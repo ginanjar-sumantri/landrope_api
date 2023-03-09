@@ -5,7 +5,6 @@ from geojson import FeatureCollection
 from fastapi import HTTPException
 from shapely.geometry import Polygon
 
-
 class GeomService:
     def from_map_to_wkt(buffer:bytes, content_type:str):
         try:

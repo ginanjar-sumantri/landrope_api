@@ -23,14 +23,6 @@ async def create(sch: ProjectCreateSch):
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[ProjectSch])
-async def get_for_ddl():
-    
-    """Gets a paginated list objects"""
-
-    objs = await crud.project.get_multi()
-    return create_response(data=objs)
-
-@router.get("", response_model=GetResponsePaginatedSch[ProjectSch])
 async def get_list(params:Params = Depends()):
     
     """Gets a paginated list objects"""
