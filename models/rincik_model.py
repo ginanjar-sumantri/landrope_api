@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -24,7 +24,7 @@ class JenisDokumenEnum(str, Enum):
     SPPT = "SPPT"
     Kutipan_Girik = "Kutipan_Girik"
 
-class RincikBase(SQLModel):
+class RincikBase(BaseGeoModel):
     id_rincik:str = Field(nullable=False, max_length=100)
     estimasi_nama_pemilik:str = Field(max_length=250)
     luas:int
@@ -35,7 +35,7 @@ class RincikBase(SQLModel):
     jenis_lahan_id:UUID = Field(default=None, foreign_key="") 
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id")
 
-class RincikFullBase(BaseGeoModel, RincikBase):
+class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):

@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -14,7 +14,7 @@ class TypeEnum(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"
 
-class BidangBase(SQLModel):
+class BidangBase(BaseGeoModel):
     id_bidang:str = Field(nullable=False, max_length=100)
     nama_pemilik:str
     luas:int
@@ -22,7 +22,7 @@ class BidangBase(SQLModel):
     no_peta:str
     status:StatusEnum
 
-class BidangFullBase(BaseGeoModel, BidangBase):
+class BidangFullBase(BaseUUIDModel, BidangBase):
     pass
 
 class Bidang(BidangFullBase, table=True):
@@ -33,7 +33,7 @@ class Bidang(BidangFullBase, table=True):
 
 #-------------------------------------------------------------------------------
 
-class BidangOverlapFullBase(BaseGeoModel, BidangBase):
+class BidangOverlapFullBase(BidangBase):
     pass
 
 class BidangOverlap(BidangOverlapFullBase, table=True):

@@ -1,16 +1,18 @@
-from datetime import datetime
 from fastapi import HTTPException
-from typing import Any, Dict, Generic, List, Type, TypeVar
-from uuid import UUID
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 from sqlmodel import SQLModel, select, func
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exc
+from pydantic import BaseModel
+from typing import Any, Dict, Generic, List, Type, TypeVar
+from datetime import datetime
+from uuid import UUID
+from common.ordered import OrderEnumSch
+
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -53,6 +55,71 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if query is None:
             query = select(self.model).offset(skip).limit(limit).order_by(self.model.id)
         response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_multi_paginated(self, *, params: Params | None = Params(), query: T | Select[T] | None = None, db_session: AsyncSession | None = None,
+                                    ) -> Page[ModelType]:
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model)
+        return await paginate(db_session, query, params)
+
+    async def get_multi_paginated_ordered(
+        self,
+        *,
+        params: Params | None = Params(),
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        query: T | Select[T] | None = None,
+        db_session: AsyncSession | None = None,
+    ) -> Page[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        if order_by not in columns or order_by is None:
+            order_by = self.model.id
+
+        if query is None:
+            if order == OrderEnumSch.ascendent:
+                query = select(self.model).order_by(columns[order_by].asc())
+            else:
+                query = select(self.model).order_by(columns[order_by].desc())
+
+        return await paginate(db_session, query, params)
+
+    async def get_multi_ordered(
+        self,
+        *,
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        skip: int = 0,
+        limit: int = 100,
+        db_session: AsyncSession | None = None,
+    ) -> List[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        if order_by not in columns or order_by is None:
+            order_by = self.model.id
+
+        if order == OrderEnumSch.ascendent:
+            query = (
+                select(self.model)
+                .offset(skip)
+                .limit(limit)
+                .order_by(columns[order_by.value].asc())
+            )
+        else:
+            query = (
+                select(self.model)
+                .offset(skip)
+                .limit(limit)
+                .order_by(columns[order_by.value].desc())
+            )
+
+        response = await db_session.execute(query)
         return response.scalars().all()
     
     async def create(self, *, obj_in: CreateSchemaType | ModelType, created_by_id : UUID | str | None = None, 

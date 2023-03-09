@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel
 from enum import Enum
 from datetime import date
 from typing import TYPE_CHECKING
@@ -17,7 +17,7 @@ class KategoriEnum(str, Enum):
     SK_Orang = "SK_Orang"
     SK_ASG = "SK_ASG"
 
-class PTSKBase(SQLModel):
+class PTSKBase(BaseGeoModel):
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
     status:StatusSKEnum = Field(nullable=True)
@@ -27,7 +27,7 @@ class PTSKBase(SQLModel):
     tanggal_tahun_SK:date = Field(nullable=True)
     tanggal_jatuh_tempo:date = Field(nullable=True)
 
-class PTSKFullBase(BaseGeoModel, PTSKBase):
+class PTSKFullBase(BaseUUIDModel, PTSKBase):
     pass
 
 class PTSK(PTSKFullBase, table=True):

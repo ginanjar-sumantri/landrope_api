@@ -1,15 +1,15 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.mapping_model import (Mapping_Planing_PTSK_Desa, Mapping_Planing_PTSK_Desa_Rincik, Mapping_Planing_PTSK_Desa_Rincik_Bidang)
 
-class DesaBase(SQLModel):
+class DesaBase(BaseGeoModel):
     name:str = Field(nullable=False, max_length=100)
     luas:int
 
-class DesaFullBase(BaseGeoModel, DesaBase):
+class DesaFullBase(BaseUUIDModel, DesaBase):
     pass
 
 class Desa(DesaFullBase, table=True):

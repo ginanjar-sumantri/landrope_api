@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 
@@ -8,12 +8,12 @@ if TYPE_CHECKING:
     from models.mapping_model import (Mapping_Planing_PTSK, Mapping_Planing_PTSK_Desa, 
                                       Mapping_Planing_PTSK_Desa_Rincik, Mapping_Planing_PTSK_Desa_Rincik_Bidang)
 
-class PlaningBase(SQLModel):
+class PlaningBase(BaseGeoModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
 
-class PlaningFullBase(BaseGeoModel, PlaningBase):
+class PlaningFullBase(BaseUUIDModel, PlaningBase):
     pass
 
 class Planing(PlaningFullBase, table=True):
