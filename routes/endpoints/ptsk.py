@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
-from models.ptsk_model import PTSK
+from models.ptsk_model import Ptsk
 from schemas.ptsk_sch import (PTSKSch, PTSKCreateSch, PTSKUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -18,7 +18,7 @@ async def create(sch: PTSKCreateSch, file:UploadFile = None):
     
     obj_current = await crud.ptsk.get_by_name(name=sch.name)
     if obj_current:
-        raise NameExistException(PTSK, name=sch.name)
+        raise NameExistException(Ptsk, name=sch.name)
     
     if file is not None:
         content_type = await file.content_type
@@ -47,7 +47,7 @@ async def get_by_id(id:UUID):
     if obj:
         return create_response(data=obj)
     else:
-        raise IdNotFoundException(PTSK, id)
+        raise IdNotFoundException(Ptsk, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PTSKCreateSch])
 async def update(id:UUID, sch:PTSKUpdateSch, file:UploadFile = None):
@@ -56,7 +56,7 @@ async def update(id:UUID, sch:PTSKUpdateSch, file:UploadFile = None):
 
     obj_current = await crud.planing.get(id=id)
     if not obj_current:
-        raise IdNotFoundException(PTSK, id)
+        raise IdNotFoundException(Ptsk, id)
     
     if file is not None:
         content_type = await file.content_type

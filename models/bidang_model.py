@@ -1,10 +1,14 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
+from models.mapping_model import Mapping_Planing_Ptsk_Desa_Rincik_Bidang, Mapping_Bidang_Overlap
 from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from models.mapping_model import Mapping_Planing_PTSK_Desa_Rincik_Bidang, Mapping_Bidang_Overlap
+    from models.planing_model import Planing
+    from models.ptsk_model import Ptsk
+    from models.desa_model import Desa
+    from models.rincik_model import Rincik
 
 class StatusEnum(str, Enum):
     Bebas = "Bebas"
@@ -28,13 +32,26 @@ class BidangFullBase(BaseUUIDModel, BidangBase):
 class Bidang(BidangFullBase, table=True):
     type:TypeEnum
 
-    planing_ptsk_desa_rincik_bidang: "Mapping_Planing_PTSK_Desa_Rincik_Bidang" = Relationship(back_populates="bidangs")
-    bidang_overlap: "Mapping_Bidang_Overlap" = Relationship(back_populates="bidangs")
+    planing:"Planing" = Relationship(back_populates="bidangs", link_model=Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+    ptsk:"Ptsk" = Relationship(back_populates="bidangs", link_model=Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+    desa:"Desa" = Relationship(back_populates="bidangs", link_model=Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+    rinciks:list["Rincik"] = Relationship(back_populates="bidangs", link_model=Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+    overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=Mapping_Bidang_Overlap)
+
+    
 
 #-------------------------------------------------------------------------------
 
-class BidangOverlapFullBase(BidangBase):
+class BidangoverlapBase(BaseGeoModel):
+    id_bidang:str = Field(nullable=False, max_length=100)
+    nama_pemilik:str
+    luas:int
+    alas_hak:str
+    no_peta:str
+    status:StatusEnum
+
+class BidangoverlapFullBase(BaseUUIDModel, BidangoverlapBase):
     pass
 
-class BidangOverlap(BidangOverlapFullBase, table=True):
-    bidang_overlap: "Mapping_Bidang_Overlap" = Relationship(back_populates="overlaps")
+class Bidangoverlap(BidangoverlapFullBase, table=True):
+    bidangs : list["Bidang"] = Relationship(back_populates="overlaps", link_model=Mapping_Bidang_Overlap)

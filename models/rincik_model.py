@@ -3,12 +3,15 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from enum import Enum
 from typing import TYPE_CHECKING
+from models.mapping_model import Mapping_Planing_Ptsk_Desa_Rincik, Mapping_Planing_Ptsk_Desa_Rincik_Bidang
 
 
 if TYPE_CHECKING:
     from models.jenis_lahan_model import JenisLahan
-    from models.ptsk_model import PTSK
-    from models.mapping_model import Mapping_Planing_PTSK_Desa_Rincik, Mapping_Planing_PTSK_Desa_Rincik_Bidang
+    from models.planing_model import Planing
+    from models.ptsk_model import Ptsk
+    from models.desa_model import Desa
+    
 
 class CategoryEnum(str, Enum):
     Group_Besar = "Group_Besar"
@@ -32,13 +35,16 @@ class RincikBase(BaseGeoModel):
     alas_hak:str = Field(max_length=100)
     jenis_dokumen: JenisDokumenEnum
     no_peta:str = Field(max_length=100)
-    jenis_lahan_id:UUID = Field(default=None, foreign_key="") 
-    ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id")
+    jenis_lahan_id:UUID = Field(default=None, foreign_key="")
 
 class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="rincik")
-    planing_ptsk_desa_rincik: "Mapping_Planing_PTSK_Desa_Rincik" = Relationship(back_populates="rinciks")
-    planing_ptsk_desa_rincik_bidang: "Mapping_Planing_PTSK_Desa_Rincik_Bidang" = Relationship(back_populates="rinciks")
+
+    planing:"Planing" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
+    ptsk:"Ptsk" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
+    desa:"Desa" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
+    
+

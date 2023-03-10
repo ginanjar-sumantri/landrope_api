@@ -29,7 +29,9 @@ def init_app():
     
     app.add_middleware(SQLAlchemyMiddleware,
                        db_url=settings.DB_CONFIG,
-                       engine_args={"echo" : False, "pool_pre_ping" : True, "pool_recycle" : 1000})
+                       engine_args={"echo" : False, "pool_pre_ping" : True, "pool_recycle" : 1800})
+    
+    add_pagination(app)
     
     gunicorn_error_logger = logging.getLogger("gunicorn.error")
     gunicorn_logger = logging.getLogger("gunicorn")

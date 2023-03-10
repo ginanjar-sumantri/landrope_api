@@ -1,12 +1,16 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
+from models.mapping_model import (Mapping_Planing_Ptsk, Mapping_Planing_Ptsk_Desa, 
+                                      Mapping_Planing_Ptsk_Desa_Rincik, Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
 from uuid import UUID
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.project_model import Project
-    from models.mapping_model import (Mapping_Planing_PTSK, Mapping_Planing_PTSK_Desa, 
-                                      Mapping_Planing_PTSK_Desa_Rincik, Mapping_Planing_PTSK_Desa_Rincik_Bidang)
+    from models.ptsk_model import Ptsk
+    from models.desa_model import Desa
+    from models.rincik_model import Rincik
+    from models.bidang_model import Bidang
 
 class PlaningBase(BaseGeoModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -18,7 +22,9 @@ class PlaningFullBase(BaseUUIDModel, PlaningBase):
 
 class Planing(PlaningFullBase, table=True):
     project: "Project" = Relationship(back_populates="planings")
-    planing_ptsk: "Mapping_Planing_PTSK" = Relationship(back_populates="planings")
-    planing_ptsk_desa: "Mapping_Planing_PTSK_Desa" = Relationship(back_populates="planings")
-    planing_ptsk_desa_rincik: "Mapping_Planing_PTSK_Desa_Rincik" = Relationship(back_populates="planings")
-    planing_ptsk_desa_rincik_bidang: "Mapping_Planing_PTSK_Desa_Rincik_Bidang" = Relationship(back_populates="planings")
+    ptsks:list["Ptsk"] = Relationship(back_populates="planings", link_model=Mapping_Planing_Ptsk)
+    desas:list["Desa"] = Relationship(back_populates="planings", link_model=Mapping_Planing_Ptsk_Desa)
+    rinciks:list["Rincik"] = Relationship(back_populates="planing", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
+    bidangs:list["Bidang"] = Relationship(back_populates="planing", link_model=Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+
+    
