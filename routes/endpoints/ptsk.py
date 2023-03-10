@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
 from models.ptsk_model import Ptsk
-from schemas.ptsk_sch import (PTSKSch, PTSKCreateSch, PTSKUpdateSch)
+from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -11,8 +11,8 @@ from services.geom_service import GeomService
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[PTSKSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PTSKCreateSch, file:UploadFile = None):
+@router.post("", response_model=PostResponseBaseSch[PtskSch], status_code=status.HTTP_201_CREATED)
+async def create(sch: PtskCreateSch, file:UploadFile = None):
     
     """Create a new object"""
     
@@ -30,7 +30,7 @@ async def create(sch: PTSKCreateSch, file:UploadFile = None):
     new_obj = await crud.ptsk.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[PTSKSch])
+@router.get("", response_model=GetResponsePaginatedSch[PtskSch])
 async def get_list(params:Params = Depends()):
     
     """Gets a paginated list objects"""
@@ -38,7 +38,7 @@ async def get_list(params:Params = Depends()):
     objs = await crud.ptsk.get_multi_paginated(params=params)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[PTSKSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[PtskSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -49,8 +49,8 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Ptsk, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[PTSKCreateSch])
-async def update(id:UUID, sch:PTSKUpdateSch, file:UploadFile = None):
+@router.put("/{id}", response_model=PutResponseBaseSch[PtskCreateSch])
+async def update(id:UUID, sch:PtskUpdateSch, file:UploadFile = None):
     
     """Update a obj by its id"""
 

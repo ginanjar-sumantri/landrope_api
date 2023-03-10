@@ -1,12 +1,12 @@
 from models.ptsk_model import PtskBase, PtskFullBase
 from common.partial import optional
 
-class PTSKCreateSch(PtskBase):
+class PtskCreateSch(PtskBase):
     pass
 
-class PTSKSch(PtskFullBase):
+class PtskSch(PtskFullBase):
     pass
 
 @optional
-class PTSKUpdateSch(PtskBase):
+class PtskUpdateSch(PtskBase):
     pass

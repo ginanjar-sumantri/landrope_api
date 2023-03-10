@@ -3,15 +3,15 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from crud.base_crud import CRUDBase
-from models.ptsk_model import Ptsk
-from schemas.ptsk_sch import PtskCreateSch, PtskUpdateSch
+from models.desa_model import Desa
+from schemas.desa_sch import DesaCreateSch, DesaUpdateSch
 
-class CRUDPTSK(CRUDBase[Ptsk, PtskCreateSch, PtskUpdateSch]):
+class CRUDDesa(CRUDBase[Desa, DesaCreateSch, DesaUpdateSch]):
     async def get_by_name(
         self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Ptsk:
+    ) -> Desa:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Ptsk).where(Ptsk.name == name))
+        obj = await db_session.execute(select(Desa).where(Desa.name == name))
         return obj.scalar_one_or_none()
 
-ptsk = CRUDPTSK(Ptsk)
+desa = CRUDDesa(Desa)
