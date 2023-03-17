@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class PlaningBase(BaseGeoModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
     desa_id:UUID = Field(default=None, foreign_key="desa.id")
-    luas:
+    luas:Decimal
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
 
