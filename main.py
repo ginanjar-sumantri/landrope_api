@@ -6,6 +6,7 @@ from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 from fastapi_pagination import add_pagination
 
 from configs.config import settings 
+from routes import api
 
 def init_app():
 
@@ -31,6 +32,7 @@ def init_app():
                        db_url=settings.DB_CONFIG,
                        engine_args={"echo" : False, "pool_pre_ping" : True, "pool_recycle" : 1800})
     
+    app.include_router(api.api_router, prefix="/landrope")
     add_pagination(app)
     
     gunicorn_error_logger = logging.getLogger("gunicorn.error")

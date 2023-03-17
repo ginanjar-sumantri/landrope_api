@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from models.jenis_lahan_model import JenisLahan
     from models.planing_model import Planing
     from models.ptsk_model import Ptsk
-    from models.desa_model import Desa
+    from models.bidang_model import Bidang
     
 
 class CategoryEnum(str, Enum):
@@ -37,14 +37,16 @@ class RincikBase(BaseGeoModel):
     no_peta:str = Field(max_length=100)
     jenis_lahan_id:UUID = Field(default=None, foreign_key="")
 
+    planing_id:UUID = Field(default=None, foreign_key="planing.id")
+    ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
+
 class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="rincik")
-
-    planing:"Planing" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
-    ptsk:"Ptsk" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
-    desa:"Desa" = Relationship(back_populates="rinciks", link_model=Mapping_Planing_Ptsk_Desa_Rincik)
+    planing:"Planing" = Relationship(back_populates="rinciks")
+    ptsk:"Ptsk" = Relationship(back_populates="rinciks")
+    bidang:"Bidang" = Relationship(back_populates="rincik")
     
 

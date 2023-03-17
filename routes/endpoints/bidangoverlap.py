@@ -8,6 +8,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
 from services.geom_service import GeomService
+from shapely.geometry import shape
 
 router = APIRouter()
 
@@ -21,11 +22,15 @@ async def create(sch: BidangoverlapCreateSch, file:UploadFile = None):
         raise NameExistException(Bidangoverlap, name=sch.id_bidang)
     
     if file is not None:
-        content_type = await file.content_type
         buffer = await file.read()
-        geom = GeomService.from_map_to_wkt(buffer=buffer, content_type=content_type)
 
-        sch.geom = geom
+        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
+
+        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
     new_obj = await crud.bidangoverlap.create(obj_in=sch)
     return create_response(data=new_obj)

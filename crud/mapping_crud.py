@@ -3,38 +3,40 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from crud.base_crud import CRUDBase
-from models.mapping_model import (Mapping_Planing_Ptsk, Mapping_Planing_Ptsk_Desa, Mapping_Planing_Ptsk_Desa_Rincik, 
-                                  Mapping_Planing_Ptsk_Desa_Rincik_Bidang, Mapping_Bidang_Overlap)
+from models.mapping_model import (MappingPlaningPtsk, MappingBidangOverlap)
 
-class CRUDMappingPlaningPtsk(CRUDBase[Mapping_Planing_Ptsk]):
+class CRUDMappingPlaningPtsk(CRUDBase[MappingPlaningPtsk]):
     pass
 
-planing_ptsk = CRUDMappingPlaningPtsk(Mapping_Planing_Ptsk)
+planing_ptsk = CRUDMappingPlaningPtsk(MappingPlaningPtsk)
 
 #-----------------------------------------------------------------------------------------------
 
-class CRUDMappingPlaningPtskDesa(CRUDBase[Mapping_Planing_Ptsk_Desa]):
+class CRUDMappingBidangOverlap(CRUDBase[MappingBidangOverlap]):
     pass
 
-planing_ptsk_desa = CRUDMappingPlaningPtskDesa(Mapping_Planing_Ptsk_Desa)
+bidang_overlap = CRUDMappingBidangOverlap(MappingBidangOverlap)
 
 #-----------------------------------------------------------------------------------------------
 
-class CRUDMappingPlaningPtskDesaRincik(CRUDBase[Mapping_Planing_Ptsk_Desa_Rincik]):
-    pass
+# class CRUDMappingPlaningPtskDesa(CRUDBase[Mapping_Planing_Ptsk_Desa]):
+#     pass
 
-planing_ptsk_desa_rincik = CRUDMappingPlaningPtskDesaRincik(Mapping_Planing_Ptsk_Desa_Rincik)
-
-#-----------------------------------------------------------------------------------------------
-
-class CRUDMappingPlaningPtskDesaRincikBidang(CRUDBase[Mapping_Planing_Ptsk_Desa_Rincik_Bidang]):
-    pass
-
-planing_ptsk_desa_rincik_bidang = CRUDMappingPlaningPtskDesaRincikBidang(Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+# planing_ptsk_desa = CRUDMappingPlaningPtskDesa(Mapping_Planing_Ptsk_Desa)
 
 #-----------------------------------------------------------------------------------------------
 
-class CRUDMappingBidangOverlap(CRUDBase[Mapping_Bidang_Overlap]):
-    pass
+# class CRUDMappingPlaningPtskDesaRincik(CRUDBase[Mapping_Planing_Ptsk_Desa_Rincik]):
+#     pass
 
-bidang_overlap = CRUDMappingBidangOverlap(Mapping_Bidang_Overlap)
+# planing_ptsk_desa_rincik = CRUDMappingPlaningPtskDesaRincik(Mapping_Planing_Ptsk_Desa_Rincik)
+
+#-----------------------------------------------------------------------------------------------
+
+# class CRUDMappingPlaningPtskDesaRincikBidang(CRUDBase[Mapping_Planing_Ptsk_Desa_Rincik_Bidang]):
+#     pass
+
+# planing_ptsk_desa_rincik_bidang = CRUDMappingPlaningPtskDesaRincikBidang(Mapping_Planing_Ptsk_Desa_Rincik_Bidang)
+
+#-----------------------------------------------------------------------------------------------
+

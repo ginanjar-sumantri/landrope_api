@@ -13,5 +13,12 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         db_session = db_session or db.session
         obj = await db_session.execute(select(Planing).where(Planing.name == name))
         return obj.scalar_one_or_none()
+    
+    async def get_by_project_id_desa_id(
+        self, *, project_id: str, desa_id:str, db_session: AsyncSession | None = None
+    ) -> Planing:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Planing).filter(Planing.project_id == project_id and Planing.desa_id == desa_id))
+        return obj.scalar_one_or_none()
 
 planing = CRUDPlaning(Planing)

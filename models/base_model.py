@@ -17,4 +17,4 @@ class BaseUUIDModel(SQLModel):
     created_at : datetime | None = Field(default=datetime.now())
 
 class BaseGeoModel(_SQLModel):
-    geom:str = Field(sa_column=Column(Geometry('POLYGON', srid=4326)))
+    geom:str = Field(sa_column=Column(Geometry))

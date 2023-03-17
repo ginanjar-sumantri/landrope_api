@@ -6,8 +6,7 @@ from .ptsk_model import Ptsk
 from .rincik_model import Rincik
 from .jenis_lahan_model import JenisLahan
 from .bidang_model import Bidangoverlap, Bidang 
-from .mapping_model import (Mapping_Planing_Ptsk, Mapping_Planing_Ptsk_Desa, Mapping_Planing_Ptsk_Desa_Rincik, 
-                            Mapping_Planing_Ptsk_Desa_Rincik_Bidang, Mapping_Bidang_Overlap)
+from .mapping_model import (MappingPlaningPtsk, MappingBidangOverlap)
 
 
 

@@ -3,9 +3,54 @@ import fiona as fio
 import math
 from geojson import FeatureCollection
 from fastapi import HTTPException
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, shape, MultiPolygon
 
 class GeomService:
+    
+    def file_to_geo_dataframe(file:bytes = None):
+        """Convert buffer file data to geodataframe"""
+        with fio.BytesCollection(file) as s:
+            collections = FeatureCollection([(ss) for ss in s])
+            geo_dataframe = geopandas.GeoDataFrame.from_features(features=collections)
+            newgeo = GeomService.convert_3D_2D(geo_dataframe.geometry)
+
+            if newgeo.__len__() > 0:
+                geo_dataframe.geometry = newgeo
+
+            # geo_dataframe = geo_dataframe.explode(ignore_index=True)
+
+        return geo_dataframe
+    
+    def single_geometry_to_wkt(geometry):
+        """Convert geometry geo data frame"""
+        return geopandas.GeoSeries(geometry).geometry.to_wkt()[0]
+
+    def linestring_to_polygon(line:shape):
+        """Convert linestring to polygon"""
+        coords = [(xy) for xy in tuple(line.coords)]
+        polygon = geopandas.GeoSeries(Polygon(coords))
+
+        return polygon
+    
+    def convert_3D_2D(geometry):
+        """Takes a GeoSeries of 3D Multi/Polygons (has_z) and returns a list of 2D Multi/Polygons"""
+        new_geo = []
+        for p in geometry:
+            if p.has_z:
+                if p.geom_type == 'Polygon':
+                    lines = [xy[:2] for xy in list(p.exterior.coords)]
+                    new_p = Polygon(lines)
+                    new_geo.append(new_p)
+                elif p.geom_type == 'MultiPolygon':
+                    new_multi_p = []
+                    for ap in p:
+                        lines = [xy[:2] for xy in list(ap.exterior.coords)]
+                        new_p = Polygon(lines)
+                        new_multi_p.append(new_p)
+                    new_geo.append(MultiPolygon(new_multi_p))
+        return new_geo
+
+
     def from_map_to_wkt(buffer:bytes, content_type:str):
         try:
             if content_type == "application/x-zip-compressed":
@@ -13,13 +58,11 @@ class GeomService:
                     feature = s.next()
                     collections = FeatureCollection([feature])
                     gdf = geopandas.GeoDataFrame.from_features(features=collections)
-                    print(gdf.head())
                     gdf['geometry'] = gdf.geometry.boundary
             
             elif content_type == "application/octet-stream":
                 with fio.BytesCollection(buffer) as s :
                     gdf = geopandas.GeoDataFrame.from_features(features=s)
-                    print(gdf.type)
         
             else :
                 raise HTTPException(status_code=404, detail="File failed to upload, please make sure again extension file with '.zip' or '.dfx'")
