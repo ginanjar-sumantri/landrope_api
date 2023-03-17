@@ -3,7 +3,6 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from enum import Enum
 from typing import TYPE_CHECKING
-from models.mapping_model import Mapping_Planing_Ptsk_Desa_Rincik, Mapping_Planing_Ptsk_Desa_Rincik_Bidang
 
 
 if TYPE_CHECKING:
