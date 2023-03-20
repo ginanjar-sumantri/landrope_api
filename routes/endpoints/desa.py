@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
@@ -12,8 +12,8 @@ from shapely.geometry import shape
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[DesaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DesaCreateSch, file:UploadFile = None):
+@router.post("/create", response_model=PostResponseBaseSch[DesaSch], status_code=status.HTTP_201_CREATED)
+async def create(sch: DesaCreateSch = Depends(), file:UploadFile = File()):
     
     """Create a new object"""
     
@@ -21,7 +21,7 @@ async def create(sch: DesaCreateSch, file:UploadFile = None):
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
     
-    if file is not None:
+    if file:
         buffer = await file.read()
 
         geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
@@ -32,7 +32,8 @@ async def create(sch: DesaCreateSch, file:UploadFile = None):
 
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
-    new_obj = await crud.desa.create(obj_in=sch)
+    new_obj = await crud.desa.create_desa(**sch.dict())
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[DesaSch])
@@ -55,7 +56,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Desa, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[DesaCreateSch])
-async def update(id:UUID, sch:DesaUpdateSch, file:UploadFile = None):
+async def update(id:UUID, sch:DesaUpdateSch = Depends(), file:UploadFile = None):
     
     """Update a obj by its id"""
 
