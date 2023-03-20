@@ -11,5 +11,3 @@ class JenisLahanBase(SQLModel):
 
 class JenisLahan(BaseUUIDModel, JenisLahanBase, table=True):
     rincik: "Rincik" = Relationship(back_populates="jenislahan")
-
-
