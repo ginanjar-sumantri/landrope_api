@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landrope
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: landrope
+  template:
+    metadata:
+      labels:
+        app: landrope
+    spec:
+      containers:
+        - image: LAND_IMAGE
+          name: landrope
+          ports:
+            - containerPort: 8602
+              name: gunicorn
+          env:
+            - name: OAUTH2_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: landrope-configmap
+                  key: OAUTH2_URL
+            - name: OAUTH2_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: landrope-secret
+                  key: OAUTH2_TOKEN
+            - name: DB_CONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: landrope-secret
+                  key: DB_CONFIG
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: landrope-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "s1-backendconfig"}'
+spec:
+  selector:
+    app: landrope
+  ports:
+    - port: 8602
+      targetPort: 8602
