@@ -10,4 +10,4 @@ class JenisLahanBase(SQLModel):
     name:str = Field(max_length=150)
 
 class JenisLahan(BaseUUIDModel, JenisLahanBase, table=True):
-    rincik: "Rincik" = Relationship(back_populates="jenislahan")
+    rinciks: "Rincik" = Relationship(back_populates="jenis_lahan")

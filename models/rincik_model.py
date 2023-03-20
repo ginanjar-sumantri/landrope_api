@@ -34,7 +34,7 @@ class RincikBase(BaseGeoModel):
     alas_hak:str = Field(max_length=100)
     jenis_dokumen: JenisDokumenEnum
     no_peta:str = Field(max_length=100)
-    jenis_lahan_id:UUID = Field(default=None, foreign_key="")
+    jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id")
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
@@ -43,7 +43,7 @@ class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
-    jenis_lahan: "JenisLahan" = Relationship(back_populates="rincik")
+    jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks")
     planing:"Planing" = Relationship(back_populates="rinciks")
     ptsk:"Ptsk" = Relationship(back_populates="rinciks")
     bidang:"Bidang" = Relationship(back_populates="rincik")
