@@ -3,6 +3,7 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from enum import Enum
 from typing import TYPE_CHECKING
+from decimal import Decimal
 
 
 if TYPE_CHECKING:
@@ -29,12 +30,12 @@ class JenisDokumenEnum(str, Enum):
 class RincikBase(BaseGeoModel):
     id_rincik:str = Field(nullable=False, max_length=100)
     estimasi_nama_pemilik:str = Field(max_length=250)
-    luas:int
+    luas:Decimal
     category:CategoryEnum
     alas_hak:str = Field(max_length=100)
     jenis_dokumen: JenisDokumenEnum
     no_peta:str = Field(max_length=100)
-    jenis_lahan_id:UUID = Field(default=None, foreign_key="")
+    jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id")
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
@@ -43,7 +44,7 @@ class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
-    jenis_lahan: "JenisLahan" = Relationship(back_populates="rincik")
+    jenislahan: "JenisLahan" = Relationship(back_populates="rincik")
     planing:"Planing" = Relationship(back_populates="rinciks")
     ptsk:"Ptsk" = Relationship(back_populates="rinciks")
     bidang:"Bidang" = Relationship(back_populates="rincik")

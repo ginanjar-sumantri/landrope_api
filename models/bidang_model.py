@@ -4,6 +4,7 @@ from models.mapping_model import MappingBidangOverlap
 from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -22,7 +23,7 @@ class TypeEnum(str, Enum):
 class BidangBase(BaseGeoModel):
     id_bidang:str = Field(nullable=False, max_length=100)
     nama_pemilik:str
-    luas_surat:int
+    luas_surat:Decimal
     alas_hak:str
     no_peta:str
     status:StatusEnum
