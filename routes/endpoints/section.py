@@ -11,7 +11,7 @@ from common.exceptions import (IdNotFoundException, NameExistException)
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[SectionSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: SectionCreateSch):
+async def create(sch: SectionCreateSch = Depends()):
     
     """Create a new object"""
     

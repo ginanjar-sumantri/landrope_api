@@ -9,6 +9,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
+from geoalchemy2.shape import to_shape
 
 router = APIRouter()
 
@@ -20,7 +21,7 @@ async def create(sch: DesaCreateSch = Depends(), file:UploadFile = File()):
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
-    
+
     if file:
         buffer = await file.read()
 
@@ -32,7 +33,7 @@ async def create(sch: DesaCreateSch = Depends(), file:UploadFile = File()):
 
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
-    new_obj = await crud.desa.create_desa(**sch.dict())
+    new_obj = await crud.desa.create(obj_in=sch)
 
     return create_response(data=new_obj)
 
@@ -55,21 +56,29 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Desa, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[DesaCreateSch])
+@router.put("/{id}", response_model=PutResponseBaseSch[DesaSch])
 async def update(id:UUID, sch:DesaUpdateSch = Depends(), file:UploadFile = None):
     
     """Update a obj by its id"""
 
     obj_current = await crud.desa.get(id=id)
+
     if not obj_current:
         raise IdNotFoundException(Desa, id)
     
-    if file is not None:
-        content_type = await file.content_type
+    if obj_current.geom:
+        obj_current.geom = to_shape(obj_current.geom).__str__()
+    
+    if file:
         buffer = await file.read()
-        geom = GeomService.from_map_to_wkt(buffer=buffer, content_type=content_type)
 
-        sch.geom = geom
+        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
+        
+        sch = DesaCreateSch(name=sch.name, luas=sch.luas, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)

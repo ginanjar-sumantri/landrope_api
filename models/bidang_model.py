@@ -20,7 +20,7 @@ class TypeEnum(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"
 
-class BidangBase(BaseGeoModel):
+class BidangBase(SQLModel):
     id_bidang:str = Field(nullable=False, max_length=100)
     nama_pemilik:str
     luas_surat:Decimal
@@ -32,7 +32,7 @@ class BidangBase(BaseGeoModel):
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id")
     rincik_id:UUID = Field(default=None, foreign_key="rincik.id")
 
-class BidangFullBase(BaseUUIDModel, BidangBase):
+class BidangFullBase(BaseUUIDModel, BaseGeoModel, BidangBase):
     pass
 
 class Bidang(BidangFullBase, table=True):
@@ -48,7 +48,7 @@ class Bidang(BidangFullBase, table=True):
 class BidangoverlapBase(BidangBase):
     pass
 
-class BidangoverlapFullBase(BaseUUIDModel, BidangoverlapBase):
+class BidangoverlapFullBase(BaseUUIDModel, BaseGeoModel, BidangoverlapBase):
     pass
 
 class Bidangoverlap(BidangoverlapFullBase, table=True):

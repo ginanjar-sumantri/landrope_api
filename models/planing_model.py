@@ -10,14 +10,17 @@ if TYPE_CHECKING:
     from models.rincik_model import Rincik
     from models.bidang_model import Bidang
 
-class PlaningBase(BaseGeoModel):
+class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
     desa_id:UUID = Field(default=None, foreign_key="desa.id")
     luas:Decimal
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
 
-class PlaningFullBase(BaseUUIDModel, PlaningBase):
+class PlaningRawBase(BaseUUIDModel, PlaningBase):
+    pass
+
+class PlaningFullBase(PlaningRawBase, BaseGeoModel):
     pass
 
 class Planing(PlaningFullBase, table=True):

@@ -7,13 +7,14 @@ from decimal import Decimal
 if TYPE_CHECKING:
     from models.project_model import Project
     
-    
-
-class DesaBase(BaseGeoModel):
+class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     luas:Decimal
 
-class DesaFullBase(BaseUUIDModel, DesaBase):
+class DesaRawBase(BaseUUIDModel, DesaBase):
+    pass
+
+class DesaFullBase(DesaRawBase, BaseGeoModel):
     pass
 
 class Desa(DesaFullBase, table=True):

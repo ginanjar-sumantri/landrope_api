@@ -1,10 +1,10 @@
-from models.desa_model import DesaBase, DesaFullBase
+from models.desa_model import DesaBase, DesaRawBase, DesaFullBase
 from common.partial import optional
 
-class DesaCreateSch(DesaBase):
+class DesaCreateSch(DesaFullBase):
     pass
 
-class DesaSch(DesaFullBase):
+class DesaSch(DesaRawBase):
     pass
 
 @optional

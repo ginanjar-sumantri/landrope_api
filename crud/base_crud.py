@@ -35,6 +35,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session = db_session or db.session
         query = select(self.model).where(self.model.id == id)
         response = await db_session.execute(query)
+
         return response.scalar_one_or_none()
     
     async def get_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[ModelType] | None:
@@ -147,6 +148,29 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db_session.refresh(db_obj)
         return db_obj
     
+    async def create_with_dict(self, db_session: AsyncSession | None = None, created_by_id : UUID | str | None = None, **kwargs) -> ModelType:
+        db_session = db_session or db.session
+        db_obj = self.model(**kwargs)
+        db_obj.created_at = datetime.utcnow()
+        db_obj.updated_at = datetime.utcnow()
+
+        if created_by_id:
+            db_obj.created_by_id = created_by_id
+
+        try:
+            db_session.add(db_obj)
+            await db_session.commit()
+        except exc.IntegrityError:
+            db_session.rollback()
+            raise HTTPException(status_code=409, detail="Resource already exists")
+        
+        await db_session.refresh(db_obj)
+
+        # if db_obj.geom :
+        #     db_obj.geom = to_shape(db_obj.geom).__str__()
+            
+        return db_obj
+    
     async def update(self, *, obj_current : ModelType, obj_new : UpdateSchemaType | Dict[str, Any] | ModelType,
                      db_session : AsyncSession | None = None) -> ModelType :
         db_session =  db_session or db.session
@@ -157,16 +181,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
         
+        print(update_data)
         for field in obj_data:
             if field in update_data:
                 setattr(obj_current, field, update_data[field])
             if field == "update_at":
                 setattr(obj_current, field, datetime.utcnow())
             
-            db_session.add(obj_current)
-            await db_session.commit()
-            await db_session.refresh(obj_current)
-            return obj_current
+        db_session.add(obj_current)
+        await db_session.commit()
+        await db_session.refresh(obj_current)
+        return obj_current
         
     async def remove(self, *, id:UUID | str, db_session : AsyncSession | None = None) -> ModelType:
         db_session = db_session or db.session

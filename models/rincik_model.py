@@ -27,7 +27,7 @@ class JenisDokumenEnum(str, Enum):
     SPPT = "SPPT"
     Kutipan_Girik = "Kutipan_Girik"
 
-class RincikBase(BaseGeoModel):
+class RincikBase(SQLModel):
     id_rincik:str = Field(nullable=False, max_length=100)
     estimasi_nama_pemilik:str = Field(max_length=250)
     luas:Decimal
@@ -40,7 +40,7 @@ class RincikBase(BaseGeoModel):
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
 
-class RincikFullBase(BaseUUIDModel, RincikBase):
+class RincikFullBase(BaseUUIDModel, BaseGeoModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):

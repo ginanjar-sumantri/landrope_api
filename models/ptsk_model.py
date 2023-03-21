@@ -19,7 +19,7 @@ class KategoriEnum(str, Enum):
     SK_Orang = "SK_Orang"
     SK_ASG = "SK_ASG"
 
-class PtskBase(BaseGeoModel):
+class PtskBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
     status:StatusSKEnum = Field(nullable=True)
@@ -29,7 +29,7 @@ class PtskBase(BaseGeoModel):
     tanggal_tahun_SK:date = Field(nullable=True)
     tanggal_jatuh_tempo:date = Field(nullable=True)
 
-class PtskFullBase(BaseUUIDModel, PtskBase):
+class PtskFullBase(BaseUUIDModel, BaseGeoModel, PtskBase):
     pass
 
 class Ptsk(PtskFullBase, table=True):
