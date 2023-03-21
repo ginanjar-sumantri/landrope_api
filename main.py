@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.logger import logger as fastapi_logger
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 from fastapi_pagination import add_pagination
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 from configs.config import settings 
 from routes import api
