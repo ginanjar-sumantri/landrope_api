@@ -1,17 +1,18 @@
 """Add Initial Table
 
-Revision ID: 9e20fc73628f
+Revision ID: 50c085e575b1
 Revises: 
-Create Date: 2023-03-20 14:38:36.680549
+Create Date: 2023-03-20 19:55:53.990354
 
 """
 from alembic import op
 import sqlalchemy as sa
-import geoalchemy2
 import sqlmodel
+import geoalchemy2
+
 
 # revision identifiers, used by Alembic.
-revision = '9e20fc73628f'
+revision = '50c085e575b1'
 down_revision = None
 branch_labels = None
 depends_on = None
