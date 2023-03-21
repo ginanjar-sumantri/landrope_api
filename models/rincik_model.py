@@ -44,7 +44,7 @@ class RincikFullBase(BaseUUIDModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
-    jenislahan: "JenisLahan" = Relationship(back_populates="rincik")
+    jenis_lahan: "JenisLahan" = Relationship(back_populates="rincik")
     planing:"Planing" = Relationship(back_populates="rinciks")
     ptsk:"Ptsk" = Relationship(back_populates="rinciks")
     bidang:"Bidang" = Relationship(back_populates="rincik")

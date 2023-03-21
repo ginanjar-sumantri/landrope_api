@@ -15,10 +15,11 @@ def init_app():
     """
 
     app = FastAPI(title="Landrope",
-                  description=description,
-                  version="1.0",
-                  docs_url="/landrope/docs",
-                  redoc_url="/landrope/redoc")
+                description=description,
+                version="1.0",
+                docs_url="/landrope/docs",
+                redoc_url="/landrope/redoc",
+                openapi_url="/landrope/openapi.json")
     
     @app.on_event("startup")
     async def startup():
