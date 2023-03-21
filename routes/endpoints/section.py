@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Form, status, Depends, UploadFile, File
 from fastapi_pagination import Params
 import crud
 from models.section_model import Section
@@ -11,10 +11,12 @@ from common.exceptions import (IdNotFoundException, NameExistException)
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[SectionSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: SectionCreateSch = Depends()):
+async def create(code:str = Form(...), name:str = Form(...)):
     
     """Create a new object"""
     
+    sch = SectionCreateSch(code=code, name=name)
+
     obj_current = await crud.section.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Section, name=sch.name)
@@ -52,4 +54,3 @@ async def update(id:UUID, sch:SectionUpdateSch):
     
     obj_updated = await crud.section.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
-
