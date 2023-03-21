@@ -1,8 +1,8 @@
 """init_db
 
-Revision ID: 95e458f51ea0
+Revision ID: 50c085e575b1
 Revises: 
-Create Date: 2023-03-20 19:59:36.278859
+Create Date: 2023-03-20 19:55:53.990354
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '95e458f51ea0'
+revision = '50c085e575b1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table('desa',
     sa.Column('geom', geoalchemy2.types.Geometry(from_text='ST_GeomFromEWKT', name='geometry'), nullable=True),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
-    sa.Column('luas', sa.Integer(), nullable=False),
+    sa.Column('luas', sa.Numeric(), nullable=False),
     sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -104,7 +104,7 @@ def upgrade() -> None:
     sa.Column('geom', geoalchemy2.types.Geometry(from_text='ST_GeomFromEWKT', name='geometry'), nullable=True),
     sa.Column('id_rincik', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('estimasi_nama_pemilik', sqlmodel.sql.sqltypes.AutoString(length=250), nullable=False),
-    sa.Column('luas', sa.Integer(), nullable=False),
+    sa.Column('luas', sa.Numeric(), nullable=False),
     sa.Column('category', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('alas_hak', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('jenis_dokumen', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -126,7 +126,7 @@ def upgrade() -> None:
     sa.Column('geom', geoalchemy2.types.Geometry(from_text='ST_GeomFromEWKT', name='geometry'), nullable=True),
     sa.Column('id_bidang', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('nama_pemilik', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('luas_surat', sa.Integer(), nullable=False),
+    sa.Column('luas_surat', sa.Numeric(), nullable=False),
     sa.Column('alas_hak', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('no_peta', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -148,7 +148,7 @@ def upgrade() -> None:
     sa.Column('geom', geoalchemy2.types.Geometry(from_text='ST_GeomFromEWKT', name='geometry'), nullable=True),
     sa.Column('id_bidang', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('nama_pemilik', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('luas_surat', sa.Integer(), nullable=False),
+    sa.Column('luas_surat', sa.Numeric(), nullable=False),
     sa.Column('alas_hak', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('no_peta', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),

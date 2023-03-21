@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.logger import logger as fastapi_logger
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 from fastapi_pagination import add_pagination
+from fastapi.middleware.cors import CORSMiddleware
 
 from configs.config import settings 
 from routes import api
@@ -32,6 +33,13 @@ def init_app():
     app.add_middleware(SQLAlchemyMiddleware,
                        db_url=settings.DB_CONFIG,
                        engine_args={"echo" : False, "pool_pre_ping" : True, "pool_recycle" : 1800})
+    
+    app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
     
     app.include_router(api.api_router, prefix="/landrope")
     add_pagination(app)
