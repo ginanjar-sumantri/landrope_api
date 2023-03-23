@@ -11,7 +11,7 @@ from common.exceptions import (IdNotFoundException, NameExistException)
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[ProjectSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ProjectCreateSch):
+async def create(sch: ProjectCreateSch = Depends(ProjectCreateSch.as_form)):
     
     """Create a new object"""
     
@@ -41,8 +41,8 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Project, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[ProjectCreateSch])
-async def update(id:UUID, sch:ProjectUpdateSch):
+@router.put("/{id}", response_model=PutResponseBaseSch[ProjectSch])
+async def update(id:UUID, sch:ProjectUpdateSch = Depends(ProjectUpdateSch.as_form)):
     
     """Update a obj by its id"""
 

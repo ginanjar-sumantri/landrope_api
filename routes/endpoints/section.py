@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Form, status, Depends, UploadFile, File
+from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 import crud
 from models.section_model import Section
@@ -41,7 +41,7 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Section, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[SectionCreateSch])
+@router.put("/{id}", response_model=PutResponseBaseSch[SectionSch])
 async def update(id:UUID, sch:SectionUpdateSch = Depends(SectionUpdateSch.as_form)):
     
     """Update a obj by its id"""
