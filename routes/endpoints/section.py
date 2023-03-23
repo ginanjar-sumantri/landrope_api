@@ -23,11 +23,11 @@ async def create(sch: SectionCreateSch = Depends(SectionCreateSch.as_form)):
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[SectionSch])
-async def get_list(params: Params=Depends()):
+async def get_list(params: Params=Depends(), keyword:str = None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.section.get_multi_paginated(params=params)
+    objs = await crud.section.get_multi_paginated(params=params, keyword=keyword)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SectionSch])

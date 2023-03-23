@@ -64,11 +64,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
-    async def get_multi_paginated(self, *, params: Params | None = Params(), query: T | Select[T] | None = None, db_session: AsyncSession | None = None,
-                                    ) -> Page[ModelType]:
+    async def get_multi_paginated(self, *, params: Params | None = Params(),
+                                  keyword:str | None = None,
+                                  query: T | Select[T] | None = None, 
+                                  db_session: AsyncSession | None = None) -> Page[ModelType]:
         db_session = db_session or db.session
         if query is None:
-            query = select(self.model)
+            if keyword is None:
+                query = select(self.model)
+            else:
+                query = select(self.model).filter(self.model.name.contains(keyword))
         return await paginate(db_session, query, params)
 
     async def get_multi_paginated_ordered(
