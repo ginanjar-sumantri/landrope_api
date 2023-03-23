@@ -185,7 +185,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for field in obj_data:
             if field in update_data:
                 setattr(obj_current, field, update_data[field])
-            if field == "update_at":
+            if field == "updated_at":
                 setattr(obj_current, field, datetime.utcnow())
             
         db_session.add(obj_current)
