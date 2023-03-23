@@ -38,10 +38,10 @@ class BidangFullBase(BaseUUIDModel, BaseGeoModel, BidangBase):
 class Bidang(BidangFullBase, table=True):
     type:TypeEnum
 
-    planing:"Planing" = Relationship(back_populates="bidangs")
-    ptsk:"Ptsk" = Relationship(back_populates="bidangs")
-    rincik:"Rincik" = Relationship(back_populates="bidang")
-    overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=MappingBidangOverlap)
+    planing:"Planing" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
+    ptsk:"Ptsk" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
+    rincik:"Rincik" = Relationship(back_populates="bidang", sa_relationship_kwargs={'lazy':'selectin'})
+    overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
 
 #-------------------------------------------------------------------------------
 
@@ -52,4 +52,6 @@ class BidangoverlapFullBase(BaseUUIDModel, BaseGeoModel, BidangoverlapBase):
     pass
 
 class Bidangoverlap(BidangoverlapFullBase, table=True):
-    bidangs : list["Bidang"] = Relationship(back_populates="overlaps", link_model=MappingBidangOverlap)
+    planing:"Planing" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
+    ptsk:"Ptsk" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
+    bidangs : list["Bidang"] = Relationship(back_populates="overlaps", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})

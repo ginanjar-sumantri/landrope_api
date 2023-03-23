@@ -10,4 +10,4 @@ class JenisLahanBase(SQLModel):
     name:str = Field(max_length=150)
 
 class JenisLahan(BaseUUIDModel, JenisLahanBase, table=True):
-    rinciks: "Rincik" = Relationship(back_populates="jenis_lahan")
+    rinciks: "Rincik" = Relationship(back_populates="jenis_lahan", sa_relationship_kwargs={'lazy':'selectin'})

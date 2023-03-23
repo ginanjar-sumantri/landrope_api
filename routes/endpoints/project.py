@@ -11,7 +11,7 @@ from common.exceptions import (IdNotFoundException, NameExistException)
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[ProjectSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ProjectCreateSch = Depends(ProjectCreateSch.as_form)):
+async def create(sch: ProjectCreateSch):
     
     """Create a new object"""
     
@@ -20,6 +20,7 @@ async def create(sch: ProjectCreateSch = Depends(ProjectCreateSch.as_form)):
         raise NameExistException(Project, name=sch.name)
     
     new_obj = await crud.project.create(obj_in=sch)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[ProjectSch])
@@ -28,6 +29,7 @@ async def get_list(params:Params = Depends()):
     """Gets a paginated list objects"""
 
     objs = await crud.project.get_multi_paginated(params=params)
+    
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ProjectSch])
@@ -42,7 +44,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Project, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[ProjectSch])
-async def update(id:UUID, sch:ProjectUpdateSch = Depends(ProjectUpdateSch.as_form)):
+async def update(id:UUID, sch:ProjectUpdateSch):
     
     """Update a obj by its id"""
 

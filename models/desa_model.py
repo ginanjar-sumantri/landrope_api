@@ -18,5 +18,5 @@ class DesaFullBase(DesaRawBase, BaseGeoModel):
     pass
 
 class Desa(DesaFullBase, table=True):
-    projects:list["Project"] = Relationship(back_populates="desas", link_model=Planing)
+    projects:list["Project"] = Relationship(back_populates="desas", link_model=Planing, sa_relationship_kwargs={'lazy':'selectin'})
 

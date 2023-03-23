@@ -44,9 +44,9 @@ class RincikFullBase(BaseUUIDModel, BaseGeoModel, RincikBase):
     pass
 
 class Rincik(RincikFullBase, table=True):
-    jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks")
-    planing:"Planing" = Relationship(back_populates="rinciks")
-    ptsk:"Ptsk" = Relationship(back_populates="rinciks")
-    bidang:"Bidang" = Relationship(back_populates="rincik")
+    jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
+    planing:"Planing" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
+    ptsk:"Ptsk" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
+    bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
     
 

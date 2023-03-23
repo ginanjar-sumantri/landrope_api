@@ -1,16 +1,16 @@
 from models.project_model import ProjectBase, ProjectFullBase
+from typing import TYPE_CHECKING, Optional
 from common.partial import optional
 from common.as_form import as_form
+from schemas.section_sch import SectionSch
 
-@as_form
 class ProjectCreateSch(ProjectBase):
     pass
 
 class ProjectSch(ProjectFullBase):
-    pass
+    section: Optional[SectionSch] = None
 
 
-@as_form
 @optional
 class ProjectUpdateSch(ProjectBase):
     pass

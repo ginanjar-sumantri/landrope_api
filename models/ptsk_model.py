@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.rincik_model import Rincik
-    from models.bidang_model import Bidang
+    from models.bidang_model import Bidang, Bidangoverlap
 
 class StatusSKEnum(str, Enum):
     Belum_Pengajuan_SK = "Belum_Pengajuan_SK"
@@ -33,7 +33,8 @@ class PtskFullBase(BaseUUIDModel, BaseGeoModel, PtskBase):
     pass
 
 class Ptsk(PtskFullBase, table=True):
-    planings: list["Planing"] = Relationship(back_populates="ptsks", link_model=MappingPlaningPtsk)
-    rinciks: list["Rincik"] = Relationship(back_populates="ptsk")
-    bidangs: list["Bidang"] = Relationship(back_populates="ptsk")
+    planings: list["Planing"] = Relationship(back_populates="ptsks", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    rinciks: list["Rincik"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
+    bidangs: list["Bidang"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
+    overlaps:list["Bidangoverlap"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
     
