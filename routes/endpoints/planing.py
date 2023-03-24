@@ -4,7 +4,7 @@ from fastapi_pagination import Params
 from models.planing_model import Planing
 from models.project_model import Project
 from models.desa_model import Desa
-from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch)
+from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException)
@@ -15,8 +15,8 @@ import crud
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[PlaningSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PlaningCreateSch, file:UploadFile = None):
+@router.post("/create", response_model=PostResponseBaseSch[PlaningRawSch], status_code=status.HTTP_201_CREATED)
+async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
     
@@ -32,13 +32,16 @@ async def create(sch: PlaningCreateSch, file:UploadFile = None):
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
-
-        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-    
+        
+        sch = PlaningSch(code=sch.code, project_id=sch.project_id, 
+                          desa_id=sch.desa_id, luas=sch.luas, 
+                          name=sch.name, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+                          )
+        
     new_obj = await crud.planing.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[PlaningSch])
+@router.get("", response_model=GetResponsePaginatedSch[PlaningRawSch])
 async def get_list(params:Params = Depends()):
     
     """Gets a paginated list objects"""
@@ -58,7 +61,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Planing, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PlaningCreateSch])
-async def update(id:UUID, sch:PlaningUpdateSch, file:UploadFile = None):
+async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_form), file:UploadFile = None):
     
     """Update a obj by its id"""
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.project_model import Project
+    from models.planing_model import Planing
     
 class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
@@ -18,5 +18,5 @@ class DesaFullBase(DesaRawBase, BaseGeoModel):
     pass
 
 class Desa(DesaFullBase, table=True):
-    projects:list["Project"] = Relationship(back_populates="desas", link_model=Planing, sa_relationship_kwargs={'lazy':'selectin'})
+    desa_planings:list["Planing"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'selectin'})
 

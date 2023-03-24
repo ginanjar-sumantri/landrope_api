@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from models.ptsk_model import Ptsk
     from models.rincik_model import Rincik
     from models.bidang_model import Bidang, Bidangoverlap
+    from models.project_model import Project
+    from models.desa_model import Desa
 
 class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -24,6 +26,10 @@ class PlaningFullBase(PlaningRawBase, BaseGeoModel):
     pass
 
 class Planing(PlaningFullBase, table=True):
+
+    project:"Project" = Relationship(back_populates="project_planings", sa_relationship_kwargs={'lazy':'selectin'})
+    desa:"Desa" = Relationship(back_populates="desa_planings", sa_relationship_kwargs={'lazy':'selectin'})
+
     ptsks: list["Ptsk"] = Relationship(back_populates="planings", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
     rinciks: list["Rincik"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
