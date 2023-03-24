@@ -3,14 +3,16 @@ from schemas.project_sch import ProjectSch
 from schemas.desa_sch import DesaRawSch
 from common.partial import optional
 from common.as_form import as_form
+from sqlmodel import Field
 
 @as_form
 class PlaningCreateSch(PlaningBase):
     pass
 
 class PlaningRawSch(PlaningRawBase):
-    project:ProjectSch = None
-    desa:DesaRawSch = None
+    project_name:str = Field(alias='project_name')
+    desa_name:str = Field(alias='desa_name')
+    section_name:str = Field(alias='section_name')
 
 class PlaningSch(PlaningFullBase):
     pass

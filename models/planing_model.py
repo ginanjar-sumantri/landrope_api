@@ -34,3 +34,15 @@ class Planing(PlaningFullBase, table=True):
     rinciks: list["Rincik"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     overlaps:list["Bidangoverlap"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def project_name(self)-> str:
+        return self.project.name
+    
+    @property
+    def desa_name(self)-> str:
+        return self.desa.name
+    
+    @property
+    def section_name(self)-> str:
+        return self.project.section.name
