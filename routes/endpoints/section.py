@@ -27,7 +27,7 @@ async def get_list(params: Params=Depends(), keyword:str = None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.section.get_multi_paginated(params=params, keyword=keyword)
+    objs = await crud.section.get_multi_paginated_with_keyword(params=params, keyword=keyword)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SectionSch])

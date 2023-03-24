@@ -1,10 +1,14 @@
 from models.planing_model import PlaningBase, PlaningFullBase, PlaningRawBase
+from schemas.project_sch import ProjectSch
 from common.partial import optional
 
-class PlaningCreateSch(PlaningFullBase):
+class PlaningCreateSch(PlaningBase):
     pass
 
-class PlaningSch(PlaningRawBase):
+class PlaningRawSch(PlaningRawBase):
+    pass
+
+class PlaningSch(PlaningFullBase):
     pass
 
 @optional
