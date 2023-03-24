@@ -66,8 +66,8 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
     if not obj_current:
         raise IdNotFoundException(Desa, id)
     
-    # if obj_current.geom:
-    #     obj_current.geom = to_shape(obj_current.geom).__str__()
+    if obj_current.geom:
+        obj_current.geom = to_shape(obj_current.geom).__str__()
     
     if file:
         buffer = await file.read()

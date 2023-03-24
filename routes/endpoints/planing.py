@@ -11,6 +11,7 @@ from common.exceptions import (IdNotFoundException, NameExistException, NameNotF
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from datetime import datetime
+from geoalchemy2.shape import to_shape
 import crud
 
 router = APIRouter()
@@ -68,6 +69,9 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     obj_current = await crud.planing.get(id=id)
     if not obj_current:
         raise IdNotFoundException(Planing, id)
+    
+    if obj_current.geom:
+        obj_current.geom = to_shape(obj_current.geom).__str__()
     
     if file is not None:
         buffer = await file.read()
