@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '50c085e575b1'
+revision = '95e458f51ea0'
 down_revision = None
 branch_labels = None
 depends_on = None
