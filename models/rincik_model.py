@@ -40,7 +40,10 @@ class RincikBase(SQLModel):
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
 
-class RincikFullBase(BaseUUIDModel, BaseGeoModel, RincikBase):
+class RincikRawBase(BaseUUIDModel, RincikBase):
+    pass
+
+class RincikFullBase(BaseGeoModel, RincikRawBase):
     pass
 
 class Rincik(RincikFullBase, table=True):

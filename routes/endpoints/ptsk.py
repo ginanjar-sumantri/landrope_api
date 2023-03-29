@@ -31,7 +31,15 @@ async def create(sch: PtskCreateSch, file:UploadFile = None):
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        sch = PtskSch(name=sch.name, 
+                      code=sch.luas,
+                      status=sch.status,
+                      kategori=sch.kategori,
+                      luas=sch.luas,
+                      nomor_sk=sch.nomor_sk,
+                      tanggal_tahun_SK=sch.tanggal_tahun_SK,
+                      tanggal_jatuh_tempo=sch.tanggal_jatuh_tempo,
+                      geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     new_obj = await crud.ptsk.create(obj_in=sch)
     return create_response(data=new_obj)
