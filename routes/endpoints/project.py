@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 import crud
 from models.project_model import Project
@@ -7,6 +7,7 @@ from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
+from services.geom_service import GeomService
 
 router = APIRouter()
 
@@ -54,4 +55,28 @@ async def update(id:UUID, sch:ProjectUpdateSch):
     
     obj_updated = await crud.project.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
+
+@router.post("/bulk")
+async def bulk_create(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+
+    try:
+        file = await file.read()
+        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+        
+        for i, geo_data in geo_dataframe.iterrows():
+            
+            name:str = geo_data['PROJECT']
+
+            sch = ProjectSch(name=name, code=name.replace(" ", ""))
+            
+            obj_current = await crud.project.get_by_name(name=sch.name)
+            if not obj_current:
+                new_obj = await crud.project.create(obj_in=sch)
+
+    except:
+        raise HTTPException(13, detail="Failed import data")
+    
+    return {"result" : status.HTTP_200_OK}
 

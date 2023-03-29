@@ -32,7 +32,7 @@ async def create(sch: PtskCreateSch = Depends(PtskCreateSch.as_form), file:Uploa
             geo_dataframe['geometry'] = polygon.geometry
 
         sch = PtskSch(name=sch.name, 
-                      code=sch.luas,
+                      code=sch.code,
                       status=sch.status,
                       kategori=sch.kategori,
                       luas=sch.luas,
@@ -86,7 +86,7 @@ async def update(id:UUID, sch:PtskUpdateSch, file:UploadFile = None):
             geo_dataframe['geometry'] = polygon.geometry
         
         sch = PtskSch(name=sch.name, 
-                      code=sch.luas,
+                      code=sch.code,
                       status=sch.status,
                       kategori=sch.kategori,
                       luas=sch.luas,

@@ -87,7 +87,7 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     obj_updated = await crud.planing.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("", response_model=PostResponseBaseSch[None])
+@router.post("")
 async def bulk_create(file:UploadFile=File()):
 
     """Create bulk or import data"""
@@ -101,20 +101,28 @@ async def bulk_create(file:UploadFile=File()):
         for i, geo_data in geo_dataframe.iterrows():
 
             project = await crud.project.get_by_name(name=geo_data['PROJECT'])
-            if project is None:
+            print(project)
+            if not project:
                 raise NameNotFoundException(Project, name=geo_data['PROJECT'])
             
             desa = await crud.desa.get_by_name(name=geo_data['DESA'])
-            if desa is None:
+            if desa.geom:
+                desa.geom = to_shape(desa.geom).__str__()
+            print(desa)
+            if not desa:
                 raise NameNotFoundException(Desa, name=geo_data['DESA'])
 
             planing = Planing(id=str(uuid4),
                               project_id = project.id,
                               desa_id = desa.id,
-                              geom = GeomService.single_geometry_to_wkt(geo_data.geometry),
+                              geom = GeomService.bulk_geometry_to_wkt(geo_data.geometry, i),
                               luas = geo_data['LUAS'])
+            print(planing)
             
-            exists = crud.planing.get_by_project_id_desa_id(project_id=planing.project_id, desa_id=planing.desa_id)
+            search = Planing(project_id=planing.project_id, desa_id=planing.desa_id)
+            exists = crud.planing.get_by_project_id_desa_id(**search.dict())
+
+            print(exists)
 
             if exists:
                 await crud.planing.update(obj_current=exists, obj_new=planing)
@@ -124,6 +132,6 @@ async def bulk_create(file:UploadFile=File()):
     except:
         raise HTTPException(13, detail="Failed import data")
     
-    return create_response(message="Successfully upload file")
+    return {"result" : status.HTTP_200_OK}
 
     

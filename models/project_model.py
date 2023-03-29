@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     
 
 class ProjectBase(SQLModel):
-    section_id: UUID = Field(default=None, foreign_key="section.id")
+    section_id: UUID = Field(default=None, foreign_key="section.id", nullable=True)
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
 

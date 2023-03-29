@@ -1,12 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
 from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
@@ -82,4 +82,25 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
     
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
+
+
+@router.post("/bulk")
+async def bulk_create(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+
+    try:
+        file = await file.read()
+        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+        
+        for i, geo_data in geo_dataframe.iterrows():
+
+            sch = DesaSch(name=geo_data['DESA'], luas=geo_data['LUAS'], geom=GeomService.bulk_geometry_to_wkt(geo_dataframe.geometry, i))
+            
+            new_obj = await crud.desa.create(obj_in=sch)
+
+    except:
+        raise HTTPException(13, detail="Failed import data")
+    
+    return {"result" : status.HTTP_200_OK}
 

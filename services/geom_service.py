@@ -24,6 +24,10 @@ class GeomService:
     def single_geometry_to_wkt(geometry):
         """Convert geometry geo data frame"""
         return geopandas.GeoSeries(geometry).geometry.to_wkt()[0]
+    
+    def bulk_geometry_to_wkt(geometry, i):
+        """Convert geometry geo data frame"""
+        return geopandas.GeoSeries(geometry).geometry.to_wkt()[i]
 
     def linestring_to_polygon(line:shape):
         """Convert linestring to polygon"""
