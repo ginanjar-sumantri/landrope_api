@@ -14,7 +14,7 @@ from geoalchemy2.shape import to_shape
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[PtskRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PtskCreateSch, file:UploadFile = None):
+async def create(sch: PtskCreateSch = Depends(PtskCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
     
