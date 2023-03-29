@@ -3,16 +3,17 @@ from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
 from models.ptsk_model import Ptsk
-from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch)
+from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch, PtskRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
+from geoalchemy2.shape import to_shape
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[PtskSch], status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PostResponseBaseSch[PtskRawSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: PtskCreateSch, file:UploadFile = None):
     
     """Create a new object"""
@@ -21,7 +22,7 @@ async def create(sch: PtskCreateSch, file:UploadFile = None):
     if obj_current:
         raise NameExistException(Ptsk, name=sch.name)
     
-    if file is not None:
+    if file:
         buffer = await file.read()
 
         geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
@@ -35,7 +36,7 @@ async def create(sch: PtskCreateSch, file:UploadFile = None):
     new_obj = await crud.ptsk.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[PtskSch])
+@router.get("", response_model=GetResponsePaginatedSch[PtskRawSch])
 async def get_list(params:Params = Depends()):
     
     """Gets a paginated list objects"""
@@ -43,7 +44,7 @@ async def get_list(params:Params = Depends()):
     objs = await crud.ptsk.get_multi_paginated(params=params)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[PtskSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[PtskRawSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -54,21 +55,37 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Ptsk, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[PtskCreateSch])
+@router.put("/{id}", response_model=PutResponseBaseSch[PtskRawSch])
 async def update(id:UUID, sch:PtskUpdateSch, file:UploadFile = None):
     
     """Update a obj by its id"""
 
     obj_current = await crud.planing.get(id=id)
+
     if not obj_current:
         raise IdNotFoundException(Ptsk, id)
     
-    if file is not None:
-        content_type = await file.content_type
+    if obj_current.geom:
+        obj_current.geom = to_shape(obj_current.geom).__str__()
+    
+    if file:
         buffer = await file.read()
-        geom = GeomService.from_map_to_wkt(buffer=buffer, content_type=content_type)
 
-        sch.geom = geom
+        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
+        
+        sch = PtskSch(name=sch.name, 
+                      code=sch.luas,
+                      status=sch.status,
+                      kategori=sch.kategori,
+                      luas=sch.luas,
+                      nomor_sk=sch.nomor_sk,
+                      tanggal_tahun_SK=sch.tanggal_tahun_SK,
+                      tanggal_jatuh_tempo=sch.tanggal_jatuh_tempo,
+                      geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.ptsk.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)

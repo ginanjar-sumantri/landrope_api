@@ -4,6 +4,7 @@ from models.mapping_model import MappingPlaningPtsk
 from enum import Enum
 from datetime import date
 from typing import TYPE_CHECKING
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -24,12 +25,15 @@ class PtskBase(SQLModel):
     code:str = Field(nullable=False, max_length=50)
     status:StatusSKEnum = Field(nullable=True)
     kategori:KategoriEnum
-    luas:int
+    luas:Decimal
     nomor_sk:str = Field(nullable=True, max_length=200)
     tanggal_tahun_SK:date = Field(nullable=True)
     tanggal_jatuh_tempo:date = Field(nullable=True)
 
-class PtskFullBase(BaseUUIDModel, BaseGeoModel, PtskBase):
+class PtskRawBase(BaseUUIDModel, PtskBase):
+    pass
+
+class PtskFullBase(BaseGeoModel, PtskRawBase):
     pass
 
 class Ptsk(PtskFullBase, table=True):
