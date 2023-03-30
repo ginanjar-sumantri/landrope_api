@@ -13,7 +13,7 @@ from datetime import datetime
 class CRUDDesa(CRUDBase[Desa, DesaCreateSch, DesaUpdateSch]):
     async def get_by_name(
         self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Desa:
+    ) -> DesaCreateSch:
         db_session = db_session or db.session
         obj = await db_session.execute(select(Desa).where(Desa.name == name))
         return obj.scalar_one_or_none()

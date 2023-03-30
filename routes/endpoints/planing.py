@@ -97,37 +97,26 @@ async def bulk_create(file:UploadFile=File()):
         geo_dataframe = GeomService.file_to_geo_dataframe(file)
 
         list_data = []
-        
         for i, geo_data in geo_dataframe.iterrows():
 
-            project = await crud.project.get_by_name(name=geo_data['PROJECT'])
-            print(project)
-            if not project:
-                raise NameNotFoundException(Project, name=geo_data['PROJECT'])
+            projectname = geo_data['PROJECT']
+            desaname = geo_data['DESA']
+
+            project = await crud.project.get_by_name(name=projectname)
+            desa = await crud.desa.get_by_name(name=desaname)
             
-            desa = await crud.desa.get_by_name(name=geo_data['DESA'])
-            if desa.geom:
-                desa.geom = to_shape(desa.geom).__str__()
-            print(desa)
-            if not desa:
-                raise NameNotFoundException(Desa, name=geo_data['DESA'])
-
-            planing = Planing(id=str(uuid4),
-                              project_id = project.id,
-                              desa_id = desa.id,
-                              geom = GeomService.bulk_geometry_to_wkt(geo_data.geometry, i),
-                              luas = geo_data['LUAS'])
-            print(planing)
+            sch = PlaningSch(code=" ",
+                            name=" ",
+                            project_id=project.id,
+                            desa_id=desa.id,
+                            geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
+                            luas=geo_data['LUAS'])
             
-            search = Planing(project_id=planing.project_id, desa_id=planing.desa_id)
-            exists = crud.planing.get_by_project_id_desa_id(**search.dict())
-
-            print(exists)
-
-            if exists:
-                await crud.planing.update(obj_current=exists, obj_new=planing)
-            else:
-                await crud.planing.create(planing)
+            list_data.append(sch)
+            
+            # new_obj = await crud.planing.create(obj_in=sch)
+        
+        # await crud.planing.cre    
 
     except:
         raise HTTPException(13, detail="Failed import data")
