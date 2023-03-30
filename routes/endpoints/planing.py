@@ -13,6 +13,7 @@ from shapely.geometry import shape
 from datetime import datetime
 from geoalchemy2.shape import to_shape
 import crud
+from typing import List
 
 router = APIRouter()
 
@@ -78,6 +79,8 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
 
         geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
 
+        
+
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
@@ -87,7 +90,7 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     obj_updated = await crud.planing.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("")
+@router.post("/bulk")
 async def bulk_create(file:UploadFile=File()):
 
     """Create bulk or import data"""
@@ -96,31 +99,26 @@ async def bulk_create(file:UploadFile=File()):
         file = await file.read()
         geo_dataframe = GeomService.file_to_geo_dataframe(file)
 
-        list_data = []
+        projects = await crud.project.get_by_names(list_names=geo_dataframe["PROJECT"])
+        desas = await crud.desa.get_by_names(list_names=geo_dataframe["DESA"])
+
         for i, geo_data in geo_dataframe.iterrows():
 
-            projectname = geo_data['PROJECT']
-            desaname = geo_data['DESA']
+            project = next((obj for obj in projects if obj.name == geo_data['PROJECT']), None) 
+            desa = next((obj for obj in desas if obj.name == geo_data['DESA']), None) 
 
-            project = await crud.project.get_by_name(name=projectname)
-            desa = await crud.desa.get_by_name(name=desaname)
-            
-            sch = PlaningSch(code=" ",
-                            name=" ",
+            sch = Planing(code="",
+                            name="",
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
                             luas=geo_data['LUAS'])
             
-            list_data.append(sch)
-            
-            # new_obj = await crud.planing.create(obj_in=sch)
-        
-        # await crud.planing.cre    
+            new_obj = await crud.planing.create_planing(obj_in=sch)  
 
     except:
-        raise HTTPException(13, detail="Failed import data")
+        raise HTTPException(status_code=13, detail="Failed import data")
     
-    return {"result" : status.HTTP_200_OK}
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
     

@@ -95,12 +95,12 @@ async def bulk_create(file:UploadFile=File()):
         
         for i, geo_data in geo_dataframe.iterrows():
 
-            sch = DesaSch(name=geo_data['DESA'], luas=geo_data['LUAS'], geom=GeomService.bulk_geometry_to_wkt(geo_dataframe.geometry, i))
+            sch = DesaSch(name=geo_data['DESA'], luas=geo_data['LUAS'], geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
             new_obj = await crud.desa.create(obj_in=sch)
 
     except:
-        raise HTTPException(13, detail="Failed import data")
+        raise HTTPException(status_code=13, detail="Failed import data")
     
-    return {"result" : status.HTTP_200_OK}
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 

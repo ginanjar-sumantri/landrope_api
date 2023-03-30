@@ -76,7 +76,6 @@ async def bulk_create(file:UploadFile=File()):
                 new_obj = await crud.project.create(obj_in=sch)
 
     except:
-        raise HTTPException(13, detail="Failed import data")
+        raise HTTPException(status_code=13, detail="Failed import data")
     
-    return {"result" : status.HTTP_200_OK}
-
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
