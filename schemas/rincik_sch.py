@@ -12,7 +12,7 @@ class RincikRawSch(RincikRawBase):
 class RincikSch(RincikFullBase):
     pass
 
-as_form
+@as_form
 @optional
 class RincikUpdateSch(RincikBase):
     pass
