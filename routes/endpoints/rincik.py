@@ -18,7 +18,7 @@ async def create(sch: RincikCreateSch = Depends(RincikCreateSch.as_form), file:U
     
     """Create a new object"""
     
-    obj_current = await crud.rincik.get_by_id_rincik(name=sch.id_rincik)
+    obj_current = await crud.rincik.get_by_id_rincik(idrincik=sch.id_rincik)
     if obj_current:
         raise NameExistException(Rincik, name=sch.id_rincik)
     
