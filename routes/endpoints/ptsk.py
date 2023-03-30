@@ -68,7 +68,7 @@ async def update(id:UUID, sch:PtskUpdateSch = Depends(PtskUpdateSch.as_form), fi
     
     """Update a obj by its id"""
 
-    obj_current = await crud.planing.get(id=id)
+    obj_current = await crud.ptsk.get(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Ptsk, id)
