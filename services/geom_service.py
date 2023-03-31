@@ -14,6 +14,8 @@ class GeomService:
             geo_dataframe = geopandas.GeoDataFrame.from_features(features=collections)
             newgeo = GeomService.convert_3D_2D(geo_dataframe.geometry)
 
+            print(newgeo)
+
             if newgeo.__len__() > 0:
                 geo_dataframe.geometry = newgeo
 
@@ -41,8 +43,13 @@ class GeomService:
         new_geo = []
         for p in geometry:
             if p.has_z:
+                print(p.geom_type)
                 if p.geom_type == 'Polygon':
                     lines = [xy[:2] for xy in list(p.exterior.coords)]
+                    new_p = Polygon(lines)
+                    new_geo.append(new_p)
+                elif p.geom_type == 'LineString':
+                    lines = [xy[:2] for xy in list(p.coords)]
                     new_p = Polygon(lines)
                     new_geo.append(new_p)
                 elif p.geom_type == 'MultiPolygon':
