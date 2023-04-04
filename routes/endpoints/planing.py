@@ -51,7 +51,7 @@ async def get_list(params:Params = Depends()):
     objs = await crud.planing.get_multi_paginated(params=params)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[PlaningSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[PlaningRawSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -62,7 +62,7 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Planing, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[PlaningCreateSch])
+@router.put("/{id}", response_model=PutResponseBaseSch[PlaningRawSch])
 async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_form), file:UploadFile = None):
     
     """Update a obj by its id"""
