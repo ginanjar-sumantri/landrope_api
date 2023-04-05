@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     
 class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
-    code:str = Field(nullable=True, max_length=50)
+    code:str | None = Field(nullable=True, max_length=50)
     luas:Decimal
 
 class DesaRawBase(BaseUUIDModel, DesaBase):
