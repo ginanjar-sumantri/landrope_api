@@ -12,7 +12,7 @@ class PlaningCreateSch(PlaningBase):
 class PlaningRawSch(PlaningRawBase):
     project_name:str = Field(alias='project_name')
     desa_name:str = Field(alias='desa_name')
-    section_name:str = Field(alias='section_name', nullable=True)
+    section_name:str | None = Field(alias='section_name')
 
 class PlaningSch(PlaningFullBase):
     pass

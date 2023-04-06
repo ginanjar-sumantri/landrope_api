@@ -122,8 +122,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by not in columns or order_by is None:
-            order_by = self.model.id
+        # if order_by not in columns or order_by is None:
+        #     order_by = self.model.id
+        
+        for c in columns:
+            if c.name == order_by:
+                break
+        
+        if order_by is None:
+            order_by = "id"
 
         if query is None:
             if order == OrderEnumSch.ascendent:

@@ -53,3 +53,14 @@ class Rincik(RincikFullBase, table=True):
     bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
     
 
+    @property
+    def jenis_lahan_name(self)-> str:
+            return self.jenis_lahan.name
+    
+    @property
+    def planing_name(self)-> str:
+            return self.planing.name
+
+    @property
+    def ptsk_name(self)-> str:
+            return self.ptsk.name
