@@ -45,11 +45,11 @@ async def create(sch: PtskCreateSch = Depends(PtskCreateSch.as_form), file:Uploa
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[PtskRawSch])
-async def get_list(params:Params = Depends()):
+async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.ptsk.get_multi_paginated(params=params)
+    objs = await crud.ptsk.get_multi_paginated_ordered_with_keyword(params=params, order_by=order_by, keyword=keyword)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[PtskRawSch])

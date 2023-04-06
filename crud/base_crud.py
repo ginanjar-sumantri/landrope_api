@@ -107,6 +107,37 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 query = select(self.model).order_by(columns[order_by].desc())
 
         return await paginate(db_session, query, params)
+    
+    async def get_multi_paginated_ordered_with_keyword(
+        self,
+        *,
+        keyword:str | None = None,
+        params: Params | None = Params(),
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        query: T | Select[T] | None = None,
+        db_session: AsyncSession | None = None,
+    ) -> Page[ModelType]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        if order_by not in columns or order_by is None:
+            order_by = self.model.id
+
+        if query is None:
+            if order == OrderEnumSch.ascendent:
+                if keyword is None:
+                    query = select(self.model).order_by(columns[order_by].asc())
+                else:
+                    query = select(self.model).filter(self.model.name.ilike(f'%{keyword}%')).order_by(columns[order_by].asc())
+            else:
+                if keyword is None:
+                    query = select(self.model).order_by(columns[order_by].desc())
+                else:
+                    query = select(self.model).filter(self.model.name.ilike(f'%{keyword}%')).order_by(columns[order_by].desc())
+            
+        return await paginate(db_session, query, params)
 
     async def get_multi_ordered(
         self,
