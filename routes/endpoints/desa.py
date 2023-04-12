@@ -10,6 +10,9 @@ from common.exceptions import (IdNotFoundException, NameExistException, NameNotF
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
+from common.generate_code import generate_code, EntityEnum
+import string
+import random
 
 router = APIRouter()
 
@@ -21,15 +24,17 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
+    
+    sch.code = generate_code(EntityEnum=EntityEnum.desa, length=5)
 
     if file:
-        buffer = await file.read()
-
-        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+        # buffer = await file.read()
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
+        
 
         sch = DesaSch(name=sch.name, code=sch.code, luas=sch.luas, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
@@ -70,9 +75,9 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
         obj_current.geom = to_shape(obj_current.geom).__str__()
     
     if file:
-        buffer = await file.read()
+        # buffer = await file.read()
 
-        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
@@ -88,19 +93,30 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
 async def bulk_create(file:UploadFile=File()):
 
     """Create bulk or import data"""
-
     try:
-        file = await file.read()
-        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+        # file = await file.read()
+       
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+
+        desas = await crud.desa.get_all()
         
         for i, geo_data in geo_dataframe.iterrows():
+            name:str | None = geo_data['NAMOBJ']
 
-            sch = DesaSch(name=geo_data['DESA'], luas=geo_data['LUAS'], geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            obj_current = next((obj for obj in desas 
+                           if obj.name.replace(" ", "").lower() == name.replace(" ", "").lower()),None)
             
-            new_obj = await crud.desa.create(obj_in=sch)
+            if obj_current:
+                continue
+
+            code = generate_code(EntityEnum = EntityEnum.desa, length=5)
+            sch = DesaSch(name=geo_data['NAMOBJ'], code=code, luas=geo_data['SHAPE_Area'], 
+                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            
+            await crud.desa.create(obj_in=sch)
 
     except:
-        raise HTTPException(status_code=13, detail="Failed import data")
+        raise HTTPException(status_code=422, detail="Failed import data")
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 

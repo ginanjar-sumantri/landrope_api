@@ -25,6 +25,8 @@ async def create(sch: PtskCreateSch = Depends(PtskCreateSch.as_form), file:Uploa
     if file:
         buffer = await file.read()
 
+        content = file.file
+
         geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":

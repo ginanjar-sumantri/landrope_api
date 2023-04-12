@@ -44,6 +44,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_all(self, *, db_session : AsyncSession | None = None) -> List[ModelType] | None:
+        db_session = db_session or db.session
+        query = select(self.model)
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+
     async def get_by_keyword(self, *, keyword:str = None, db_session : AsyncSession | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
         query = select(self.model).filter(self.model.name.contains(keyword))
@@ -124,12 +130,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         # if order_by not in columns or order_by is None:
         #     order_by = self.model.id
-        
+
+        find = False
         for c in columns:
             if c.name == order_by:
+                find = True
                 break
         
-        if order_by is None:
+        if order_by is None or find == False:
             order_by = "id"
 
         if query is None:

@@ -99,25 +99,43 @@ async def bulk_create(file:UploadFile=File()):
         file = await file.read()
         geo_dataframe = GeomService.file_to_geo_dataframe(file)
 
-        projects = await crud.project.get_by_names(list_names=geo_dataframe["PROJECT"])
-        desas = await crud.desa.get_by_names(list_names=geo_dataframe["DESA"])
+        projects = await crud.project.get_all()
+        desas = await crud.desa.get_all()
+        planings = await crud.planing.get_all()
 
         for i, geo_data in geo_dataframe.iterrows():
+            p:str = geo_data['PROJECT']
+            d:str = geo_data['DESA']
+            kode:str = geo_data['kode']
 
-            project = next((obj for obj in projects if obj.name == geo_data['PROJECT']), None) 
-            desa = next((obj for obj in desas if obj.name == geo_data['DESA']), None) 
+            project = next((obj for obj in projects 
+                            if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None) 
+            if project is None:
+                continue
+                # raise HTTPException(status_code=404, detail=f"{p} Not Exists in Project Data Master")
+            
+            desa = next((obj for obj in desas 
+                         if obj.name.replace(" ", "").lower() == d.replace(" ", "").lower()), None)
+            if desa is None:
+                continue
+                # raise HTTPException(status_code=404, detail=f"{d} Not Exists in Desa Data Master")
+            
+            planing = next((obj for obj in planings 
+                         if obj.project_id == project.id and obj.desa_id == desa.id), None)
+            if planing:
+                continue
 
-            sch = Planing(code="",
-                            name="",
+            sch = Planing(code=kode,
+                            name=project.name + "-" + desa.name + "-" + kode,
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
                             luas=geo_data['LUAS'])
             
-            new_obj = await crud.planing.create_planing(obj_in=sch)  
+            await crud.planing.create_planing(obj_in=sch)  
 
     except:
-        raise HTTPException(status_code=13, detail="Failed import data")
+        raise HTTPException(status_code=422, detail="Failed import data")
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 

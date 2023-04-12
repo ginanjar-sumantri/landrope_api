@@ -4,9 +4,11 @@ import math
 from geojson import FeatureCollection
 from fastapi import HTTPException
 from shapely.geometry import Polygon, shape, MultiPolygon
+from io import BytesIO
 
 class GeomService:
-    
+
+    #with fiona
     def file_to_geo_dataframe(file:bytes = None):
         """Convert buffer file data to geodataframe"""
         with fio.BytesCollection(file) as s:
@@ -20,6 +22,17 @@ class GeomService:
                 geo_dataframe.geometry = newgeo
 
             # geo_dataframe = geo_dataframe.explode(ignore_index=True)
+
+        return geo_dataframe
+    
+    def file_to_geodataframe(file:BytesIO = None):
+        """Convert buffer file data to geodataframe"""
+       
+        geo_dataframe = geopandas.GeoDataFrame.from_file(file)
+        newgeo = GeomService.convert_3D_2D(geo_dataframe.geometry)
+
+        if newgeo.__len__() > 0:
+            geo_dataframe.geometry = newgeo
 
         return geo_dataframe
     
