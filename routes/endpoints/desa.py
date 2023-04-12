@@ -43,7 +43,7 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[DesaRawSch])
-async def get_list(params:Params = Depends(), order_by:str=None, keyword:str = None):
+async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None):
     
     """Gets a paginated list objects"""
 
