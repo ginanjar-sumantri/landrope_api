@@ -2,11 +2,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
-from models.bidang_model import Bidang
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch)
+from models.bidang_model import Bidang, StatusEnum, TypeEnum
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
-                                  PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+                                  PostResponseBaseSch, PutResponseBaseSch, 
+                                  ImportResponseBaseSch, create_response)
+from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
 
@@ -73,3 +74,79 @@ async def update(id:UUID, sch:BidangUpdateSch, file:UploadFile = None):
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
+@router.post("/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+async def bulk_create(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+
+    try:
+        # file = await file.read()
+        geo_dataframe = GeomService.file_to_geodataframe(file.file)
+
+        projects = await crud.project.get_all()
+        desas = await crud.desa.get_all()
+        planings = await crud.planing.get_all()
+
+        for i, geo_data in geo_dataframe.iterrows():
+            p:str = geo_data['PROJECT']
+            d:str = geo_data['DESA']
+
+            project = next((obj for obj in projects 
+                            if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None)
+            
+            if project is None:
+                continue
+                # raise HTTPException(status_code=404, detail=f"{p} Not Exists in Project Data Master")
+            
+            desa = next((obj for obj in desas 
+                         if obj.name.replace(" ", "").lower() == d.replace(" ", "").lower()), None)
+
+            if desa is None:
+                continue
+                # raise HTTPException(status_code=404, detail=f"{d} Not Exists in Desa Data Master")
+
+            plan_filter = list(filter(lambda x: [x.project_id == project.id, x.desa_id == desa.id], planings))
+            plan = plan_filter[0]
+            if plan is None:
+                continue
+            
+            sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
+                        nama_pemilik=geo_data['NAMA'],
+                        luas_surat=geo_data['LUAS'],
+                        alas_hak="",
+                        no_peta=geo_data['NO_PETA'],
+                        status=StatusBidang(geo_data['STATUS']),
+                        type=TypeBidang(geo_data['PROSES']),
+                        planing_id=plan.id,
+                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+
+            obj = await crud.bidang.create(obj_in=sch)
+
+    except:
+        raise ImportFailedException(filename=file.filename)
+    
+    return create_response(data=obj)
+
+def StatusBidang(status:str|None = None):
+    if status:
+        if status.replace(" ", "").lower() == StatusEnum.Bebas.replace("_", "").lower():
+            return StatusEnum.Bebas
+        elif status.replace(" ", "").lower() == StatusEnum.Belum_Bebas.replace("_", "").lower():
+            return StatusEnum.Belum_Bebas
+        elif status.replace(" ", "").lower() == StatusEnum.Batal.replace("_", "").lower():
+            return StatusEnum.Batal
+        else:
+            return StatusEnum.Belum_Bebas
+    else:
+        return StatusEnum.Belum_Bebas
+
+def TypeBidang(type:str|None = None):
+    if type:
+        if type.replace(" ", "").lower() == TypeEnum.Bintang.lower():
+            return TypeEnum.Bintang
+        elif type.replace(" ", "").lower() == TypeEnum.Standard.lower():
+            return TypeEnum.Standard
+        else:
+            return TypeEnum.Standard
+    else:
+        return TypeEnum.Standard

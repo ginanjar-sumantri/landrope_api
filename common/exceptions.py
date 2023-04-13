@@ -16,6 +16,18 @@ class ContentNoChangeException(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST, detail=detail, headers=headers
         )
 
+class ImportFailedException(HTTPException):
+    def __init__(
+        self,
+        filename:str|None = None,
+        headers: Dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+            detail=f"Import file {filename} failed, please check data of file", 
+            headers=headers
+        )
+
 
 class IdNotFoundException(HTTPException, Generic[ModelType]):
     def __init__(

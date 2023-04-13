@@ -65,6 +65,9 @@ class PutResponseBaseSch(ResponseBaseSch[T], Generic[T]):
 class DeleteResponseBaseSch(ResponseBaseSch[T], Generic[T]):
     message: str = "Data deleted correctly"
 
+class ImportResponseBaseSch(ResponseBaseSch[T], Generic[T]):
+    message: str = "Import file Successfully"
+
 
 def create_response(
     data: T | None,

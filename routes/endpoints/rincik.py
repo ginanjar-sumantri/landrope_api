@@ -5,8 +5,9 @@ import crud
 from models.rincik_model import Rincik, CategoryEnum, JenisDokumenEnum
 from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikUpdateSch, RincikRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
-                                  PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+                                  PostResponseBaseSch, PutResponseBaseSch, 
+                                  ImportResponseBaseSch, create_response)
+from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
@@ -101,14 +102,14 @@ async def update(id:UUID, sch:RincikUpdateSch = Depends(RincikUpdateSch.as_form)
     obj_updated = await crud.rincik.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("/bulk")
+@router.post("/bulk", response_model=ImportResponseBaseSch[RincikRawSch], status_code=status.HTTP_201_CREATED)
 async def bulk_create(file:UploadFile=File()):
 
     """Create bulk or import data"""
 
     try:
-        file = await file.read()
-        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+        # file = await file.read()
+        geo_dataframe = GeomService.file_to_geodataframe(file.file)
 
         projects = await crud.project.get_all()
         desas = await crud.desa.get_all()
@@ -155,9 +156,9 @@ async def bulk_create(file:UploadFile=File()):
                         planing_id=plan.id,
                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
-            obj_new = await crud.rincik.create(obj_in=sch)
+            obj = await crud.rincik.create(obj_in=sch)
 
     except:
-        raise HTTPException(status_code=422, detail="Failed import data")
+        raise ImportFailedException(filename=file.filename)
     
-    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
+    return create_response(data=obj)
