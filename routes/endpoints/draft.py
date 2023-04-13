@@ -5,9 +5,8 @@ import crud
 from services.geom_service import GeomService
 from models.draft_model import Draft
 from schemas.draft_sch import (DraftSch, DraftCreateSch, DraftRawSch)
-from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
-                                  PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch,  create_response)
+from common.exceptions import (IdNotFoundException)
 from shapely.geometry import shape
 
 router = APIRouter()
@@ -32,7 +31,7 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
     new_obj = await crud.draft.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.post("/delete", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
+@router.post("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID):
     
     """Delete a object"""
