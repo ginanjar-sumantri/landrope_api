@@ -18,6 +18,11 @@ class CategoryEnum(str, Enum):
     Group_Kecil = "Group_Kecil"
     Asset = "Asset"
     Overlap = "Overlap"
+    Default = "Unknown"
+
+    @classmethod
+    def _missing_(cls, value):
+         return cls.Default 
 
 class JenisDokumenEnum(str, Enum):
     AJB = "AJB"
@@ -26,16 +31,21 @@ class JenisDokumenEnum(str, Enum):
     Akta_Hibah = "Akta_Hibah"
     SPPT = "SPPT"
     Kutipan_Girik = "Kutipan_Girik"
+    Default = "Unknown"
+
+    @classmethod
+    def _missing_(cls, value):
+         return cls.Default 
 
 class RincikBase(SQLModel):
     id_rincik:str = Field(nullable=False, max_length=100)
     estimasi_nama_pemilik:str = Field(max_length=250)
     luas:Decimal
-    category:CategoryEnum
+    category:CategoryEnum | None = Field(nullable=True)
     alas_hak:str = Field(max_length=100)
-    jenis_dokumen: JenisDokumenEnum
+    jenis_dokumen: JenisDokumenEnum | None = Field(nullable=True)
     no_peta:str = Field(max_length=100)
-    jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id")
+    jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)

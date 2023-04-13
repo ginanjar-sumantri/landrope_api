@@ -125,7 +125,7 @@ async def bulk_create(file:UploadFile=File()):
             if planing:
                 continue
 
-            sch = Planing(code=kode,
+            sch = PlaningSch(code=kode,
                             name=project.name + "-" + desa.name + "-" + kode,
                             project_id=project.id,
                             desa_id=desa.id,
