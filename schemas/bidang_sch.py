@@ -8,13 +8,13 @@ class BidangCreateSch(BidangBase):
     pass
 
 class BidangRawSch(BidangRawBase):
-    planing_name:str = Field(alias='planing_name')
-    project_name:str = Field(alias='project_name')
-    desa_name:str = Field(alias='desa_name')
-    section_name:str = Field(alias='section_name')
-    desa_name:str = Field(alias='desa_name')
-    project_name:str = Field(alias='project_name')
-    desa_name:str = Field(alias='desa_name')
+    planing_name:str|None = Field(alias='planing_name')
+    project_name:str|None = Field(alias='project_name')
+    desa_name:str|None = Field(alias='desa_name')
+    section_name:str|None = Field(alias='section_name')
+    ptsk_name:str|None = Field(alias='ptsk_name')
+    id_rincik:str|None = Field(alias='id_rincik')
+    
 
 
 class BidangSch(BidangFullBase):
