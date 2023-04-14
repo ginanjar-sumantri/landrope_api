@@ -1,6 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingBidangOverlap
 from uuid import UUID
 
 class DraftBase(SQLModel):

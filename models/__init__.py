@@ -8,3 +8,4 @@ from .jenis_lahan_model import JenisLahan
 from .bidang_model import Bidangoverlap, Bidang 
 from .mapping_model import (MappingPlaningPtsk, MappingBidangOverlap)
 from .draft_model import Draft
+from .gps_model import Gps

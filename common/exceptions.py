@@ -22,11 +22,18 @@ class ImportFailedException(HTTPException):
         filename:str|None = None,
         headers: Dict[str, Any] | None = None,
     ) -> None:
+        if filename:
+            super().__init__(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                detail=f"Import file {filename} failed, please check data of file", 
+                headers=headers
+            )
+        
         super().__init__(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
-            detail=f"Import file {filename} failed, please check data of file", 
-            headers=headers
-        )
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                detail=f"Please Attach File", 
+                headers=headers
+            )
 
 
 class IdNotFoundException(HTTPException, Generic[ModelType]):

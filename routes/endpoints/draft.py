@@ -6,7 +6,7 @@ from services.geom_service import GeomService
 from models.draft_model import Draft
 from schemas.draft_sch import (DraftSch, DraftCreateSch, DraftRawSch)
 from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch,  create_response)
-from common.exceptions import (IdNotFoundException)
+from common.exceptions import (IdNotFoundException, ImportFailedException)
 from shapely.geometry import shape
 
 router = APIRouter()
@@ -26,7 +26,7 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
         
         sch = DraftSch(rincik_id=sch.rincik_id, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
-        raise HTTPException(status_code=422, detail="Please attach file!")
+        raise ImportFailedException()
         
     new_obj = await crud.draft.create(obj_in=sch)
     return create_response(data=new_obj)

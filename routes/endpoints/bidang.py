@@ -13,7 +13,7 @@ from shapely.geometry import shape
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[BidangSch], status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: BidangCreateSch, file:UploadFile = None):
     
     """Create a new object"""
@@ -22,21 +22,23 @@ async def create(sch: BidangCreateSch, file:UploadFile = None):
     if obj_current:
         raise NameExistException(Bidang, name=sch.id_bidang)
     
-    if file is not None:
-        buffer = await file.read()
+    if file:
+        # buffer = await file.read()
 
-        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+    else:
+        raise ImportFailedException()
     
     new_obj = await crud.bidang.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[BidangSch])
+@router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None):
     
     """Gets a paginated list objects"""
@@ -44,7 +46,7 @@ async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=N
     objs = await crud.bidang.get_multi_paginated_ordered_with_keyword(params=params, order_by=order_by, keyword=keyword)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[BidangSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[BidangRawSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -55,7 +57,7 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Bidang, id)
     
-@router.put("/{id}", response_model=PutResponseBaseSch[BidangCreateSch])
+@router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
 async def update(id:UUID, sch:BidangUpdateSch, file:UploadFile = None):
     
     """Update a obj by its id"""
@@ -64,7 +66,7 @@ async def update(id:UUID, sch:BidangUpdateSch, file:UploadFile = None):
     if not obj_current:
         raise IdNotFoundException(Bidang, id)
     
-    if file is not None:
+    if file:
         content_type = await file.content_type
         buffer = await file.read()
         geom = GeomService.from_map_to_wkt(buffer=buffer, content_type=content_type)
