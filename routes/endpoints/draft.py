@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, HTTPException
+from fastapi import APIRouter, status, Depends, UploadFile, File
 from fastapi_pagination import Params
 import crud
 from services.geom_service import GeomService
@@ -12,7 +12,7 @@ from shapely.geometry import shape
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:UploadFile = None):
+async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:UploadFile = File()):
     
     """Create a new object"""
 

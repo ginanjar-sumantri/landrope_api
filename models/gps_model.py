@@ -8,7 +8,7 @@ class GpsBase(SQLModel):
     alas_hak:str|None
     luas:Decimal|None
     desa:str|None
-    petunjuk:str|None
+    penunjuk:str|None
     pic:str|None
     group:str|None
 

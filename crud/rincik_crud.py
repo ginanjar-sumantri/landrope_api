@@ -58,7 +58,10 @@ class CRUDRincik(CRUDBase[Rincik, RincikCreateSch, RincikUpdateSch]):
                 if keyword is None:
                     query = select(self.model).order_by(columns[order_by].desc())
                 else:
-                    query = select(self.model).filter(self.model.id_rincik.ilike(f'%{keyword}%')).order_by(columns[order_by].desc())
+                    query = select(self.model).filter(or_(self.model.id_rincik.ilike(f'%{keyword}%'),
+                                                          self.model.alas_hak.ilike(f'%{keyword}%'),
+                                                          self.model.estimasi_nama_pemilik.ilike(f'%{keyword}%'),
+                                                          self.model.no_peta.ilike(f'%{keyword}%'))).order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
 

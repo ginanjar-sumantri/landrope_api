@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
 from models.rincik_model import Rincik, CategoryEnum, JenisDokumenEnum

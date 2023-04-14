@@ -7,20 +7,38 @@ from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
+from services.geom_service import GeomService
+from shapely.geometry import shape
 
 router = APIRouter()
 
-# @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
-# async def create(file:UploadFile = File()):
+@router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
+async def create(file:UploadFile = File()):
     
-#     """Create a new object"""
+    """Create a new object"""
+    if file is None:
+        ImportFailedException()
 
-#     obj_current = await crud.jenislahan.get_by_name(name=sch.name)
-#     if obj_current:
-#         raise NameExistException(JenisLahan, name=sch.name)
+    geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+
+    if geo_dataframe.geometry[0].geom_type == "LineString":
+        polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+        geo_dataframe['geometry'] = polygon.geometry
     
-#     new_obj = await crud.jenislahan.create(obj_in=sch)
-#     return create_response(data=new_obj)
+
+    print(geo_dataframe)
+    sch = GpsSch(nama=geo_dataframe['nama'][0],
+                alas_hak=geo_dataframe['alas_hak'][0],
+                luas=geo_dataframe['luas'][0],
+                desa=geo_dataframe['desa'][0],
+                petunjuk=geo_dataframe['penunjuk_b'][0],
+                pic=geo_dataframe['pic'][0],
+                group=geo_dataframe['group'][0], 
+                geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        )
+        
+    new_obj = await crud.gps.create(obj_in=sch)
+    return create_response(data=new_obj)
 
 # @router.get("", response_model=GetResponsePaginatedSch[JenisLahanSch])
 # async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None):
