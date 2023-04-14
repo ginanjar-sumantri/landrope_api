@@ -2,6 +2,12 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from decimal import Decimal
+from enum import Enum
+
+class StatusGpsEnum(str, Enum):
+    Clear = "Clear"
+    Overlap = "Overlap"
+    NotSet = "Not_Set"
 
 class GpsBase(SQLModel):
     nama:str|None
@@ -11,6 +17,7 @@ class GpsBase(SQLModel):
     penunjuk:str|None
     pic:str|None
     group:str|None
+    status:StatusGpsEnum|None
 
 class GpsRawBase(BaseUUIDModel, GpsBase):
     pass

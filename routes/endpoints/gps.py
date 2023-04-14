@@ -1,14 +1,15 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, File
+from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 import crud
-from models.gps_model import Gps
+from models.gps_model import Gps, StatusGpsEnum
 from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
+from geoalchemy2.shape import to_shape 
 
 router = APIRouter()
 
@@ -24,49 +25,56 @@ async def create(file:UploadFile = File()):
     if geo_dataframe.geometry[0].geom_type == "LineString":
         polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
         geo_dataframe['geometry'] = polygon.geometry
-    
 
-    print(geo_dataframe)
+    gps_datas = await crud.gps.get_intersect_gps(geom=geo_dataframe.geometry[0])
+    status = StatusGpsEnum.NotSet
+    
+    if len(gps_datas) > 0:
+        status = StatusGpsEnum.Overlap
+    else:
+        status = StatusGpsEnum.Clear
+
     sch = GpsSch(nama=geo_dataframe['nama'][0],
                 alas_hak=geo_dataframe['alas_hak'][0],
                 luas=geo_dataframe['luas'][0],
                 desa=geo_dataframe['desa'][0],
                 petunjuk=geo_dataframe['penunjuk_b'][0],
                 pic=geo_dataframe['pic'][0],
-                group=geo_dataframe['group'][0], 
+                group=geo_dataframe['group'][0],
+                status=status,
                 geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         )
         
     new_obj = await crud.gps.create(obj_in=sch)
     return create_response(data=new_obj)
 
-# @router.get("", response_model=GetResponsePaginatedSch[JenisLahanSch])
-# async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None):
+@router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
+async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None):
     
-#     """Gets a paginated list objects"""
+    """Gets a paginated list objects"""
 
-#     objs = await crud.jenislahan.get_multi_paginated_ordered_with_keyword(params=params, order_by=order_by, keyword=keyword)
-#     return create_response(data=objs)
+    objs = await crud.gps.get_filtered_gps(params=params, order_by=order_by, keyword=keyword)
+    return create_response(data=objs)
 
-# @router.get("/{id}", response_model=GetResponseBaseSch[JenisLahanSch])
-# async def get_by_id(id:UUID):
+@router.get("/{id}", response_model=GetResponseBaseSch[GpsRawSch])
+async def get_by_id(id:UUID):
 
-#     """Get an object by id"""
+    """Get an object by id"""
 
-#     obj = await crud.jenislahan.get(id=id)
-#     if obj:
-#         return create_response(data=obj)
-#     else:
-#         raise IdNotFoundException(JenisLahan, id)
+    obj = await crud.gps.get(id=id)
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(Gps, id)
     
-# @router.put("/{id}", response_model=PutResponseBaseSch[JenisLahanSch])
-# async def update(id:UUID, sch:JenisLahanUpdateSch):
+@router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
+async def update(id:UUID, sch:GpsUpdateSch):
     
-#     """Update a obj by its id"""
+    """Update a obj by its id"""
 
-#     obj_current = await crud.jenislahan.get(id=id)
-#     if not obj_current:
-#         raise IdNotFoundException(JenisLahan, id)
+    obj_current = await crud.gps.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Gps, id)
     
-#     obj_updated = await crud.jenislahan.update(obj_current=obj_current, obj_new=sch)
-#     return create_response(data=obj_updated)
+    obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch)
+    return create_response(data=obj_updated)
