@@ -1,10 +1,10 @@
-from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
+from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase, BidangExtBase
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import Field
 
 @as_form
-class BidangCreateSch(BidangBase):
+class BidangCreateSch(BidangExtBase):
     pass
 
 class BidangRawSch(BidangRawBase):

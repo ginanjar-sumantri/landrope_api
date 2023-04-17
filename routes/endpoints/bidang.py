@@ -19,7 +19,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     
     """Create a new object"""
     
-    obj_current = await crud.bidang.get_by_id_bidang(name=sch.id_bidang)
+    obj_current = await crud.bidang.get_by_id_bidang(idbidang=sch.id_bidang)
     if obj_current:
         raise NameExistException(Bidang, name=sch.id_bidang)
     
@@ -31,21 +31,18 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
             geo_dataframe['geometry'] = polygon.geometry
 
         if sch.rincik_id is None:
-            rinciksch = RincikSch(id_rincik=sch.id_rincik,
-                        estimasi_nama_pemilik=sch.estimasi_nama_pemilik,
-                        luas=sch.luas,
-                        category=sch.category,
+            rinciksch = RincikSch(id_rincik=sch.id_bidang,
+                        estimasi_nama_pemilik=sch.nama_pemilik,
+                        luas=sch.luas_surat,
                         alas_hak=sch.alas_hak,
-                        jenis_dokumen=sch.jenis_dokumen,
                         no_peta=sch.no_peta,
-                        jenis_lahan_id=sch.jenis_lahan_id,
                         planing_id=sch.planing_id,
                         ptsk_id=sch.ptsk_id,
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
             rincik = await crud.rincik.create(obj_in=rinciksch)
             sch.rincik_id = rincik.id
-       
 
+        
         sch = BidangSch(id_bidang=sch.id_bidang,
                         nama_pemilik=sch.nama_pemilik,
                         luas_surat=sch.luas_surat,
@@ -53,7 +50,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
                         no_peta=sch.no_peta,
                         status=sch.status,
                         type=sch.type,
-                        planing_id=sch.plan_id,
+                        planing_id=sch.planing_id,
                         rincik_id=sch.rincik_id,
                         ptsk_id=sch.ptsk_id,
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
