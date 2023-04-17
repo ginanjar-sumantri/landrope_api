@@ -14,7 +14,7 @@ from shapely.geometry import shape
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[BidangoverlapRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: BidangoverlapCreateSch, file:UploadFile = None):
+async def create(sch: BidangoverlapCreateSch = Depends(BidangoverlapCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
     
@@ -62,7 +62,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Bidangoverlap, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangoverlapRawSch])
-async def update(id:UUID, sch:BidangoverlapUpdateSch, file:UploadFile = None):
+async def update(id:UUID, sch:BidangoverlapUpdateSch = Depends(BidangoverlapCreateSch.as_form), file:UploadFile = None):
     
     """Update a obj by its id"""
 
