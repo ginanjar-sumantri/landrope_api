@@ -15,7 +15,6 @@ GeoAlchemy2==0.13.1
 geojson==3.0.1
 geopandas==0.12.2
 greenlet==2.0.2
-gunicorn==20.1.0
 h11==0.14.0
 idna==3.4
 Mako==1.2.4

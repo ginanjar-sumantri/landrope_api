@@ -20,6 +20,7 @@ class BidangRawSch(BidangRawBase):
 class BidangSch(BidangFullBase):
     pass
 
+@as_form
 @optional
 class BidangUpdateSch(BidangBase):
     pass

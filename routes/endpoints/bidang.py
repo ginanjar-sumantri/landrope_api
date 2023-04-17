@@ -14,7 +14,7 @@ from shapely.geometry import shape
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: BidangCreateSch, file:UploadFile = None):
+async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
     
@@ -58,7 +58,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Bidang, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
-async def update(id:UUID, sch:BidangUpdateSch, file:UploadFile = None):
+async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None):
     
     """Update a obj by its id"""
 
@@ -67,11 +67,23 @@ async def update(id:UUID, sch:BidangUpdateSch, file:UploadFile = None):
         raise IdNotFoundException(Bidang, id)
     
     if file:
-        content_type = await file.content_type
-        buffer = await file.read()
-        geom = GeomService.from_map_to_wkt(buffer=buffer, content_type=content_type)
+        # buffer = await file.read()
 
-        sch.geom = geom
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
+
+        sch = BidangSch(id_bidang=sch.id_bidang,
+                        nama_pemilik=sch.nama_pemilik,
+                        luas_surat=sch.luas_surat,
+                        alas_hak=sch.alas_hak,
+                        no_peta=sch.no_peta,
+                        status=sch.status,
+                        type=sch.type,
+                        planing_id=sch.plan_id,
+                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
