@@ -22,13 +22,13 @@ class KategoriEnum(str, Enum):
 
 class PtskBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
-    code:str = Field(nullable=False, max_length=50)
-    status:StatusSKEnum = Field(nullable=True)
-    kategori:KategoriEnum
+    code:str | None  = Field(nullable=True, max_length=50)
+    status:StatusSKEnum | None = Field(nullable=True)
+    kategori:KategoriEnum | None = Field(nullable=True)
     luas:Decimal
-    nomor_sk:str = Field(nullable=True, max_length=200)
-    tanggal_tahun_SK:date = Field(nullable=True)
-    tanggal_jatuh_tempo:date = Field(nullable=True)
+    nomor_sk:str | None = Field(nullable=True, max_length=200)
+    tanggal_tahun_SK:date | None = Field(nullable=True)
+    tanggal_jatuh_tempo:date | None = Field(nullable=True)
 
 class PtskRawBase(BaseUUIDModel, PtskBase):
     pass
