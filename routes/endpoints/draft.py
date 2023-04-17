@@ -31,7 +31,7 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
     new_obj = await crud.draft.create(obj_in=sch)
     return create_response(data=new_obj)
 
-@router.post("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
+@router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID):
     
     """Delete a object"""
