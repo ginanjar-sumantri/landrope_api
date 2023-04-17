@@ -4,6 +4,7 @@ from fastapi_pagination import Params
 import crud
 from models.bidang_model import Bidang, StatusEnum, TypeEnum
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch)
+from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikRawBase)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
@@ -23,13 +24,27 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         raise NameExistException(Bidang, name=sch.id_bidang)
     
     if file:
-        # buffer = await file.read()
-
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
+
+        if sch.rincik_id is None:
+            rinciksch = RincikSch(id_rincik=sch.id_rincik,
+                        estimasi_nama_pemilik=sch.estimasi_nama_pemilik,
+                        luas=sch.luas,
+                        category=sch.category,
+                        alas_hak=sch.alas_hak,
+                        jenis_dokumen=sch.jenis_dokumen,
+                        no_peta=sch.no_peta,
+                        jenis_lahan_id=sch.jenis_lahan_id,
+                        planing_id=sch.planing_id,
+                        ptsk_id=sch.ptsk_id,
+                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+            rincik = await crud.rincik.create(obj_in=rinciksch)
+            sch.rincik_id = rincik.id
+       
 
         sch = BidangSch(id_bidang=sch.id_bidang,
                         nama_pemilik=sch.nama_pemilik,
@@ -44,9 +59,12 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
-    
+
     new_obj = await crud.bidang.create(obj_in=sch)
+
     return create_response(data=new_obj)
+    
+
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None):
