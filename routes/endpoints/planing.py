@@ -7,7 +7,7 @@ from models.desa_model import Desa
 from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException)
+from common.exceptions import (IdNotFoundException, NameExistException, CodeExistException, NameNotFoundException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from datetime import datetime
@@ -26,10 +26,12 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
     if obj_current:
         raise NameExistException(Planing, name=sch.name)
     
-    if file is not None:
-        buffer = await file.read()
-
-        geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
+    obj_current = await crud.planing.get_by_code(name=sch.code)
+    if obj_current:
+        raise CodeExistException(Planing, code=sch.code)
+    
+    if file:
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
@@ -74,12 +76,10 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     if obj_current.geom:
         obj_current.geom = to_shape(obj_current.geom).__str__()
     
-    if file is not None:
+    if file:
         buffer = await file.read()
 
         geo_dataframe = GeomService.file_to_geo_dataframe(buffer)
-
-        
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))

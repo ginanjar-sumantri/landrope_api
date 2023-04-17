@@ -33,9 +33,10 @@ class BidangBase(SQLModel):
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id", nullable=True)
     ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
-    rincik_id:UUID = Field(default=None, foreign_key="rincik.id", nullable=True)
+    
 
 class BidangRawBase(BaseUUIDModel, BidangBase):
+    rincik_id:UUID = Field(default=None, foreign_key="rincik.id", nullable=True)
     type:TypeEnum
 
 class BidangFullBase(BaseGeoModel, BidangRawBase):
@@ -77,7 +78,10 @@ class Bidang(BidangFullBase, table=True):
 class BidangoverlapBase(BidangBase):
     pass
 
-class BidangoverlapFullBase(BaseUUIDModel, BaseGeoModel, BidangoverlapBase):
+class BidangoverlapRawBase(BaseUUIDModel, BidangoverlapBase):
+    pass
+
+class BidangoverlapFullBase(BaseGeoModel, BidangoverlapRawBase):
     pass
 
 class Bidangoverlap(BidangoverlapFullBase, table=True):

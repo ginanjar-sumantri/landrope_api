@@ -34,7 +34,6 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
-        
 
         sch = DesaSch(name=sch.name, code=sch.code, luas=sch.luas, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
@@ -75,8 +74,6 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
         obj_current.geom = to_shape(obj_current.geom).__str__()
     
     if file:
-        # buffer = await file.read()
-
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
@@ -94,8 +91,6 @@ async def bulk_create(file:UploadFile=File()):
 
     """Create bulk or import data"""
     try:
-        # file = await file.read()
-       
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         desas = await crud.desa.get_all()

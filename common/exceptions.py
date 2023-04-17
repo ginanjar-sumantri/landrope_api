@@ -99,3 +99,24 @@ class NameExistException(HTTPException, Generic[ModelType]):
             detail=f"The {model.__name__} name already exists.",
             headers=headers,
         )
+
+class CodeExistException(HTTPException, Generic[ModelType]):
+    def __init__(
+        self,
+        model: Type[ModelType],
+        code: str | None = None,
+        headers: Dict[str, Any] | None = None,
+    ) -> None:
+        if code:
+            super().__init__(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"The {model.__name__} code {code} already exists.",
+                headers=headers,
+            )
+            return
+
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"The {model.__name__} code already exists.",
+            headers=headers,
+        )

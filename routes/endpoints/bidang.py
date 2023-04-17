@@ -31,7 +31,17 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        sch = BidangSch(id_bidang=sch.id_bidang,
+                        nama_pemilik=sch.nama_pemilik,
+                        luas_surat=sch.luas_surat,
+                        alas_hak=sch.alas_hak,
+                        no_peta=sch.no_peta,
+                        status=sch.status,
+                        type=sch.type,
+                        planing_id=sch.plan_id,
+                        rincik_id=sch.rincik_id,
+                        ptsk_id=sch.ptsk_id,
+                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
     
