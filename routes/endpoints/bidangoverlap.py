@@ -18,7 +18,7 @@ async def create(sch: BidangoverlapCreateSch = Depends(BidangoverlapCreateSch.as
     
     """Create a new object"""
     
-    obj_current = await crud.bidangoverlap.get_by_id_bidang(name=sch.id_bidang)
+    obj_current = await crud.bidangoverlap.get_by_id_bidang(idbidang=sch.id_bidang)
     if obj_current:
         raise NameExistException(Bidangoverlap, name=sch.id_bidang)
     
