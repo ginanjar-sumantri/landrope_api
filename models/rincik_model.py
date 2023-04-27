@@ -9,7 +9,7 @@ from decimal import Decimal
 if TYPE_CHECKING:
     from models.jenis_lahan_model import JenisLahan
     from models.planing_model import Planing
-    from models.ptsk_model import Ptsk
+    from models.skpt_model import Skpt
     from models.bidang_model import Bidang
     
 
@@ -48,7 +48,8 @@ class RincikBase(SQLModel):
     jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
-    ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
+    skpt_id:UUID = Field(default=None, foreign_key="skpt.id", nullable=True)
+    # ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
 
 class RincikRawBase(BaseUUIDModel, RincikBase):
     pass
@@ -59,7 +60,7 @@ class RincikFullBase(BaseGeoModel, RincikRawBase):
 class Rincik(RincikFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
-    ptsk:"Ptsk" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
+    skpt:"Skpt" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
     
 
@@ -73,4 +74,8 @@ class Rincik(RincikFullBase, table=True):
 
     @property
     def ptsk_name(self)-> str:
-            return self.ptsk.name
+            return self.skpt.ptsk.name
+    
+    @property
+    def nomor_sk(self)-> str:
+        return self.skpt.nomor_sk

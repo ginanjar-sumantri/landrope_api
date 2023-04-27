@@ -9,30 +9,27 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 
 from crud.base_crud import CRUDBase
-from models.ptsk_model import Ptsk
-from schemas.ptsk_sch import PtskCreateSch, PtskUpdateSch
+from models.skpt_model import Skpt
+from schemas.skpt_sch import SkptCreateSch, SkptUpdateSch
 
-class CRUDPTSK(CRUDBase[Ptsk, PtskCreateSch, PtskUpdateSch]):
-    async def get_by_name(
-        self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Ptsk:
+class CRUDSKPT(CRUDBase[Skpt, SkptCreateSch, SkptUpdateSch]):
+    async def get_by_sk_number(
+        self, *, number: str, db_session: AsyncSession | None = None
+    ) -> Skpt:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Ptsk)
-                                       .where(Ptsk.name.replace(" ", "")
-                                              .replace(".", "").lower() == 
-                                              name.replace(" ", "").replace(".", "").lower()))
+        obj = await db_session.execute(select(Skpt).where(Skpt.nomor_sk == number))
         return obj.scalar_one_or_none()
     
-    async def get_filtered_ptsk(
+    async def get_filtered_skpt(
         self,
         *,
         keyword:str | None = None,
         params: Params | None = Params(),
         order_by: str | None = None,
         order: OrderEnumSch | None = OrderEnumSch.ascendent,
-        query: Ptsk | Select[Ptsk] | None = None,
+        query: Skpt | Select[Skpt] | None = None,
         db_session: AsyncSession | None = None,
-    ) -> Page[Ptsk]:
+    ) -> Page[Skpt]:
         db_session = db_session or db.session
 
         columns = self.model.__table__.columns
@@ -54,17 +51,15 @@ class CRUDPTSK(CRUDBase[Ptsk, PtskCreateSch, PtskUpdateSch]):
                 if keyword is None:
                     query = select(self.model).order_by(columns[order_by].asc())
                 else:
-                    query = select(self.model).filter(or_(self.model.name.ilike(f'%{keyword}%'),
-                                                          self.model.code.ilike(f'%{keyword}%')
+                    query = select(self.model).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%')
                                                           )).order_by(columns[order_by].asc())
             else:
                 if keyword is None:
                     query = select(self.model).order_by(columns[order_by].desc())
                 else:
-                    query = select(self.model).filter(or_(self.model.name.ilike(f'%{keyword}%'),
-                                                          self.model.code.ilike(f'%{keyword}%')
+                    query = select(self.model).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%')
                                                          )).order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
 
-ptsk = CRUDPTSK(Ptsk)
+skpt = CRUDSKPT(Skpt)
