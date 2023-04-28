@@ -14,7 +14,7 @@ from geoalchemy2.shape import to_shape
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[PtskRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PtskCreateSch = Depends(PtskCreateSch.as_form)):
+async def create(sch: PtskCreateSch):
     
     """Create a new object"""
     
@@ -66,7 +66,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Ptsk, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PtskRawSch])
-async def update(id:UUID, sch:PtskUpdateSch = Depends(PtskUpdateSch.as_form), file:UploadFile = None):
+async def update(id:UUID, sch:PtskUpdateSch, file:UploadFile = None):
     
     """Update a obj by its id"""
 

@@ -21,6 +21,7 @@ class KategoriEnum(str, Enum):
     SK_ASG = "SK_ASG"
 
 class SkptBase(SQLModel):
+    code:str = Field(nullable=False, max_length=50)
     status:StatusSKEnum | None = Field(nullable=True)
     kategori:KategoriEnum | None = Field(nullable=True)
     luas:Decimal
