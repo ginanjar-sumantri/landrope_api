@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingPlaningPtsk
+from models.mapping_model import MappingPlaningSkpt
 from uuid import UUID
 from typing import TYPE_CHECKING
 from decimal import Decimal
@@ -30,7 +30,7 @@ class Planing(PlaningFullBase, table=True):
     project:"Project" = Relationship(back_populates="project_planings", sa_relationship_kwargs={'lazy':'selectin'})
     desa:"Desa" = Relationship(back_populates="desa_planings", sa_relationship_kwargs={'lazy':'selectin'})
 
-    skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     
     rinciks: list["Rincik"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})

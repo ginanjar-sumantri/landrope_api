@@ -5,7 +5,7 @@ from datetime import date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from uuid import UUID
-from models.mapping_model import MappingPlaningPtsk
+from models.mapping_model import MappingPlaningSkpt
 
 if TYPE_CHECKING:
     from models.ptsk_model import Ptsk 
@@ -39,7 +39,7 @@ class SkptFullBase(BaseGeoModel, SkptRawBase):
 
 class Skpt(SkptFullBase, table=True):
     ptsk:"Ptsk" = Relationship(back_populates="skpts", sa_relationship_kwargs={'lazy':'selectin'})
-    planings:list["Planing"] = Relationship(back_populates="skpts", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    planings:list["Planing"] = Relationship(back_populates="skpts", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     rinciks: list["Rincik"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     overlaps:list["Bidangoverlap"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})

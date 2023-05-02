@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingPlaningPtsk
+from models.mapping_model import MappingPlaningSkpt
 from enum import Enum
 from datetime import date
 from typing import TYPE_CHECKING
@@ -38,7 +38,7 @@ class PtskFullBase(PtskRawBase):
     pass
 
 class Ptsk(PtskFullBase, table=True):
-    planings: list["Planing"] = Relationship(back_populates="ptsks", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    # planings: list["Planing"] = Relationship(back_populates="ptsks", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     skpts: list["Skpt"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
     # bidangs: list["Bidang"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
     # overlaps:list["Bidangoverlap"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})

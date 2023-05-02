@@ -7,7 +7,7 @@ from decimal import Decimal
 class MappingBase(SQLModel):
     pass
 
-class MappingPlaningPtsk(MappingBase, table=True):
+class MappingPlaningSkpt(MappingBase, table=True):
     planing_id:UUID = Field(default=None, foreign_key="planing.id", primary_key=True)
     skpt_id:UUID = Field(default=None, foreign_key="skpt.id", primary_key=True)
 
