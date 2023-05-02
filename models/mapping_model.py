@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING
 from decimal import Decimal
 
-class MappingBase(SQLModel):
+class MappingBase(BaseUUIDModel):
     pass
 
 class MappingPlaningSkpt(MappingBase, table=True):

@@ -10,4 +10,5 @@ from .jenis_lahan_crud import jenislahan
 from .draft_crud import draft
 from .gps_crud import gps
 from .skpt_crud import skpt
+from .mapping_crud import planing_skpt
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

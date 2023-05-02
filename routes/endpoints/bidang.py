@@ -8,6 +8,7 @@ from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikRawBase)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
+from schemas.mapping_sch import MappingPlaningSkptSch
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
@@ -37,7 +38,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
                         alas_hak=sch.alas_hak,
                         no_peta=sch.no_peta,
                         planing_id=sch.planing_id,
-                        ptsk_id=sch.ptsk_id,
+                        skpt_id=sch.skpt_id,
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
             rincik = await crud.rincik.create(obj_in=rinciksch)
             sch.rincik_id = rincik.id
@@ -52,16 +53,24 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
                         type=sch.type,
                         planing_id=sch.planing_id,
                         rincik_id=sch.rincik_id,
-                        ptsk_id=sch.ptsk_id,
+                        skpt_id=sch.skpt_id,
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
+    
+    #add maping planing when not exists
+    await addMappingPlaningSKPT(sk_id=sch.skpt_id, plan_id=sch.planing_id)
 
     new_obj = await crud.bidang.create(obj_in=sch)
 
     return create_response(data=new_obj)
     
-
+async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
+    obj = await crud.planing_skpt.get_mapping_by_plan_sk_id(plan_id=plan_id, sk_id=sk_id)
+    if obj is None :
+        sch = MappingPlaningSkptSch(planing_id=plan_id, skpt_id=sk_id)
+        obj = await crud.planing_skpt.create(obj_in=sch)
+    return obj
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None):
@@ -107,7 +116,9 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
                         no_peta=sch.no_peta,
                         status=sch.status,
                         type=sch.type,
-                        planing_id=sch.plan_id,
+                        planing_id=sch.planing_id,
+                        rincik_id=sch.rincik_id,
+                        skpt_id=sch.skpt_id,
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
