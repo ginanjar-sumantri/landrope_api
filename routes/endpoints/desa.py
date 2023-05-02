@@ -10,7 +10,7 @@ from common.exceptions import (IdNotFoundException, NameExistException, NameNotF
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
-from common.generate_code import generate_code, EntityEnum
+from common.generator import generate_code, EntityEnum
 import string
 import random
 
@@ -24,11 +24,8 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
-    
-    sch.code = generate_code(EntityEnum=EntityEnum.desa, length=5)
 
     if file:
-        # buffer = await file.read()
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
@@ -103,9 +100,8 @@ async def bulk_create(file:UploadFile=File()):
             
             if obj_current:
                 continue
-
-            code = generate_code(EntityEnum = EntityEnum.desa, length=5)
-            sch = DesaSch(name=geo_data['NAMOBJ'], code=code, luas=geo_data['SHAPE_Area'], 
+            
+            sch = DesaSch(name=geo_data['NAMOBJ'],  luas=geo_data['SHAPE_Area'], 
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
             await crud.desa.create(obj_in=sch)

@@ -248,7 +248,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         else:
             update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
         
-        print(update_data)
         for field in obj_data:
             if field in update_data:
                 setattr(obj_current, field, update_data[field])

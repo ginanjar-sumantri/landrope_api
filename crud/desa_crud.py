@@ -8,6 +8,8 @@ from models.desa_model import Desa
 from schemas.desa_sch import DesaCreateSch, DesaUpdateSch
 from geoalchemy2.shape import to_shape
 from typing import List
+from sqlalchemy.orm import load_only
+from uuid import UUID
 
 from datetime import datetime
 
@@ -24,5 +26,5 @@ class CRUDDesa(CRUDBase[Desa, DesaCreateSch, DesaUpdateSch]):
         query = select(self.model).where(self.model.name.in_(list_names))
         response =  await db_session.execute(query)
         return response.scalars().all()
-
+    
 desa = CRUDDesa(Desa)

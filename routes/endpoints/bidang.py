@@ -12,6 +12,7 @@ from schemas.mapping_sch import MappingPlaningSkptSch
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
+from common.generator import generate_id_bidang
 
 router = APIRouter()
 
@@ -23,6 +24,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     obj_current = await crud.bidang.get_by_id_bidang(idbidang=sch.id_bidang)
     if obj_current:
         raise NameExistException(Bidang, name=sch.id_bidang)
+    
+    sch.id_bidang = await generate_id_bidang(sch.planing_id)
     
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)

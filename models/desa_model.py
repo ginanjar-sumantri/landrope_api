@@ -11,6 +11,7 @@ class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     code:str | None = Field(nullable=True, max_length=50)
     luas:Decimal
+    last:int = Field(nullable=True) #this is for last Id Bidang
 
 class DesaRawBase(BaseUUIDModel, DesaBase):
     pass
