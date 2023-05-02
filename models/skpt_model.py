@@ -5,11 +5,13 @@ from datetime import date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from uuid import UUID
+from models.mapping_model import MappingPlaningPtsk
 
 if TYPE_CHECKING:
     from models.ptsk_model import Ptsk 
     from models.rincik_model import Rincik
     from models.bidang_model import Bidang, Bidangoverlap
+    from models.planing_model import Planing
 
 class StatusSKEnum(str, Enum):
     Belum_Pengajuan_SK = "Belum_Pengajuan_SK"
@@ -21,7 +23,6 @@ class KategoriEnum(str, Enum):
     SK_ASG = "SK_ASG"
 
 class SkptBase(SQLModel):
-    code:str = Field(nullable=False, max_length=50)
     status:StatusSKEnum | None = Field(nullable=True)
     kategori:KategoriEnum | None = Field(nullable=True)
     luas:Decimal
@@ -38,10 +39,15 @@ class SkptFullBase(BaseGeoModel, SkptRawBase):
 
 class Skpt(SkptFullBase, table=True):
     ptsk:"Ptsk" = Relationship(back_populates="skpts", sa_relationship_kwargs={'lazy':'selectin'})
+    planings:list["Planing"] = Relationship(back_populates="skpts", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
     rinciks: list["Rincik"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     overlaps:list["Bidangoverlap"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def ptsk_name(self)-> str:
-            return self.ptsk.name
+        return self.ptsk.name
+    
+    @property
+    def ptsk_code(self)-> str:
+        return self.ptsk.code 

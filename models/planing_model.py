@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.ptsk_model import Ptsk
+    from models.skpt_model import Skpt
     from models.rincik_model import Rincik
     from models.bidang_model import Bidang, Bidangoverlap
     from models.project_model import Project
@@ -30,7 +30,8 @@ class Planing(PlaningFullBase, table=True):
     project:"Project" = Relationship(back_populates="project_planings", sa_relationship_kwargs={'lazy':'selectin'})
     desa:"Desa" = Relationship(back_populates="desa_planings", sa_relationship_kwargs={'lazy':'selectin'})
 
-    ptsks: list["Ptsk"] = Relationship(back_populates="planings", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningPtsk, sa_relationship_kwargs={'lazy':'selectin'})
+    
     rinciks: list["Rincik"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     overlaps:list["Bidangoverlap"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})

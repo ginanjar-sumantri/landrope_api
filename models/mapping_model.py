@@ -9,7 +9,7 @@ class MappingBase(SQLModel):
 
 class MappingPlaningPtsk(MappingBase, table=True):
     planing_id:UUID = Field(default=None, foreign_key="planing.id", primary_key=True)
-    ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", primary_key=True)
+    skpt_id:UUID = Field(default=None, foreign_key="skpt.id", primary_key=True)
 
 #--------------------------------------------------------------------------------------------------
 
