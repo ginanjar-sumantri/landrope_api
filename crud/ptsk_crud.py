@@ -17,10 +17,7 @@ class CRUDPTSK(CRUDBase[Ptsk, PtskCreateSch, PtskUpdateSch]):
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> Ptsk:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Ptsk)
-                                       .where(Ptsk.name.replace(" ", "")
-                                              .replace(".", "").lower() == 
-                                              name.replace(" ", "").replace(".", "").lower()))
+        obj = await db_session.execute(select(Ptsk).where(Ptsk.name == name))
         return obj.scalar_one_or_none()
     
     async def get_filtered_ptsk(
