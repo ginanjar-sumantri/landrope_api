@@ -4,6 +4,8 @@ from uuid import UUID
 
 class DraftBase(SQLModel):
     rincik_id:UUID = Field(default=None, foreign_key="rincik.id")
+    skpt_id:UUID = Field(default=None, foreign_key="skpt.id")
+    planing_id:UUID = Field(default=None, foreign_key="planing.id")
 
 class DraftRawBase(BaseUUIDModel, DraftBase):
     pass

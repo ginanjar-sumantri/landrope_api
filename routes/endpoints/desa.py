@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPExce
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
+from models.code_counter_model import CodeCounterEnum
 from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -10,7 +11,7 @@ from common.exceptions import (IdNotFoundException, NameExistException, NameNotF
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
-from common.generator import generate_code, EntityEnum
+from common.generator import generate_code
 import string
 import random
 
@@ -24,6 +25,9 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
+    
+    sch.code = await generate_code(CodeCounterEnum.Desa)
+    sch.last = 1
 
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -32,7 +36,11 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch = DesaSch(name=sch.name, code=sch.code, luas=sch.luas, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = DesaSch(name=sch.name, 
+                      code=sch.code, 
+                      luas=sch.luas,
+                      last=sch.last, 
+                      geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     new_obj = await crud.desa.create(obj_in=sch)
 
@@ -77,7 +85,10 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
         
-        sch = DesaSch(name=sch.name, code=sch.code, luas=sch.luas, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = DesaSch(name=sch.name, 
+                      code=sch.code, 
+                      luas=sch.luas, 
+                      geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
@@ -101,7 +112,11 @@ async def bulk_create(file:UploadFile=File()):
             if obj_current:
                 continue
             
-            sch = DesaSch(name=geo_data['NAMOBJ'],  luas=geo_data['SHAPE_Area'], 
+            g_code = await generate_code(entity=CodeCounterEnum.Desa)
+
+            sch = DesaSch(name=geo_data['NAMOBJ'], 
+                          code=g_code, 
+                          luas=geo_data['SHAPE_Area'], 
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
             await crud.desa.create(obj_in=sch)

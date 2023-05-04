@@ -4,20 +4,8 @@ from enum import Enum
 import crud
 from schemas.desa_sch import DesaSch
 from geoalchemy2.shape import to_shape
+from models.code_counter_model import CodeCounterEnum, CodeCounter
 
-class EntityEnum(str, Enum):
-    desa = "VILL"
-
-def generate_code(EntityEnum:EntityEnum | None = EntityEnum.desa, length:int = 5):
-    head:str = EntityEnum
-    num = string.digits
-    length:int = length
-    all = num
-
-    temp = random.sample(all, length)
-    code = head + "".join(temp)
-
-    return code
 
 async def generate_id_bidang(planing_id:str):
     planing = await crud.planing.get(id=planing_id)
@@ -40,3 +28,26 @@ async def generate_id_bidang(planing_id:str):
     id_bidang = f"{code_section}{code_project}{code_desa}{number}"
     return id_bidang
    
+async def generate_code(entity:CodeCounterEnum):
+    code_counter = await crud.codecounter.get_by_entity(entity=entity)
+
+    if code_counter is None:
+        obj_in = CodeCounter(entity=entity, last=1)
+        obj = await crud.codecounter.create(obj_in=obj_in)
+
+        last = '{:03d}'.format(obj.last)
+        return last
+    
+    else:
+        counter = (code_counter.last + 1)
+        obj_new = CodeCounter(entity=code_counter.entity, last=counter)
+        await crud.codecounter.update(obj_current=code_counter, obj_new=obj_new)
+        last = '{:03d}'.format(counter)
+        return last
+
+
+
+    
+
+
+

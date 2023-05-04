@@ -1,6 +1,5 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from uuid import UUID
 from decimal import Decimal
 from enum import Enum
 
