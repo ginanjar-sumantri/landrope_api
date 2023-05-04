@@ -23,7 +23,7 @@ class TypeEnum(str, Enum):
     
 
 class BidangBase(SQLModel):
-    id_bidang:str = Field(nullable=False, max_length=100)
+    id_bidang:str | None = Field(nullable=False, max_length=100)
     nama_pemilik:str
     luas_surat:Decimal
     alas_hak:str
