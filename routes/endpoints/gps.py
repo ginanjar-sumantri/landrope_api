@@ -14,7 +14,7 @@ from geoalchemy2.shape import to_shape
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
-async def create(file:UploadFile = File()):
+async def create(status:StatusGpsEnum | None, skpt_id:UUID|str|None, file:UploadFile = File()):
     
     """Create a new object"""
     if file is None:
@@ -26,13 +26,13 @@ async def create(file:UploadFile = File()):
         polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
         geo_dataframe['geometry'] = polygon.geometry
 
-    gps_datas = await crud.gps.get_intersect_gps(geom=geo_dataframe.geometry[0])
-    status = StatusGpsEnum.NotSet
+    # gps_datas = await crud.gps.get_intersect_gps(geom=geo_dataframe.geometry[0])
+    # status = StatusGpsEnum.NotSet
     
-    if len(gps_datas) > 0:
-        status = StatusGpsEnum.Overlap
-    else:
-        status = StatusGpsEnum.Clear
+    # if len(gps_datas) > 0:
+    #     status = StatusGpsEnum.Overlap
+    # else:
+    #     status = StatusGpsEnum.Clear
 
     sch = GpsSch(nama=geo_dataframe['nama'][0],
                 alas_hak=geo_dataframe['alas_hak'][0],
@@ -42,6 +42,7 @@ async def create(file:UploadFile = File()):
                 pic=geo_dataframe['pic'][0],
                 group=geo_dataframe['group'][0],
                 status=status,
+                skpt_id=skpt_id,
                 geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         )
         
@@ -68,7 +69,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Gps, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
-async def update(id:UUID, sch:GpsUpdateSch):
+async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form)):
     
     """Update a obj by its id"""
 

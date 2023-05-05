@@ -13,6 +13,7 @@ class BidangRawSch(BidangRawBase):
     desa_name:str|None = Field(alias='desa_name')
     section_name:str|None = Field(alias='section_name')
     ptsk_name:str|None = Field(alias='ptsk_name')
+    nomor_sk:str|None = Field(alias='nomor_sk')
     id_rincik:str|None = Field(alias='id_rincik')
     
 

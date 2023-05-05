@@ -70,11 +70,23 @@ class Rincik(RincikFullBase, table=True):
     
     @property
     def planing_name(self)-> str:
-            return self.planing.name
-
+        return self.planing.name
+    
+    @property
+    def project_name(self)-> str:
+        return self.planing.project.name
+    
+    @property
+    def desa_name(self)-> str:
+        return self.planing.desa.name
+    
+    @property
+    def section_name(self)-> str:
+        return self.planing.project.section.name
+    
     @property
     def ptsk_name(self)-> str:
-            return self.skpt.ptsk.name
+        return self.skpt.ptsk.name
     
     @property
     def nomor_sk(self)-> str:

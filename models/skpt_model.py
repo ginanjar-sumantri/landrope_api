@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from models.rincik_model import Rincik
     from models.bidang_model import Bidang, Bidangoverlap
     from models.planing_model import Planing
+    from models.gps_model import Gps
 
 class StatusSKEnum(str, Enum):
     Belum_Pengajuan_SK = "Belum_Pengajuan_SK"
@@ -43,6 +44,7 @@ class Skpt(SkptFullBase, table=True):
     rinciks: list["Rincik"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
     overlaps:list["Bidangoverlap"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
+    gpsts:list["Gps"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def ptsk_name(self)-> str:

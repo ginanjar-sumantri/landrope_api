@@ -10,8 +10,12 @@ class RincikCreateSch(RincikBase):
 
 class RincikRawSch(RincikRawBase):
     jenis_lahan_name:str | None = Field(alias='jenis_lahan_name')
-    planing_name:str | None = Field(alias='planing_name')
-    ptsk_name:str | None = Field(alias='ptsk_name')
+    planing_name:str|None = Field(alias='planing_name')
+    project_name:str|None = Field(alias='project_name')
+    desa_name:str|None = Field(alias='desa_name')
+    section_name:str|None = Field(alias='section_name')
+    ptsk_name:str|None = Field(alias='ptsk_name')
+    nomor_sk:str|None = Field(alias='nomor_sk')
 
 class RincikSch(RincikFullBase):
     pass
