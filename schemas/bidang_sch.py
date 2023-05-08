@@ -15,6 +15,7 @@ class BidangRawSch(BidangRawBase):
     ptsk_name:str|None = Field(alias='ptsk_name')
     nomor_sk:str|None = Field(alias='nomor_sk')
     id_rincik:str|None = Field(alias='id_rincik')
+    jenis_lahan_name:str | None = Field(alias='jenis_lahan_name')
     
 
 
