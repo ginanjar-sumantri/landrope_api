@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
-from models.bidang_model import Bidang, StatusEnum, TypeEnum
+from models.bidang_model import Bidang, StatusEnum, TipeProses
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch)
 from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikRawBase)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -195,11 +195,11 @@ def StatusBidang(status:str|None = None):
 
 def TypeBidang(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == TypeEnum.Bintang.lower():
-            return TypeEnum.Bintang
-        elif type.replace(" ", "").lower() == TypeEnum.Standard.lower():
-            return TypeEnum.Standard
+        if type.replace(" ", "").lower() == TipeProses.Bintang.lower():
+            return TipeProses.Bintang
+        elif type.replace(" ", "").lower() == TipeProses.Standard.lower():
+            return TipeProses.Standard
         else:
-            return TypeEnum.Standard
+            return TipeProses.Standard
     else:
-        return TypeEnum.Standard
+        return TipeProses.Standard
