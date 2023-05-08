@@ -61,7 +61,7 @@ class Rincik(RincikFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
-    bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
+    # bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
     
 
     @property

@@ -18,17 +18,14 @@ class StatusEnum(str, Enum):
     Belum_Bebas = "Belum_Bebas"
     Batal = "Batal"
 
-    @classmethod
-    def _missing_(cls, value):
-         return cls.Default 
-
-class TypeEnum(str, Enum):
+class TipeProses(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"
 
-    @classmethod
-    def _missing_(cls, value):
-         return cls.Default 
+class TipeBidang(str, Enum):
+    Rincik = "Rincik"
+    Bidang = "Bidang"
+    Overlap = "Overlap"
 
 class CategoryEnum(str, Enum):
     Group_Besar = "Group_Besar"
@@ -71,8 +68,9 @@ class BidangBase(SQLModel):
     # ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
     
 class BidangExtBase(BidangBase):
-    type:TypeEnum
-    rincik_id:UUID = Field(default=None, foreign_key="rincik.id", nullable=True)
+    tipe_proses:TipeProses
+    tipe_proses:TipeBidang
+    # rincik_id:UUID = Field(default=None, foreign_key="rincik.id", nullable=True)
 
 class BidangRawBase(BaseUUIDModel, BidangExtBase):
     pass
@@ -85,8 +83,8 @@ class Bidang(BidangFullBase, table=True):
     planing:"Planing" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     # ptsk:"Ptsk" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
-    rincik:"Rincik" = Relationship(back_populates="bidang", sa_relationship_kwargs={'lazy':'selectin'})
-    overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
+    # rincik:"Rincik" = Relationship(back_populates="bidang", sa_relationship_kwargs={'lazy':'selectin'})
+    # overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
     jenis_lahan: "JenisLahan" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
@@ -123,26 +121,26 @@ class Bidang(BidangFullBase, table=True):
 
 #-------------------------------------------------------------------------------
 
-class BidangoverlapBase(BidangBase):
-    pass
+# class BidangoverlapBase(BidangBase):
+#     pass
 
-class BidangoverlapRawBase(BaseUUIDModel, BidangoverlapBase):
-    pass
+# class BidangoverlapRawBase(BaseUUIDModel, BidangoverlapBase):
+#     pass
 
-class BidangoverlapFullBase(BaseGeoModel, BidangoverlapRawBase):
-    pass
+# class BidangoverlapFullBase(BaseGeoModel, BidangoverlapRawBase):
+#     pass
 
-class Bidangoverlap(BidangoverlapFullBase, table=True):
-    planing:"Planing" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
-    skpt:"Skpt" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
-    bidangs : list["Bidang"] = Relationship(back_populates="overlaps", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
+# class Bidangoverlap(BidangoverlapFullBase, table=True):
+#     planing:"Planing" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
+#     skpt:"Skpt" = Relationship(back_populates="overlaps", sa_relationship_kwargs={'lazy':'selectin'})
+#     # bidangs : list["Bidang"] = Relationship(back_populates="overlaps", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
 
-    @property
-    def planing_name(self)-> str:
-        return self.planing.name
+#     @property
+#     def planing_name(self)-> str:
+#         return self.planing.name
     
-    @property
-    def ptsk_name(self)-> str:
-        return self.ptsk.name
+#     @property
+#     def ptsk_name(self)-> str:
+#         return self.ptsk.name
     
 
