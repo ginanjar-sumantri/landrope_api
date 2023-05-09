@@ -48,6 +48,7 @@ async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=Non
     """Gets a paginated list objects"""
 
     objs = await crud.skpt.get_filtered_skpt(params=params, order_by=order_by, keyword=keyword)
+    
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SkptRawSch])

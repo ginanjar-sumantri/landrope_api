@@ -26,7 +26,7 @@ class KategoriEnum(str, Enum):
 class SkptBase(SQLModel):
     status:StatusSKEnum | None = Field(nullable=True)
     kategori:KategoriEnum | None = Field(nullable=True)
-    luas:Decimal
+    luas:Decimal | None
     nomor_sk:str | None = Field(nullable=True, max_length=200)
     tanggal_tahun_SK:date | None = Field(nullable=True)
     tanggal_jatuh_tempo:date | None = Field(nullable=True)

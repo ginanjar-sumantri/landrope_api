@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     code:str | None = Field(nullable=True, max_length=50)
+    kecamatan:str | None = Field(nullable=True, max_length=100)
+    kota:str | None = Field(nullable=True, max_length=100)
     luas:Decimal
     last:int | None = Field(nullable=True) #this is for last Id Bidang
 

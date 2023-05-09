@@ -4,7 +4,7 @@ from routes.endpoints import (bidang, bidangoverlap, desa, planing, project,
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
-api_router.include_router(bidangoverlap.router, prefix="/bidangoverlap", tags=["bidangoverlap"])
+# api_router.include_router(bidangoverlap.router, prefix="/bidangoverlap", tags=["bidangoverlap"])
 api_router.include_router(desa.router, prefix="/desa", tags=["desa"])
 api_router.include_router(planing.router, prefix="/planing", tags=["planing"])
 api_router.include_router(project.router, prefix="/project", tags=["project"])

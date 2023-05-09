@@ -10,6 +10,7 @@ from common.ordered import OrderEnumSch
 
 from crud.base_crud import CRUDBase
 from models.skpt_model import Skpt
+from models.ptsk_model import Ptsk
 from schemas.skpt_sch import SkptCreateSch, SkptUpdateSch
 
 class CRUDSKPT(CRUDBase[Skpt, SkptCreateSch, SkptUpdateSch]):
@@ -51,15 +52,19 @@ class CRUDSKPT(CRUDBase[Skpt, SkptCreateSch, SkptUpdateSch]):
                 if keyword is None:
                     query = select(self.model).order_by(columns[order_by].asc())
                 else:
-                    query = select(self.model).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%')
+                    query = select(self.model).join(Ptsk).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%'),
+                                                                     Ptsk.name.ilike(f'%{keyword}%')
                                                           )).order_by(columns[order_by].asc())
             else:
                 if keyword is None:
                     query = select(self.model).order_by(columns[order_by].desc())
                 else:
-                    query = select(self.model).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%')
-                                                         )).order_by(columns[order_by].desc())
+                    query = select(self.model).join(Ptsk).filter(or_(self.model.nomor_sk.ilike(f'%{keyword}%'),
+                                                                     Ptsk.name.ilike(f'%{keyword}%')
+                                                          )).order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
+    
+    
 
 skpt = CRUDSKPT(Skpt)
