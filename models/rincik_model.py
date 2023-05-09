@@ -49,7 +49,6 @@ class RincikBase(SQLModel):
 
     planing_id:UUID = Field(default=None, foreign_key="planing.id")
     skpt_id:UUID = Field(default=None, foreign_key="skpt.id", nullable=True)
-    # ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
 
 class RincikRawBase(BaseUUIDModel, RincikBase):
     pass
@@ -61,7 +60,6 @@ class Rincik(RincikFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="rinciks", sa_relationship_kwargs={'lazy':'selectin'})
-    # bidang:"Bidang" = Relationship(back_populates="rincik", sa_relationship_kwargs={'lazy':'selectin'})
     
 
     @property

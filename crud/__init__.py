@@ -5,7 +5,7 @@ from .ptsk_crud import ptsk
 from .desa_crud import desa
 from .rincik_crud import rincik
 from .bidang_crud import bidang
-from .bidangoverlap_crud import bidangoverlap
+# from .bidangoverlap_crud import bidangoverlap
 from .jenis_lahan_crud import jenislahan
 from .draft_crud import draft
 from .gps_crud import gps

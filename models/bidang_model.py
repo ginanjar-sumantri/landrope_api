@@ -62,15 +62,13 @@ class BidangBase(SQLModel):
     jenis_dokumen: JenisDokumenEnum | None = Field(nullable=True)
     status:StatusEnum | None = Field(nullable=True)
 
-    jenis_lahan_id:UUID = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
+    jenis_lahan_id:UUID | None = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
     planing_id:UUID = Field(default=None, foreign_key="planing.id", nullable=True)
     skpt_id:UUID = Field(default=None, foreign_key="skpt.id", nullable=True)
-    # ptsk_id:UUID = Field(default=None, foreign_key="ptsk.id", nullable=True)
     
 class BidangExtBase(BidangBase):
-    tipe_proses:TipeProses
-    tipe_proses:TipeBidang
-    # rincik_id:UUID = Field(default=None, foreign_key="rincik.id", nullable=True)
+    tipe_proses:TipeProses | None = Field(default=None, nullable=True)
+    tipe_proses:TipeBidang | None = Field(default=None, nullable=True)
 
 class BidangRawBase(BaseUUIDModel, BidangExtBase):
     pass
@@ -81,10 +79,7 @@ class BidangFullBase(BaseGeoModel, BidangRawBase):
 class Bidang(BidangFullBase, table=True):
 
     planing:"Planing" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
-    # ptsk:"Ptsk" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
-    # rincik:"Rincik" = Relationship(back_populates="bidang", sa_relationship_kwargs={'lazy':'selectin'})
-    # overlaps:list["Bidangoverlap"] = Relationship(back_populates="bidangs", link_model=MappingBidangOverlap, sa_relationship_kwargs={'lazy':'selectin'})
     jenis_lahan: "JenisLahan" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property

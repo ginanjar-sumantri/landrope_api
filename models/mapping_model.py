@@ -15,7 +15,7 @@ class MappingPlaningSkpt(MappingBase, table=True):
 
 class MappingBidangOverlap(MappingBase, table=True):
     bidang_id:UUID = Field(default=None, foreign_key="bidang.id", primary_key=True)
-    bidang_overlap_id:UUID = Field(default=None, foreign_key="bidangoverlap.id", primary_key=True)
+    bidang_overlap_id:UUID = Field(default=None, foreign_key="bidang.id", primary_key=True)
     luas:Decimal
 
 #--------------------------------------------------------------------------------------------------

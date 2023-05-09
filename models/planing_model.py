@@ -29,12 +29,9 @@ class Planing(PlaningFullBase, table=True):
 
     project:"Project" = Relationship(back_populates="project_planings", sa_relationship_kwargs={'lazy':'selectin'})
     desa:"Desa" = Relationship(back_populates="desa_planings", sa_relationship_kwargs={'lazy':'selectin'})
-
     skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
-    
     rinciks: list["Rincik"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
-    overlaps:list["Bidangoverlap"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def project_name(self)-> str:
