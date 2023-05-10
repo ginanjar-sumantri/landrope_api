@@ -14,6 +14,7 @@ from datetime import datetime
 from geoalchemy2.shape import to_shape
 import crud
 from typing import List
+from common.rounder import RoundTwo
 
 router = APIRouter()
 
@@ -37,10 +38,11 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
         
-        sch = PlaningSch(code=sch.code, project_id=sch.project_id, 
-                          desa_id=sch.desa_id, luas=sch.luas, 
-                          name=sch.name, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-                          )
+        sch = PlaningSch(code=sch.code, 
+                        project_id=sch.project_id, 
+                        desa_id=sch.desa_id,
+                        luas=sch.luas, 
+                        name=sch.name, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
         
     new_obj = await crud.planing.create(obj_in=sch)
     return create_response(data=new_obj)
