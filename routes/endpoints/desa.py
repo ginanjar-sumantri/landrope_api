@@ -12,6 +12,8 @@ from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.generator import generate_code
+from common.rounder import RoundTwo
+from decimal import Decimal
 import string
 import random
 
@@ -38,7 +40,7 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
 
         sch = DesaSch(name=sch.name, 
                       code=sch.code, 
-                      luas=sch.luas,
+                      luas=RoundTwo(sch.luas),
                       last=sch.last, 
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
@@ -87,7 +89,7 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
         
         sch = DesaSch(name=sch.name, 
                       code=sch.code, 
-                      luas=sch.luas, 
+                      luas=RoundTwo(sch.luas), 
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
@@ -100,7 +102,6 @@ async def bulk_create(file:UploadFile=File()):
     """Create bulk or import data"""
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-
         desas = await crud.desa.get_all()
         
         for i, geo_data in geo_dataframe.iterrows():
@@ -113,10 +114,11 @@ async def bulk_create(file:UploadFile=File()):
                 continue
             
             g_code = await generate_code(entity=CodeCounterEnum.Desa)
+            luas:Decimal = RoundTwo(geo_data['SHAPE_Area'])
 
             sch = DesaSch(name=geo_data['NAMOBJ'], 
                           code=g_code, 
-                          luas=geo_data['SHAPE_Area'], 
+                          luas=luas, 
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
             await crud.desa.create(obj_in=sch)

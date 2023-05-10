@@ -9,7 +9,8 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
-from geoalchemy2.shape import to_shape 
+from geoalchemy2.shape import to_shape
+from common.rounder import RoundTwo
 
 router = APIRouter()
 
@@ -26,17 +27,10 @@ async def create(status:StatusGpsEnum | None, skpt_id:UUID|str|None, file:Upload
         polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
         geo_dataframe['geometry'] = polygon.geometry
 
-    # gps_datas = await crud.gps.get_intersect_gps(geom=geo_dataframe.geometry[0])
-    # status = StatusGpsEnum.NotSet
-    
-    # if len(gps_datas) > 0:
-    #     status = StatusGpsEnum.Overlap
-    # else:
-    #     status = StatusGpsEnum.Clear
 
     sch = GpsSch(nama=geo_dataframe['nama'][0],
                 alas_hak=geo_dataframe['alas_hak'][0],
-                luas=geo_dataframe['luas'][0],
+                luas=RoundTwo(geo_dataframe['luas'][0]),
                 desa=geo_dataframe['desa'][0],
                 petunjuk=geo_dataframe['penunjuk_b'][0],
                 pic=geo_dataframe['pic'][0],

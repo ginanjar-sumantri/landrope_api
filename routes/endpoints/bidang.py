@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
-from models.bidang_model import Bidang, StatusEnum, TipeProses
+from models.bidang_model import Bidang, StatusEnum, TipeProses, TipeBidang
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch)
 from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikRawBase)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -13,6 +13,8 @@ from common.exceptions import (IdNotFoundException, NameExistException, ImportFa
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from common.generator import generate_id_bidang
+from common.rounder import RoundTwo
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -33,30 +35,20 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
-
-        if sch.rincik_id is None:
-            rinciksch = RincikSch(id_rincik=sch.id_bidang,
-                        estimasi_nama_pemilik=sch.nama_pemilik,
-                        luas=sch.luas_surat,
-                        alas_hak=sch.alas_hak,
-                        no_peta=sch.no_peta,
-                        planing_id=sch.planing_id,
-                        skpt_id=sch.skpt_id,
-                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
-            rincik = await crud.rincik.create(obj_in=rinciksch)
-            sch.rincik_id = rincik.id
-
         
         sch = BidangSch(id_bidang=sch.id_bidang,
                         nama_pemilik=sch.nama_pemilik,
-                        luas_surat=sch.luas_surat,
+                        luas_surat=RoundTwo(sch.luas_surat),
                         alas_hak=sch.alas_hak,
                         no_peta=sch.no_peta,
+                        category=sch.category,
+                        jenis_dokumen=sch.jenis_dokumen,
                         status=sch.status,
-                        type=sch.type,
+                        jenis_lahan_id=sch.jenis_lahan_id,
                         planing_id=sch.planing_id,
-                        rincik_id=sch.rincik_id,
                         skpt_id=sch.skpt_id,
+                        tipe_proses=sch.tipe_proses,
+                        tipe_bidang=sch.tipe_bidang,    
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
@@ -114,14 +106,17 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 
         sch = BidangSch(id_bidang=sch.id_bidang,
                         nama_pemilik=sch.nama_pemilik,
-                        luas_surat=sch.luas_surat,
+                        luas_surat=RoundTwo(sch.luas_surat),
                         alas_hak=sch.alas_hak,
                         no_peta=sch.no_peta,
+                        category=sch.category,
+                        jenis_dokumen=sch.jenis_dokumen,
                         status=sch.status,
-                        type=sch.type,
+                        jenis_lahan_id=sch.jenis_lahan_id,
                         planing_id=sch.planing_id,
-                        rincik_id=sch.rincik_id,
                         skpt_id=sch.skpt_id,
+                        tipe_proses=sch.tipe_proses,
+                        tipe_bidang=sch.tipe_bidang,    
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
@@ -143,6 +138,7 @@ async def bulk_create(file:UploadFile=File()):
         for i, geo_data in geo_dataframe.iterrows():
             p:str = geo_data['PROJECT']
             d:str = geo_data['DESA']
+            luas_surat:Decimal = RoundTwo(geo_data['LUAS'])
 
             project = next((obj for obj in projects 
                             if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None)
@@ -165,11 +161,12 @@ async def bulk_create(file:UploadFile=File()):
             
             sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
                         nama_pemilik=geo_data['NAMA'],
-                        luas_surat=geo_data['LUAS'],
+                        luas_surat=luas_surat,
                         alas_hak="",
                         no_peta=geo_data['NO_PETA'],
-                        status=StatusBidang(geo_data['STATUS']),
-                        type=TypeBidang(geo_data['PROSES']),
+                        status=FindStatusBidang(geo_data['STATUS']),
+                        tipe_proses=FindTipeProses(geo_data['PROSES']),
+                        tipe_bidang=TipeBidang.Bidang,
                         planing_id=plan.id,
                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
@@ -180,7 +177,7 @@ async def bulk_create(file:UploadFile=File()):
     
     return create_response(data=obj)
 
-def StatusBidang(status:str|None = None):
+def FindStatusBidang(status:str|None = None):
     if status:
         if status.replace(" ", "").lower() == StatusEnum.Bebas.replace("_", "").lower():
             return StatusEnum.Bebas
@@ -193,7 +190,7 @@ def StatusBidang(status:str|None = None):
     else:
         return StatusEnum.Belum_Bebas
 
-def TypeBidang(type:str|None = None):
+def FindTipeProses(type:str|None = None):
     if type:
         if type.replace(" ", "").lower() == TipeProses.Bintang.lower():
             return TipeProses.Bintang

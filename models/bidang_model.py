@@ -68,7 +68,7 @@ class BidangBase(SQLModel):
     
 class BidangExtBase(BidangBase):
     tipe_proses:TipeProses | None = Field(default=None, nullable=True)
-    tipe_proses:TipeBidang | None = Field(default=None, nullable=True)
+    tipe_bidang:TipeBidang | None = Field(default=None, nullable=True)
 
 class BidangRawBase(BaseUUIDModel, BidangExtBase):
     pass
