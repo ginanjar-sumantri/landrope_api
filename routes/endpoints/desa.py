@@ -145,26 +145,28 @@ def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
         my_objects=[]
 
         ent = data[0].dict()
-        
-        for key, value in ent:
-            print(key)
-            if key == "geom":
-                obj_columns.remove(key)
-        
         obj_columns = list(ent.keys())
-        geometry:str = 'geometry'
-        obj_columns.append(geometry)
 
-        print(obj_columns)
+        geom:str='geom'
+        geometry:str = 'geometry'
         
         for row in data:
             dict_object = dict(row)
             dict_object['geometry'] = loads(dict_object['geom'].data)
             dict_object['id'] = str(dict_object['id'])
             my_objects.append(dict_object)
+        
+        for key in obj_columns:
+            if key == "created_at":
+                obj_columns.remove(key)
+            if key == "updated_at":
+                obj_columns.remove(key)
+        
+        obj_columns.append(geometry)
+        obj_columns.remove(geom)
 
         gdf = gpd.GeoDataFrame(my_objects, columns=obj_columns)
-        print(gdf.head())
+
         tempdir = tempfile.mkdtemp()
 
         # mengekspor GeoDataFrame ke dalam file shapefile
@@ -172,10 +174,10 @@ def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
         gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
 
         # membuat file zip dan menambahkan file shapefile ke dalamnya
-        output_zip = os.path.join(tempdir, 'output.zip')
+        output_zip = os.path.join(tempdir, f'{obj_name}.zip')
         with zipfile.ZipFile(output_zip, 'w') as zip:
             zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
             zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
             zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
 
-        return FileResponse(output_zip, media_type='application/zip', filename='output.zip')
+        return FileResponse(output_zip, media_type='application/zip', filename=f'{obj_name}.zip')
