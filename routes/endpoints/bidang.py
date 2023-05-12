@@ -138,7 +138,7 @@ async def bulk_create(file:UploadFile=File()):
         for i, geo_data in geo_dataframe.iterrows():
             p:str = geo_data['PROJECT']
             d:str = geo_data['DESA']
-            luas_surat:Decimal = RoundTwo(geo_data['LUAS'])
+            luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
 
             project = next((obj for obj in projects 
                             if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None)

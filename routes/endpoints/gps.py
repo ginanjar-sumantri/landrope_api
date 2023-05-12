@@ -11,6 +11,7 @@ from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
 
     sch = GpsSch(nama=geo_dataframe['nama'][0],
                 alas_hak=geo_dataframe['alas_hak'][0],
-                luas=RoundTwo(geo_dataframe['luas'][0]),
+                luas=RoundTwo(Decimal(geo_dataframe['luas'][0])),
                 desa=geo_dataframe['desa'][0],
                 petunjuk=geo_dataframe['penunjuk_b'][0],
                 pic=geo_dataframe['pic'][0],

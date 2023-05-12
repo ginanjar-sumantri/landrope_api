@@ -121,7 +121,7 @@ async def bulk_create(file:UploadFile=File()):
                 continue
             
             g_code = await generate_code(entity=CodeCounterEnum.Desa)
-            luas:Decimal = RoundTwo(geo_data['SHAPE_Area'])
+            luas:Decimal = RoundTwo(Decimal(geo_data['SHAPE_Area']))
 
             sch = DesaSch(name=geo_data['NAMOBJ'], 
                           code=g_code, 
@@ -145,9 +145,15 @@ def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
         my_objects=[]
 
         ent = data[0].dict()
+        
+        for key, value in ent:
+            print(key)
+            if key == "geom":
+                obj_columns.remove(key)
+        
         obj_columns = list(ent.keys())
-        obj_columns = obj_columns.append('geometry')
-        obj_columns = obj_columns.remove('geom')
+        geometry:str = 'geometry'
+        obj_columns.append(geometry)
 
         print(obj_columns)
         

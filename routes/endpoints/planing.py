@@ -2,19 +2,16 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 from models.planing_model import Planing
-from models.project_model import Project
-from models.desa_model import Desa
 from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, CodeExistException, NameNotFoundException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
-from datetime import datetime
 from geoalchemy2.shape import to_shape
 import crud
-from typing import List
 from common.rounder import RoundTwo
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -41,7 +38,7 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
         sch = PlaningSch(code=sch.code, 
                         project_id=sch.project_id, 
                         desa_id=sch.desa_id,
-                        luas=sch.luas, 
+                        luas=RoundTwo(sch.luas), 
                         name=sch.name, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
         
     new_obj = await crud.planing.create(obj_in=sch)
@@ -132,7 +129,7 @@ async def bulk_create(file:UploadFile=File()):
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                            luas=geo_data['LUAS'])
+                            luas=RoundTwo(Decimal(geo_data['LUAS'])))
             
             await crud.planing.create_planing(obj_in=sch)  
 

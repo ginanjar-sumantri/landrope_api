@@ -115,7 +115,7 @@ async def bulk_create(file:UploadFile=File()):
                 
                 pt = await crud.ptsk.create(obj_in=new_pt)
 
-            luas:Decimal = RoundTwo(geo_data['LUAS'])
+            luas:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
             sch = SkptSch(ptsk_id=pt.id,
                           status=StatusSK(geo_data['STATUS']),
                           kategori=KategoriEnum.SK_ASG,
