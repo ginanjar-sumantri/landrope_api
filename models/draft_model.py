@@ -3,9 +3,9 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 
 class DraftBase(SQLModel):
-    rincik_id:UUID = Field(default=None, foreign_key="rincik.id")
-    skpt_id:UUID = Field(default=None, foreign_key="skpt.id")
-    planing_id:UUID = Field(default=None, foreign_key="planing.id")
+    rincik_id:UUID | None
+    skpt_id:UUID | None
+    planing_id:UUID | None
 
 class DraftRawBase(BaseUUIDModel, DraftBase):
     pass
