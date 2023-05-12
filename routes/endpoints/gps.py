@@ -15,7 +15,7 @@ from common.rounder import RoundTwo
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
-async def create(status:StatusGpsEnum | None, skpt_id:UUID|str|None, file:UploadFile = File()):
+async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile = File()):
     
     """Create a new object"""
     if file is None:

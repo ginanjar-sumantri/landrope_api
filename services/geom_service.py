@@ -56,7 +56,6 @@ class GeomService:
         new_geo = []
         for p in geometry:
             if p.has_z:
-                print(p.geom_type)
                 if p.geom_type == 'Polygon':
                     lines = [xy[:2] for xy in list(p.exterior.coords)]
                     new_p = Polygon(lines)

@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException, Response
+from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
@@ -18,9 +19,9 @@ from io import BytesIO
 import zipfile
 from typing import List
 import geopandas as gpd
-from shapely.wkb import loads, load
-import shapely
-from geoalchemy2 import func
+from shapely.wkb import loads
+import tempfile
+import os
 
 router = APIRouter()
 
@@ -107,6 +108,7 @@ async def bulk_create(file:UploadFile=File()):
     """Create bulk or import data"""
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        print(geo_dataframe.head())
         desas = await crud.desa.get_all()
         
         for i, geo_data in geo_dataframe.iterrows():
@@ -135,36 +137,39 @@ async def bulk_create(file:UploadFile=File()):
 
 @router.get("export-all", response_class=Response)
 async def export_shp():
-    try:
-
-        objs = await crud.desa.get_all_()
-        return export_shp_zip(data=objs, obj_name="desa")
-    
-    except:
-        raise HTTPException(status_code=422, detail="Failed export data")
+    objs = await crud.desa.get_all_()
+    return export_shp_zip(data=objs, obj_name="desa")
     
 
 def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
         my_objects=[]
+
+        ent = data[0].dict()
+        obj_columns = list(ent.keys())
+        obj_columns = obj_columns.append('geometry')
+        obj_columns = obj_columns.remove('geom')
+
+        print(obj_columns)
+        
         for row in data:
             dict_object = dict(row)
             dict_object['geometry'] = loads(dict_object['geom'].data)
+            dict_object['id'] = str(dict_object['id'])
             my_objects.append(dict_object)
-            print(dict_object)
-            break
 
-        gdf = gpd.GeoDataFrame(my_objects)
+        gdf = gpd.GeoDataFrame(my_objects, columns=obj_columns)
         print(gdf.head())
-        shp_file = BytesIO()
-        print('1')
+        tempdir = tempfile.mkdtemp()
 
-        with zipfile.ZipFile(shp_file, 'w', compression=zipfile.ZIP_DEFLATED) as z:
-            print(2)
-            z.writestr("data.shp", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.shp'))
-            print(3)
-            z.writestr("data.shx", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.shx'))
-            z.writestr("data.dbf", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.dbf'))
-            z.writestr("data.prj", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.prj'))
-        shp_file.seek(0)
-        return Response.StreamingResponse(shp_file, media_type='application/octet-stream', headers={'Content-Disposition': 'attachment; filename=data.zip'})
-            
+        # mengekspor GeoDataFrame ke dalam file shapefile
+        output_folder = os.path.join(tempdir, 'shapefile')
+        gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
+
+        # membuat file zip dan menambahkan file shapefile ke dalamnya
+        output_zip = os.path.join(tempdir, 'output.zip')
+        with zipfile.ZipFile(output_zip, 'w') as zip:
+            zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
+            zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
+            zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
+
+        return FileResponse(output_zip, media_type='application/zip', filename='output.zip')
