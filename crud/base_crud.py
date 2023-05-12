@@ -209,7 +209,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db_session.add(db_obj)
             await db_session.commit()
         except exc.IntegrityError:
-            db_session.rollback()
+            await db_session.rollback()
             raise HTTPException(status_code=409, detail="Resource already exists")
         
         await db_session.refresh(db_obj)

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException, Response
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
@@ -14,8 +14,13 @@ from geoalchemy2.shape import to_shape
 from common.generator import generate_code
 from common.rounder import RoundTwo
 from decimal import Decimal
-import string
-import random
+from io import BytesIO
+import zipfile
+from typing import List
+import geopandas as gpd
+from shapely.wkb import loads, load
+import shapely
+from geoalchemy2 import func
 
 router = APIRouter()
 
@@ -128,3 +133,38 @@ async def bulk_create(file:UploadFile=File()):
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
+@router.get("export-all", response_class=Response)
+async def export_shp():
+    try:
+
+        objs = await crud.desa.get_all_()
+        return export_shp_zip(data=objs, obj_name="desa")
+    
+    except:
+        raise HTTPException(status_code=422, detail="Failed export data")
+    
+
+def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
+        my_objects=[]
+        for row in data:
+            dict_object = dict(row)
+            dict_object['geometry'] = loads(dict_object['geom'].data)
+            my_objects.append(dict_object)
+            print(dict_object)
+            break
+
+        gdf = gpd.GeoDataFrame(my_objects)
+        print(gdf.head())
+        shp_file = BytesIO()
+        print('1')
+
+        with zipfile.ZipFile(shp_file, 'w', compression=zipfile.ZIP_DEFLATED) as z:
+            print(2)
+            z.writestr("data.shp", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.shp'))
+            print(3)
+            z.writestr("data.shx", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.shx'))
+            z.writestr("data.dbf", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.dbf'))
+            z.writestr("data.prj", gdf.to_file(driver='ESRI Shapefile', filename='data').read_file('data.prj'))
+        shp_file.seek(0)
+        return Response.StreamingResponse(shp_file, media_type='application/octet-stream', headers={'Content-Disposition': 'attachment; filename=data.zip'})
+            

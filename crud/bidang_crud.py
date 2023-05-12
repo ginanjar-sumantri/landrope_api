@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.bidang_model import Bidang
+from models.bidang_model import Bidang, TipeBidang
 from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
@@ -21,6 +21,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         self,
         *,
         keyword:str | None = None,
+        type: TipeBidang | None = TipeBidang.Bidang,
         params: Params | None = Params(),
         order_by: str | None = None,
         order: OrderEnumSch | None = OrderEnumSch.ascendent,
@@ -46,17 +47,17 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         if query is None:
             if order == OrderEnumSch.ascendent:
                 if keyword is None:
-                    query = select(self.model).order_by(columns[order_by].asc())
+                    query = select(self.model).where(self.model.tipe_bidang == type).order_by(columns[order_by].asc())
                 else:
-                    query = select(self.model).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
+                    query = select(self.model).where(self.model.tipe_bidang == type).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
                                                           self.model.alas_hak.ilike(f'%{keyword}%'),
                                                           self.model.nama_pemilik.ilike(f'%{keyword}%'),
                                                           self.model.no_peta.ilike(f'%{keyword}%'))).order_by(columns[order_by].asc())
             else:
                 if keyword is None:
-                    query = select(self.model).order_by(columns[order_by].desc())
+                    query = select(self.model).where(self.model.tipe_bidang == type).order_by(columns[order_by].desc())
                 else:
-                    query = select(self.model).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
+                    query = select(self.model).where(self.model.tipe_bidang == type).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
                                                           self.model.alas_hak.ilike(f'%{keyword}%'),
                                                           self.model.nama_pemilik.ilike(f'%{keyword}%'),
                                                           self.model.no_peta.ilike(f'%{keyword}%'))).order_by(columns[order_by].desc())

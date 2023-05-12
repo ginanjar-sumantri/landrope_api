@@ -68,15 +68,15 @@ async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
     return obj
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
-async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None):
+async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, type:TipeBidang = TipeBidang.Bidang):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang.get_filtered_bidang(params=params, order_by=order_by, keyword=keyword)
+    objs = await crud.bidang.get_filtered_bidang(params=params, order_by=order_by, keyword=keyword, type=type)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangRawSch])
-async def get_by_id(id:UUID):
+async def get_by_id(id:UUID): 
 
     """Get an object by id"""
 

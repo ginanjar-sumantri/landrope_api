@@ -11,6 +11,8 @@ from common.exceptions import (IdNotFoundException, NameExistException, ImportFa
 from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
+from common.rounder import RoundTwo
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -33,7 +35,7 @@ async def create(sch: SkptCreateSch = Depends(SkptCreateSch.as_form), file:Uploa
         sch = SkptSch(ptsk_id=sch.ptsk_id,
                       status=sch.status,
                       kategori=sch.kategori,
-                      luas=sch.luas,
+                      luas=RoundTwo(sch.luas),
                       nomor_sk=sch.nomor_sk,
                       tanggal_tahun_SK=sch.tanggal_tahun_SK,
                       tanggal_jatuh_tempo=sch.tanggal_jatuh_tempo,
@@ -85,7 +87,7 @@ async def update(id:UUID, sch:SkptUpdateSch = Depends(SkptUpdateSch.as_form), fi
         sch = SkptSch(ptsk_id=sch.ptsk_id,
                       status=sch.status,
                       kategori=sch.kategori,
-                      luas=sch.luas,
+                      luas=RoundTwo(sch.luas),
                       nomor_sk=sch.nomor_sk,
                       tanggal_tahun_SK=sch.tanggal_tahun_SK,
                       tanggal_jatuh_tempo=sch.tanggal_jatuh_tempo,
@@ -113,11 +115,11 @@ async def bulk_create(file:UploadFile=File()):
                 
                 pt = await crud.ptsk.create(obj_in=new_pt)
 
-            
+            luas:Decimal = RoundTwo(geo_data['LUAS'])
             sch = SkptSch(ptsk_id=pt.id,
                           status=StatusSK(geo_data['STATUS']),
                           kategori=KategoriEnum.SK_ASG,
-                          luas=geo_data['LUAS'],
+                          luas=luas,
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
             obj = await crud.skpt.create(obj_in=sch)

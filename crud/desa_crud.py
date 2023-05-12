@@ -5,7 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exc
 from crud.base_crud import CRUDBase
 from models.desa_model import Desa
-from schemas.desa_sch import DesaCreateSch, DesaUpdateSch
+from schemas.desa_sch import DesaCreateSch, DesaUpdateSch, DesaSch
 from geoalchemy2.shape import to_shape
 from typing import List
 from sqlalchemy.orm import load_only
@@ -26,5 +26,12 @@ class CRUDDesa(CRUDBase[Desa, DesaCreateSch, DesaUpdateSch]):
         query = select(self.model).where(self.model.name.in_(list_names))
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_all_(self, *, db_session : AsyncSession | None = None) -> List[DesaSch] | None:
+        db_session = db_session or db.session
+        query = select(self.model)
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+
     
 desa = CRUDDesa(Desa)

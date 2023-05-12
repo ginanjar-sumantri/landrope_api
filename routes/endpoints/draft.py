@@ -24,11 +24,12 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
         
-        sch = DraftSch(rincik_id=sch.rincik_id, skpt_id=sch.skpt_id, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = DraftSch(rincik_id=sch.rincik_id, skpt_id=sch.skpt_id, planing_id=sch.planing_id, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
         
     new_obj = await crud.draft.create(obj_in=sch)
+    
     return create_response(data=new_obj)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
