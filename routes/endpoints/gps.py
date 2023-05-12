@@ -35,8 +35,8 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
                 petunjuk=geo_dataframe['penunjuk_b'][0],
                 pic=geo_dataframe['pic'][0],
                 group=geo_dataframe['group'][0],
-                status=status,
-                skpt_id=skpt_id,
+                status=sch.status,
+                skpt_id=sch.skpt_id,
                 geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         )
         
