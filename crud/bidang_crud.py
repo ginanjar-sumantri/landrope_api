@@ -63,5 +63,57 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                           self.model.no_peta.ilike(f'%{keyword}%'))).order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
+    
+    async def get_filtered_bidang_by_dict(
+        self,
+        *,
+        keyword:str | None = None,
+        filter_query: dict = {},
+        params: Params | None = Params(),
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        query: Bidang | Select[Bidang] | None = None,
+        db_session: AsyncSession | None = None,
+    ) -> Page[Bidang]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        # if order_by not in columns or order_by is None:
+        #     order_by = self.model.id
+
+        find = False
+        for c in columns:
+            if c.name == order_by:
+                find = True
+                break
+        
+        if order_by is None or find == False:
+            order_by = "id"
+
+
+        if query is None:
+            query = select(self.model)
+            if filter_query is not None:
+                print(filter_query)
+                for key, value in filter_query.items():
+                    query = query.where(getattr(self.model, key) == value)
+
+            if order == OrderEnumSch.ascendent:
+                if keyword:
+                    query = query.filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
+                                                          self.model.alas_hak.ilike(f'%{keyword}%'),
+                                                          self.model.nama_pemilik.ilike(f'%{keyword}%'),
+                                                          self.model.no_peta.ilike(f'%{keyword}%')))
+                query = query.order_by(columns[order_by].asc())
+            else:
+                if keyword:
+                    query = select(self.model).where(self.model.tipe_bidang == type).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
+                                                          self.model.alas_hak.ilike(f'%{keyword}%'),
+                                                          self.model.nama_pemilik.ilike(f'%{keyword}%'),
+                                                          self.model.no_peta.ilike(f'%{keyword}%')))
+                query = query.order_by(columns[order_by].desc())
+            
+        return await paginate(db_session, query, params)
 
 bidang = CRUDBidang(Bidang)

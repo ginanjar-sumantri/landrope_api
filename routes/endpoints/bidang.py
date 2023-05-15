@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, status, UploadFile, File, Query
 from fastapi_pagination import Params
 import crud
 from models.bidang_model import Bidang, StatusEnum, TipeProses, TipeBidang
@@ -15,6 +15,7 @@ from shapely.geometry import shape
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
 from decimal import Decimal
+import json
 
 router = APIRouter()
 
@@ -67,12 +68,23 @@ async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
         obj = await crud.planing_skpt.create(obj_in=sch)
     return obj
 
+# @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
+# async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, type:TipeBidang = TipeBidang.Bidang):
+    
+#     """Gets a paginated list objects"""
+
+#     objs = await crud.bidang.get_filtered_bidang(params=params, order_by=order_by, keyword=keyword, type=type)
+#     return create_response(data=objs)
+
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
-async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, type:TipeBidang = TipeBidang.Bidang):
+async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, filter_query:str=None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang.get_filtered_bidang(params=params, order_by=order_by, keyword=keyword, type=type)
+    if filter_query:
+        filter_query = json.loads(filter_query)
+
+    objs = await crud.bidang.get_filtered_bidang_by_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangRawSch])
