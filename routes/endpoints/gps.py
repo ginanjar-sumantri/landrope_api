@@ -64,13 +64,36 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Gps, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
-async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form)):
+async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:UploadFile = None):
     
     """Update a obj by its id"""
 
     obj_current = await crud.gps.get(id=id)
+
     if not obj_current:
         raise IdNotFoundException(Gps, id)
+    
+    if obj_current.geom:
+        obj_current.geom = to_shape(obj_current.geom).__str__()
+
+    if file:
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
+
+        sch = GpsSch(nama=sch.nama,
+                alas_hak=sch.alas_hak,
+                luas=RoundTwo(Decimal(sch.luas)),
+                desa=sch.desa,
+                petunjuk=sch.petunjuk,
+                pic=sch.pic,
+                group=sch.group,
+                status=sch.status,
+                skpt_id=sch.skpt_id,
+                geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        )
     
     obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
