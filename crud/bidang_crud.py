@@ -9,6 +9,7 @@ from crud.base_crud import CRUDBase
 from models.bidang_model import Bidang, TipeBidang
 from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch
 
+
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
     async def get_by_id_bidang(
         self, *, idbidang: str, db_session: AsyncSession | None = None
@@ -90,30 +91,29 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         if order_by is None or find == False:
             order_by = "id"
-
+        
+        attrs = list(self.model().__dict__.keys())
 
         if query is None:
             query = select(self.model)
+
             if filter_query is not None:
-                print(filter_query)
                 for key, value in filter_query.items():
                     query = query.where(getattr(self.model, key) == value)
-
-            if order == OrderEnumSch.ascendent:
-                if keyword:
+            
+            if keyword:
                     query = query.filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
                                                           self.model.alas_hak.ilike(f'%{keyword}%'),
                                                           self.model.nama_pemilik.ilike(f'%{keyword}%'),
                                                           self.model.no_peta.ilike(f'%{keyword}%')))
+
+            if order == OrderEnumSch.ascendent:
                 query = query.order_by(columns[order_by].asc())
             else:
-                if keyword:
-                    query = select(self.model).where(self.model.tipe_bidang == type).filter(or_(self.model.id_bidang.ilike(f'%{keyword}%'),
-                                                          self.model.alas_hak.ilike(f'%{keyword}%'),
-                                                          self.model.nama_pemilik.ilike(f'%{keyword}%'),
-                                                          self.model.no_peta.ilike(f'%{keyword}%')))
                 query = query.order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
+    
+    
 
 bidang = CRUDBidang(Bidang)

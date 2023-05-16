@@ -3,16 +3,16 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
 from fastapi.encoders import jsonable_encoder
-from sqlmodel import SQLModel, select, func
+from sqlmodel import SQLModel, select, func, or_
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import exc
+from sqlalchemy import exc, Numeric, DateTime, Integer, String
 from pydantic import BaseModel
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from datetime import datetime
 from uuid import UUID
 from common.ordered import OrderEnumSch
-
+from sqlalchemy.sql.sqltypes import CHAR, VARCHAR
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -57,12 +57,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         query = select(self.model)
         response =  await db_session.execute(query)
         return response.scalars().all()
-
-    async def get_by_keyword(self, *, keyword:str = None, db_session : AsyncSession | None = None) -> List[ModelType] | None:
-        db_session = db_session or db.session
-        query = select(self.model).filter(self.model.name.contains(keyword))
-        response =  await db_session.execute(query)
-        return response.scalars().all()
     
     async def get_count(self, db_session : AsyncSession | None = None) -> ModelType | None:
         db_session = db_session or db.session
@@ -86,16 +80,84 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 query = select(self.model)
         return await paginate(db_session, query, params)
     
-    async def get_multi_paginated_with_keyword(self, *, params: Params | None = Params(),
-                                  keyword:str | None = None,
-                                  query: T | Select[T] | None = None, 
-                                  db_session: AsyncSession | None = None) -> Page[ModelType]:
+    async def get_multi_paginate_ordered_with_keyword_dict(
+        self,
+        *,
+        keyword:str | None = None,
+        filter_query: dict = {},
+        params: Params | None = Params(),
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        query: T | Select[T] | None = None,
+        db_session: AsyncSession | None = None,
+        join:bool | None = False
+    ) -> Page[T]:
         db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        # if order_by not in columns or order_by is None:
+        #     order_by = self.model.id
+
+        find = False
+        for c in columns:
+            if c.name == order_by:
+                find = True
+                break
+        
+        if order_by is None or find == False:
+            order_by = "id"
+        
         if query is None:
-            if keyword is None:
-                query = select(self.model)
+            query = select(self.model)
+            
+            if filter_query is not None:
+                for key, value in filter_query.items():
+                    query = query.where(getattr(self.model, key) == value)
+
+            if keyword:
+                filter_clause = None
+                for attr in columns:
+                    if not "CHAR" in str(attr.type) or attr.name.endswith("_id") or attr.name == "id":
+                        continue
+
+                    condition = getattr(self.model, attr.name).ilike(f'%{keyword}%')
+                    if filter_clause is None:
+                        filter_clause = condition
+                    else:
+                        filter_clause = or_(filter_clause, condition)
+                
+                #Filter Column yang berelasi dengan object (untuk case tertentu)
+                if join:
+                    relationships = self.model.__mapper__.relationships
+
+                    for r in relationships:
+                        if r.uselist: #filter object list dilewati
+                            continue
+
+                        class_relation = r.mapper.class_
+                        query = query.join(class_relation)
+                        relation_columns = class_relation.__table__.columns
+                        
+                        for c in relation_columns:
+                            if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                                continue
+                            cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
+                            if filter_clause is None:
+                                filter_clause = cond
+                            else:
+                                filter_clause = or_(filter_clause, cond)
+
+                
+                query = query.filter(filter_clause)
+
+            if order == OrderEnumSch.ascendent:
+                query = query.order_by(columns[order_by].asc())
             else:
-                query = select(self.model).filter(self.model.name.ilike(f'%{keyword}%')) #ilike is not case sensitive
+                query = query.order_by(columns[order_by].desc())
+            
+            print(query)
+
         return await paginate(db_session, query, params)
 
     async def get_multi_paginated_ordered(
@@ -120,46 +182,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             else:
                 query = select(self.model).order_by(columns[order_by].desc())
 
-        return await paginate(db_session, query, params)
-    
-    async def get_multi_paginated_ordered_with_keyword(
-        self,
-        *,
-        keyword:str | None = None,
-        params: Params | None = Params(),
-        order_by: str | None = None,
-        order: OrderEnumSch | None = OrderEnumSch.ascendent,
-        query: T | Select[T] | None = None,
-        db_session: AsyncSession | None = None,
-    ) -> Page[ModelType]:
-        db_session = db_session or db.session
-
-        columns = self.model.__table__.columns
-
-        # if order_by not in columns or order_by is None:
-        #     order_by = self.model.id
-
-        find = False
-        for c in columns:
-            if c.name == order_by:
-                find = True
-                break
-        
-        if order_by is None or find == False:
-            order_by = "id"
-
-        if query is None:
-            if order == OrderEnumSch.ascendent:
-                if keyword is None:
-                    query = select(self.model).order_by(columns[order_by].asc())
-                else:
-                    query = select(self.model).filter(self.model.name.ilike(f'%{keyword}%')).order_by(columns[order_by].asc())
-            else:
-                if keyword is None:
-                    query = select(self.model).order_by(columns[order_by].desc())
-                else:
-                    query = select(self.model).filter(self.model.name.ilike(f'%{keyword}%')).order_by(columns[order_by].desc())
-            
         return await paginate(db_session, query, params)
 
     async def get_multi_ordered(

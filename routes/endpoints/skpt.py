@@ -13,6 +13,7 @@ from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
 from decimal import Decimal
+import json
 
 router = APIRouter()
 
@@ -45,11 +46,18 @@ async def create(sch: SkptCreateSch = Depends(SkptCreateSch.as_form), file:Uploa
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[SkptRawSch])
-async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None):
+async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None, filter_query:str=None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.skpt.get_filtered_skpt(params=params, order_by=order_by, keyword=keyword)
+    if filter_query:
+        filter_query = json.loads(filter_query)
+
+    objs = await crud.skpt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
+                                                                        order_by=order_by, 
+                                                                        keyword=keyword, 
+                                                                        filter_query=filter_query,
+                                                                        join=True)
     
     return create_response(data=objs)
 
