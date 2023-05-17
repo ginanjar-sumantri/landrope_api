@@ -17,10 +17,19 @@ class BidangRawSch(BidangRawBase):
     id_rincik:str|None = Field(alias='id_rincik')
     jenis_lahan_name:str | None = Field(alias='jenis_lahan_name')
     
+class BidangExtSch(BidangFullBase):
+    planing:str|None 
+    project:str|None
+    desa:str|None 
+    section:str|None 
+    pt:str|None 
+    nomor_sk:str|None 
+    jenis_lahan:str | None
+    tipeproses:str | None
+    tipebidang:str | None
+    jnsdokumen:str | None
 
-
-class BidangSch(BidangFullBase):
-    pass
+class BidangSch(BidangFullBase):pass
 
 @as_form
 @optional

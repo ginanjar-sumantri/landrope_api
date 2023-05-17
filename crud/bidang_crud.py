@@ -6,9 +6,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.bidang_model import Bidang, TipeBidang
-from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch
-
+from models.bidang_model import Bidang, TipeBidangEnum
+from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangSch, BidangExtSch
+from typing import List
+from sqlalchemy.orm import load_only
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
     async def get_by_id_bidang(
@@ -22,7 +23,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         self,
         *,
         keyword:str | None = None,
-        type: TipeBidang | None = TipeBidang.Bidang,
+        type: TipeBidangEnum | None = TipeBidangEnum.Bidang,
         params: Params | None = Params(),
         order_by: str | None = None,
         order: OrderEnumSch | None = OrderEnumSch.ascendent,
@@ -113,7 +114,5 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                 query = query.order_by(columns[order_by].desc())
             
         return await paginate(db_session, query, params)
-    
-    
 
 bidang = CRUDBidang(Bidang)

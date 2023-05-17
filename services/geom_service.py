@@ -1,12 +1,22 @@
+
+from geojson import FeatureCollection
+from fastapi import HTTPException
+from fastapi.responses import FileResponse
+from shapely.geometry import Polygon, shape, MultiPolygon
+from io import BytesIO
+from typing import List
+from typing import Generic, TypeVar
+import zipfile
+import tempfile
+import os
+import pandas as pd
 import geopandas
 import fiona as fio
 import math
-from geojson import FeatureCollection
-from fastapi import HTTPException
-from shapely.geometry import Polygon, shape, MultiPolygon
-from io import BytesIO
 
-class GeomService:
+T = TypeVar('T')
+
+class GeomService(Generic[T]):
 
     #with fiona
     def file_to_geo_dataframe(file:bytes = None):
@@ -98,6 +108,49 @@ class GeomService:
         except:
             raise HTTPException(status_code=404, detail="File failed to upload, please make sure again Geometry Type is 'POLYGON' or 'LINESTRING' 2D")
     
+    def export_shp_zip(data:List[T]| None, obj_name:str):
+
+        # Mengubah data list object menjadi dictionary dan memasukkan kedalam variable list my_objects
+        my_objects = list(map(lambda obj: obj.__dict__, data))
+
+        # Maping pandas dataframe list dictionary my_object
+        df = pd.DataFrame.from_dict(my_objects)
+
+        # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
+        desired_types = ['str' 'geometry']
+        df = df.applymap(lambda x: convert_to_string(x) if x not in desired_types else x)
+
+        # Memindahkan semua nilai geometry dalam dataframe['geom'] ke dalam varable gs (digunakan untuk geodataframe)
+        gs = geopandas.GeoSeries.from_wkt(df['geom'])
+
+        # Hapus kolom-kolom yang tidak diperlukan
+        df = df.drop('geom', axis=1) 
+        df = df.drop('updated_at', axis=1)
+        df = df.drop('created_at', axis=1)
+
+        # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
+        gdf = geopandas.GeoDataFrame(df, geometry=gs)
+
+        print(gdf.head())
+
+        tempdir = tempfile.mkdtemp()
+
+        # mengekspor GeoDataFrame ke dalam file shapefile
+        output_folder = os.path.join(tempdir, 'shapefile')
+        gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
+
+        # membuat file zip dan menambahkan file shapefile ke dalamnya
+        output_zip = os.path.join(tempdir, f'{obj_name}.zip')
+        with zipfile.ZipFile(output_zip, 'w') as zip:
+            zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
+            zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
+            zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
+
+        return FileResponse(output_zip, media_type='application/zip', filename=f'{obj_name}.zip')
+
+
+def convert_to_string(value):
+    return str(value)
 
 def utm_to_latlon(coords, zone_number):
     easting = coords[0]
@@ -154,3 +207,4 @@ def utmToLatLng(zone, easting, northing, northernHemisphere=False):
     longitude = ((zone > 0) and (6 * zone - 183.0) or 3.0) - _a3
 
     return (longitude, latitude)
+

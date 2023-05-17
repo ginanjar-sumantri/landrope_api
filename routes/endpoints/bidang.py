@@ -1,10 +1,9 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException
 from fastapi_pagination import Params
 import crud
-from models.bidang_model import Bidang, StatusEnum, TipeProses, TipeBidang
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch)
-from schemas.rincik_sch import (RincikSch, RincikCreateSch, RincikRawBase)
+from models.bidang_model import Bidang, StatusEnum, TipeProsesEnum, TipeBidangEnum
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangExtSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
@@ -16,10 +15,11 @@ from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
 from decimal import Decimal
 import json
+from shapely import wkt, wkb
 
 router = APIRouter()
 
-@router.post("", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
@@ -178,7 +178,7 @@ async def bulk_create(file:UploadFile=File()):
                         no_peta=geo_data['NO_PETA'],
                         status=FindStatusBidang(geo_data['STATUS']),
                         tipe_proses=FindTipeProses(geo_data['PROSES']),
-                        tipe_bidang=TipeBidang.Bidang,
+                        tipe_bidang=TipeBidangEnum.Bidang,
                         planing_id=plan.id,
                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
@@ -188,6 +188,46 @@ async def bulk_create(file:UploadFile=File()):
         raise ImportFailedException(filename=file.filename)
     
     return create_response(data=obj)
+
+@router.get("/export/shp", response_class=Response)
+async def export(filter_query:str = None):
+    if filter_query:
+        filter_query = json.loads(filter_query)
+    
+    results = await crud.bidang.get_by_dict(filter_query=filter_query)
+    schemas = []
+    for data in results:
+        sch = BidangExtSch(id=str(data.id),
+                           id_bidang=data.id_bidang,
+                           nama_pemilik=data.nama_pemilik,
+                           luas_surat=str(data.luas_surat),
+                           alas_hak=data.alas_hak,
+                           no_peta=data.no_peta,
+                           category=data.category,
+                           jnsdokumen=data.jenis_dokumen,
+                           status=data.status,
+                           jenis_lahan=data.jenis_lahan_name,
+                           pt=data.ptsk_name, 
+                           planing=data.planing_name,
+                           project=data.project_name,
+                           desa=data.desa_name,
+                           section=data.section_name,
+                           nomor_sk=data.nomor_sk,
+                           tipeproses=data.tipe_proses,
+                           tipebidang=data.tipe_bidang,
+                           geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
+                           )
+        
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].id_bidang}"
+
+        return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+    else:
+        raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
 
 def FindStatusBidang(status:str|None = None):
     if status:
@@ -204,11 +244,11 @@ def FindStatusBidang(status:str|None = None):
 
 def FindTipeProses(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == TipeProses.Bintang.lower():
-            return TipeProses.Bintang
-        elif type.replace(" ", "").lower() == TipeProses.Standard.lower():
-            return TipeProses.Standard
+        if type.replace(" ", "").lower() == TipeProsesEnum.Bintang.lower():
+            return TipeProsesEnum.Bintang
+        elif type.replace(" ", "").lower() == TipeProsesEnum.Standard.lower():
+            return TipeProsesEnum.Standard
         else:
-            return TipeProses.Standard
+            return TipeProsesEnum.Standard
     else:
-        return TipeProses.Standard
+        return TipeProsesEnum.Standard

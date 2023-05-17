@@ -6,13 +6,12 @@ from fastapi.encoders import jsonable_encoder
 from sqlmodel import SQLModel, select, func, or_
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import exc, Numeric, DateTime, Integer, String
+from sqlalchemy import exc
 from pydantic import BaseModel
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from datetime import datetime
 from uuid import UUID
 from common.ordered import OrderEnumSch
-from sqlalchemy.sql.sqltypes import CHAR, VARCHAR
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -69,6 +68,17 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session = db_session or db.session
         if query is None:
             query = select(self.model).offset(skip).limit(limit).order_by(self.model.id)
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+
+    async def get_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: dict = {}) -> List[ModelType] | None:
+        db_session = db_session or db.session
+        query = select(self.model)
+
+        if filter_query is not None:
+                for key, value in filter_query.items():
+                    query = query.where(getattr(self.model, key) == value)
+
         response =  await db_session.execute(query)
         return response.scalars().all()
     

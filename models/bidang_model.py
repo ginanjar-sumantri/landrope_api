@@ -18,11 +18,11 @@ class StatusEnum(str, Enum):
     Belum_Bebas = "Belum_Bebas"
     Batal = "Batal"
 
-class TipeProses(str, Enum):
+class TipeProsesEnum(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"
 
-class TipeBidang(str, Enum):
+class TipeBidangEnum(str, Enum):
     Rincik = "Rincik"
     Bidang = "Bidang"
     Overlap = "Overlap"
@@ -54,7 +54,7 @@ class JenisDokumenEnum(str, Enum):
 
 class BidangBase(SQLModel):
     id_bidang:str | None = Field(nullable=False, max_length=100)
-    nama_pemilik:str
+    nama_pemilik:str | None
     luas_surat:Decimal
     alas_hak:str
     no_peta:str
@@ -67,8 +67,8 @@ class BidangBase(SQLModel):
     skpt_id:UUID = Field(default=None, foreign_key="skpt.id", nullable=True)
     
 class BidangExtBase(BidangBase):
-    tipe_proses:TipeProses | None = Field(default=None, nullable=True)
-    tipe_bidang:TipeBidang | None = Field(default=None, nullable=True)
+    tipe_proses:TipeProsesEnum | None = Field(default=None, nullable=True)
+    tipe_bidang:TipeBidangEnum | None = Field(default=None, nullable=True)
 
 class BidangRawBase(BaseUUIDModel, BidangExtBase):
     pass
@@ -77,7 +77,6 @@ class BidangFullBase(BaseGeoModel, BidangRawBase):
     pass
 
 class Bidang(BidangFullBase, table=True):
-
     planing:"Planing" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     jenis_lahan: "JenisLahan" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
@@ -112,6 +111,8 @@ class Bidang(BidangFullBase, table=True):
     
     @property
     def jenis_lahan_name(self)-> str:
+            if self.jenis_lahan is None:
+                return ""
             return self.jenis_lahan.name
 
 #-------------------------------------------------------------------------------

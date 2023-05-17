@@ -15,13 +15,9 @@ from geoalchemy2.shape import to_shape
 from common.generator import generate_code
 from common.rounder import RoundTwo
 from decimal import Decimal
-from io import BytesIO
-import zipfile
-from typing import List
-import geopandas as gpd
-from shapely.wkb import loads
-import tempfile
-import os
+from shapely import wkt, wkb
+
+import json
 
 router = APIRouter()
 
@@ -135,49 +131,32 @@ async def bulk_create(file:UploadFile=File()):
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
-@router.get("export-all", response_class=Response)
-async def export_shp():
-    objs = await crud.desa.get_all_()
-    return export_shp_zip(data=objs, obj_name="desa")
+@router.get("/export/shp", response_class=Response)
+async def export_shp(filter_query:str = None):
+    if filter_query:
+        filter_query = json.loads(filter_query)
+
+    schemas = []
+    
+    results = await crud.desa.get_by_dict(filter_query=filter_query)
+
+    for data in results:
+        sch = DesaSch(id=data.id,
+                      geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+                      name=data.name,
+                      code=data.code,
+                      kecamatan=data.kecamatan,
+                      kota=data.kota,
+                      luas=data.luas
+        )
+
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].name}"
+
+    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     
 
-def export_shp_zip(data:List[DesaSch]| None, obj_name:str):
-        my_objects=[]
-
-        ent = data[0].dict()
-        obj_columns = list(ent.keys())
-
-        geom:str='geom'
-        geometry:str = 'geometry'
-        
-        for row in data:
-            dict_object = dict(row)
-            dict_object['geometry'] = loads(dict_object['geom'].data)
-            dict_object['id'] = str(dict_object['id'])
-            my_objects.append(dict_object)
-        
-        for key in obj_columns:
-            if key == "created_at":
-                obj_columns.remove(key)
-            if key == "updated_at":
-                obj_columns.remove(key)
-        
-        obj_columns.append(geometry)
-        obj_columns.remove(geom)
-
-        gdf = gpd.GeoDataFrame(my_objects, columns=obj_columns)
-
-        tempdir = tempfile.mkdtemp()
-
-        # mengekspor GeoDataFrame ke dalam file shapefile
-        output_folder = os.path.join(tempdir, 'shapefile')
-        gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
-
-        # membuat file zip dan menambahkan file shapefile ke dalamnya
-        output_zip = os.path.join(tempdir, f'{obj_name}.zip')
-        with zipfile.ZipFile(output_zip, 'w') as zip:
-            zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
-            zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
-            zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
-
-        return FileResponse(output_zip, media_type='application/zip', filename=f'{obj_name}.zip')
