@@ -45,11 +45,11 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None):
+async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.gps.get_filtered_gps(params=params, order_by=order_by, keyword=keyword)
+    objs = await crud.gps.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[GpsRawSch])

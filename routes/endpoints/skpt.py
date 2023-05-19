@@ -51,11 +51,6 @@ async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=Non
     
     """Gets a paginated list objects"""
 
-    if not filter_query:
-        filter_query = None
-    else:
-        filter_query = json.loads(filter_query)
-
     objs = await crud.skpt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
                                                                         order_by=order_by, 
                                                                         keyword=keyword, 

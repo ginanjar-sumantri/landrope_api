@@ -81,9 +81,6 @@ async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=N
     
     """Gets a paginated list objects"""
 
-    if filter_query:
-        filter_query = json.loads(filter_query)
-
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 

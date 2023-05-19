@@ -12,6 +12,7 @@ from typing import Any, Dict, Generic, List, Type, TypeVar
 from datetime import datetime
 from uuid import UUID
 from common.ordered import OrderEnumSch
+import json
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -94,7 +95,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         *,
         keyword:str | None = None,
-        filter_query: dict = {},
+        filter_query: str | None,
         params: Params | None = Params(),
         order_by: str | None = None,
         order: OrderEnumSch | None = OrderEnumSch.ascendent,
@@ -105,7 +106,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session = db_session or db.session
 
         columns = self.model.__table__.columns
-
+        
         # if order_by not in columns or order_by is None:
         #     order_by = self.model.id
 
@@ -121,7 +122,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if query is None:
             query = select(self.model)
             
-            if filter_query is not None:
+            if filter_query is not None and not filter_query:
+                filter_query = json.loads(filter_query)
                 for key, value in filter_query.items():
                     query = query.where(getattr(self.model, key) == value)
 
