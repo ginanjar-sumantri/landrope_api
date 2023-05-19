@@ -1,14 +1,15 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, status, UploadFile, File, Response
 from fastapi_pagination import Params
 import crud
 from models.skpt_model import Skpt, StatusSKEnum, KategoriEnum
-from schemas.skpt_sch import (SkptSch, SkptCreateSch, SkptUpdateSch, SkptRawSch)
+from schemas.skpt_sch import (SkptSch, SkptCreateSch, SkptUpdateSch, SkptRawSch, SkptExtSch)
 from schemas.ptsk_sch import (PtskSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, ImportResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
+from shapely import wkt, wkb
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
@@ -136,6 +137,37 @@ async def bulk_create(file:UploadFile=File()):
         raise ImportFailedException(filename=file.filename)
     
     return create_response(data=obj)
+
+@router.get("/export/shp", response_class=Response)
+async def export_shp(filter_query:str = None):
+    if filter_query:
+        filter_query = json.loads(filter_query)
+
+    schemas = []
+    
+    results = await crud.skpt.get_by_dict(filter_query=filter_query)
+
+    for data in results:
+        sch = SkptExtSch(id=data.id,
+                      geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+                      status=str(data.status),
+                      kategori=str(data.kategori),
+                      luas=data.luas,
+                      nomor_sk=data.nomor_sk,
+                      tanggal_jatuh_tempo=data.tanggal_jatuh_tempo,
+                      tanggal_tahun_SK=data.tanggal_tahun_SK,
+                      ptsk_code=data.ptsk_code,
+                      ptsk_name=data.ptsk_name,
+        )
+
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].nomor_sk}"
+
+    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
 
 def StatusSK(status:str|None = None):
     if status:

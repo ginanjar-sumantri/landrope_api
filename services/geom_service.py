@@ -127,6 +127,8 @@ class GeomService(Generic[T]):
         df = df.drop('geom', axis=1) 
         df = df.drop('updated_at', axis=1)
         df = df.drop('created_at', axis=1)
+        columns_to_drop = [col for col in df.columns if "_id" in col]
+        df = df.drop(columns=columns_to_drop)
 
         # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
         gdf = geopandas.GeoDataFrame(df, geometry=gs)

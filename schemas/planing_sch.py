@@ -17,6 +17,11 @@ class PlaningRawSch(PlaningRawBase):
 class PlaningSch(PlaningFullBase):
     pass
 
+class PlaningExtSch(PlaningFullBase):
+    project_name:str | None
+    desa_name:str | None
+    section_name:str | None
+
 @as_form
 @optional
 class PlaningUpdateSch(PlaningBase):

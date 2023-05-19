@@ -14,6 +14,12 @@ class SkptRawSch(SkptRawBase):
 class SkptSch(SkptFullBase):
     pass
 
+class SkptExtSch(SkptFullBase):
+    ptsk_name:str | None
+    ptsk_code:str| None
+    status:str| None
+    kategori:str| None
+
 @as_form
 @optional
 class SkptUpdateSch(SkptBase):

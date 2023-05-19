@@ -147,8 +147,7 @@ async def export_shp(filter_query:str = None):
                       code=data.code,
                       kecamatan=data.kecamatan,
                       kota=data.kota,
-                      luas=data.luas
-        )
+                      luas=data.luas)
 
         schemas.append(sch)
 
