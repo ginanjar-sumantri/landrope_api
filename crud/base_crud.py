@@ -72,11 +72,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response =  await db_session.execute(query)
         return response.scalars().all()
 
-    async def get_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: dict = {}) -> List[ModelType] | None:
+    async def get_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: str | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
         query = select(self.model)
 
-        if filter_query is not None:
+        if filter_query is not None and not filter_query:
+                filter_query = json.loads(filter_query)
                 for key, value in filter_query.items():
                     query = query.where(getattr(self.model, key) == value)
 
@@ -95,7 +96,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         *,
         keyword:str | None = None,
-        filter_query: str | None,
+        filter_query: str | None = None,
         params: Params | None = Params(),
         order_by: str | None = None,
         order: OrderEnumSch | None = OrderEnumSch.ascendent,

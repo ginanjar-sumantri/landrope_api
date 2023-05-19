@@ -188,8 +188,6 @@ async def bulk_create(file:UploadFile=File()):
 
 @router.get("/export/shp", response_class=Response)
 async def export(filter_query:str = None):
-    if filter_query:
-        filter_query = json.loads(filter_query)
     
     results = await crud.bidang.get_by_dict(filter_query=filter_query)
     schemas = []

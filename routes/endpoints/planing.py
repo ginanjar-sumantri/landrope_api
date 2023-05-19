@@ -142,8 +142,6 @@ async def bulk_create(file:UploadFile=File()):
 
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):
-    if filter_query:
-        filter_query = json.loads(filter_query)
 
     schemas = []
     
