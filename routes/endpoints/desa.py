@@ -131,6 +131,39 @@ async def bulk_create(file:UploadFile=File()):
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
+@router.post("/bulk2")
+async def bulk_create2(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+    try:
+        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        print(geo_dataframe.head())
+        desas = await crud.desa.get_all()
+        
+        for i, geo_data in geo_dataframe.iterrows():
+            name:str | None = geo_data['NAMOBJ']
+
+            obj_current = next((obj for obj in desas 
+                           if obj.name.replace(" ", "").lower() == name.replace(" ", "").lower()),None)
+            
+            if obj_current:
+                continue
+            
+            g_code = await generate_code(entity=CodeCounterEnum.Desa)
+            luas:Decimal = RoundTwo(Decimal(geo_data['SHAPE_Area']))
+
+            sch = DesaSch(name=geo_data['NAMOBJ'], 
+                          code=g_code, 
+                          luas=luas, 
+                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            
+            await crud.desa.create(obj_in=sch)
+
+    except:
+        raise HTTPException(status_code=422, detail="Failed import data")
+    
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
+
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):
     if filter_query:
