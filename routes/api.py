@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, bidangoverlap, desa, planing, project, 
-                              ptsk, rincik, section, jenis_lahan, draft, gps, skpt)
+                              ptsk, rincik, section, jenis_lahan, draft, gps, skpt, worker, role)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -15,3 +15,5 @@ api_router.include_router(section.router, prefix="/section", tags=["section"])
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
 api_router.include_router(gps.router, prefix="/gps", tags=["gps"])
+api_router.include_router(worker.router, prefix="/worker", tags=["worker"])
+api_router.include_router(role.router, prefix="/role", tags=["role"])
