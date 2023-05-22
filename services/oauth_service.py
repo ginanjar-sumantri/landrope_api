@@ -28,9 +28,9 @@ class OauthService:
                 else:
                     return AccessToken(**r), "OK"
             else:
-                return None, self.OAUTH_BASE_URL
+                return None, self.NOT_AUTHORIZED
         except:
-            return None, self.OAUTH_BASE_URL
+            return None, self.CONNECTION_FAILED
 
     async def check_user_by_email_or_phone(self, email: str, phone: str | None = None) -> dict:
 
