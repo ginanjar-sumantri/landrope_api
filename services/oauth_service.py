@@ -15,6 +15,7 @@ class OauthService:
     CONNECTION_FAILED = "Cannot create connection to authentication server."
 
     async def check_token(self, token) -> Tuple[AccessToken | None, str]:
+
         try:
             url = f'{self.OAUTH_BASE_URL}/oauth/check_token/'
             headers = {'Authorization': f'Bearer {self.OAUTH_DEFAULT_TOKEN}'}
@@ -27,9 +28,9 @@ class OauthService:
                 else:
                     return AccessToken(**r), "OK"
             else:
-                return None, self.NOT_AUTHORIZED
+                return None, self.OAUTH_BASE_URL
         except:
-            return None, self.CONNECTION_FAILED
+            return None, self.OAUTH_BASE_URL
 
     async def check_user_by_email_or_phone(self, email: str, phone: str | None = None) -> dict:
 

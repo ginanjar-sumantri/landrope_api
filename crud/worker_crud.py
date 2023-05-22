@@ -151,6 +151,7 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
             raise HTTPException(status_code=401, detail='Worker Tidak ditemukan')
 
     async def get_active_worker(self, token: str = Depends(token_auth_scheme)) -> Worker:
+        print("active worker")
         oauth_user, _ = await OauthService().check_token(token)
         if oauth_user:
 
@@ -167,10 +168,10 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
             if worker:
                 return worker
             else:
-                raise HTTPException(status_code=401, detail='Worker Tidak Aktif')
+                raise HTTPException(status_code=401, detail=_)
 
         else:
-            raise HTTPException(status_code=401, detail='Worker Tidak ditemukan')
+            raise HTTPException(status_code=401, detail=_)
 
 
 worker = CRUDWorker(Worker)
