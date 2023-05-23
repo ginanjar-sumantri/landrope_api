@@ -45,22 +45,22 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
         db_obj = self.model.from_orm(obj_in)
         db_obj.created_at = datetime.utcnow()
         db_obj.updated_at = datetime.utcnow()
-        db_obj.created_by_id = worker_id
-        db_obj.updated_by_id = worker_id
+        # db_obj.created_by_id = worker_id
+        # db_obj.updated_by_id = worker_id
 
         if oauth_user:
             db_obj.oauth_id = oauth_user.id
 
         try:
             for i in obj_in.roles_id:
-                role = crud.role.get(id=i)
+                role = await crud.role.get(id=i)
                 if role:
                     db_obj.roles.append(role)
 
-            for p in obj_in.project_id:
-                project = crud.project.get(id=p)
-                if project:
-                    db_obj.projects.append(project)
+            # for p in obj_in.project_id:
+            #     project = crud.project.get(id=p)
+            #     if project:
+            #         db_obj.projects.append(project)
 
             db_session.add(db_obj)
             await db_session.commit()
@@ -89,7 +89,7 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
             if field == "updated_at":
                 setattr(obj_current, field, datetime.utcnow())
 
-        obj_current.updated_by_id = worker_id
+        # obj_current.updated_by_id = worker_id
 
         try:
             obj_current.roles = []
@@ -98,12 +98,12 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
                 if role:
                     obj_current.roles.append(role)
 
-            obj_current.projects = []
-            for p in obj_new.project_id:
-                project = await crud.project.get(id=p)
-                if project:
-                    obj_current.projects.append(project)
-            db_session.add(obj_current)
+            # obj_current.projects = []
+            # for p in obj_new.project_id:
+            #     project = await crud.project.get(id=p)
+            #     if project:
+            #         obj_current.projects.append(project)
+            # db_session.add(obj_current)
 
         except Exception as ex:
             await db_session.rollback()
@@ -122,7 +122,7 @@ class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
         )
         obj = response.scalar_one()
         obj.is_active = False
-        obj.updated_by_id = worker_id
+        # obj.updated_by_id = worker_id
         db_session.add(obj)
         await db_session.commit()
         await db_session.refresh(obj)

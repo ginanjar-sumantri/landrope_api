@@ -1,6 +1,5 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException, Response
-from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
@@ -16,8 +15,6 @@ from common.generator import generate_code
 from common.rounder import RoundTwo
 from decimal import Decimal
 from shapely import wkt, wkb
-
-import json
 
 router = APIRouter()
 

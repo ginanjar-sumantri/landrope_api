@@ -28,7 +28,7 @@ class Role(RoleFullBase, table=True):
 class WorkerBase(SQLModel):
     name: str = Field(nullable=False, max_length=100)
     email: EmailStr = Field(nullable=False)
-    oauth_id: Optional[UUID] = Field(nullable=True)
+    oauth_id: Optional[UUID] | None = Field(nullable=True)
     is_active: bool = Field(default=True)
 
 

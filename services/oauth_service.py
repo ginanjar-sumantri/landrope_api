@@ -42,6 +42,7 @@ class OauthService:
         return response.json()['data'] if response.json()['data'] != None else {'detail': ''}
 
     async def register_user_oauth(self, body: dict) -> Tuple[OauthUser | None, str]:
+        
         url_create_user = self.OAUTH_BASE_URL + '/api/users/'
 
         headers = {
@@ -56,6 +57,7 @@ class OauthService:
                 data = response.json()['data']
                 return OauthUser(**data), "OK"
             else:
+                print(f'{response.status_code}:{response.reason}')
                 return None, ""
         except:
             return None, self.CONNECTION_FAILED

@@ -22,7 +22,7 @@ async def get(
     if current_worker.is_super_admin:
         query = query
     elif current_worker.is_admin:
-        query = query.filter(Role.name == 'USER')
+        query = query.filter(Role.name != 'ADMIN')
     else:
         query = query.filter(Role.id == '')
     objs = await crud.role.get_multi_paginated_ordered(params=param, order_by='created_at', query=query)

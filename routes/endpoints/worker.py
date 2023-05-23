@@ -69,11 +69,11 @@ async def create(
         # if already_exist_phone:
         #     raise PhoneExistException(Worker, phone=sch.phone)
 
-        response_exist = await OauthService().check_user_by_email_or_phone(email=sch.email, phone="")
+        response_exist = await OauthService().check_user_by_email_or_phone(email=sch.email)
 
         letters = string.ascii_letters
         password = ''.join(random.choice(letters) for _ in range(8))
-        role = 'S1_MKT'
+        role = 'LANDROPE'
 
         oauth_response = None
 
@@ -134,15 +134,15 @@ async def update(
         raise IdNotFoundException(Worker, id=id)
 
     if current_worker.is_super_admin:
-        alrady_exist_mobile = await crud.worker.get_phone_exclude_me(phone=sch.phone, worker_id=current_worker.id)
-        if len(alrady_exist_mobile) != 0:
-            raise HTTPException(status_code=409, detail='Mobile Number already used.')
+        # alrady_exist_mobile = await crud.worker.get_phone_exclude_me(phone=sch.phone, worker_id=current_worker.id)
+        # if len(alrady_exist_mobile) != 0:
+        #     raise HTTPException(status_code=409, detail='Mobile Number already used.')
 
         already_exist_email = await crud.worker.get_email_exclude_me(email=sch.email, worker_id=current_worker.id)
         if len(already_exist_email) != 0:
             raise HTTPException(status_code=409, detail='Email already used.')
 
-        response_exist = await OauthService().check_user_by_email_or_phone(email=sch.email, phone=sch.phone)
+        response_exist = await OauthService().check_user_by_email_or_phone(email=sch.email)
 
         letters = string.ascii_letters
         password = ''.join(random.choice(letters) for _ in range(8))
@@ -155,11 +155,11 @@ async def update(
             if 'detail' in response_exist:
                 raise HTTPException(status_code=409, detail='Something wrong, please contact developer')
 
-            response_exist = await OauthService().check_user_by_email_or_phone(email=obj_current.email, phone=obj_current.phone)
+            response_exist = await OauthService().check_user_by_email_or_phone(email=obj_current.email)
 
             if (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.oauth_id))) or (obj_current.phone is not None and response_exist['mobile'] is not None and response_exist['email'] is None and response_exist['mobile']['id'] == str(obj_current.oauth_id)):
                 data = response_exist['email'] if response_exist['email'] is not None else response_exist['mobile']
-                data['mobile_no'] = obj_current.phone.replace('+', '') if obj_current.phone is not None else None
+                data['mobile_no'] = None
                 id = data.pop('id')
                 data['password'] = password
                 [data.pop(e) for e in ['avatar', 'full_name']]
