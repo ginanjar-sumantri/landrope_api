@@ -122,55 +122,55 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         if query is None:
             query = select(self.model)
+
+        if filter_query is not None and filter_query:
+            filter_query = json.loads(filter_query)
             
-            if filter_query is not None and not filter_query:
-                filter_query = json.loads(filter_query)
-                for key, value in filter_query.items():
-                    query = query.where(getattr(self.model, key) == value)
+            for key, value in filter_query.items():
+                query = query.where(getattr(self.model, key) == value)
+        
+        filter_clause = None
 
-            if keyword:
-                filter_clause = None
-                for attr in columns:
-                    if not "CHAR" in str(attr.type) or attr.name.endswith("_id") or attr.name == "id":
-                        continue
+        if keyword:
+            for attr in columns:
+                if not "CHAR" in str(attr.type) or attr.name.endswith("_id") or attr.name == "id":
+                    continue
 
-                    condition = getattr(self.model, attr.name).ilike(f'%{keyword}%')
-                    if filter_clause is None:
-                        filter_clause = condition
-                    else:
-                        filter_clause = or_(filter_clause, condition)
+                condition = getattr(self.model, attr.name).ilike(f'%{keyword}%')
+                if filter_clause is None:
+                    filter_clause = condition
+                else:
+                    filter_clause = or_(filter_clause, condition)
                 
-                #Filter Column yang berelasi dengan object (untuk case tertentu)
-                if join:
-                    relationships = self.model.__mapper__.relationships
+        #Filter Column yang berelasi dengan object (untuk case tertentu)
+        if join:
+            relationships = self.model.__mapper__.relationships
 
-                    for r in relationships:
-                        if r.uselist: #filter object list dilewati
-                            continue
+            for r in relationships:
+                if r.uselist: #filter object list dilewati
+                    continue
 
-                        class_relation = r.mapper.class_
-                        query = query.join(class_relation)
-                        relation_columns = class_relation.__table__.columns
+                class_relation = r.mapper.class_
+                query = query.join(class_relation)
+                relation_columns = class_relation.__table__.columns
                         
-                        for c in relation_columns:
-                            if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
-                                continue
-                            cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
-                            if filter_clause is None:
-                                filter_clause = cond
-                            else:
-                                filter_clause = or_(filter_clause, cond)
+                for c in relation_columns:
+                    if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                        continue
+                    cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
+                    if filter_clause is None:
+                        filter_clause = cond
+                    else:
+                        filter_clause = or_(filter_clause, cond)
 
-                
-                query = query.filter(filter_clause)
+        if filter_clause is not None:        
+            query = query.filter(filter_clause)
 
-            if order == OrderEnumSch.ascendent:
-                query = query.order_by(columns[order_by].asc())
-            else:
-                query = query.order_by(columns[order_by].desc())
+        if order == OrderEnumSch.ascendent:
+            query = query.order_by(columns[order_by].asc())
+        else:
+            query = query.order_by(columns[order_by].desc())
             
-            print(query)
-
         return await paginate(db_session, query, params)
 
     async def get_multi_paginated_ordered(

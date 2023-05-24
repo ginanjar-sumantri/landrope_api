@@ -19,7 +19,7 @@ from common.exceptions import (EmailExistException, IdNotFoundException)
 router = APIRouter()
 
 
-@router.get("", response_model=GetResponsePaginatedSch[WorkerSch])
+@router.get("", response_model=GetResponsePaginatedSch[WorkerByIdSch])
 async def get(
     params: Params = Depends()
 ):
@@ -138,7 +138,7 @@ async def update(
         # if len(alrady_exist_mobile) != 0:
         #     raise HTTPException(status_code=409, detail='Mobile Number already used.')
 
-        already_exist_email = await crud.worker.get_email_exclude_me(email=sch.email, worker_id=current_worker.id)
+        already_exist_email = await crud.worker.get_email_exclude_me(email=sch.email, worker_id=obj_current.id)
         if len(already_exist_email) != 0:
             raise HTTPException(status_code=409, detail='Email already used.')
 
@@ -157,7 +157,8 @@ async def update(
 
             response_exist = await OauthService().check_user_by_email_or_phone(email=obj_current.email)
 
-            if (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.oauth_id))) or (obj_current.phone is not None and response_exist['mobile'] is not None and response_exist['email'] is None and response_exist['mobile']['id'] == str(obj_current.oauth_id)):
+            if (response_exist['mobile'] == response_exist['email'] 
+                and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.oauth_id))) or (obj_current.phone is not None and response_exist['mobile'] is not None and response_exist['email'] is None and response_exist['mobile']['id'] == str(obj_current.oauth_id)):
                 data = response_exist['email'] if response_exist['email'] is not None else response_exist['mobile']
                 data['mobile_no'] = None
                 id = data.pop('id')
@@ -197,8 +198,7 @@ async def update(
                 oauth_response = await OauthService().register_user_oauth(body=data)
             elif (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.id))):
                 data = response_exist['email']
-                data['mobile_no'] = obj_current.phone.replace(
-                    '+', '') if obj_current.phone is not None else data['mobile_no']
+                data['mobile_no'] = None
                 id = data.pop('id')
                 data['password'] = password
                 [data.pop(e) for e in ['avatar', 'full_name']]
