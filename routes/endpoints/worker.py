@@ -146,7 +146,7 @@ async def update(
 
         letters = string.ascii_letters
         password = ''.join(random.choice(letters) for _ in range(8))
-        role = 'S1_MKT'
+        role = 'LANDROPE'
 
         oauth_response = None
         if obj_current.oauth_id is not None:
