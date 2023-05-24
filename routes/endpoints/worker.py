@@ -133,7 +133,7 @@ async def update(
     if not obj_current:
         raise IdNotFoundException(Worker, id=id)
 
-    if current_worker.is_super_admin:
+    if current_worker.is_admin:
         # alrady_exist_mobile = await crud.worker.get_phone_exclude_me(phone=sch.phone, worker_id=current_worker.id)
         # if len(alrady_exist_mobile) != 0:
         #     raise HTTPException(status_code=409, detail='Mobile Number already used.')
