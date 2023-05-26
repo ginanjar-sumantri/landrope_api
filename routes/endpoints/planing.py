@@ -26,7 +26,7 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
     if obj_current:
         raise NameExistException(Planing, name=sch.name)
     
-    obj_current = await crud.planing.get_by_code(name=sch.code)
+    obj_current = await crud.planing.get_by_code(code=sch.code)
     if obj_current:
         raise CodeExistException(Planing, code=sch.code)
     
@@ -41,7 +41,8 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
                         project_id=sch.project_id, 
                         desa_id=sch.desa_id,
                         luas=RoundTwo(sch.luas), 
-                        name=sch.name, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+                        name=sch.name, 
+                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
         
     new_obj = await crud.planing.create(obj_in=sch)
     return create_response(data=new_obj)

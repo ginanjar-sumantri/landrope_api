@@ -13,7 +13,8 @@ class DesaBase(SQLModel):
     kecamatan:str | None = Field(nullable=True, max_length=100)
     kota:str | None = Field(nullable=True, max_length=100)
     luas:Decimal
-    last:int | None = Field(nullable=True) #this is for last Id Bidang
+    last:int | None = Field(default=1, nullable=True) #untuk mengetahui nomor terakhir id bidang di desa tsb
+    digit:int | None = Field(default=4, nullable=True) #digit untuk id bidang di desa tsb
 
 class DesaRawBase(BaseUUIDModel, DesaBase):
     pass

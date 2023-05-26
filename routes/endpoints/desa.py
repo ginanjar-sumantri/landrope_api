@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPExce
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
-from models.code_counter_model import CodeCounterEnum
 from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -12,6 +11,7 @@ from services.geom_service import GeomService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.generator import generate_code
+from models.code_counter_model import CodeCounterEnum
 from common.rounder import RoundTwo
 from decimal import Decimal
 from shapely import wkt, wkb
@@ -28,7 +28,6 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
         raise NameExistException(Desa, name=sch.name)
     
     sch.code = await generate_code(CodeCounterEnum.Desa)
-    sch.last = 1
 
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -38,9 +37,10 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
             geo_dataframe['geometry'] = polygon.geometry
 
         sch = DesaSch(name=sch.name, 
-                      code=sch.code, 
-                      luas=RoundTwo(sch.luas),
-                      last=sch.last, 
+                      code=sch.code,
+                      kecamatan=sch.kecamatan,
+                      kota=sch.kota,
+                      luas=RoundTwo(Decimal(sch.luas)),
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     new_obj = await crud.desa.create(obj_in=sch)
@@ -87,7 +87,9 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
             geo_dataframe['geometry'] = polygon.geometry
         
         sch = DesaSch(name=sch.name, 
-                      code=sch.code, 
+                      code=sch.code,
+                      kecamatan=sch.kecamatan,
+                      kota=sch.kota, 
                       luas=RoundTwo(sch.luas), 
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     

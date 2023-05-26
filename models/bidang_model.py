@@ -10,7 +10,6 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.skpt_model import Skpt
-    from models.rincik_model import Rincik
     from models.jenis_lahan_model import JenisLahan
 
 class StatusEnum(str, Enum):
