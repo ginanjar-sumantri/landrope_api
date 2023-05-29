@@ -19,7 +19,6 @@ class Dokumen(DokumenFullBase, table=True):
     bundledts:list["BundleDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
 
 
-
 class BundleHdBase(SQLModel):
     code:str | None = Field(nullable=False)
     keyword:str | None

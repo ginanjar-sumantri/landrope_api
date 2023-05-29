@@ -65,6 +65,8 @@ async def generate_code(entity:CodeCounterEnum):
 
         code = str(code_counter).zfill(max_digit)
         return code
+    
+
 
 
 

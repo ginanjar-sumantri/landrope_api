@@ -51,7 +51,7 @@ async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=Non
     
     """Gets a paginated list objects"""
 
-    objs = await crud.ptsk.get_filtered_ptsk(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    objs = await crud.ptsk.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[PtskRawSch])

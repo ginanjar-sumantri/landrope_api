@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.dokumen_model import Dokumen
 from schemas.dokumen_sch import (DokumenSch, DokumenCreateSch, DokumenUpdateSch)
-from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
+from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
@@ -30,6 +30,17 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
 
     objs = await crud.dokumen.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
+
+@router.get("/{id}", response_model=GetResponseBaseSch[DokumenSch])
+async def get_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    obj = await crud.dokumen.get(id=id)
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(Dokumen, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[DokumenSch])
 async def update(id:UUID, sch:DokumenUpdateSch):
