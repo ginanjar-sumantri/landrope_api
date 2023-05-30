@@ -43,7 +43,18 @@ class BundleHd(BundleHdFullBase, table=True):
         bunddling_code = f"D" + "".join(codes)
 
         return bunddling_code
-
+    
+    @property
+    def planing_name(self) -> str | None:
+        return self.planing.name or ""
+    
+    @property
+    def project_name(self) -> str | None:
+        return self.planing.project.name or ""
+    
+    @property
+    def desa_name(self) -> str | None:
+        return self.planing.desa.name or ""
 
 class BundleDtBase(SQLModel):
     code:str | None = Field(nullable=False)

@@ -8,7 +8,9 @@ class BundleHdCreateSch(BundleHdBase):
     pass
 
 class BundleHdSch(BundleHdFullBase):
-    pass
+    planing:str|None = Field(alias="planing_name")
+    project:str|None = Field(alias="project_name")
+    desa:str|None = Field(alias="desa_name")
 
 class BundleHdByIdSch(BundleHdSch):
     bundledts:list[BundleDt]
