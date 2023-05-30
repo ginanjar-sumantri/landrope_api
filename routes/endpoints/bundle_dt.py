@@ -8,6 +8,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
+import json
 
 router = APIRouter()
 
@@ -48,4 +49,22 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-   
+@router.get("/get/json")
+async def extract_json():
+    str_json ="""[{
+		"tanggal":"",
+		"field":[{"key":"Nomor","value":"1234"},{"key":"Tanggal","value":"string"}]
+	},
+	{
+		"tanggal":"",
+		"field":[{"key":"Nomor","value":"1122"},{"key":"Tanggal","value":"string"}]
+	}]"""
+
+    obj_json = json.loads(str_json)
+    values = []
+    for item in obj_json:
+        for field in item['field']:
+            if field['key'] in ["Nomor"]:
+                values.append(field['value'])
+
+    return values            
