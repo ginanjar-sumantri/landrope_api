@@ -7,6 +7,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetRe
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
+from datetime import datetime
 import crud
 import json
 
@@ -41,30 +42,61 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
-    for_keyword = ["AJB", "PBB"]
+    dokumen = await crud.dokumen.is_dokumen_for_keyword(id=sch.dokumen_id)
     
-    if obj_current.dokumen.name in for_keyword:
-        pass
+    #updated keyword when dokumen metadata is keyword header
+    if dokumen:
+        metadata = sch.meta_data.replace("'",'"')
+        obj_json = json.loads(metadata)
+        current_bundle_hd = await crud.bundlehd.get(id=sch.bundle_hd_id)
+        values = []
+        for item in obj_json:
+            for field in item['field']:
+                value = str(field['value'])
+                if value in (current_bundle_hd.keyword or ""):
+                    continue
+
+                is_datetime = is_datetimecheck(value=value)
+                if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
+                    values.append(str(value))
+        
+        edit_keyword_hd = current_bundle_hd
+        edit_keyword_hd.keyword = ','.join(values) if current_bundle_hd.keyword is None else f"{current_bundle_hd.keyword},{','.join(values)}"
+
+        await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
     
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.get("/get/json")
-async def extract_json():
-    str_json ="""[{
-		"tanggal":"",
-		"field":[{"key":"Nomor","value":"1234"},{"key":"Tanggal","value":"string"}]
-	},
-	{
-		"tanggal":"",
-		"field":[{"key":"Nomor","value":"1122"},{"key":"Tanggal","value":"string"}]
-	}]"""
+# @router.get("/get/json")
+# async def extract_json():
+#     str_json ="""[{
+# 		"tanggal":"2023-05-22T08:06:46.572436",
+# 		"field":[{"key":"Nomor","value":"1234"},{"key":"Tanggal","value":"2023-05-22T08:06:46.572436"}]
+# 	},
+# 	{
+# 		"tanggal":"2023-05-22T08:06:46.572436",
+# 		"field":[{"key":"Nomor","value":1122},{"key":"Tanggal","value":"2023-05-22T08:06:46.572436"}]
+# 	}]"""
 
-    obj_json = json.loads(str_json)
-    values = []
-    for item in obj_json:
-        for field in item['field']:
-            if field['key'] in ["Nomor"]:
-                values.append(field['value'])
+#     obj_json = json.loads(str_json)
+#     values = []
+#     for item in obj_json:
+#         for field in item['field']:
+#             value = field['value']
+#             is_datetime = is_datetimecheck(value=value)
+#             if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
+#                 values.append(str(value))
 
-    return values            
+#     return values            
+
+def is_datetimecheck(value):
+    is_datetime = False
+
+    try:
+        datetime.strptime(str(value), "%Y-%m-%dT%H:%M:%S.%f")
+        is_datetime = True
+    except ValueError:
+        pass
+
+    return is_datetime

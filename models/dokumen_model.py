@@ -11,6 +11,7 @@ class DokumenBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=100)
     dyn_form:str | None
+    is_keyword:bool | None #apakah dokumen tersebut masuk dalam pencarian
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass
@@ -21,7 +22,7 @@ class Dokumen(DokumenFullBase, table=True):
 
 class BundleHdBase(SQLModel):
     code:str | None = Field(nullable=False)
-    keyword:str | None
+    keyword:str | None = Field(default="")
 
     planing_id:UUID | None = Field(default=None, foreign_key="planing.id", nullable=False)
 
