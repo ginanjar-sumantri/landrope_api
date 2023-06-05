@@ -6,49 +6,12 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
 from pydantic import BaseModel
+from common.enum import CategoryEnum, JenisDokumenEnum, StatusEnum, TipeProsesEnum, TipeBidangEnum
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.skpt_model import Skpt
     from models.jenis_lahan_model import JenisLahan
-
-class StatusEnum(str, Enum):
-    Bebas = "Bebas"
-    Belum_Bebas = "Belum_Bebas"
-    Batal = "Batal"
-
-class TipeProsesEnum(str, Enum):
-    Standard = "Standard"
-    Bintang = "Bintang"
-
-class TipeBidangEnum(str, Enum):
-    Rincik = "Rincik"
-    Bidang = "Bidang"
-    Overlap = "Overlap"
-
-class CategoryEnum(str, Enum):
-    Group_Besar = "Group_Besar"
-    Group_Kecil = "Group_Kecil"
-    Asset = "Asset"
-    Overlap = "Overlap"
-    Default = "Unknown"
-
-    @classmethod
-    def _missing_(cls, value):
-         return cls.Default 
-
-class JenisDokumenEnum(str, Enum):
-    AJB = "AJB"
-    Sertifikat = "Sertifikat"
-    Tanah_Garapan = "Tanah_Garapan"
-    Akta_Hibah = "Akta_Hibah"
-    SPPT = "SPPT"
-    Kutipan_Girik = "Kutipan_Girik"
-    Default = "Unknown"
-
-    @classmethod
-    def _missing_(cls, value):
-         return cls.Default 
     
 
 class BidangBase(SQLModel):

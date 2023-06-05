@@ -6,7 +6,7 @@ class BundleDtCreateSch(BundleDtBase):
     pass
 
 class BundleDtSch(BundleDtFullBase):
-    pass
+    dokumen_name:str | None = Field(alias="dokumen_name")
 
 @optional
 class BundleDtUpdateSch(BundleDtBase):
