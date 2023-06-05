@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
+    from models.checklist_dokumen_model import ChecklistDokumen
 
 
 class DokumenBase(SQLModel):
@@ -18,6 +19,7 @@ class DokumenFullBase(BaseUUIDModel, DokumenBase):
 
 class Dokumen(DokumenFullBase, table=True):
     bundledts:list["BundleDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+    cheklistdokumens:list["ChecklistDokumen"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
 
 
 class BundleHdBase(SQLModel):
@@ -32,6 +34,7 @@ class BundleHdFullBase(BaseUUIDModel, BundleHdBase):
 class BundleHd(BundleHdFullBase, table=True):
     planing:"Planing" = Relationship(back_populates="bundlehds", sa_relationship_kwargs={'lazy':'selectin'})
     bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
+    
 
     @property
     def get_bundling_code(self)-> str | None:

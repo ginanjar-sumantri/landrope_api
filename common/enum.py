@@ -1,6 +1,6 @@
 from enum import Enum
 
-class JenisSuratEnum(str, Enum):
+class JenisAlashakEnum(str, Enum):
     Girik = "Girik"
     Sertifikat = "Sertifikasi"
 
@@ -9,7 +9,7 @@ class KategoriPenjualEnum(str, Enum):
     Waris = "Waris"
     PT = "PT"
 
-class JenisBayar(str, Enum):
+class JenisBayarEnum(str, Enum):
     UTJ = "UTJ"
     DP = "DP"
     LUNAS = "LUNAS"

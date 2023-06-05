@@ -11,5 +11,6 @@ from .gps_model import Gps
 from .skpt_model import Skpt
 from .code_counter_model import CodeCounter
 from .worker_model import Worker, Role
+from .checklist_dokumen_model import ChecklistDokumen
 
 from .dokumen_model import Dokumen, BundleHd, BundleDt
