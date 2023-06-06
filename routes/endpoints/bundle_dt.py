@@ -44,21 +44,15 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
     
     dokumen = await crud.dokumen.is_dokumen_for_keyword(id=sch.dokumen_id)
     
-    #updated keyword when dokumen metadata is keyword header
+    #updated bundle header keyword when dokumen metadata is_keyword true
     if dokumen:
         metadata = sch.meta_data.replace("'",'"')
         obj_json = json.loads(metadata)
         current_bundle_hd = await crud.bundlehd.get(id=sch.bundle_hd_id)
         values = []
-        for item in obj_json:
-            for field in item['field']:
-                value = str(field['value'])
-                if value in (current_bundle_hd.keyword or ""):
-                    continue
-
-                is_datetime = is_datetimecheck(value=value)
-                if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
-                    values.append(str(value))
+        for data in obj_json['history']:
+            value = data['meta_data'][f'{dokumen.key_field}']
+            values.append(value)
         
         edit_keyword_hd = current_bundle_hd
         edit_keyword_hd.keyword = ','.join(values) if current_bundle_hd.keyword is None else f"{current_bundle_hd.keyword},{','.join(values)}"
@@ -70,23 +64,21 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
 
 # @router.get("/get/json")
 # async def extract_json():
-#     str_json ="""[{
-# 		"tanggal":"2023-05-22T08:06:46.572436",
-# 		"field":[{"key":"Nomor","value":"1234"},{"key":"Tanggal","value":"2023-05-22T08:06:46.572436"}]
-# 	},
-# 	{
-# 		"tanggal":"2023-05-22T08:06:46.572436",
-# 		"field":[{"key":"Nomor","value":1122},{"key":"Tanggal","value":"2023-05-22T08:06:46.572436"}]
-# 	}]"""
+#     str_json = "{'history':[{'tanggal':'2023-06-06 08:15:39','nomor':'AJB 5123','meta_data': {'Nomor':'AJB 5123','Tanggal':'2023-06-28'}}]}".replace("'",'"')
 
 #     obj_json = json.loads(str_json)
 #     values = []
-#     for item in obj_json:
-#         for field in item['field']:
-#             value = field['value']
-#             is_datetime = is_datetimecheck(value=value)
-#             if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
-#                 values.append(str(value))
+#     nomor = 'Nomor'
+#     # for item in obj_json:
+#     #     for field in item['field']:
+#     #         value = field['value']
+#     #         is_datetime = is_datetimecheck(value=value)
+#     #         if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
+#     #             values.append(str(value))
+
+#     for data in obj_json['history']:
+#         value = data['meta_data'][f'{nomor}']
+#         values.append(value)
 
 #     return values            
 

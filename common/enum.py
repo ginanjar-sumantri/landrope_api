@@ -51,3 +51,8 @@ class JenisBayarEnum(str, Enum):
     UTJ = "UTJ"
     DP = "DP"
     LUNAS = "LUNAS"
+
+class PosisiBidangEnum(str, Enum):
+    Pinggir_Jalan = "Pinggir_Jalan"
+    Standard = "Standard"
+    Overlap = "Overlap"

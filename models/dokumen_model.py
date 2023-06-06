@@ -13,6 +13,7 @@ class DokumenBase(SQLModel):
     code:str = Field(nullable=False, max_length=100)
     dyn_form:str | None
     is_keyword:bool | None #apakah dokumen tersebut masuk dalam pencarian
+    key_field:str | None = Field(nullable=True)
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass

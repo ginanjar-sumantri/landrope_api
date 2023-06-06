@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.checklist_dokumen_model import ChecklistDokumen
-from schemas.checklist_dokumen_sch import (ChecklistDokumenSch, ChecklistDokumenCreateSch, ChecklistDokumenUpdateSch)
+from schemas.checklist_dokumen_sch import (ChecklistDokumenSch, ChecklistDokumenCreateSch, ChecklistDokumenBulkCreateSch, ChecklistDokumenUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
@@ -12,12 +12,18 @@ import crud
 
 router = APIRouter()
 
-@router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ChecklistDokumenCreateSch):
+@router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenBulkCreateSch], status_code=status.HTTP_201_CREATED)
+async def create(sch: ChecklistDokumenBulkCreateSch):
     
     """Create a new object"""
+    
+    for dokumen in sch.dokumens:
+        obj_new = ChecklistDokumen(jenis_alashak=sch.jenis_alashak,
+                                   kategori_penjual=sch.kategori_penjual,
+                                   jenis_bayar=sch.jenis_bayar,
+                                   dokumen_id=dokumen)
         
-    new_obj = await crud.checklistdokumen.create(obj_in=sch)
+        new_obj = await crud.checklistdokumen.create(obj_in=obj_new)
     
     return create_response(data=new_obj)
 
