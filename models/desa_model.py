@@ -6,6 +6,7 @@ from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
+    from models.kjb_model import KjbHd
     
 class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
@@ -24,4 +25,5 @@ class DesaFullBase(DesaRawBase, BaseGeoModel):
 
 class Desa(DesaFullBase, table=True):
     desa_planings:list["Planing"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hds: list["KjbHd"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'select'})
 

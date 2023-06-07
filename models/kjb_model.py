@@ -21,8 +21,8 @@ class KjbHdBase(SQLModel):
     desa_id:UUID = Field(foreign_key="desa.id", nullable=False)
     luas_kjb:Decimal
     remark:str
-    manager:UUID = Field(foreign_key="manager.id")
-    sales:UUID = Field(foreign_key="sales.id")
+    manager_id:UUID = Field(foreign_key="manager.id")
+    sales_id:UUID = Field(foreign_key="sales.id")
     mediator:str | None
     telepon_mediator:str | None
     pemilik_id:UUID = Field(foreign_key="pemilik.id")
@@ -34,14 +34,15 @@ class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
 
 class KjbHd(KjbHdFullBase, table=True):
-    desa:"Desa" = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    manager:"Manager" = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    sales:"Sales" = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    pemilik:"Pemilik" = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    desa:"Desa" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
+    manager:"Manager" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
+    sales:"Sales" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
+    pemilik:"Pemilik" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
 
     kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     carabayars:list["KjbCaraBayar"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
 
 class KjbDtBase(SQLModel):
@@ -85,7 +86,7 @@ class KjbRekeningFullBase(BaseUUIDModel, KjbRekeningBase):
     pass
 
 class KjbRekening(KjbRekeningFullBase, table=True):
-    pass
+    kjb_hd:"KjbHd" = Relationship(back_populates="rekenings", sa_relationship_kwargs={'lazy':'selectin'})
 
 
 class KjbCaraBayarBase(SQLModel):
@@ -98,7 +99,7 @@ class KjbCaraBayarFullBase(BaseUUIDModel, KjbCaraBayarBase):
     pass
 
 class KjbCaraBayar(KjbCaraBayarFullBase, table=True):
-    pass
+    kjb_hd:"KjbHd" = Relationship(back_populates="carabayars", sa_relationship_kwargs={'lazy':'selectin'})
 
 
 class KjbBebanBiayaBase(SQLModel):
@@ -111,4 +112,4 @@ class KjbBebanBiayaFullBase(BaseUUIDModel, KjbBebanBiayaBase):
     pass
 
 class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
-    pass
+    kjb_hd:"KjbHd" = Relationship(back_populates="bebanbiayas", sa_relationship_kwargs={'lazy':'selectin'})
