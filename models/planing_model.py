@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from models.project_model import Project
     from models.desa_model import Desa
     from models.dokumen_model import BundleHd
-    from models.kesepakatan_jual_beli_model import KjbDt
+    from models.kjb_model import KjbDt
 
 class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -33,7 +33,6 @@ class Planing(PlaningFullBase, table=True):
     skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
-    # kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
 
     @property
     def project_name(self)-> str:

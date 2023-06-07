@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from crud.base_crud import CRUDBase
-from models.jenis_lahan_model import JenisLahan
+from models.master_model import JenisLahan
 from schemas.jenis_lahan_sch import JenisLahanCreateSch, JenisLahanUpdateSch
 
 class CRUDJenisLahan(CRUDBase[JenisLahan, JenisLahanCreateSch, JenisLahanUpdateSch]):

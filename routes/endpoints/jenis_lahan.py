@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 import crud
-from models.jenis_lahan_model import JenisLahan
+from models.master_model import JenisLahan
 from schemas.jenis_lahan_sch import (JenisLahanSch, JenisLahanCreateSch, JenisLahanUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)

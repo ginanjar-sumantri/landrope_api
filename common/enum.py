@@ -40,7 +40,7 @@ class JenisDokumenEnum(str, Enum):
 
 class JenisAlashakEnum(str, Enum):
     Girik = "Girik"
-    Sertifikat = "Sertifikasi"
+    Sertifikat = "Sertifikat"
 
 class KategoriPenjualEnum(str, Enum):
     Perorangan = "Perorangan"
@@ -56,3 +56,7 @@ class PosisiBidangEnum(str, Enum):
     Pinggir_Jalan = "Pinggir_Jalan"
     Standard = "Standard"
     Overlap = "Overlap"
+
+class SatuanBayar(str, Enum):
+    Percentage = "Percentage"
+    Amount = "Amount"

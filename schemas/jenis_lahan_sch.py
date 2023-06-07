@@ -1,4 +1,4 @@
-from models.jenis_lahan_model import JenisLahanBase, JenisLahan
+from models.master_model import JenisLahanBase, JenisLahan
 from common.partial import optional
 
 class JenisLahanCreateSch(JenisLahanBase):

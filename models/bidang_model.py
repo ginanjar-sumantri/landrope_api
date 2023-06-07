@@ -11,7 +11,7 @@ from common.enum import CategoryEnum, JenisDokumenEnum, StatusEnum, TipeProsesEn
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.skpt_model import Skpt
-    from models.jenis_lahan_model import JenisLahan
+    from models.master_model import JenisLahan
     
 
 class BidangBase(SQLModel):
