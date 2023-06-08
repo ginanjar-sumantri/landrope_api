@@ -18,6 +18,13 @@ async def create(sch: ChecklistDokumenBulkCreateSch):
     """Create a new object"""
     
     for dokumen in sch.dokumens:
+        exists = await crud.checklistdokumen.get(dokumen_id=dokumen, 
+                                                 jenis_alashak=sch.jenis_alashak, 
+                                                 jenis_bayar=sch.jenis_bayar, 
+                                                 kategori_penjual=sch.kategori_penjual)
+        if exists:
+            continue
+
         obj_new = ChecklistDokumen(jenis_alashak=sch.jenis_alashak,
                                    kategori_penjual=sch.kategori_penjual,
                                    jenis_bayar=sch.jenis_bayar,
