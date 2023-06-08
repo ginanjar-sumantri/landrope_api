@@ -28,14 +28,14 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
             db_obj.created_by_id = created_by_id
         
         try:
-            db_session.add(db_obj)
-            await db_session.commit()
-
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
                 code = db_obj.code + i.code
-                bundle_dt = BundleDtCreateSch(bundle_hd_id=db_obj.id, code=code, dokumen_id=i.id)
-                await crud.bundledt.create(obj_in=bundle_dt)
+                bundle_dt = BundleDt(code=code, dokumen_id=i.id)
+                db_obj.bundledts.append(bundle_dt)
+
+            db_session.add(db_obj)
+            await db_session.commit()
 
         except exc.IntegrityError:
             await db_session.rollback()

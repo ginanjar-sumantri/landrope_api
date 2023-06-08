@@ -1,34 +1,21 @@
-from models.pemilik_model import PemilikBase, PemilikFullBase, KontakBase, KontakFullBase, RekeningBase, RekeningFullBase
+from models.pemilik_model import PemilikBase, PemilikFullBase, Kontak, Rekening
 from common.partial import optional
+from typing import List
+from schemas.kontak_sch import KontakCreateExtSch
+from schemas.rekening_sch import RekeningCreateExtSch
 
 class PemilikCreateSch(PemilikBase):
-    pass
+    kontaks:List[KontakCreateExtSch]
+    rekenings:List[RekeningCreateExtSch]
 
 class PemilikSch(PemilikFullBase):
     pass
+
+class PemilikByIdSch(PemilikFullBase):
+    kontaks:List[Kontak]
+    rekenings:List[Rekening]
 
 @optional
 class PemilikUpdateSch(PemilikBase):
     pass
 
-
-class KontakCreateSch(KontakBase):
-    pass
-
-class KontakSch(KontakFullBase):
-    pass
-
-@optional
-class KontakUpdateSch(KontakBase):
-    pass
-
-
-class RekeningCreateSch(RekeningBase):
-    pass
-
-class RekeningSch(RekeningFullBase):
-    pass
-
-@optional
-class RekeningUpdateSch(RekeningBase):
-    pass
