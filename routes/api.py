@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, planing, project, ptsk, section, jenis_lahan, 
                               draft, gps, skpt, worker, role, dokumen, bundle_hd, bundle_dt,
-                              checklist_dokumen)
+                              checklist_dokumen, marketing)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -23,3 +23,5 @@ api_router.include_router(bundle_dt.router, prefix="/bundledt", tags=["bundledt"
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
 api_router.include_router(gps.router, prefix="/gps", tags=["gps"])
+api_router.include_router(marketing.manager, prefix="/manager", tags=["manager"])
+api_router.include_router(marketing.sales, prefix="/sales", tags=["sales"])

@@ -14,6 +14,7 @@ from .code_counter_crud import codecounter
 from .worker_crud import worker
 from .role_crud import role
 from .checklist_dokumen_crud import checklistdokumen
+from .marketing_crud import manager, sales
 
 from .dokumen_crud import dokumen
 from .bundle_hd_crud import bundlehd
