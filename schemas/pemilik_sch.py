@@ -17,5 +17,6 @@ class PemilikByIdSch(PemilikFullBase):
 
 @optional
 class PemilikUpdateSch(PemilikBase):
-    pass
+    kontaks:List[KontakCreateExtSch]
+    rekenings:List[RekeningCreateExtSch]
 
