@@ -20,6 +20,7 @@ from .dokumen_crud import dokumen
 from .bundle_hd_crud import bundlehd
 from .bundle_dt_crud import bundledt
 from .pemilik_crud import pemilik, kontak, rekening
+from .beban_biaya_crud import bebanbiaya
 
-# from .kjb_hd_crud import kjb_hd, kjb_rekening
+from .kjb_hd_crud import kjb_hd, kjb_rekening
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

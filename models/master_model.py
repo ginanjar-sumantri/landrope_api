@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
     from models.kjb_model import KjbDt
 
-class Beban(BaseUUIDModel, table=True):
+class BebanBiaya(BaseUUIDModel, table=True):
     name:str
     is_active:bool
 

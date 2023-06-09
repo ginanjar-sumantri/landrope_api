@@ -100,7 +100,6 @@ class KjbRekeningBase(SQLModel):
     bank_rekening:str
     nomor_rekening:str
 
-    rekening_id:UUID = Field(foreign_key="rekening.id")
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
 
 class KjbRekeningFullBase(BaseUUIDModel, KjbRekeningBase):
@@ -124,7 +123,7 @@ class KjbCaraBayar(KjbCaraBayarFullBase, table=True):
 
 
 class KjbBebanBiayaBase(SQLModel):
-    beban_id:UUID = Field(foreign_key="beban.id", nullable=False)
+    beban_biaya_id:UUID = Field(foreign_key="beban.id", nullable=False)
     beban_pembeli:bool = Field(nullable=False)
 
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)

@@ -44,6 +44,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_session = db_session or db.session
         obj = await db_session.execute(select(self.model).where(self.model.code == code))
         return obj.scalar_one_or_none()
+    
+    async def get_by_name(
+        self, *, name: str, db_session: AsyncSession | None = None
+    ) -> ModelType:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(self.model).where(self.model.name.replace(" ", "").lower() == name.replace(" ", "").lower()))
+        return obj.scalar_one_or_none()
 
     
     async def get_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[ModelType] | None:

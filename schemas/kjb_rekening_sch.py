@@ -8,7 +8,9 @@ class KjbRekeningCreateSch(KjbRekeningBase):
     pass
 
 class KjbRekeningCreateExtSch(BaseModel):
-    rekenings:List[UUID]
+    nama_pemilik_rekening:str
+    bank_rekening:str
+    nomor_rekening:str
 
 class KjbRekeningSch(KjbRekeningFullBase):
     pass

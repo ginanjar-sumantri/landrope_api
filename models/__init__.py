@@ -3,7 +3,7 @@ from .project_model import Project
 from .planing_model import Planing
 from .desa_model import Desa
 from .ptsk_model import Ptsk
-from .master_model import JenisLahan, Beban, JenisSurat
+from .master_model import JenisLahan, BebanBiaya, JenisSurat
 from .bidang_model import Bidang 
 from .mapping_model import (MappingPlaningSkpt, MappingBidangOverlap)
 from .draft_model import Draft
