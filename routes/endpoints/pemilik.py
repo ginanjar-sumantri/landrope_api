@@ -53,6 +53,12 @@ async def update(id:UUID, sch:PemilikUpdateSch):
         raise IdNotFoundException(Pemilik, id)
     
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch)
+
+    # kontaks = await crud.kontak.get_by_pemilik_id(pemilik_id=id)
+    # for i in kontaks:
+    #     if i.nomor_telepon.strip() in sch.kontaks:
+
+
     return create_response(data=obj_updated)
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)

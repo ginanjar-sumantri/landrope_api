@@ -55,7 +55,12 @@ pemilik = CRUDPemilik(Pemilik)
 
 
 class CRUDKontak(CRUDBase[Kontak, KontakCreateSch, KontakUpdateSch]):
-    pass
+    async def get_by_pemilik_id(self, *, pemilik_id: UUID | str, db_session: AsyncSession | None = None) -> List[Kontak] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.pemilik_id == pemilik_id)
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 kontak = CRUDKontak(Kontak)
 

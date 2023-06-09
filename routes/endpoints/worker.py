@@ -89,6 +89,7 @@ async def create(
                 'last_name': ''.join(last_name),
                 'email_verified': False,
                 'mobile_verified': False,
+                "send_email_verify" : True,
                 'password': password,
                 'roles': [role]
             }
