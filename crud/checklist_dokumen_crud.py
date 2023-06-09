@@ -15,14 +15,14 @@ from uuid import UUID
 from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
 
 class CRUDChecklistDokumen(CRUDBase[ChecklistDokumen, ChecklistDokumenCreateSch, ChecklistDokumenUpdateSch]):
-    async def get(self, *, 
+    async def get_single(self, *, 
                   dokumen_id: UUID | str,
                   jenis_alashak: JenisAlashakEnum,
                   jenis_bayar: JenisBayarEnum,
                   kategori_penjual: KategoriPenjualEnum,
                   db_session: AsyncSession | None = None) -> ChecklistDokumen | None:
         db_session = db_session or db.session
-        query = select(self.model).where(and_(self.model.dokumen_id == id, 
+        query = select(self.model).where(and_(self.model.dokumen_id == dokumen_id, 
                                               self.model.jenis_alashak == jenis_alashak,
                                               self.model.jenis_bayar == jenis_bayar,
                                               self.model.kategori_penjual == kategori_penjual))

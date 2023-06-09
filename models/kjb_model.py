@@ -44,6 +44,27 @@ class KjbHd(KjbHdFullBase, table=True):
     carabayars:list["KjbCaraBayar"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
+    @property
+    def desa_name(self) -> str | None:
+        return self.desa.name
+    
+    @property
+    def manager_name(self) -> str | None:
+        return self.manager.name
+    
+    @property
+    def sales_name(self) -> str | None:
+        return self.sales.name
+    
+    @property
+    def nomor_telepon(self) -> list[str] | None:
+        kontaks = []
+        for i in self.pemilik.kontaks:
+            kontaks.append(i.nomor_telepon)
+        
+        return kontaks
+
+
 
 class KjbDtBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
