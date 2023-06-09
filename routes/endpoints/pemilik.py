@@ -54,22 +54,25 @@ async def update(id:UUID, sch:PemilikUpdateSch):
     
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch)
 
-    update_kontak(pemilik_id=id, sch=sch)
+    await update_kontak(pemilik_id=id, sch=sch)
 
     return create_response(data=obj_updated)
 
 async def update_kontak(pemilik_id:UUID, sch:PemilikUpdateSch):
-
     kontaks = await crud.kontak.get_by_pemilik_id(pemilik_id=pemilik_id)
     
-    set1 = set(sch.kontaks['nomor_telepon'])
-    set2 = set(kontaks['nomor_telepon'])
+    obj_data = list(map(lambda x: x.nomor_telepon, kontaks))
+    obj_sch = list(map(lambda x: x.nomor_telepon, sch.kontaks))
+    
+
+    set1 = set(obj_sch)
+    set2 = set(obj_data)
 
     add_kontak = list(set1 - set2)
     remove_kontak = list(set2 - set1)
 
     for a in add_kontak:
-        a_kontak = Kontak(nomor_telepon=a, pemilik_id=id)
+        a_kontak = Kontak(nomor_telepon=a, pemilik_id=pemilik_id)
         await crud.kontak.create(obj_in=a_kontak)
     
     for r in remove_kontak:
