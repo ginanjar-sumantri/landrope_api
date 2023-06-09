@@ -54,12 +54,29 @@ async def update(id:UUID, sch:PemilikUpdateSch):
     
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch)
 
-    # kontaks = await crud.kontak.get_by_pemilik_id(pemilik_id=id)
-    # for i in kontaks:
-    #     if i.nomor_telepon.strip() in sch.kontaks['nomor_telepon']:
-    #         continue
+    update_kontak(pemilik_id=id, sch=sch)
 
     return create_response(data=obj_updated)
+
+async def update_kontak(pemilik_id:UUID, sch:PemilikUpdateSch):
+
+    kontaks = await crud.kontak.get_by_pemilik_id(pemilik_id=pemilik_id)
+    
+    set1 = set(sch.kontaks['nomor_telepon'])
+    set2 = set(kontaks['nomor_telepon'])
+
+    add_kontak = list(set1 - set2)
+    remove_kontak = list(set2 - set1)
+
+    for a in add_kontak:
+        a_kontak = Kontak(nomor_telepon=a, pemilik_id=id)
+        await crud.kontak.create(obj_in=a_kontak)
+    
+    for r in remove_kontak:
+        s_kontak = list(filter(lambda x: x.nomor_telepon == r, kontaks))
+        r_kontak = s_kontak[0]
+        await crud.kontak.remove(id=r_kontak.id)
+
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID):
