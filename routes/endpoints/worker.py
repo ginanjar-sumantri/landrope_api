@@ -94,9 +94,10 @@ async def create(
                 'roles': [role]
             }
             oauth_response, _ = await OauthService().register_user_oauth(body=data)
-        elif (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and response_exist['email']['mobile_no'] is None):
+        # elif (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and response_exist['email']['mobile_no'] is None):
+        elif response_exist['email'] is not None:
             data = response_exist['email']
-            data['mobile_no'] = ""
+            data['mobile_no'] = response_exist['mobile']
             id = data.pop('id')
             data['password'] = password
             [data.pop(e) for e in ['avatar', 'full_name']]
@@ -161,10 +162,9 @@ async def update(
 
             response_exist = await OauthService().check_user_by_email_or_phone(email=obj_current.email)
 
-            if (response_exist['mobile'] == response_exist['email'] 
-                and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.oauth_id))) or (obj_current.phone is not None and response_exist['mobile'] is not None and response_exist['email'] is None and response_exist['mobile']['id'] == str(obj_current.oauth_id)):
+            if response_exist['email'] is not None:
                 data = response_exist['email'] if response_exist['email'] is not None else response_exist['mobile']
-                data['mobile_no'] = None
+                data['mobile_no'] = response_exist['mobile']
                 id = data.pop('id')
                 data['password'] = password
                 [data.pop(e) for e in ['avatar', 'full_name']]
@@ -195,14 +195,15 @@ async def update(
                     'last_name': ''.join(last_name),
                     'email_verified': False,
                     'mobile_verified': False,
+                    "send_email_verify" : True,
                     'password': password,
                     'roles': [role]
                 }
 
                 oauth_response = await OauthService().register_user_oauth(body=data)
-            elif (response_exist['mobile'] == response_exist['email'] and response_exist['email'] is not None) or (response_exist['email'] is not None and response_exist['mobile'] is None and (response_exist['email']['mobile_no'] is None or response_exist['email']['id'] == str(obj_current.id))):
+            elif response_exist['email'] is not None:
                 data = response_exist['email']
-                data['mobile_no'] = None
+                data['mobile_no'] = response_exist['mobile']
                 id = data.pop('id')
                 data['password'] = password
                 [data.pop(e) for e in ['avatar', 'full_name']]

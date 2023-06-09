@@ -56,8 +56,8 @@ async def update(id:UUID, sch:PemilikUpdateSch):
 
     # kontaks = await crud.kontak.get_by_pemilik_id(pemilik_id=id)
     # for i in kontaks:
-    #     if i.nomor_telepon.strip() in sch.kontaks:
-
+    #     if i.nomor_telepon.strip() in sch.kontaks['nomor_telepon']:
+    #         continue
 
     return create_response(data=obj_updated)
 
