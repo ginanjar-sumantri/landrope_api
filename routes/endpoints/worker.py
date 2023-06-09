@@ -104,17 +104,17 @@ async def create(
 
             oauth_response, _ = await OauthService().update_user_oauth(body=data, id=id)
 
-        else:
-            # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
-            #     raise HTTPException(status_code=409,
-            #                         detail='Mobile Number already register in our subsystem with another email address')
-            # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
-            #     raise HTTPException(status_code=409, detail='Email already registered with other mobile number')
+        # else:
+        #     # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
+        #     #     raise HTTPException(status_code=409,
+        #     #                         detail='Mobile Number already register in our subsystem with another email address')
+        #     # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
+        #     #     raise HTTPException(status_code=409, detail='Email already registered with other mobile number')
 
-            if response_exist['email'] is not None :
-                raise HTTPException(status_code=409, detail='Email already registered')
+        #     if response_exist['email'] is not None :
+        #         raise HTTPException(status_code=409, detail='Email already registered')
 
-            raise HTTPException(status_code=400, detail='Something wrong. Please contact developer.')
+        #     raise HTTPException(status_code=400, detail='Something wrong. Please contact developer.')
 
         new_obj = await crud.worker.create(obj_in=sch, oauth_user=oauth_response, worker_id=current_worker.id)
     else:
@@ -171,19 +171,19 @@ async def update(
                 data['roles'].append(role) if role not in data['roles'] else data['roles']
 
                 oauth_response = await OauthService().update_user_oauth(body=data, id=id)
-            else:
-                # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
-                #     raise HTTPException(
-                #         status_code=409, detail='Mobile Number already register in our subsystem with another email address')
-                # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
-                #     raise HTTPException(
-                #         status_code=409, detail='Email already registered with other mobile number')
+            # else:
+            #     # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
+            #     #     raise HTTPException(
+            #     #         status_code=409, detail='Mobile Number already register in our subsystem with another email address')
+            #     # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
+            #     #     raise HTTPException(
+            #     #         status_code=409, detail='Email already registered with other mobile number')
                 
-                if response_exist['email'] is not None:
-                    raise HTTPException(
-                        status_code=409, detail='Email already registered')
+            #     if response_exist['email'] is not None:
+            #         raise HTTPException(
+            #             status_code=409, detail='Email already registered')
 
-                raise HTTPException(status_code=409, detail='Something wrong, please contact developer')
+            #     raise HTTPException(status_code=409, detail='Something wrong, please contact developer')
         else:
             response_exist = await OauthService().check_user_by_email_or_phone(email=obj_current.email, phone="")
             if 'detail' in response_exist:
@@ -209,17 +209,17 @@ async def update(
                 data['roles'].append(role) if role not in data['roles'] else data['roles']
 
                 oauth_response = await OauthService().update_user_oauth(data=data, id=id)
-            else:
-                # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
-                #     raise HTTPException(status_code=409,
-                #                         detail='Mobile Number already register in our subsystem with another email address')
-                # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
-                #     raise HTTPException(status_code=409, detail='Email already registered with other mobile number')
+            # else:
+            #     # if response_exist['mobile'] is not None and response_exist['mobile']['email'] != sch.email:
+            #     #     raise HTTPException(status_code=409,
+            #     #                         detail='Mobile Number already register in our subsystem with another email address')
+            #     # elif response_exist['email'] is not None and change_phone_format(response_exist['email']['mobile_no']) != sch.phone:
+            #     #     raise HTTPException(status_code=409, detail='Email already registered with other mobile number')
                 
-                if response_exist['email'] is not None:
-                    raise HTTPException(status_code=409, detail='Email already registered')
+            #     if response_exist['email'] is not None:
+            #         raise HTTPException(status_code=409, detail='Email already registered')
 
-                raise HTTPException({'detail': 'Something wrong. Please contact developer.'})
+            #     raise HTTPException({'detail': 'Something wrong. Please contact developer.'})
 
         sch.oauth_id = oauth_response[0].id
 
