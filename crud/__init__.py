@@ -24,4 +24,5 @@ from .beban_biaya_crud import bebanbiaya
 
 from .kjb_hd_crud import kjb_hd
 from .kjb_rekening_crud import kjb_rekening
+from .kjb_dt_crud import kjb_dt
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap
