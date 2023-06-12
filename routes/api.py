@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, planing, project, ptsk, section, jenis_lahan, 
                               draft, gps, skpt, worker, role, dokumen, bundle_hd, bundle_dt,
-                              checklist_dokumen, marketing, pemilik, kjb_hd)
+                              checklist_dokumen, marketing, pemilik, kjb_hd, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_cara_bayar)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -19,7 +19,10 @@ api_router.include_router(checklist_dokumen.router, prefix="/cheklistdokumen", t
 api_router.include_router(bundle_hd.router, prefix="/bundlehd", tags=["bundlehd"])
 api_router.include_router(bundle_dt.router, prefix="/bundledt", tags=["bundledt"])
 api_router.include_router(kjb_hd.router, prefix="/kjbhd", tags=["kjbhd"])
-
+api_router.include_router(kjb_dt.router, prefix="/kjbdt", tags=["kjbdt"])
+api_router.include_router(kjb_rekening.router, prefix="/kjbrekening", tags=["kjbrekening"])
+api_router.include_router(kjb_cara_bayar.router, prefix="/kjbcarabayar", tags=["kjbcarabayar"])
+api_router.include_router(kjb_beban_biaya.router, prefix="/kjbbebanbiaya", tags=["kjbbebanbiaya"])
 
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
