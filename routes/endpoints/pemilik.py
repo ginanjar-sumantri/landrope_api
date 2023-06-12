@@ -55,6 +55,7 @@ async def update(id:UUID, sch:PemilikUpdateSch):
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch)
 
     await update_kontak(pemilik_id=id, sch=sch)
+    await update_rekening(pemilik_id=id, sch=sch)
 
     return create_response(data=obj_updated)
 
@@ -63,7 +64,6 @@ async def update_kontak(pemilik_id:UUID, sch:PemilikUpdateSch):
     
     obj_data = list(map(lambda x: x.nomor_telepon, kontaks))
     obj_sch = list(map(lambda x: x.nomor_telepon, sch.kontaks))
-    
 
     set1 = set(obj_sch)
     set2 = set(obj_data)
@@ -79,6 +79,26 @@ async def update_kontak(pemilik_id:UUID, sch:PemilikUpdateSch):
         s_kontak = list(filter(lambda x: x.nomor_telepon == r, kontaks))
         r_kontak = s_kontak[0]
         await crud.kontak.remove(id=r_kontak.id)
+
+async def update_rekening(pemilik_id:UUID, sch:PemilikUpdateSch):
+    rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=pemilik_id)
+
+    for r in rekenings:
+        obj_remove = list(filter(lambda x: x.nama_pemilik_rekening.strip().lower() == r.nama_pemilik_rekening.strip().lower() 
+                                 and x.nomor_rekening.strip() == r.nomor_rekening.strip() 
+                                 and x.bank_rekening.strip().lower() == r.bank_rekening.strip().lower(), sch.rekenings))
+        
+        if obj_remove is None:
+            await crud.rekening.remove(id=r.id)
+        
+    for a in sch.rekenings:
+        a_rekening = Rekening(nama_pemilik_rekening=a.nama_pemilik_rekening,
+                              nomor_rekening=a.nama_pemilik_rekening,
+                              bank_rekening=a.bank_rekening)
+        await crud.rekening.create(obj_in=a_rekening)
+
+
+            
 
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)
