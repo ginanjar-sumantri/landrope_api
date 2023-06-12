@@ -92,16 +92,17 @@ async def update_rekening(pemilik_id:UUID, sch:PemilikUpdateSch):
             await crud.rekening.remove(id=r.id)
         
     for a in sch.rekenings:
-        obj_add = await crud.rekening.get_by_rekening_bank_pemilik(nama_pemilik_rekening=a.nama_pemilik_rekening,
-                                                                   nomor_rekening=a.nomor_rekening,
-                                                                   bank_rekening=a.bank_rekening)
+        obj_add = next((x for x in rekenings if x.nama_pemilik_rekening.strip().lower() == a.nama_pemilik_rekening.strip().lower() 
+                                 and x.nomor_rekening.strip() == a.nomor_rekening.strip() 
+                                 and x.bank_rekening.strip().lower() == a.bank_rekening.strip().lower()), None)
         
         if obj_add:
             continue
 
         a_rekening = Rekening(nama_pemilik_rekening=a.nama_pemilik_rekening,
-                              nomor_rekening=a.nama_pemilik_rekening,
-                              bank_rekening=a.bank_rekening)
+                              nomor_rekening=a.nomor_rekening,
+                              bank_rekening=a.bank_rekening,
+                              pemilik_id=pemilik_id)
         await crud.rekening.create(obj_in=a_rekening)
 
 
