@@ -44,38 +44,61 @@ class Bidang(BidangFullBase, table=True):
     jenis_lahan: "JenisLahan" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
-    def planing_name(self)-> str:
-        return self.planing.name
+    def planing_name(self)-> str | None:
+        if self.planing is None:
+            return ""
+        
+        return self.planing.name or ""
     
     @property
-    def project_name(self)-> str:
-        return self.planing.project.name
+    def project_name(self)-> str | None:
+        if self.planing is None:
+            return ""
+        if self.planing.project is None:
+            return ""
+        
+        return self.planing.project.name or ""
     
     @property
-    def desa_name(self)-> str:
-        return self.planing.desa.name
+    def desa_name(self)-> str | None:
+        if self.planing is None:
+            return ""
+        if self.planing.desa is None:
+            return ""
+        
+        return self.planing.desa.name or ""
     
     @property
-    def section_name(self)-> str:
-        return self.planing.project.section.name
+    def section_name(self)-> str | None:
+        if self.planing is None:
+            return ""
+        if self.planing.project is None:
+            return ""
+        if self.planing.project.section is None:
+            return ""
+        
+        return self.planing.project.section.name or ""
     
     @property
-    def ptsk_name(self)-> str:
-        return self.skpt.ptsk.name
+    def ptsk_name(self)-> str | None:
+        if self.skpt is None:
+            return ""
+        if self.skpt.ptsk is None:
+            return ""
+        
+        return self.skpt.ptsk.name or ""
     
     @property
-    def nomor_sk(self)-> str:
-        return self.skpt.nomor_sk
-    
-    @property
-    def id_rincik(self)-> str:
-        return self.rincik.id_rincik
+    def nomor_sk(self)-> str | None:
+        if self.skpt is None:
+            return ""
+        return self.skpt.nomor_sk or ""
     
     @property
     def jenis_lahan_name(self)-> str:
-            if self.jenis_lahan is None:
-                return ""
-            return self.jenis_lahan.name
+        if self.jenis_lahan is None:
+            return ""
+        return self.jenis_lahan.name
 
 #-------------------------------------------------------------------------------
 

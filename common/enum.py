@@ -57,6 +57,14 @@ class PosisiBidangEnum(str, Enum):
     Standard = "Standard"
     Overlap = "Overlap"
 
-class SatuanBayar(str, Enum):
+class SatuanBayarEnum(str, Enum):
     Percentage = "Percentage"
     Amount = "Amount"
+
+class StatusValidEnum(str, Enum):
+    Valid = "Valid"
+    Tidak_Valid = "Tidak_Valid"
+
+class StatusPetaLokasiEnum(str, Enum):
+    Lanjut_Peta_Lokasi = "Lanjut_Peta_Lokasi"
+    Tidak_Lanjut = "Tidak_Lanjut"

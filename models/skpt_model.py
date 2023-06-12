@@ -45,8 +45,12 @@ class Skpt(SkptFullBase, table=True):
 
     @property
     def ptsk_name(self)-> str:
+        if self.ptsk is None:
+            return ""
         return self.ptsk.name
     
     @property
     def ptsk_code(self)-> str:
+        if self.ptsk is None:
+            return ""
         return self.ptsk.code 

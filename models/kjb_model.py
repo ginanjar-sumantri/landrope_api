@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
-from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayar, JenisBayarEnum
+from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, JenisBayarEnum
 from decimal import Decimal
 
 if TYPE_CHECKING:
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from models.marketing_model import Manager, Sales
     from models.pemilik_model import Pemilik
     from models.master_model import JenisSurat
+    from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 
 class KjbHdBase(SQLModel):
     kjb_id:str | None = Field(nullable=False, max_length=500)
@@ -28,7 +29,7 @@ class KjbHdBase(SQLModel):
     pemilik_id:UUID = Field(foreign_key="pemilik.id")
     ada_utj:bool
     utj_amount:Decimal
-    satuan_bayar:SatuanBayar
+    satuan_bayar:SatuanBayarEnum
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
@@ -43,6 +44,8 @@ class KjbHd(KjbHdFullBase, table=True):
     rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     carabayars:list["KjbCaraBayar"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+
+    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def desa_name(self) -> str | None:
@@ -65,7 +68,6 @@ class KjbHd(KjbHdFullBase, table=True):
         return kontaks
 
 
-
 class KjbDtBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
     alashak:str
@@ -85,6 +87,8 @@ class KjbDt(KjbDtFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
     jenis_surat:"JenisSurat" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
+
+    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def planing_name(self) -> str | None :

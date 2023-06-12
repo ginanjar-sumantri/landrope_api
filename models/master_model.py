@@ -7,6 +7,7 @@ from common.enum import JenisAlashakEnum
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
     from models.kjb_model import KjbDt
+    from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 
 class BebanBiaya(BaseUUIDModel, table=True):
     name:str
@@ -28,4 +29,5 @@ class JenisSurat(BaseUUIDModel, table=True):
     name:str
 
     kjb_dts: list["KjbDt"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'select'})
+    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'selectin'})
     

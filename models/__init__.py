@@ -16,3 +16,4 @@ from .kjb_model import KjbHd, KjbDt, KjbBebanBiaya, KjbRekening, KjbCaraBayar
 from .marketing_model import Manager, Sales
 from .pemilik_model import Pemilik, Kontak, Rekening
 from .dokumen_model import Dokumen, BundleHd, BundleDt
+# from .tanda_terima_notaris_model import TandaTerimaNotarisHd
