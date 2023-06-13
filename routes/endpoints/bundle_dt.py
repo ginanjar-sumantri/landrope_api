@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
-from models.dokumen_model import BundleDt
+from models.bundle_model import BundleDt
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)

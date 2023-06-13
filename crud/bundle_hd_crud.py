@@ -10,7 +10,7 @@ from sqlalchemy import exc
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.dokumen_model import BundleHd, BundleDt
+from models.bundle_model import BundleHd, BundleDt
 from schemas.bundle_hd_sch import BundleHdCreateSch, BundleHdUpdateSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from datetime import datetime

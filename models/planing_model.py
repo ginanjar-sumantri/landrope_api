@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from models.desa_model import Desa
     from models.dokumen_model import BundleHd
     from models.kjb_model import KjbDt
-    # from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
+    from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 
 class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -36,7 +36,7 @@ class Planing(PlaningFullBase, table=True):
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
 
-    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     
 
     @property

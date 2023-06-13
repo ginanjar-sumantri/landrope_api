@@ -1,4 +1,4 @@
-from models.dokumen_model import BundleHd, BundleHdBase, BundleHdFullBase, BundleDt
+from models.bundle_model import BundleHd, BundleHdBase, BundleHdFullBase, BundleDt
 from common.partial import optional
 from sqlmodel import Field
 from typing import List

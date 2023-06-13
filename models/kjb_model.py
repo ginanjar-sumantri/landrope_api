@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from models.pemilik_model import Pemilik
     from models.master_model import JenisSurat
     from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
+    from models.bundle_model import BundleHd
 
 class KjbHdBase(SQLModel):
     kjb_id:str | None = Field(nullable=False, max_length=500)
@@ -45,7 +46,7 @@ class KjbHd(KjbHdFullBase, table=True):
     carabayars:list["KjbCaraBayar"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
-    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def desa_name(self) -> str | None:
@@ -79,6 +80,8 @@ class KjbDtBase(SQLModel):
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
     planing_id:UUID | None = Field(foreign_key="planing.id", nullable=True)
     jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
+    bundle_hd_id:UUID = Field(foreign_key="bundle_hd.id", nullable=True)
+
 
 class KjbDtFullBase(BaseUUIDModel, KjbDtBase):
     pass
@@ -87,8 +90,9 @@ class KjbDt(KjbDtFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
     jenis_surat:"JenisSurat" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
 
-    # tanda_terima_notarists:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def planing_name(self) -> str | None :
