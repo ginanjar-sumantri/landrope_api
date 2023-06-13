@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from models.master_model import JenisSurat
     from models.notaris_model import Notaris
     from models.planing_model import Planing
+    from models.dokumen_model import Dokumen
 
 class TandaTerimaNotarisHdBase(SQLModel):
     kjb_hd_id:UUID = Field(nullable=False, foreign_key="kjb_hd.id")
@@ -36,4 +37,23 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     jenis_surat:"JenisSurat" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     notaris:"Notaris" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
+
+    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
+
+
+class TandaTerimaNotarisDtBase(SQLModel):
+    tanggal_tanda_terima:datetime | None = Field(default=datetime.now())
+    dokumen_id:UUID = Field(foreign_key="dokumen.id")
+    meta_data:str | None
+    tanggal_terima_dokumen:datetime | None = Field(default=datetime.now())
+
+    tanda_terima_notaris_hd_id:UUID = Field(foreign_key="tanda_terima_notaris_hd.id", nullable=False)
+    
+class TandaTerimaNotarisDtFullBase(BaseUUIDModel, TandaTerimaNotarisDtBase):
+    pass
+
+class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
+    dokumen:"Dokumen" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+
 

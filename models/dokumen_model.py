@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from models.checklist_dokumen_model import ChecklistDokumen
     from models.bundle_model import BundleDt
+    from models.tanda_terima_notaris_model import TandaTerimaNotarisDt
 
 
 class DokumenBase(SQLModel):
@@ -21,6 +22,8 @@ class DokumenFullBase(BaseUUIDModel, DokumenBase):
 class Dokumen(DokumenFullBase, table=True):
     bundledts:list["BundleDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
     cheklistdokumens:list["ChecklistDokumen"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+
+    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
 
 
 
