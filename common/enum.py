@@ -4,6 +4,8 @@ class StatusEnum(str, Enum):
     Bebas = "Bebas"
     Belum_Bebas = "Belum_Bebas"
     Batal = "Batal"
+    Lanjut = "Lanjut"
+    Pending = "Pending"
 
 class TipeProsesEnum(str, Enum):
     Standard = "Standard"
