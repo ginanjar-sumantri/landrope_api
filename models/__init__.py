@@ -17,5 +17,5 @@ from .marketing_model import Manager, Sales
 from .pemilik_model import Pemilik, Kontak, Rekening
 from .dokumen_model import Dokumen
 from .bundle_model import BundleHd, BundleDt
-from .tanda_terima_notaris_model import TandaTerimaNotarisHd
+from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisDt
 from .notaris_model import Notaris
