@@ -124,8 +124,8 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-async def bulk_create(file:UploadFile=File()):
+@router.post("/bulk/{tipeproses}", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+async def bulk_create(tipeproses:str, file:UploadFile=File()):
 
     """Create bulk or import data"""
 
@@ -138,38 +138,66 @@ async def bulk_create(file:UploadFile=File()):
         planings = await crud.planing.get_all()
 
         for i, geo_data in geo_dataframe.iterrows():
-            p:str = geo_data['PROJECT']
-            d:str = geo_data['DESA']
+            p = geo_data.get("PROJECT", "None")
+            if p != "None":
+                 p = geo_data['PROJECT']
+            
+            d = geo_data.get("DESA", "None")
+            if d != "None":
+                 d = geo_data['DESA']
+            
+            no_peta = geo_data.get("NO_PETA", "")
+            if no_peta != "":
+                 no_peta = geo_data['NO_PETA']
+            
+            status_bidang = geo_data.get("STATUS", "None")
+            if status_bidang != "None":
+                 status_bidang = geo_data['STATUS']
+            elif status_bidang == "None" and tipeproses == "Rincik":
+                status_bidang = None
+            
+            t_proses = geo_data.get("PROSES", "None")
+            if t_proses != "None":
+                 t_proses = geo_data['PROSES']
+            elif t_proses == "None" and tipeproses == "Rincik":
+                t_proses = None
+            
             luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
 
             project = next((obj for obj in projects 
                             if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None)
             
-            if project is None:
-                continue
+            # if project is None:
+            #     continue
                 # raise HTTPException(status_code=404, detail=f"{p} Not Exists in Project Data Master")
             
             desa = next((obj for obj in desas 
                          if obj.name.replace(" ", "").lower() == d.replace(" ", "").lower()), None)
 
-            if desa is None:
-                continue
+            # if desa is None:
+            #     continue
                 # raise HTTPException(status_code=404, detail=f"{d} Not Exists in Desa Data Master")
-
-            plan_filter = list(filter(lambda x: [x.project_id == project.id, x.desa_id == desa.id], planings))
-            plan = plan_filter[0]
-            if plan is None:
-                continue
+            
+            
+            if project is None or desa is None:
+                plan_id = None
+            else:
+                plan_filter = list(filter(lambda x: [x.project_id == project.id, x.desa_id == desa.id], planings))
+                plan = plan_filter[0]
+                if plan is None:
+                    plan_id = None
+                else:
+                    plan_id = plan.id
             
             sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
                         nama_pemilik=geo_data['NAMA'],
                         luas_surat=luas_surat,
                         alas_hak="",
-                        no_peta=geo_data['NO_PETA'],
-                        status=FindStatusBidang(geo_data['STATUS']),
-                        tipe_proses=FindTipeProses(geo_data['PROSES']),
-                        tipe_bidang=TipeBidangEnum.Bidang,
-                        planing_id=plan.id,
+                        no_peta=no_peta,
+                        status=FindStatusBidang(status_bidang),
+                        tipe_proses=FindTipeProses(t_proses),
+                        tipe_bidang=FindTipeBidang(tipeproses),
+                        planing_id=plan_id,
                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
             obj = await crud.bidang.create(obj_in=sch)
@@ -225,10 +253,14 @@ def FindStatusBidang(status:str|None = None):
             return StatusEnum.Belum_Bebas
         elif status.replace(" ", "").lower() == StatusEnum.Batal.replace("_", "").lower():
             return StatusEnum.Batal
+        elif status.replace(" ", "").lower() == StatusEnum.Lanjut.replace("_", "").lower():
+            return StatusEnum.Lanjut
+        elif status.replace(" ", "").lower() == StatusEnum.Pending.replace("_", "").lower():
+            return StatusEnum.Pending
         else:
-            return StatusEnum.Belum_Bebas
+            return StatusEnum.Batal
     else:
-        return StatusEnum.Belum_Bebas
+        return None
 
 def FindTipeProses(type:str|None = None):
     if type:
@@ -239,4 +271,13 @@ def FindTipeProses(type:str|None = None):
         else:
             return TipeProsesEnum.Standard
     else:
-        return TipeProsesEnum.Standard
+        return None
+
+def FindTipeBidang(type:str|None = None):
+    if type:
+        if type.replace(" ", "").lower() == TipeBidangEnum.Bidang.lower() or type.replace(" ", "").lower() == "Bintang":
+            return TipeBidangEnum.Bidang
+        elif type.replace(" ", "").lower() == TipeBidangEnum.Rincik.lower():
+            return TipeBidangEnum.Rincik
+    else:
+        return None
