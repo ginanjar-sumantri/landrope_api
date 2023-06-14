@@ -124,7 +124,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("/{tipeproses}/bulk/", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+@router.post("/{tipeproses}/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
 async def bulk_create(tipeproses:str, file:UploadFile=File()):
 
     """Create bulk or import data"""
