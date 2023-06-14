@@ -158,8 +158,10 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
             
             t_proses = geo_data.get("PROSES", "None")
             if t_proses != "None":
-                 t_proses = geo_data['PROSES']
-            elif t_proses == "None" and tipeproses == "Rincik":
+                t_proses = geo_data['PROSES']
+            elif t_proses == "None" and tipeproses != "Rincik":
+                t_proses = tipeproses
+            else:
                 t_proses = None
             
             luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
@@ -275,7 +277,7 @@ def FindTipeProses(type:str|None = None):
 
 def FindTipeBidang(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == TipeBidangEnum.Bidang.lower() or type.replace(" ", "").lower() == "Bintang":
+        if type.replace(" ", "").lower() == TipeBidangEnum.Bidang.lower() or type.replace(" ", "").lower() == "Bintang".lower():
             return TipeBidangEnum.Bidang
         elif type.replace(" ", "").lower() == TipeBidangEnum.Rincik.lower():
             return TipeBidangEnum.Rincik
