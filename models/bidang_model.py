@@ -25,8 +25,8 @@ class BidangBase(SQLModel):
     status:StatusEnum | None = Field(nullable=True)
 
     jenis_lahan_id:UUID | None = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
-    planing_id:UUID = Field(default=None, foreign_key="planing.id", nullable=True)
-    skpt_id:UUID = Field(default=None, foreign_key="skpt.id", nullable=True)
+    planing_id:UUID | None = Field(default=None, foreign_key="planing.id", nullable=True)
+    skpt_id:UUID | None = Field(default=None, foreign_key="skpt.id", nullable=True)
     
 class BidangExtBase(BidangBase):
     tipe_proses:TipeProsesEnum | None = Field(default=None, nullable=True)
