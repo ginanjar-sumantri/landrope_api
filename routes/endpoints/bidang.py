@@ -124,7 +124,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-@router.post("/bulk/{tipeproses}", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+@router.post("/{tipeproses}/bulk/", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
 async def bulk_create(tipeproses:str, file:UploadFile=File()):
 
     """Create bulk or import data"""
@@ -153,13 +153,13 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
             status_bidang = geo_data.get("STATUS", "None")
             if status_bidang != "None":
                  status_bidang = geo_data['STATUS']
-            elif status_bidang == "None" and tipeproses == "Rincik":
+            elif status_bidang == "None" and tipeproses.lower() == "Rincik".lower():
                 status_bidang = None
             
             t_proses = geo_data.get("PROSES", "None")
             if t_proses != "None":
                 t_proses = geo_data['PROSES']
-            elif t_proses == "None" and tipeproses != "Rincik":
+            elif t_proses == "None" and tipeproses.lower() != "Rincik".lower():
                 t_proses = tipeproses
             else:
                 t_proses = None
