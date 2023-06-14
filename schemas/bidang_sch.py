@@ -33,5 +33,5 @@ class BidangSch(BidangFullBase):pass
 
 @as_form
 @optional
-class BidangUpdateSch(BidangBase):
+class BidangUpdateSch(BidangExtBase):
     pass

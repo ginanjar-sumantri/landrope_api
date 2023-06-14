@@ -80,8 +80,8 @@ async def update(id:UUID, sch:SkptUpdateSch = Depends(SkptUpdateSch.as_form), fi
     if not obj_current:
         raise IdNotFoundException(Skpt, id)
     
-    if obj_current.geom:
-        obj_current.geom = to_shape(obj_current.geom).__str__()
+    if obj_current.geom :
+        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
     
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)

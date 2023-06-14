@@ -12,6 +12,8 @@ from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
 from decimal import Decimal
+from shapely import wkt, wkb
+
 
 router = APIRouter()
 
@@ -73,9 +75,9 @@ async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:U
     if not obj_current:
         raise IdNotFoundException(Gps, id)
     
-    if obj_current.geom:
-        obj_current.geom = to_shape(obj_current.geom).__str__()
-
+    if obj_current.geom :
+        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+    
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 

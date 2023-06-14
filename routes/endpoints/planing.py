@@ -75,8 +75,8 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     if not obj_current:
         raise IdNotFoundException(Planing, id)
     
-    if obj_current.geom:
-        obj_current.geom = to_shape(obj_current.geom).__str__()
+    if obj_current.geom :
+        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
     
     if file:
         buffer = await file.read()

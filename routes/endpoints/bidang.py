@@ -97,6 +97,9 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     if not obj_current:
         raise IdNotFoundException(Bidang, id)
     
+    if obj_current.geom :
+        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+    
     if file:
         # buffer = await file.read()
 
