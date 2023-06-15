@@ -194,10 +194,35 @@ async def bulk_planing(file:UploadFile=File()):
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
-
-
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):
+
+    schemas = []
+    
+    results = await crud.planing.get_by_dict(filter_query=filter_query)
+
+    for data in results:
+        sch = PlaningExtSch(id=data.id,
+                      geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+                      luas=data.luas,
+                      name=data.name,
+                      code=data.code,
+                      project_name=data.project_name,
+                      desa_name=data.desa_name,
+                      section_name=data.section_name
+        )
+
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].name}"
+
+    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+
+@router.get("/export/shp2", response_class=Response)
+async def export_shp2(filter_query:str = None):
 
     schemas = []
     

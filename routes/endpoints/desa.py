@@ -182,6 +182,31 @@ async def export_shp(filter_query:str = None):
     results = await crud.desa.get_by_dict(filter_query=filter_query)
 
     for data in results:
+        sch = DesaSch(id=data.id,
+                      geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+                      name=data.name,
+                      code=data.code,
+                      kecamatan=data.kecamatan,
+                      kota=data.kota,
+                      luas=data.luas)
+
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].name}"
+
+    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+
+@router.get("/export/shp2", response_class=Response)
+async def export_shp2(filter_query:str = None):
+
+    schemas = []
+    
+    results = await crud.desa.get_by_dict(filter_query=filter_query)
+
+    for data in results:
         sch = DesaExportSch(id=data.id,
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       name=data.name,
