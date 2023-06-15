@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPExce
 from fastapi_pagination import Params
 import crud
 from models.desa_model import Desa
-from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch)
+from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch, DesaExportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException)
@@ -132,28 +132,38 @@ async def bulk_create(file:UploadFile=File()):
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.post("/bulk2")
-async def bulk_create2(file:UploadFile=File()):
+async def bulk_desa(file:UploadFile=File()):
 
     """Create bulk or import data"""
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-        print(geo_dataframe.head())
-        desas = await crud.desa.get_all()
         
         for i, geo_data in geo_dataframe.iterrows():
-            name:str | None = geo_data['NAMOBJ']
+            name:str = geo_data['name']
+            code:str = geo_data['code']
+            luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
-            obj_current = next((obj for obj in desas 
-                           if obj.name.replace(" ", "").lower() == name.replace(" ", "").lower()),None)
+            obj_current = await crud.desa.get_by_name(name=name)
             
             if obj_current:
+                obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                sch_update = DesaSch(name=name, 
+                      code=code,
+                      kecamatan=geo_data['kecamatan'],
+                      kota=geo_data['kota'], 
+                      luas=luas, 
+                      geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+                
+                await crud.desa.update(obj_current=obj_current, obj_new=sch_update)
                 continue
             
-            g_code = await generate_code(entity=CodeCounterEnum.Desa)
-            luas:Decimal = RoundTwo(Decimal(geo_data['SHAPE_Area']))
+            if code is None or code == "":
+                code = await generate_code(entity=CodeCounterEnum.Desa)
 
-            sch = DesaSch(name=geo_data['NAMOBJ'], 
-                          code=g_code, 
+            sch = DesaSch(name=name, 
+                          code=code,
+                          kecamatan=geo_data['kecamatan'],
+                          kota=geo_data['kota'], 
                           luas=luas, 
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
@@ -172,7 +182,7 @@ async def export_shp(filter_query:str = None):
     results = await crud.desa.get_by_dict(filter_query=filter_query)
 
     for data in results:
-        sch = DesaSch(id=data.id,
+        sch = DesaExportSch(id=data.id,
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       name=data.name,
                       code=data.code,

@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response
 from fastapi_pagination import Params
 from models.planing_model import Planing
-from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch, PlaningExtSch)
+from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch, PlaningExtSch, PlaningExportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, CodeExistException, NameNotFoundException)
@@ -134,12 +134,67 @@ async def bulk_create(file:UploadFile=File()):
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
                             luas=RoundTwo(Decimal(geo_data['LUAS'])))
             
-            await crud.planing.create_planing(obj_in=sch)  
+            await crud.planing.create(obj_in=sch)  
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
+
+@router.post("/bulk")
+async def bulk_planing(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+
+    try:
+        file = await file.read()
+        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+
+        errors = []
+
+        for i, geo_data in geo_dataframe.iterrows():
+            project_name:str = geo_data['project']
+            desa_name:str = geo_data['desa']
+            code:str = geo_data['code']
+            luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
+
+            project = await crud.project.get_by_name(name=project_name)
+            desa = await crud.desa.get_by_name(name=desa_name)
+
+            if project is None or desa is None:
+                error = {'project' : project_name, 'desa' : desa_name, 'code' : code, 'details' : 'project or desa not exists in data master'}
+                errors.append(error)
+                continue
+            
+            obj_current = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa)
+
+            if obj_current:
+                obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                sch_update = PlaningSch(code=code,
+                            name=project.name + "-" + desa.name + "-" + code,
+                            project_id=project.id,
+                            desa_id=desa.id,
+                            geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
+                            luas=luas)
+
+                await crud.planing.update(obj_current=obj_current, obj_new=sch_update)
+                continue
+
+            sch = PlaningSch(code=code,
+                            name=project.name + "-" + desa.name + "-" + code,
+                            project_id=project.id,
+                            desa_id=desa.id,
+                            geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
+                            luas=luas)
+            
+            await crud.planing.create(obj_in=sch)  
+
+    except:
+        raise HTTPException(status_code=422, detail="Failed import data")
+    
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
+
+
 
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):
@@ -149,15 +204,14 @@ async def export_shp(filter_query:str = None):
     results = await crud.planing.get_by_dict(filter_query=filter_query)
 
     for data in results:
-        sch = PlaningExtSch(id=data.id,
+        sch = PlaningExportSch(id=data.id,
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       luas=data.luas,
                       name=data.name,
                       code=data.code,
-                      project_name=data.project_name,
-                      desa_name=data.desa_name,
-                      section_name=data.section_name
-        )
+                      project=data.project_name,
+                      desa=data.desa_name,
+                      section=data.section_name)
 
         schemas.append(sch)
 

@@ -135,6 +135,41 @@ async def bulk_create(file:UploadFile=File()):
     
     return create_response(data=obj)
 
+@router.post("/bulk2", response_model=ImportResponseBaseSch[SkptRawSch], status_code=status.HTTP_201_CREATED)
+async def bulk_skpt(file:UploadFile=File()):
+
+    """Create bulk or import data"""
+
+    try:
+        geo_dataframe = GeomService.file_to_geodataframe(file.file)
+
+        for i, geo_data in geo_dataframe.iterrows():
+            
+            pt_name = geo_data['ptsk_name']
+            pt_code = geo_data['ptsk_code']
+            luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
+            pt = await crud.ptsk.get_by_name(name=pt_name)
+
+            if pt is None:
+                new_pt =  PtskSch(name=pt_name, code= pt_code or "")
+                
+                pt = await crud.ptsk.create(obj_in=new_pt)
+            
+            sk = await crud.skpt.get_by_sk_number()
+
+            sch = SkptSch(ptsk_id=pt.id,
+                          status=StatusSK(geo_data['STATUS']),
+                          kategori=KategoriEnum.SK_ASG,
+                          luas=luas,
+                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+
+            obj = await crud.skpt.create(obj_in=sch)
+
+    except:
+        raise ImportFailedException(filename=file.filename)
+    
+    return create_response(data=obj)
+
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):
 

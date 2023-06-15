@@ -10,13 +10,6 @@ from sqlalchemy import exc
 from datetime import datetime
 
 class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
-    async def get_by_name(
-        self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Planing:
-        db_session = db_session or db.session
-        obj = await db_session.execute(select(Planing).where(Planing.name == name))
-        return obj.scalar_one_or_none()
-    
     async def get_by_project_id_desa_id(
         self, *, project_id: str, desa_id:str, db_session: AsyncSession | None = None
     ) -> Planing:
@@ -24,8 +17,8 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         obj = await db_session.execute(select(Planing).where(and_(Planing.project_id == project_id, Planing.desa_id == desa_id)))
         return obj.scalar_one_or_none()
     
-    async def create_planing(self, *, obj_in: Planing, created_by_id : UUID | str | None = None, 
-                     db_session : AsyncSession | None = None) -> PlaningCreateSch :
+    async def create_planing(self, *, obj_in: PlaningCreateSch, created_by_id : UUID | str | None = None, 
+                     db_session : AsyncSession | None = None) -> Planing :
         db_session = db_session or db.session
         db_obj = self.model.from_orm(obj_in) #type ignore
         db_obj.created_at = datetime.utcnow()

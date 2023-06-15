@@ -4,6 +4,9 @@ from schemas.desa_sch import DesaRawSch
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import Field
+from models.base_model import BaseGeoModel
+from decimal import Decimal
+from uuid import UUID
 
 @as_form
 class PlaningCreateSch(PlaningBase):
@@ -21,6 +24,15 @@ class PlaningExtSch(PlaningFullBase):
     project_name:str | None
     desa_name:str | None
     section_name:str | None
+
+class PlaningExportSch(BaseGeoModel):
+    id:UUID
+    luas:Decimal
+    name:str | None
+    code:str | None
+    project:str | None
+    desa:str | None
+    section:str | None
 
 @as_form
 @optional

@@ -125,8 +125,8 @@ class GeomService(Generic[T]):
 
         # Hapus kolom-kolom yang tidak diperlukan
         df = df.drop('geom', axis=1) 
-        df = df.drop('updated_at', axis=1)
-        df = df.drop('created_at', axis=1)
+        # df = df.drop('updated_at', axis=1)
+        # df = df.drop('created_at', axis=1)
         columns_to_drop = [col for col in df.columns if "_id" in col]
         df = df.drop(columns=columns_to_drop)
 

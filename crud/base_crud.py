@@ -3,7 +3,7 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
 from fastapi.encoders import jsonable_encoder
-from sqlmodel import SQLModel, select, func, or_
+from sqlmodel import SQLModel, select, func, or_, and_
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exc
@@ -49,15 +49,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> ModelType:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(self.model).where(self.model.name.replace(" ", "").lower() == name.replace(" ", "").lower()))
+        obj = await db_session.execute(select(self.model).where(func.lower(func.trim(self.model.name)) == name.strip().lower()))
         return obj.scalar_one_or_none()
 
-    
     async def get_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
         query = select(self.model).where(self.model.id.in_(list_ids))
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_by_name_and_code(
+        self, *, name: str, code: str, db_session: AsyncSession | None = None
+    ) -> ModelType:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(self.model).where(and_ (self.model.name == name, self.model.code == code)))
+        return obj.scalar_one_or_none()
     
     async def get_all(self, *, db_session : AsyncSession | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
