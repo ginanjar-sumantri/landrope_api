@@ -15,7 +15,7 @@ async def create(sch: KjbHdCreateSch):
     
     """Create a new object"""
         
-    new_obj = await crud.kjb_hd.create(obj_in=sch)
+    new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch)
     
     return create_response(data=new_obj)
 
