@@ -147,7 +147,9 @@ async def bulk_skpt(file:UploadFile=File()):
             
             pt_name = geo_data['ptsk_name']
             pt_code = geo_data['ptsk_code']
+            sk_nomor = geo_data['nomor_sk']
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
+
             pt = await crud.ptsk.get_by_name(name=pt_name)
 
             if pt is None:
@@ -155,7 +157,18 @@ async def bulk_skpt(file:UploadFile=File()):
                 
                 pt = await crud.ptsk.create(obj_in=new_pt)
             
-            sk = await crud.skpt.get_by_sk_number()
+            sk = await crud.skpt.get_by_sk_number(number=sk_nomor)
+
+            if sk:
+                 sk.geom = wkt.dumps(wkb.loads(sk.geom.data, hex=True))
+                 sk_update = SkptSch(ptsk_id=pt.id,
+                          status=geo_data['status'],
+                          kategori=KategoriEnum.SK_ASG,
+                          luas=luas,
+                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+                 await crud.skpt.update(obj_current=sk, obj_new=sk_update)
+                 continue
+
 
             sch = SkptSch(ptsk_id=pt.id,
                           status=StatusSK(geo_data['STATUS']),
@@ -187,9 +200,7 @@ async def export_shp(filter_query:str = None):
                       tanggal_jatuh_tempo=data.tanggal_jatuh_tempo,
                       tanggal_tahun_SK=data.tanggal_tahun_SK,
                       ptsk_code=data.ptsk_code,
-                      ptsk_name=data.ptsk_name,
-        )
-
+                      ptsk_name=data.ptsk_name)
         schemas.append(sch)
 
     if results:

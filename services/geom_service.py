@@ -124,9 +124,16 @@ class GeomService(Generic[T]):
         gs = geopandas.GeoSeries.from_wkt(df['geom'])
 
         # Hapus kolom-kolom yang tidak diperlukan
-        df = df.drop('geom', axis=1) 
-        df = df.drop('updated_at', axis=1)
-        df = df.drop('created_at', axis=1)
+        df = df.drop('geom', axis=1)
+
+        f_updated = df.get("update_at", None)
+        if f_updated is not None:
+            df = df.drop('updated_at', axis=1)
+        
+        f_created = df.get("created_at", None)
+        if f_created is not None:
+            df = df.drop('created_at', axis=1)
+            
         columns_to_drop = [col for col in df.columns if "_id" in col]
         df = df.drop(columns=columns_to_drop)
 

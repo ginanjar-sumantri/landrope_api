@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING
 from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, JenisBayarEnum
 from decimal import Decimal
+from datetime import datetime
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -22,6 +23,7 @@ class KjbHdBase(SQLModel):
     kategori_penjual:KategoriPenjualEnum
     desa_id:UUID = Field(foreign_key="desa.id", nullable=False)
     luas_kjb:Decimal
+    tanggal_kjb:datetime| None = Field(default=datetime.now())
     remark:str
     manager_id:UUID = Field(foreign_key="manager.id")
     sales_id:UUID = Field(foreign_key="sales.id")
