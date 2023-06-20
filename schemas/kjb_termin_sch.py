@@ -1,4 +1,4 @@
-from models.kjb_model import KjbCaraBayar, KjbCaraBayarBase, KjbCaraBayarFullBase
+from models.kjb_model import KjbTermin, KjbTerminBase, KjbTerminFullBase
 from common.partial import optional
 from pydantic import BaseModel
 from typing import List
@@ -6,16 +6,16 @@ from uuid import UUID
 from common.enum import JenisBayarEnum
 from decimal import Decimal
 
-class KjbCaraBayarCreateSch(KjbCaraBayarBase):
+class KjbTerminCreateSch(KjbTerminBase):
     pass
 
-class KjbCaraBayarCreateExtSch(BaseModel):
+class KjbTerminCreateExtSch(BaseModel):
     jenis_bayar:JenisBayarEnum
     nilai:Decimal
 
-class KjbCaraBayarSch(KjbCaraBayarFullBase):
+class KjbTerminSch(KjbTerminFullBase):
     pass
 
 @optional
-class KjbCaraBayarUpdateSch(KjbCaraBayarFullBase):
+class KjbTerminUpdateSch(KjbTerminFullBase):
     pass

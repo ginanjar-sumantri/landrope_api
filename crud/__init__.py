@@ -19,15 +19,19 @@ from .marketing_crud import manager, sales
 from .dokumen_crud import dokumen
 from .bundle_hd_crud import bundlehd
 from .bundle_dt_crud import bundledt
-from .pemilik_crud import pemilik, kontak, rekening
 from .beban_biaya_crud import bebanbiaya
 
 from .kjb_hd_crud import kjb_hd
 from .kjb_dt_crud import kjb_dt
 from .kjb_rekening_crud import kjb_rekening
 from .kjb_beban_biaya_crud import kjb_bebanbiaya
-from .kjb_cara_bayar_crud import kjb_carabayar
+from .kjb_harga_crud import kjb_harga
+from .kjb_termin_crud import kjb_termin
 
 from .tanda_terima_notaris_hd_crud import tandaterimanotaris_hd
 from .tanda_terima_notaris_dt_crud import tandaterimanotaris_dt
+
+from .pemilik_crud import pemilik, kontak, rekening
+from .harga_standard_crud import harga_standard
+
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

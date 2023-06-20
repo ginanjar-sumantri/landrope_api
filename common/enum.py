@@ -63,6 +63,10 @@ class SatuanBayarEnum(str, Enum):
     Percentage = "Percentage"
     Amount = "Amount"
 
+class SatuanHargaEnum(str, Enum):
+    PerMeter2 = "Per_Meter2"
+    Lumpsum = "Lumpsum" 
+
 class StatusValidEnum(str, Enum):
     Valid = "Valid"
     Tidak_Valid = "Tidak_Valid"

@@ -9,8 +9,8 @@ from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbCaraBayar
-from schemas.kjb_cara_bayar_sch import KjbCaraBayarCreateSch, KjbCaraBayarUpdateSch
+from models.kjb_model import KjbHarga
+from schemas.kjb_harga_sch import KjbHargaCreateSch, KjbHargaUpdateSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -19,7 +19,7 @@ import crud
 
 
 
-class CRUDKjbCaraBayar(CRUDBase[KjbCaraBayar, KjbCaraBayarCreateSch, KjbCaraBayarUpdateSch]):
+class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
     pass
 
-kjb_carabayar = CRUDKjbCaraBayar(KjbCaraBayar)
+kjb_harga = CRUDKjbHarga(KjbHarga)

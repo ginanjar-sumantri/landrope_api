@@ -7,6 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
+from common.generator import generate_code_bundle
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
@@ -28,6 +29,8 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
             db_obj.created_by_id = created_by_id
         
         try:
+            db_obj.code = await generate_code_bundle(planing_id=db_obj.planing_id)
+
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
                 code = db_obj.code + i.code
@@ -44,5 +47,12 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
         await db_session.refresh(db_obj)
         
         return db_obj
+    
+    async def get_by_keyword(self, *, keyword: str, db_session: AsyncSession | None = None) -> BundleHd | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.keyword.ilike(f'%{keyword}%'))
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 bundlehd = CRUDBundleHd(BundleHd)

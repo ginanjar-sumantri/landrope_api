@@ -1,6 +1,6 @@
-from models.kjb_model import KjbHdBase, KjbHdFullBase, KjbRekening, KjbCaraBayar, KjbBebanBiaya, KjbDt
+from models.kjb_model import KjbHdBase, KjbHdFullBase, KjbRekening, KjbHarga, KjbBebanBiaya, KjbDt
 from schemas.kjb_rekening_sch import KjbRekeningCreateExtSch
-from schemas.kjb_cara_bayar_sch import KjbCaraBayarCreateExtSch
+from schemas.kjb_harga_sch import KjbHargaCreateExtSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateExtSch
 from common.partial import optional
 from sqlmodel import Field
@@ -8,7 +8,7 @@ from typing import List
 
 class KjbHdCreateSch(KjbHdBase):
     rekenings:List[KjbRekeningCreateExtSch]
-    carabayars:List[KjbCaraBayarCreateExtSch]
+    hargas:List[KjbHargaCreateExtSch]
     bebanbiayas:List[KjbBebanBiayaCreateExtSch]
 
 class KjbHdSch(KjbHdFullBase):
@@ -17,7 +17,7 @@ class KjbHdSch(KjbHdFullBase):
 class KjbHdByIdSch(KjbHdFullBase):
     kjb_dts:List[KjbDt]
     rekenings:List[KjbRekening]
-    carabayars:List[KjbCaraBayar]
+    harga:List[KjbHarga]
     bebanbiayas:List[KjbBebanBiaya]
 
     desa_name:str = Field(alias="desa_name")

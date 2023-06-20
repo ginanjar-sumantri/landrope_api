@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
-from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, JenisBayarEnum
+from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum
 from decimal import Decimal
 from datetime import datetime
 
@@ -33,6 +33,7 @@ class KjbHdBase(SQLModel):
     ada_utj:bool
     utj_amount:Decimal
     satuan_bayar:SatuanBayarEnum
+    satuan_harga:SatuanHargaEnum
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
@@ -45,7 +46,7 @@ class KjbHd(KjbHdFullBase, table=True):
 
     kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    carabayars:list["KjbCaraBayar"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
@@ -119,17 +120,32 @@ class KjbRekening(KjbRekeningFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="rekenings", sa_relationship_kwargs={'lazy':'selectin'})
 
 
-class KjbCaraBayarBase(SQLModel):
+class KjbHargaBase(SQLModel):
+    jenis_alashak:JenisAlashakEnum
+    harga_akta:Decimal | None = Field(nullable=True)
+    harga_transaksi:Decimal | None = Field(nullable=True)
+
+    kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id")
+
+class KjbHargaFullBase(BaseUUIDModel, KjbHargaBase):
+    pass
+
+class KjbHarga(KjbHargaFullBase, table=True):
+    kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'selectin'})
+    termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'selectin'})
+
+
+class KjbTerminBase(SQLModel):
     jenis_bayar:JenisBayarEnum
     nilai:Decimal
 
-    kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
+    kjb_harga_id:UUID = Field(foreign_key="kjb_harga.id", nullable=False)
 
-class KjbCaraBayarFullBase(BaseUUIDModel, KjbCaraBayarBase):
+class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
     pass
 
-class KjbCaraBayar(KjbCaraBayarFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="carabayars", sa_relationship_kwargs={'lazy':'selectin'})
+class KjbTermin(KjbTerminFullBase, table=True):
+    harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'selectin'})
 
 
 class KjbBebanBiayaBase(SQLModel):

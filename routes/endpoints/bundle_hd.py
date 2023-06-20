@@ -16,16 +16,6 @@ router = APIRouter()
 async def create(sch: BundleHdCreateSch):
     
     """Create a new object"""
-
-    planing = await crud.planing.get(id=sch.planing_id)
-    bundle_code = await generate_code(entity=CodeCounterEnum.Bundle)
-    project_code = planing.project.code
-    desa_code = planing.desa.code
-
-    codes = [project_code, desa_code, bundle_code]
-
-    sch.code = f"D" + "".join(codes)
-
         
     new_obj = await crud.bundlehd.create_and_generate(obj_in=sch)
     
