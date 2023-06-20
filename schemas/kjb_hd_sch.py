@@ -14,7 +14,10 @@ class KjbHdCreateSch(KjbHdBase):
     bebanbiayas:List[KjbBebanBiayaCreateExtSch]
 
 class KjbHdSch(KjbHdFullBase):
-    pass
+    desa_name:str = Field(alias="desa_name")
+    manager_name:str = Field(alias="manager_name")
+    sales_name:str = Field(alias="sales_name")
+    penjual_tanah:str = Field(alias="penjual_tanah")
 
 class KjbHdByIdSch(KjbHdFullBase):
     kjb_dts:List[KjbDtSch]
@@ -27,7 +30,6 @@ class KjbHdByIdSch(KjbHdFullBase):
     sales_name:str = Field(alias="sales_name")
 
     nomor_telepon:List[str] = Field(alias="nomor_telepon")
-
 
 
 @optional

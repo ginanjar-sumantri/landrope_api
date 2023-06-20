@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 class KjbHdBase(SQLModel):
     kjb_id:str | None = Field(nullable=False, max_length=500)
-    penjual_tanah:str | None = Field(nullable=True, max_length=200)
     category:CategoryEnum | None
     nama_group:str | None = Field(nullable=True, max_length=200)
     kategori_penjual:KategoriPenjualEnum
@@ -53,14 +52,20 @@ class KjbHd(KjbHdFullBase, table=True):
 
     @property
     def desa_name(self) -> str | None:
+        if self.desa is None:
+            return ""
         return self.desa.name
     
     @property
     def manager_name(self) -> str | None:
+        if self.manager is None:
+            return ""
         return self.manager.name
     
     @property
     def sales_name(self) -> str | None:
+        if self.sales is None:
+            return ""
         return self.sales.name
     
     @property
@@ -70,6 +75,12 @@ class KjbHd(KjbHdFullBase, table=True):
             kontaks.append(i.nomor_telepon)
         
         return kontaks
+    
+    @property
+    def penjual_tanah(self) -> str | None:
+        if self.pemilik is None:
+            return ""
+        return self.pemilik.name
 
 
 class KjbDtBase(SQLModel):

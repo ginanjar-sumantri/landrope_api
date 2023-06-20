@@ -46,8 +46,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 
                 harga = KjbHarga(jenis_alashak=j.jenis_alashak,
                                  harga_akta=j.harga_akta,
-                                 harga_transaksi=j.harga_transaksi,
-                                 termins=termins)
+                                 harga_transaksi=j.harga_transaksi)
+                
+                if len(termins) > 0:
+                    harga.termins = termins
                 
                 db_obj.hargas.append(harga)
             
