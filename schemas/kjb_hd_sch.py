@@ -1,7 +1,9 @@
-from models.kjb_model import KjbHdBase, KjbHdFullBase, KjbRekening, KjbHarga, KjbBebanBiaya, KjbDt
-from schemas.kjb_rekening_sch import KjbRekeningCreateExtSch
-from schemas.kjb_harga_sch import KjbHargaCreateExtSch
-from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateExtSch
+from models.kjb_model import KjbHdBase, KjbHdFullBase
+from schemas.kjb_dt_sch import KjbDtSch
+from schemas.kjb_termin_sch import KjbTerminSch
+from schemas.kjb_rekening_sch import KjbRekeningCreateExtSch, KjbRekeningSch
+from schemas.kjb_harga_sch import KjbHargaCreateExtSch, KjbHargaExtSch
+from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateExtSch, KjbBebanBiayaSch
 from common.partial import optional
 from sqlmodel import Field
 from typing import List
@@ -15,10 +17,10 @@ class KjbHdSch(KjbHdFullBase):
     pass
 
 class KjbHdByIdSch(KjbHdFullBase):
-    kjb_dts:List[KjbDt]
-    rekenings:List[KjbRekening]
-    harga:List[KjbHarga]
-    bebanbiayas:List[KjbBebanBiaya]
+    kjb_dts:List[KjbDtSch]
+    rekenings:List[KjbRekeningSch]
+    harga:List[KjbHargaExtSch]
+    bebanbiayas:List[KjbBebanBiayaSch]
 
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")

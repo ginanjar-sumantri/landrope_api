@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbHd
-from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch)
+from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 import crud
@@ -27,7 +27,7 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     objs = await crud.kjb_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[KjbHdSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[KjbHdByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""

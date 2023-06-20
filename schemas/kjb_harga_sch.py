@@ -1,5 +1,5 @@
 from models.kjb_model import KjbHarga, KjbHargaBase, KjbHargaFullBase
-from schemas.kjb_termin_sch import KjbTerminCreateExtSch
+from schemas.kjb_termin_sch import KjbTerminCreateExtSch, KjbTerminSch
 from common.partial import optional
 from pydantic import BaseModel
 from typing import List
@@ -19,6 +19,9 @@ class KjbHargaCreateExtSch(BaseModel):
 
 class KjbHargaSch(KjbHargaFullBase):
     pass
+
+class KjbHargaExtSch(KjbHargaFullBase):
+    termins:list[KjbTerminSch]
 
 @optional
 class KjbHargaUpdateSch(KjbHargaFullBase):
