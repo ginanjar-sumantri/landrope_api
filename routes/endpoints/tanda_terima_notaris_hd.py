@@ -39,8 +39,8 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
         
         kjb_dt_update = kjb_dt
         kjb_dt_update.bundle_hd_id = bundle.id
-        kjb_dt_update.luas_surat_ttn = new_obj.luas_surat
-        kjb_dt_update.planing_ttn_id = new_obj.planing_id
+        kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
+        kjb_dt_update.planing_by_ttn_id = new_obj.planing_id
 
         await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
     

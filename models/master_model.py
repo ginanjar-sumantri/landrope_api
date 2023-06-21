@@ -23,10 +23,12 @@ class JenisLahan(BaseUUIDModel, JenisLahanBase, table=True):
     # bidangs: "Bidang" = Relationship(back_populates="jenis_lahan", sa_relationship_kwargs={'lazy':'selectin'})
 
 ######################################################
-
-class JenisSurat(BaseUUIDModel, table=True):
+class JenisSuratBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
     name:str
+
+class JenisSurat(BaseUUIDModel, JenisSuratBase, table=True):
+    pass
 
     # kjb_dts: list["KjbDt"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'select'})
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'selectin'})
