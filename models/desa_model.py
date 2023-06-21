@@ -25,5 +25,5 @@ class DesaFullBase(DesaRawBase, BaseGeoModel):
 
 class Desa(DesaFullBase, table=True):
     desa_planings:list["Planing"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_hds: list["KjbHd"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_hds: list["KjbHd"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'select'})
 

@@ -34,11 +34,11 @@ class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
 class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_surat:"JenisSurat" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    notaris:"Notaris" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    planing:"Planing" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
-    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
 
 class TandaTerimaNotarisDtBase(SQLModel):
@@ -53,7 +53,7 @@ class TandaTerimaNotarisDtFullBase(BaseUUIDModel, TandaTerimaNotarisDtBase):
     pass
 
 class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
-    dokumen:"Dokumen" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
 
 

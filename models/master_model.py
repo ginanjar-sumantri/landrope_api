@@ -6,9 +6,7 @@ from common.enum import JenisAlashakEnum
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.bidang_model import Bidang
-    from models.kjb_model import KjbDt
-    from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
+    from models.planing_model import Planing
 
 class BebanBiaya(BaseUUIDModel, table=True):
     name:str
@@ -21,7 +19,8 @@ class JenisLahanBase(SQLModel):
     name:str = Field(max_length=150)
 
 class JenisLahan(BaseUUIDModel, JenisLahanBase, table=True):
-    bidangs: "Bidang" = Relationship(back_populates="jenis_lahan", sa_relationship_kwargs={'lazy':'selectin'})
+    pass
+    # bidangs: "Bidang" = Relationship(back_populates="jenis_lahan", sa_relationship_kwargs={'lazy':'selectin'})
 
 ######################################################
 
@@ -29,8 +28,8 @@ class JenisSurat(BaseUUIDModel, table=True):
     jenis_alashak:JenisAlashakEnum
     name:str
 
-    kjb_dts: list["KjbDt"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'select'})
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'selectin'})
+    # kjb_dts: list["KjbDt"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'select'})
+    # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="jenis_surat", sa_relationship_kwargs={'lazy':'selectin'})
     
 #######################################################
 
@@ -39,4 +38,18 @@ class HargaStandardBase(SQLModel):
     harga:Decimal
 
 class HargaStandard(BaseUUIDModel, HargaStandardBase, table=True):
-    pass
+    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def planing_name(self) -> str :
+        if self.planing is None:
+            return ""
+        
+        return self.planing.name
+    
+    @property
+    def planing_code(self) -> str :
+        if self.planing is None:
+            return ""
+        
+        return self.planing.code

@@ -59,7 +59,7 @@ class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
 
 class BundleDt(BundleDtFullBase, table=True):
     bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'selectin'})
-    dokumen:"Dokumen" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'selectin'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def dokumen_name(self) -> str | None:

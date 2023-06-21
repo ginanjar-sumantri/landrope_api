@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum
 from decimal import Decimal
 from datetime import datetime
@@ -38,10 +38,10 @@ class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
 
 class KjbHd(KjbHdFullBase, table=True):
-    desa:"Desa" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
-    manager:"Manager" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
-    sales:"Sales" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
-    pemilik:"Pemilik" = Relationship(back_populates="kjb_hds", sa_relationship_kwargs={'lazy':'selectin'})
+    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    manager:"Manager" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    sales:"Sales" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
@@ -90,22 +90,26 @@ class KjbDtBase(SQLModel):
     harga_akta:Decimal
     harga_transaksi:Decimal
     luas_surat:Decimal
+    luas_surat_by_ttn:Decimal
+    planing_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
+    planing_by_ttn_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
     
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
-    planing_id:UUID | None = Field(foreign_key="planing.id", nullable=True)
+    
     jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
-    bundle_hd_id:UUID = Field(foreign_key="bundle_hd.id", nullable=True)
+    bundle_hd_id:Optional[UUID] = Field(foreign_key="bundle_hd.id", nullable=True)
 
 
 class KjbDtFullBase(BaseUUIDModel, KjbDtBase):
     pass
 
-class KjbDt(KjbDtFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
-    planing:"Planing" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_surat:"JenisSurat" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
-    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+class KjbDt(KjbDtFullBase, table=True): 
+    planing:Optional["Planing"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.planing_id==Planing.id", "lazy": "joined"})
+    planing_by_ttn:Optional["Planing"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.planing_by_ttn_id==Planing.id", "lazy": "joined"})
 
+    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property

@@ -41,7 +41,7 @@ class BidangFullBase(BaseGeoModel, BidangRawBase):
 class Bidang(BidangFullBase, table=True):
     planing:"Planing" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
     skpt:"Skpt" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_lahan: "JenisLahan" = Relationship(back_populates="bidangs", sa_relationship_kwargs={'lazy':'selectin'})
+    jenis_lahan: "JenisLahan" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def planing_name(self)-> str | None:

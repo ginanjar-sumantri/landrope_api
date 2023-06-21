@@ -13,5 +13,6 @@ class NotarisFullBase(BaseUUIDModel, NotarisBase):
     pass
 
 class Notaris(NotarisFullBase, table=True):
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="notaris", sa_relationship_kwargs={'lazy':'selectin'})
+    # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="notaris", sa_relationship_kwargs={'lazy':'selectin'})
+    pass
     

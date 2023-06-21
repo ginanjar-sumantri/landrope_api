@@ -34,9 +34,9 @@ class Planing(PlaningFullBase, table=True):
     skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
-    kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
-
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
+    # kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_dts_by_ttn: list["KjbDt"] = Relationship(back_populates="planing_by_ttn", sa_relationship_kwargs={'lazy':'select'})
+    # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     
 
     @property

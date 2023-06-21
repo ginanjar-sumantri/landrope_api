@@ -16,7 +16,7 @@ class ManagerFullBase(BaseUUIDModel, ManagerBase):
 
 class Manager(ManagerFullBase, table=True):
     salests:list["Sales"] = Relationship(back_populates="manager", sa_relationship_kwargs={'lazy':'select'})
-    kjb_hds: list["KjbHd"] = Relationship(back_populates="manager", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_hds: list["KjbHd"] = Relationship(back_populates="manager", sa_relationship_kwargs={'lazy':'select'})
 
 
 class SalesBase(SQLModel):
@@ -30,7 +30,7 @@ class Sales(SalesFullBase, table=True):
     manager_id:UUID | None = Field(foreign_key="manager.id")
 
     manager:"Manager" = Relationship(back_populates="salests", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_hds: list["KjbHd"] = Relationship(back_populates="sales", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_hds: list["KjbHd"] = Relationship(back_populates="sales", sa_relationship_kwargs={'lazy':'select'})
 
     @property
     def manager_name(self) -> str | None :

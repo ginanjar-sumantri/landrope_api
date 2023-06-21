@@ -20,10 +20,11 @@ class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass
 
 class Dokumen(DokumenFullBase, table=True):
-    bundledts:list["BundleDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
-    cheklistdokumens:list["ChecklistDokumen"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+    # bundledts:list["BundleDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+    # cheklistdokumens:list["ChecklistDokumen"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
 
-    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+    # tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
+    pass
 
 
 

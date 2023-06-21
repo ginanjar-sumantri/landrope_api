@@ -15,7 +15,7 @@ class PemilikFullBase(BaseUUIDModel, PemilikBase):
 class Pemilik(PemilikFullBase, table=True):
     kontaks:list["Kontak"] = Relationship(back_populates="pemilik", sa_relationship_kwargs={'lazy':'selectin'})
     rekenings:list["Rekening"] = Relationship(back_populates="pemilik", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_hds: list["KjbHd"] = Relationship(back_populates="pemilik", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_hds: list["KjbHd"] = Relationship(back_populates="pemilik", sa_relationship_kwargs={'lazy':'select'})
 
 
 class KontakBase(SQLModel):

@@ -18,7 +18,7 @@ class ChecklistDokumenFullBase(BaseUUIDModel, ChecklistDokumenBase):
 
 class ChecklistDokumen(ChecklistDokumenFullBase, table=True):
 
-    dokumen:"Dokumen" = Relationship(back_populates="cheklistdokumens", sa_relationship_kwargs={'lazy':'selectin'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def dokumen_name(self) -> str:
