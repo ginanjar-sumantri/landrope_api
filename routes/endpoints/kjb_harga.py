@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbHarga
-from schemas.kjb_harga_sch import (KjbHargaSch, KjbHargaCreateSch, KjbHargaUpdateSch)
+from schemas.kjb_harga_sch import (KjbHargaSch, KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 import crud
@@ -11,7 +11,7 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHargaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbHargaCreateSch):
+async def create(sch: KjbHargaCreateExtSch):
     
     """Create a new object"""
         
