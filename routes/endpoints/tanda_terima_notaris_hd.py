@@ -9,6 +9,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
+from common.enum import StatusValidEnum, StatusPetaLokasiEnum
 import crud
 
 
@@ -21,11 +22,15 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
 
     kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
 
-    if kjb_dt is None :
+    if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
         
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch)
 
+    if new_obj.status_valid is not StatusValidEnum.Valid and new_obj.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+        return create_response(data=new_obj)
+    
+    kjb_dt_update = kjb_dt
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
     if kjb_dt.bundle_hd_id is None :
         ## Match bundle with kjb detail by alashak
@@ -37,12 +42,12 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
             bundle_sch = BundleHdCreateSch(planing_id=sch.planing_id)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
         
-        kjb_dt_update = kjb_dt
         kjb_dt_update.bundle_hd_id = bundle.id
-        kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
-        kjb_dt_update.planing_by_ttn_id = new_obj.planing_id
+    
+    kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
+    kjb_dt_update.planing_by_ttn_id = new_obj.planing_id
 
-        await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
+    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
     
     return create_response(data=new_obj)
 
@@ -75,7 +80,35 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
+    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+
+    if not kjb_dt:
+        raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
+    
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch)
+
+    if obj_updated.status_valid is not StatusValidEnum.Valid and obj_updated.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+        return create_response(data=obj_updated)
+    
+    kjb_dt_update = kjb_dt
+    ## if kjb detail is not match with bundle, then match bundle with kjb detail
+    if kjb_dt.bundle_hd_id is None :
+        ## Match bundle with kjb detail by alashak
+        ## When bundle not exists create new bundle and match id bundle to kjb detail
+        ## When bundle exists match match id bundle to kjb detail
+        
+        bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
+        if bundle is None:
+            bundle_sch = BundleHdCreateSch(planing_id=sch.planing_id)
+            bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
+
+        kjb_dt_update.bundle_hd_id = bundle.id
+    
+    kjb_dt_update.luas_surat_by_ttn = obj_updated.luas_surat
+    kjb_dt_update.planing_by_ttn_id = obj_updated.planing_id
+
+    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
+
     return create_response(data=obj_updated)
 
 

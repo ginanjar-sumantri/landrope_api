@@ -1,13 +1,15 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
-from models.tanda_terima_notaris_model import TandaTerimaNotarisDt
+from models.bundle_model import BundleHd, BundleDt
+from models.tanda_terima_notaris_model import TandaTerimaNotarisDt, TandaTerimaNotarisHd
 from schemas.tanda_terima_notaris_dt_sch import (TandaTerimaNotarisDtSch, TandaTerimaNotarisDtCreateSch, TandaTerimaNotarisDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -16,7 +18,44 @@ router = APIRouter()
 async def create(sch: TandaTerimaNotarisDtCreateSch):
     
     """Create a new object"""
+
+    tanda_terima_hd = await crud.tandaterimanotaris_hd.get(id=sch.tanda_terima_notaris_hd_id)
+    if not tanda_terima_hd:
+        raise IdNotFoundException(TandaTerimaNotarisHd, id)
+    
+    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    if not bundlehd_obj_current:
+        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+    
+    dokumen = await crud.dokumen.get(id=sch.dokumen_id)
+
+    bundledt_obj_current = next((x for x in bundlehd_obj_current.bundledts if x.dokumen_id == sch.dokumen_id and x.bundle_hd_id == bundlehd_obj_current.id), None)
+    if bundledt_obj_current is None:
+        code = bundlehd_obj_current.code + dokumen.code
+        new_dokumen = BundleDt(code=code, dokumen_id=dokumen.id, meta_data=sch.meta_data, bundle_hd_id=bundlehd_obj_current.id)
+
+        bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen)
+    else:
+        bundledt_obj_updated = bundledt_obj_current
+        bundledt_obj_updated.meta_data = sch.meta_data
+
+        await crud.bundledt.update(obj_current=bundledt_obj_current, obj_new=bundledt_obj_updated)
+    
+    #updated bundle header keyword when dokumen metadata is_keyword true
+    if dokumen.is_keyword:
+        metadata = sch.meta_data.replace("'",'"')
+        obj_json = json.loads(metadata)
+
+        values = []
+        for data in obj_json['history']:
+            value = data['meta_data'][f'{dokumen.key_field}']
+            values.append(value)
         
+        edit_keyword_hd = bundlehd_obj_current
+        edit_keyword_hd.keyword = ','.join(values) if bundlehd_obj_current.keyword is None else f"{bundlehd_obj_current.keyword},{','.join(values)}"
+
+        await crud.bundlehd.update(obj_current=bundlehd_obj_current, obj_new=edit_keyword_hd)
+
     new_obj = await crud.tandaterimanotaris_dt.create(obj_in=sch)
     
     return create_response(data=new_obj)

@@ -8,7 +8,7 @@ class KjbBebanBiayaCreateSch(KjbBebanBiayaBase):
     pass
 
 class KjbBebanBiayaCreateExtSch(BaseModel):
-    beban_biaya_id:UUID | None
+    beban_biaya_id:str | None
     beban_biaya_name:str | None
     beban_pembeli:bool
 
