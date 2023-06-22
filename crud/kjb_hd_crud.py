@@ -10,7 +10,7 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening
-from models.master_model import BebanBiaya
+from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch
 from typing import List
 from uuid import UUID
@@ -38,7 +38,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 db_obj.rekenings.append(rekening)
             
             for j in obj_in.hargas:
-                termins = [KjbTermin]
+                termins = []
                 for l in j.termins:
                     termin = KjbTermin(jenis_bayar=l.jenis_bayar,
                                          nilai=l.nilai)
@@ -54,16 +54,18 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 db_obj.hargas.append(harga)
             
             for k in obj_in.bebanbiayas:
-                obj_bebanbiaya = await crud.bebanbiaya.get(id=k.beban_biaya_id)
-
+                if k.beban_biaya_id != "":
+                    obj_bebanbiaya = await crud.bebanbiaya.get(id=UUID(k.beban_biaya_id))
+                else:
+                    obj_bebanbiaya = await crud.bebanbiaya.get_by_name(name=k.beban_biaya_name)
+                    
                 if obj_bebanbiaya is None:
-                    obj_bebanbiaya_in = BebanBiaya(name=k.beban_biaya_name)
-                    obj_bebanbiaya = await crud.bebanbiaya.create(obj_in=obj_bebanbiaya_in)
-
-
+                        obj_bebanbiaya_in = BebanBiayaCreateSch(name=k.beban_biaya_name, is_active=True)
+                        obj_bebanbiaya = await crud.bebanbiaya.create(obj_in=obj_bebanbiaya_in)
+                    
                 bebanbiaya = KjbBebanBiaya(beban_biaya_id=obj_bebanbiaya.id,
-                                               beban_pembeli=k.beban_pembeli)
-                db_obj.bebanbiayas.append(bebanbiaya)
+                                                beban_pembeli=k.beban_pembeli)
+                db_obj.bebanbiayas.append(bebanbiaya)  
 
             db_session.add(db_obj)
             await db_session.commit()
