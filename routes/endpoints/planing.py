@@ -141,7 +141,7 @@ async def bulk_create(file:UploadFile=File()):
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
-@router.post("/bulk")
+@router.post("/bulk2")
 async def bulk_planing(file:UploadFile=File()):
 
     """Create bulk or import data"""
