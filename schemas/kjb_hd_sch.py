@@ -22,7 +22,7 @@ class KjbHdSch(KjbHdFullBase):
 class KjbHdByIdSch(KjbHdFullBase):
     kjb_dts:List[KjbDtSch]
     rekenings:List[KjbRekeningSch]
-    harga:List[KjbHargaExtSch]
+    hargas:List[KjbHargaExtSch]
     bebanbiayas:List[KjbBebanBiayaSch]
 
     desa_name:str = Field(alias="desa_name")

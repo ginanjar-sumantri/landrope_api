@@ -156,6 +156,7 @@ async def bulk_planing(file:UploadFile=File()):
             project_name:str = geo_data['project']
             desa_name:str = geo_data['desa']
             code:str = geo_data['code']
+            name:str = geo_data['name']
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
             project = await crud.project.get_by_name(name=project_name)
@@ -181,7 +182,7 @@ async def bulk_planing(file:UploadFile=File()):
                 continue
 
             sch = PlaningSch(code=code,
-                            name=project.name + "-" + desa.name + "-" + code,
+                            name=name,
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
@@ -229,7 +230,7 @@ async def export_shp2(filter_query:str = None):
     results = await crud.planing.get_by_dict(filter_query=filter_query)
 
     for data in results:
-        sch = PlaningExportSch(id=data.id,
+        sch = PlaningExportSch(
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       luas=data.luas,
                       name=data.name,

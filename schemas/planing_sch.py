@@ -26,7 +26,6 @@ class PlaningExtSch(PlaningFullBase):
     section_name:str | None
 
 class PlaningExportSch(BaseGeoModel):
-    id:UUID
     luas:Decimal
     name:str | None
     code:str | None
