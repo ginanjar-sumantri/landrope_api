@@ -38,6 +38,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 db_obj.rekenings.append(rekening)
             
             for j in obj_in.hargas:
+                obj_harga = next((harga for harga in db_obj.hargas if harga.jenis_alashak == j.jenis_alashak), None)
+                if obj_harga:
+                    raise HTTPException(status_code=409, detail=f"Harga {j.jenis_alashak} double input")
+                
                 termins = []
                 for l in j.termins:
                     termin = KjbTermin(jenis_bayar=l.jenis_bayar,

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from models.desa_model import Desa
     from models.marketing_model import Manager, Sales
     from models.pemilik_model import Pemilik
-    from models.master_model import JenisSurat
+    from models.master_model import JenisSurat, BebanBiaya
     from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
     from models.bundle_model import BundleHd
 
@@ -174,3 +174,11 @@ class KjbBebanBiayaFullBase(BaseUUIDModel, KjbBebanBiayaBase):
 
 class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="bebanbiayas", sa_relationship_kwargs={'lazy':'selectin'})
+    beban_biaya:"BebanBiaya" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def beban_biaya_name(self) -> str :
+        if self.beban_biaya is None:
+            return ""
+        
+        return self.beban_biaya.name
