@@ -28,6 +28,7 @@ class KjbHdByIdSch(KjbHdFullBase):
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")
     sales_name:str = Field(alias="sales_name")
+    penjual_tanah:str = Field(alias="penjual_tanah")
 
     nomor_telepon:List[str] = Field(alias="nomor_telepon")
 

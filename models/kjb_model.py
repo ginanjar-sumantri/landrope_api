@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from models.bundle_model import BundleHd
 
 class KjbHdBase(SQLModel):
-    kjb_id:str | None = Field(nullable=False, max_length=500)
+    code:str | None = Field(nullable=True, max_length=500)
     category:CategoryEnum | None
     nama_group:str | None = Field(nullable=True, max_length=200)
     kategori_penjual:KategoriPenjualEnum
