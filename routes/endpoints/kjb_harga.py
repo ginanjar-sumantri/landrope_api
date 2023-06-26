@@ -11,7 +11,7 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHargaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbHargaCreateExtSch):
+async def create(sch: KjbHargaCreateSch):
     
     """Create a new object"""
         
