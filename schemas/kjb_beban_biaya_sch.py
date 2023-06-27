@@ -8,6 +8,12 @@ from uuid import UUID
 class KjbBebanBiayaCreateSch(KjbBebanBiayaBase):
     pass
 
+class KjbBebanBiayaCreateExSch(BaseModel):
+    beban_biaya_id:str | None
+    beban_biaya_name:str | None
+    beban_pembeli:bool
+    kjb_hd_id:str | None
+
 class KjbBebanBiayaCreateExtSch(BaseModel):
     beban_biaya_id:str | None
     beban_biaya_name:str | None

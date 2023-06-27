@@ -2,7 +2,8 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbBebanBiaya
-from schemas.kjb_beban_biaya_sch import (KjbBebanBiayaSch, KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch)
+from schemas.beban_biaya_sch import BebanBiayaCreateSch
+from schemas.kjb_beban_biaya_sch import (KjbBebanBiayaSch, KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch, KjbBebanBiayaCreateExSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 import crud
@@ -11,11 +12,18 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbBebanBiayaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbBebanBiayaCreateSch):
+async def create(sch: KjbBebanBiayaCreateExSch):
     
     """Create a new object"""
-        
-    new_obj = await crud.kjb_bebanbiaya.create(obj_in=sch)
+
+    beban_biaya = await crud.bebanbiaya.get_by_name(name=sch.beban_biaya_name)
+    if beban_biaya is None:
+        sch_bebanbiaya = BebanBiayaCreateSch(name=sch.beban_biaya_name, is_active=True)
+        beban_biaya = await crud.bebanbiaya.create(obj_in=sch_bebanbiaya)
+
+    sch_in = KjbBebanBiayaCreateSch(beban_biaya_id=beban_biaya.id, beban_pembeli=sch.beban_pembeli, kjb_hd_id=UUID(sch.kjb_hd_id))
+
+    new_obj = await crud.kjb_bebanbiaya.create(obj_in=sch_in)
     
     return create_response(data=new_obj)
 
