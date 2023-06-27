@@ -17,7 +17,7 @@ class DesaSch(DesaFullBase):
 
 class DesaExportSch(BaseGeoModel):
     id:UUID
-    desa:str | None
+    name:str | None
     code_desa:str | None
     kecamatan:str | None
     kota:str | None

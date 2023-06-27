@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Response
 from fastapi_pagination import Params
 import crud
 from models.skpt_model import Skpt, StatusSKEnum, KategoriEnum
-from schemas.skpt_sch import (SkptSch, SkptCreateSch, SkptUpdateSch, SkptRawSch, SkptExtSch)
+from schemas.skpt_sch import (SkptSch, SkptCreateSch, SkptUpdateSch, SkptRawSch, SkptExtSch, SkptExportSch)
 from schemas.ptsk_sch import (PtskSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, ImportResponseBaseSch, create_response)
@@ -201,6 +201,33 @@ async def export_shp(filter_query:str = None):
                       tanggal_tahun_SK=data.tanggal_tahun_SK,
                       ptsk_code=data.ptsk_code,
                       ptsk_name=data.ptsk_name)
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].nomor_sk}"
+
+    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+
+@router.get("/export/shp2", response_class=Response)
+async def export_shp(filter_query:str = None):
+
+    schemas = []
+    
+    results = await crud.skpt.get_by_dict(filter_query=filter_query)
+
+    for data in results:
+        sch = SkptExportSch(geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+                      code=data.ptsk.code,
+                      name=data.ptsk.name,
+                      kategori=str(data.kategori),
+                      luas=data.luas,
+                      no_sk=data.nomor_sk,
+                      status=str(data.status),
+                      tgl_sk=data.tanggal_tahun_SK,
+                      jatuhtempo=data.tanggal_jatuh_tempo,
+                      project=data.pro)
         schemas.append(sch)
 
     if results:

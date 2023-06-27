@@ -8,7 +8,7 @@ from common.enum import JenisAlashakEnum
 from decimal import Decimal
 
 class KjbHargaCreateSch(KjbHargaBase):
-    pass
+    termins:list[KjbTerminCreateExtSch]
 
 class KjbHargaCreateExtSch(BaseModel):
     jenis_alashak:JenisAlashakEnum

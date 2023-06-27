@@ -139,8 +139,10 @@ async def bulk_desa(file:UploadFile=File()):
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         
         for i, geo_data in geo_dataframe.iterrows():
-            name:str = geo_data['desa']
-            code:str = geo_data['code_desa']
+            code:str = geo_data['code']
+            name:str = geo_data['name']
+            kota:str = geo_data['kota']
+            kecamatan:str = geo_data['kecamatan']
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
             obj_current = await crud.desa.get_by_name(name=name)
@@ -149,8 +151,8 @@ async def bulk_desa(file:UploadFile=File()):
                 obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
                 sch_update = DesaSch(name=name, 
                       code=code,
-                      kecamatan=geo_data['kecamatan'],
-                      kota=geo_data['kota'], 
+                      kecamatan=kecamatan,
+                      kota=kota, 
                       luas=luas, 
                       geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
                 
@@ -162,8 +164,8 @@ async def bulk_desa(file:UploadFile=File()):
 
             sch = DesaSch(name=name, 
                           code=code,
-                          kecamatan=geo_data['kecamatan'],
-                          kota=geo_data['kota'], 
+                          kecamatan=kecamatan,
+                          kota=kota, 
                           luas=luas, 
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
             
@@ -209,7 +211,7 @@ async def export_shp2(filter_query:str = None):
     for data in results:
         sch = DesaExportSch(
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
-                      desa=data.name,
+                      name=data.name,
                       code_desa=data.code,
                       kecamatan=data.kecamatan,
                       kota=data.kota,

@@ -153,10 +153,11 @@ async def bulk_planing(file:UploadFile=File()):
         errors = []
 
         for i, geo_data in geo_dataframe.iterrows():
+            name:str = geo_data['name']
+            code:str = geo_data['code']
             project_name:str = geo_data['project']
             desa_name:str = geo_data['desa']
-            code:str = geo_data['code']
-            name:str = geo_data['name']
+
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
             project = await crud.project.get_by_name(name=project_name)
@@ -172,7 +173,7 @@ async def bulk_planing(file:UploadFile=File()):
             if obj_current:
                 obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
                 sch_update = PlaningSch(code=code,
-                            name=project.name + "-" + desa.name + "-" + code,
+                            name=name,
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
@@ -192,6 +193,9 @@ async def bulk_planing(file:UploadFile=File()):
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")
+    
+    if len(errors) > 0:
+        return {"result" : status.HTTP_207_MULTI_STATUS, "message" : "Some data can't imported", "errors" : errors}
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
