@@ -9,9 +9,9 @@ from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbHarga
+from models.kjb_model import KjbHarga, KjbTermin
 from schemas.kjb_harga_sch import KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch
-from schemas.kjb_termin_sch import KjbTerminSch
+from schemas.kjb_termin_sch import KjbTerminSch, KjbTerminCreateExtSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -30,7 +30,7 @@ class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
         try:
 
             for i in obj_in.termins:
-                termin = KjbTerminSch(jenis_bayar=i.jenis_bayar, nilai=i.nilai)
+                termin = KjbTermin(jenis_bayar=i.jenis_bayar, nilai=i.nilai)
                 db_obj.termins.append(termin)
 
             db_session.add(db_obj)
