@@ -31,7 +31,7 @@ class ImportFailedException(HTTPException):
         
         super().__init__(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
-                detail=f"Please Attach File", 
+                detail=f"Import file {filename} failed, please check data of file", 
                 headers=headers
             )
 
@@ -74,7 +74,7 @@ class NameNotFoundException(HTTPException, Generic[ModelType]):
         else:
             super().__init__(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{model.__name__} name not found.",
+                detail=f"Unable to find the {model.__name__} named {name}.",
                 headers=headers,
             )
 

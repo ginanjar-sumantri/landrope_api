@@ -215,7 +215,7 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
 @router.get("/export/shp", response_class=Response)
 async def export(filter_query:str = None):
     
-    results = await crud.bidang.get_by_dict(filter_query=filter_query)
+    results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
     schemas = []
     for data in results:
         sch = BidangExtSch(id=str(data.id),

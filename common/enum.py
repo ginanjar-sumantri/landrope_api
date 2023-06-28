@@ -7,6 +7,15 @@ class StatusEnum(str, Enum):
     Lanjut = "Lanjut"
     Pending = "Pending"
 
+class StatusSKEnum(str, Enum):
+    Belum_Pengajuan_SK = "Belum_Pengajuan_SK"
+    Pengajuan_Awal_SK  = "Pengajuan_Awal_SK"
+    Final_SK = "Final_SK"
+
+class KategoriSKEnum(str, Enum):
+    SK_Orang = "SK_Orang"
+    SK_ASG = "SK_ASG"
+
 class TipeProsesEnum(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"

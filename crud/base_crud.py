@@ -85,7 +85,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response =  await db_session.execute(query)
         return response.scalars().all()
 
-    async def get_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: str | None = None) -> List[ModelType] | None:
+    async def get_multi_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: str | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
         query = select(self.model)
 
@@ -262,6 +262,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         await db_session.refresh(db_obj)
         return db_obj
+    
+    async def create_all(self, *, obj_ins: List[CreateSchemaType] | List[ModelType],
+                     db_session : AsyncSession | None = None) -> List[ModelType] :
+        db_session = db_session or db.session
+        db_objs = [self.model.from_orm(obj_in) for obj_in in obj_ins] #type ignore
+
+        try:
+            db_session.add_all(db_objs)
+            await db_session.commit()
+        except exc.IntegrityError:
+            await db_session.rollback()
+            raise HTTPException(status_code=409, detail="Resource already exists")
+        
+        await db_session.refresh(db_objs)
+        return db_objs
     
     async def create_with_dict(self, db_session: AsyncSession | None = None, created_by_id : UUID | str | None = None, **kwargs) -> ModelType:
         db_session = db_session or db.session
