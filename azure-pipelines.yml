@@ -1,31 +1,27 @@
 resources:
-- repo: self
-  fetchDepth: '1'
+  - repo: self
+    fetchDepth: 1
 pool:
   vmImage: ubuntu-latest
 trigger:
-- staging
+  - staging
+  - dev
 variables:
-  BuildConfiguration: 'Release'
-  DockerImageName: 'sedayuone/landrope'
+  BuildConfiguration: "Release"
+  DockerImageName: "sedayuone/landrope/$(Build.SourceBranchName)/landrope_api"
 steps:
-- task: CmdLine@1
-  displayName: 'Lock image version in deployment.yaml'
-  inputs:
-    filename: /bin/bash
-    arguments: '-c "awk ''{gsub(\"LAND_IMAGE\", \"asia.gcr.io/$(DockerImageName):$(Build.BuildId)\", $0); print}'' deployment-dev.yaml > $(build.artifactstagingdirectory)/deployment-dev.yaml"'
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)'
-- task: Docker@2
-  displayName: 'Login to Container Registry'
-  inputs:
-    command: login
-    containerRegistry: 'gcr-sedayuone'
-- task: Docker@2
-  displayName: 'Build and push image'
-  inputs:
-    Dockerfile: 'Dockerfile'
-    command: buildAndPush
-    repository: '$(DockerImageName)'
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish Artifact"
+    inputs:
+      PathtoPublish: "$(build.artifactstagingdirectory)"
+  - task: Docker@2
+    displayName: "Login to Container Registry"
+    inputs:
+      command: login
+      containerRegistry: "gar-sedayuone"
+  - task: Docker@2
+    displayName: "Build and push image"
+    inputs:
+      Dockerfile: "Dockerfile"
+      command: buildAndPush
+      repository: "$(DockerImageName)"
