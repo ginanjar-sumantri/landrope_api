@@ -36,5 +36,6 @@ from .harga_standard_crud import harga_standard
 from .jenis_lahan_crud import jenislahan
 from .jenis_surat_crud import jenissurat
 from .marketing_crud import manager, sales
+from .notaris_crud import notaris
 
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap
