@@ -1,13 +1,11 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingPlaningSkpt
 from enum import Enum
 from datetime import date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.planing_model import Planing
     from models.skpt_model import Skpt
     # from models.rincik_model import Rincik
     # from models.bidang_model import Bidang, Bidangoverlap

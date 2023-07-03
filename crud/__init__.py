@@ -10,7 +10,6 @@ from .draft_crud import draft
 from .gps_crud import gps
 from .skpt_crud import skpt
 from .skpt_dt_crud import skptdt
-from .mapping_crud import planing_skpt
 from .code_counter_crud import codecounter
 from .worker_crud import worker
 from .role_crud import role

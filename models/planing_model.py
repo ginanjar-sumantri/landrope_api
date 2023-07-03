@@ -1,18 +1,14 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingPlaningSkpt
 from uuid import UUID
 from typing import TYPE_CHECKING
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.skpt_model import Skpt
-    from models.bidang_model import Bidang, Bidangoverlap
+    from models.bidang_model import Bidang
     from models.project_model import Project
     from models.desa_model import Desa
-    from models.dokumen_model import BundleHd
-    from models.kjb_model import KjbDt
-    from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
+    from models.bundle_model import BundleHd
 
 class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -31,7 +27,6 @@ class Planing(PlaningFullBase, table=True):
 
     project:"Project" = Relationship(back_populates="project_planings", sa_relationship_kwargs={'lazy':'selectin'})
     desa:"Desa" = Relationship(back_populates="desa_planings", sa_relationship_kwargs={'lazy':'selectin'})
-    skpts: list["Skpt"] = Relationship(back_populates="planings", link_model=MappingPlaningSkpt, sa_relationship_kwargs={'lazy':'selectin'})
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     # kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})

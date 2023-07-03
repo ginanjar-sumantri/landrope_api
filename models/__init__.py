@@ -5,7 +5,7 @@ from .desa_model import Desa
 from .ptsk_model import Ptsk
 from .master_model import JenisLahan, BebanBiaya, JenisSurat
 from .bidang_model import Bidang 
-from .mapping_model import (MappingPlaningSkpt, MappingBidangOverlap)
+from .mapping_model import (MappingBidangOverlap)
 from .draft_model import Draft
 from .gps_model import Gps
 from .skpt_model import Skpt

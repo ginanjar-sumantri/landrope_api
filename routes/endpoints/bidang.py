@@ -7,7 +7,6 @@ from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, Bid
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
-from schemas.mapping_sch import MappingPlaningSkptSch
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
 from shapely.geometry import shape
@@ -55,18 +54,18 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         raise ImportFailedException()
     
     #add maping planing when not exists
-    await addMappingPlaningSKPT(sk_id=sch.skpt_id, plan_id=sch.planing_id)
+    # await addMappingPlaningSKPT(sk_id=sch.skpt_id, plan_id=sch.planing_id)
 
     new_obj = await crud.bidang.create(obj_in=sch)
 
     return create_response(data=new_obj)
     
-async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
-    obj = await crud.planing_skpt.get_mapping_by_plan_sk_id(plan_id=plan_id, sk_id=sk_id)
-    if obj is None :
-        sch = MappingPlaningSkptSch(planing_id=plan_id, skpt_id=sk_id)
-        obj = await crud.planing_skpt.create(obj_in=sch)
-    return obj
+# async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
+#     obj = await crud.planing_skpt.get_mapping_by_plan_sk_id(plan_id=plan_id, sk_id=sk_id)
+#     if obj is None :
+#         sch = MappingPlaningSkptSch(planing_id=plan_id, skpt_id=sk_id)
+#         obj = await crud.planing_skpt.create(obj_in=sch)
+#     return obj
 
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
