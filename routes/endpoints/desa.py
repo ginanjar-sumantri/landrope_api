@@ -181,7 +181,7 @@ async def export_shp(filter_query:str = None):
 
     schemas = []
     
-    results = await crud.desa.get_by_dict(filter_query=filter_query)
+    results = await crud.desa.get_multi_by_dict(filter_query=filter_query)
 
     for data in results:
         sch = DesaSch(id=data.id,
@@ -206,7 +206,7 @@ async def export_shp2(filter_query:str = None):
 
     schemas = []
     
-    results = await crud.desa.get_by_dict(filter_query=filter_query)
+    results = await crud.desa.get_multi_by_dict(filter_query=filter_query)
 
     for data in results:
         sch = DesaExportSch(

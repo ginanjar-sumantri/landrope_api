@@ -204,7 +204,7 @@ async def export_shp(filter_query:str = None):
 
     schemas = []
     
-    results = await crud.planing.get_by_dict(filter_query=filter_query)
+    results = await crud.planing.get_multi_by_dict(filter_query=filter_query)
 
     for data in results:
         sch = PlaningExtSch(id=data.id,
@@ -231,7 +231,7 @@ async def export_shp2(filter_query:str = None):
 
     schemas = []
     
-    results = await crud.planing.get_by_dict(filter_query=filter_query)
+    results = await crud.planing.get_multi_by_dict(filter_query=filter_query)
 
     for data in results:
         sch = PlaningExportSch(
