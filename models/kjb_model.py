@@ -48,7 +48,7 @@ class KjbHd(KjbHdFullBase, table=True):
     hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def desa_name(self) -> str | None:
@@ -90,7 +90,7 @@ class KjbDtBase(SQLModel):
     harga_akta:Decimal
     harga_transaksi:Decimal
     luas_surat:Decimal
-    luas_surat_by_ttn:Decimal
+    luas_surat_by_ttn:Decimal | None = Field(nullable=True)
     planing_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
     planing_by_ttn_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
     
@@ -119,6 +119,17 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def jenis_surat_name(self) -> str | None :
         return self.jenis_surat.name
+    
+    @property
+    def kjb_code(self) -> str :
+        return self.kjb_hd.code
+    
+    @property
+    def planing_name_by_ttn(self) -> str :
+        if self.planing_by_ttn is None:
+            return ""
+        
+        return self.planing_by_ttn.name
 
 
 class KjbRekeningBase(SQLModel):

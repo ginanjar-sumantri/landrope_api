@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from models.dokumen_model import Dokumen
 
 class TandaTerimaNotarisHdBase(SQLModel):
-    kjb_hd_id:UUID = Field(nullable=False, foreign_key="kjb_hd.id")
+    # kjb_hd_id:UUID = Field(nullable=False, foreign_key="kjb_hd.id")
     kjb_dt_id:UUID = Field(nullable=False, foreign_key="kjb_dt.id")
     jenis_alashak:JenisAlashakEnum
     jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
@@ -32,13 +32,30 @@ class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
     pass
 
 class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    # kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def alahak(self) -> str:
+        return self.kjb_dt.alashak
+    
+    @property
+    def jenis_surat_name(self) -> str:
+        return self.jenis_surat.name
+    
+    @property
+    def notaris_name(self) -> str:
+        return self.notaris.name
+    
+    @property
+    def planing_name(self) -> str:
+        return self.planing.name
+
 
 
 class TandaTerimaNotarisDtBase(SQLModel):
