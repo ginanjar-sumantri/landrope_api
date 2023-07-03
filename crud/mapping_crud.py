@@ -3,19 +3,7 @@ from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 from crud.base_crud import CRUDBase
-from models.mapping_model import (MappingPlaningSkpt, MappingBidangOverlap)
-from schemas.mapping_sch import MappingPlaningSkptSch
-
-class CRUDMappingPlaningPtsk(CRUDBase[MappingPlaningSkpt, MappingPlaningSkptSch, MappingPlaningSkptSch]):
-    async def get_mapping_by_plan_sk_id(self, *, sk_id: UUID | str, plan_id: UUID | str, 
-                  db_session: AsyncSession | None = None) -> MappingPlaningSkpt | None:
-        db_session = db_session or db.session
-        query = select(self.model).where(and_(self.model.planing_id == plan_id, self.model.skpt_id == sk_id))
-        response = await db_session.execute(query)
-
-        return response.scalar_one_or_none()
-
-planing_skpt = CRUDMappingPlaningPtsk(MappingPlaningSkpt)
+from models.mapping_model import (MappingBidangOverlap)
 
 #-----------------------------------------------------------------------------------------------
 
