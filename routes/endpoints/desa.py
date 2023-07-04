@@ -99,39 +99,6 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
 
 
 @router.post("/bulk")
-async def bulk_create(file:UploadFile=File()):
-
-    """Create bulk or import data"""
-    try:
-        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-        print(geo_dataframe.head())
-        desas = await crud.desa.get_all()
-        
-        for i, geo_data in geo_dataframe.iterrows():
-            name:str | None = geo_data['NAMOBJ']
-
-            obj_current = next((obj for obj in desas 
-                           if obj.name.replace(" ", "").lower() == name.replace(" ", "").lower()),None)
-            
-            if obj_current:
-                continue
-            
-            g_code = await generate_code(entity=CodeCounterEnum.Desa)
-            luas:Decimal = RoundTwo(Decimal(geo_data['SHAPE_Area']))
-
-            sch = DesaSch(name=geo_data['NAMOBJ'], 
-                          code=g_code, 
-                          luas=luas, 
-                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-            
-            await crud.desa.create(obj_in=sch)
-
-    except:
-        raise HTTPException(status_code=422, detail="Failed import data")
-    
-    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
-
-@router.post("/bulk2")
 async def bulk_desa(file:UploadFile=File()):
 
     """Create bulk or import data"""
@@ -177,31 +144,6 @@ async def bulk_desa(file:UploadFile=File()):
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp(filter_query:str = None):
-
-    schemas = []
-    
-    results = await crud.desa.get_multi_by_dict(filter_query=filter_query)
-
-    for data in results:
-        sch = DesaSch(id=data.id,
-                      geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
-                      name=data.name,
-                      code=data.code,
-                      kecamatan=data.kecamatan,
-                      kota=data.kota,
-                      luas=data.luas)
-
-        schemas.append(sch)
-
-    if results:
-        obj_name = results[0].__class__.__name__
-        if len(results) == 1:
-            obj_name = f"{obj_name}-{results[0].name}"
-
-    return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
-
-@router.get("/export/shp2", response_class=Response)
 async def export_shp2(filter_query:str = None):
 
     schemas = []
@@ -212,7 +154,7 @@ async def export_shp2(filter_query:str = None):
         sch = DesaExportSch(
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       name=data.name,
-                      code_desa=data.code,
+                      code=data.code,
                       kecamatan=data.kecamatan,
                       kota=data.kota,
                       luas=data.luas)

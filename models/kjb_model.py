@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from models.master_model import JenisSurat, BebanBiaya
     from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
     from models.bundle_model import BundleHd
+    from models.request_peta_lokasi import RequestPetaLokasi
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
@@ -111,6 +112,7 @@ class KjbDt(KjbDtFullBase, table=True):
     jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+    request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def planing_name(self) -> str | None :

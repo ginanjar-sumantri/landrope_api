@@ -30,6 +30,8 @@ from .kjb_termin_crud import kjb_termin
 from .tanda_terima_notaris_hd_crud import tandaterimanotaris_hd
 from .tanda_terima_notaris_dt_crud import tandaterimanotaris_dt
 
+from .request_peta_lokasi_crud import request_peta_lokasi
+
 from .pemilik_crud import pemilik, kontak, rekening
 from .harga_standard_crud import harga_standard
 from .jenis_lahan_crud import jenislahan
