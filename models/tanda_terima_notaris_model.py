@@ -30,7 +30,6 @@ class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
 class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     # kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
@@ -42,7 +41,7 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     
     @property
     def jenis_surat_name(self) -> str:
-        return self.jenis_surat.name
+        return self.kjb_dt.jenis_surat.name
     
     @property
     def notaris_name(self) -> str:
