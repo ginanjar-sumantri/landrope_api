@@ -9,7 +9,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
-from common.enum import StatusValidEnum, StatusPetaLokasiEnum
+from common.enum import StatusPetaLokasiEnum
 import crud
 
 
@@ -27,7 +27,7 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
         
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch)
 
-    if new_obj.status_valid is not StatusValidEnum.Valid and new_obj.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+    if new_obj.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
         return create_response(data=new_obj)
     
     kjb_dt_update = kjb_dt
@@ -87,7 +87,7 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
     
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch)
 
-    if obj_updated.status_valid is not StatusValidEnum.Valid and obj_updated.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+    if obj_updated.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
         return create_response(data=obj_updated)
     
     kjb_dt_update = kjb_dt

@@ -76,10 +76,6 @@ class SatuanHargaEnum(str, Enum):
     PerMeter2 = "Per_Meter2"
     Lumpsum = "Lumpsum" 
 
-class StatusValidEnum(str, Enum):
-    Valid = "Valid"
-    Tidak_Valid = "Tidak_Valid"
-
 class StatusPetaLokasiEnum(str, Enum):
     Lanjut_Peta_Lokasi = "Lanjut_Peta_Lokasi"
     Tidak_Lanjut = "Tidak_Lanjut"

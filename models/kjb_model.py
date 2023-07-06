@@ -132,6 +132,10 @@ class KjbDt(KjbDtFullBase, table=True):
             return ""
         
         return self.planing_by_ttn.name
+    
+    @property
+    def kategori_penjual(self) -> str:
+        return str(self.kjb_hd.kategori_penjual)
 
 
 class KjbRekeningBase(SQLModel):

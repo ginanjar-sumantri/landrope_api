@@ -10,6 +10,7 @@ class KjbDtSch(KjbDtFullBase):
     jenis_surat_name:str | None = Field(alias="jenis_surat_name")
     planing_name:str | None = Field(alias="planing_name")
     planing_name_by_ttn:str | None = Field(alias="planing_name_by_ttn")
+    kategori_penjual:str | None = Field(alias="kategori_penjual")
 
 @optional
 class KjbDtUpdateSch(KjbDtBase):

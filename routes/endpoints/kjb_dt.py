@@ -28,11 +28,11 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     return create_response(data=objs)
 
 @router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtSch])
-async def get_list_for_petlok(kjb_hd_id:UUID):
+async def get_list_for_petlok(kjb_hd_id:UUID, params: Params=Depends()):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.kjb_dt.get_for_petlok(kjb_hd_id=kjb_hd_id)
+    objs = await crud.kjb_dt.get_multi_for_petlok(kjb_hd_id=kjb_hd_id, params=params)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[KjbDtSch])
