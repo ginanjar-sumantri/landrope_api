@@ -18,6 +18,15 @@ from sqlalchemy import exc
 
 
 class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
-    pass
+    async def get_multi_for_petlok(self, *,
+                             kjb_hd_id:UUID | None,
+                             db_session : AsyncSession | None = None) -> List[KjbDt] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id, 
+                                              self.model.tanda_terima_notaris_hd != None,
+                                              self.model.request_peta_lokasi == None))
+        print(query)
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 
 kjb_dt = CRUDKjbDt(KjbDt)

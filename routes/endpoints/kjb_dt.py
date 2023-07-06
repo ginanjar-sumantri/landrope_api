@@ -27,6 +27,14 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     objs = await crud.kjb_dt.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
+@router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtSch])
+async def get_list_for_petlok(kjb_hd_id:UUID):
+    
+    """Gets a paginated list objects"""
+
+    objs = await crud.kjb_dt.get_for_petlok(kjb_hd_id=kjb_hd_id)
+    return create_response(data=objs)
+
 @router.get("/{id}", response_model=GetResponseBaseSch[KjbDtSch])
 async def get_by_id(id:UUID):
 
