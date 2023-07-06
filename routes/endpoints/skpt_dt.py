@@ -16,6 +16,7 @@ from services.geom_service import GeomService
 from shapely import wkt, wkb
 from shapely.geometry import shape
 from common.rounder import RoundTwo
+from common.enum import StatusSKEnum, KategoriSKEnum
 from decimal import Decimal
 from datetime import datetime
 import json
@@ -108,7 +109,7 @@ async def bulk_skpt(file:UploadFile=File()):
     """Create bulk or import data"""
 
     try:
-        datas = [SkptDtSch]
+        datas = []
         current_datetime = datetime.now()
         geo_dataframe = GeomService.file_to_geodataframe(file.file)
 
@@ -150,8 +151,8 @@ async def bulk_skpt(file:UploadFile=File()):
 
             if sk is None:
                  new_sk = SkptSch(ptsk_id=pt.id,
-                          status=shp_data.status,
-                          kategori=shp_data.kategori,
+                          status=StatusSK(shp_data.status),
+                          kategori=KategoriSk(shp_data.kategori),
                           nomor_sk=shp_data.no_sk,
                           tanggal_tahun_SK=shp_data.tgl_sk,
                           tanggal_jatuh_tempo=shp_data.jatuhtempo)
@@ -159,8 +160,8 @@ async def bulk_skpt(file:UploadFile=File()):
                  sk = await crud.skpt.create(obj_in=new_sk)
             else:
                 update_sk = SkptSch(ptsk_id=pt.id,
-                          status=shp_data.status,
-                          kategori=shp_data.kategori,
+                          status=StatusSK(shp_data.status),
+                          kategori=KategoriSk(shp_data.kategori),
                           nomor_sk=shp_data.no_sk,
                           tanggal_tahun_SK=shp_data.tgl_sk,
                           tanggal_jatuh_tempo=shp_data.jatuhtempo)
@@ -194,10 +195,10 @@ async def export_shp(filter_query:str = None):
         sch = SkptShpSch(geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       code=data.skpt.ptsk.code,
                       name=data.skpt.ptsk.name,
-                      kategori=str(data.skpt.kategori),
+                      kategori=str(data.skpt.kategori).replace("_", " "),
                       luas=data.luas,
                       no_sk=data.nomor_sk,
-                      status=str(data.skpt.status),
+                      status=str(data.skpt.status).replace("_", ""),
                       tgl_sk=data.skpt.tanggal_tahun_SK,
                       jatuhtempo=data.skpt.tanggal_jatuh_tempo,
                       project=data.project_name,
@@ -211,13 +212,28 @@ async def export_shp(filter_query:str = None):
 
     return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
 
-# def StatusSK(status:str|None = None):
-#     if status:
-#         if status.replace(" ", "").lower() == "belumil":
-#             return StatusSKEnum.Belum_Pengajuan_SK
-#         elif status.replace(" ", "").lower() == "sudahil":
-#             return StatusSKEnum.Final_SK
-#         else:
-#             return StatusSKEnum.Pengajuan_Awal_SK
-#     else:
-#         return StatusSKEnum.Belum_Pengajuan_SK
+def StatusSK(status:str|None = None):
+    if status:
+        if status.replace(" ", "").replace("_", "").lower() == "belumil":
+            return StatusSKEnum.Belum_Pengajuan_SK
+        elif status.replace(" ", "").replace("_", "").lower() == "sudahil":
+            return StatusSKEnum.Final_SK
+        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Belum_Pengajuan_SK).replace(" ", "").replace("_", "").lower():
+            return StatusSKEnum.Belum_Pengajuan_SK
+        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Final_SK).replace(" ", "").replace("_", "").lower():
+            return StatusSKEnum.Final_SK
+        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Pengajuan_Awal_SK).replace(" ", "").replace("_", "").lower():
+            return StatusSKEnum.Pengajuan_Awal_SK
+        else:
+            return StatusSKEnum.Belum_Pengajuan_SK
+    else:
+        return StatusSKEnum.Belum_Pengajuan_SK
+
+def KategoriSk(kategori:str|None = None):
+    if kategori:
+        if kategori.replace(" ", "").replace("_", "").lower() == str(KategoriSKEnum.SK_ASG).replace(" ", "").replace("_", "").lower():
+            return KategoriSKEnum.SK_ASG
+        elif kategori.replace(" ", "").replace("_", "").lower() == str(KategoriSKEnum.SK_Orang).replace(" ", "").replace("_", "").lower():
+            return KategoriSKEnum.SK_Orang
+    else:
+        return KategoriSKEnum.SK_ASG

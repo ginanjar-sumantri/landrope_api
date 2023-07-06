@@ -2,6 +2,8 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response
 from fastapi_pagination import Params
 from models.planing_model import Planing
+from models.project_model import Project
+from models.desa_model import Desa
 from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch, PlaningExtSch, PlaningShpSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -12,6 +14,7 @@ from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
 from decimal import Decimal
+from datetime import datetime
 import crud
 import json
 
@@ -22,13 +25,21 @@ async def create(sch: PlaningCreateSch = Depends(PlaningCreateSch.as_form), file
     
     """Create a new object"""
     
-    obj_current = await crud.planing.get_by_name(name=sch.name)
+    obj_current = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
     if obj_current:
         raise NameExistException(Planing, name=sch.name)
+
+    project = await crud.project.get(id=sch.project_id)
+    if project is None:
+        raise IdNotFoundException(Project, id=sch.project_id)
     
-    obj_current = await crud.planing.get_by_code(code=sch.code)
-    if obj_current:
-        raise CodeExistException(Planing, code=sch.code)
+    desa = await crud.desa.get(id=sch.desa_id)
+    if desa is None:
+        raise IdNotFoundException(Desa, id=sch.desa_id)
+    
+    code = project.section.code + project.code + desa.code
+    sch.code = code
+    sch.name = project.name + "-" + desa.name + "-" + code
     
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -93,62 +104,15 @@ async def update(id:UUID, sch:PlaningUpdateSch = Depends(PlaningUpdateSch.as_for
     return create_response(data=obj_updated)
 
 @router.post("/bulk")
-async def bulk_create(file:UploadFile=File()):
+async def bulk(file:UploadFile=File()):
 
     """Create bulk or import data"""
 
     try:
         file = await file.read()
         geo_dataframe = GeomService.file_to_geo_dataframe(file)
-
-        projects = await crud.project.get_all()
-        desas = await crud.desa.get_all()
-        planings = await crud.planing.get_all()
-
-        for i, geo_data in geo_dataframe.iterrows():
-            p:str = geo_data['PROJECT']
-            d:str = geo_data['DESA']
-            kode:str = geo_data['kode']
-
-            project = next((obj for obj in projects 
-                            if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None) 
-            if project is None:
-                continue
-                # raise HTTPException(status_code=404, detail=f"{p} Not Exists in Project Data Master")
-            
-            desa = next((obj for obj in desas 
-                         if obj.name.replace(" ", "").lower() == d.replace(" ", "").lower()), None)
-            if desa is None:
-                continue
-                # raise HTTPException(status_code=404, detail=f"{d} Not Exists in Desa Data Master")
-            
-            planing = next((obj for obj in planings 
-                         if obj.project_id == project.id and obj.desa_id == desa.id), None)
-            if planing:
-                continue
-
-            sch = PlaningSch(code=kode,
-                            name=project.name + "-" + desa.name + "-" + kode,
-                            project_id=project.id,
-                            desa_id=desa.id,
-                            geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                            luas=RoundTwo(Decimal(geo_data['LUAS'])))
-            
-            await crud.planing.create(obj_in=sch)  
-
-    except:
-        raise HTTPException(status_code=422, detail="Failed import data")
-    
-    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
-
-@router.post("/bulk2")
-async def bulk_planing(file:UploadFile=File()):
-
-    """Create bulk or import data"""
-
-    try:
-        file = await file.read()
-        geo_dataframe = GeomService.file_to_geo_dataframe(file)
+        datas = []
+        current_datetime = datetime.now()
 
         errors = []
 
@@ -161,19 +125,22 @@ async def bulk_planing(file:UploadFile=File()):
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
             project = await crud.project.get_by_name(name=project_name)
-            desa = await crud.desa.get_by_name(name=desa_name)
-
-            if project is None or desa is None:
-                error = {'project' : project_name, 'desa' : desa_name, 'code' : code, 'details' : 'project or desa not exists in data master'}
-                errors.append(error)
-                continue
+            if project is None:
+                raise NameNotFoundException(Project, name=project_name)
             
-            obj_current = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa)
+            desa = await crud.desa.get_by_name(name=desa_name)
+            if desa is None:
+                raise NameNotFoundException(Desa, name=desa_name)
+            
+            code_combine = project.section.code + project.code + desa.code
+            name_combine = project.name + "-" + desa.name + "-" + code_combine
+            
+            obj_current = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
 
             if obj_current:
                 obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-                sch_update = PlaningSch(code=code,
-                            name=name,
+                sch_update = PlaningSch(code=obj_current.code,
+                            name=obj_current.name,
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
@@ -182,14 +149,19 @@ async def bulk_planing(file:UploadFile=File()):
                 await crud.planing.update(obj_current=obj_current, obj_new=sch_update)
                 continue
 
-            sch = PlaningSch(code=code,
-                            name=name,
+            sch = Planing(code=code_combine,
+                            name=name_combine,
                             project_id=project.id,
                             desa_id=desa.id,
                             geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                            luas=luas)
+                            luas=luas,
+                            created_at=current_datetime,
+                            updated_at=current_datetime)
             
-            await crud.planing.create(obj_in=sch)  
+            datas.append(sch)
+        
+        if len(datas) > 0:
+            await crud.planing.create_all(obj_ins=datas)  
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")
@@ -200,7 +172,7 @@ async def bulk_planing(file:UploadFile=File()):
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp2(filter_query:str = None):
+async def export_shp(filter_query:str = None):
 
     schemas = []
     
@@ -211,7 +183,7 @@ async def export_shp2(filter_query:str = None):
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       luas=data.luas,
                       name=data.name,
-                      code_desa=data.desa.code,
+                      code=data.code,
                       project=data.project_name,
                       desa=data.desa_name,
                       section=data.section_name)

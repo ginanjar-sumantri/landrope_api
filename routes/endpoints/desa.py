@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException, Response
 from fastapi_pagination import Params
 import crud
@@ -14,6 +14,7 @@ from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 from common.rounder import RoundTwo
 from decimal import Decimal
+from datetime import datetime
 from shapely import wkt, wkb
 
 router = APIRouter()
@@ -99,10 +100,12 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
 
 
 @router.post("/bulk")
-async def bulk_desa(file:UploadFile=File()):
+async def bulk(file:UploadFile=File()):
 
     """Create bulk or import data"""
     try:
+        datas = []
+        current_datetime = datetime.now()
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         
         for i, geo_data in geo_dataframe.iterrows():
@@ -116,8 +119,8 @@ async def bulk_desa(file:UploadFile=File()):
             
             if obj_current:
                 obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-                sch_update = DesaSch(name=name, 
-                      code=code,
+                sch_update = DesaSch(name=obj_current.name, 
+                      code=obj_current.code,
                       kecamatan=kecamatan,
                       kota=kota, 
                       luas=luas, 
@@ -128,15 +131,24 @@ async def bulk_desa(file:UploadFile=File()):
             
             if code is None or code == "":
                 code = await generate_code(entity=CodeCounterEnum.Desa)
+            else:
+                code = str(code).zfill(3)
 
-            sch = DesaSch(name=name, 
+            sch = Desa(
+                          name=name,
                           code=code,
                           kecamatan=kecamatan,
                           kota=kota, 
-                          luas=luas, 
-                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+                          luas=luas,
+                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
+                          created_at=current_datetime,
+                          updated_at=current_datetime,
+                          )
             
-            await crud.desa.create(obj_in=sch)
+            datas.append(sch)
+
+        if len(datas) > 0:    
+            await crud.desa.create_all(obj_ins=datas)
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")
@@ -144,7 +156,7 @@ async def bulk_desa(file:UploadFile=File()):
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp2(filter_query:str = None):
+async def export_shp(filter_query:str = None):
 
     schemas = []
     

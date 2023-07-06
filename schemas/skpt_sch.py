@@ -30,12 +30,13 @@ class SkptShpSch(BaseGeoModel):
     code:str | None
     name:str| None
     kategori:str| None
-    luas:Decimal
     no_sk:str | None
+    tgl_sk:date | None
+    jatuhtempo:date | None
     status:str | None
-    tgl_sk:date
-    jatuhtempo:date
+    section:str | None
     project:str | None
+    luas:Decimal | None
     desa:str | None
 
 @optional

@@ -27,11 +27,11 @@ class PlaningExtSch(PlaningFullBase):
 
 class PlaningShpSch(BaseGeoModel):
     name:str | None
-    code_desa:str | None
-    PROJECT:str | None
-    DESA:str | None
-    SECTION:str | None
-    LUAS:Decimal | None
+    code:str | None
+    project:str | None
+    desa:str | None
+    section:str | None
+    luas:Decimal | None
 
 @as_form
 @optional

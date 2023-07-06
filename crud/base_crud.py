@@ -49,7 +49,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> ModelType:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(self.model).where(func.lower(func.trim(self.model.name)) == name.strip().lower()))
+        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.name, ' ', ''))) == name.strip().lower().replace(' ', ''))
+        print(query)
+        obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
 
     async def get_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[ModelType] | None:
@@ -263,20 +265,26 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db_session.refresh(db_obj)
         return db_obj
     
-    async def create_all(self, *, obj_ins: List[CreateSchemaType] | List[ModelType],
+    async def create_all(self, *, obj_ins: List[ModelType],
                      db_session : AsyncSession | None = None) -> List[ModelType] :
         db_session = db_session or db.session
-        db_objs = [self.model.from_orm(obj_in) for obj_in in obj_ins] #type ignore
+        #db_objs = [self.model.from_orm(obj_in) for obj_in in obj_ins] #type ignore
+        # db_objs = []
+        # for obj_in in obj_ins:
+        #     db_obj = self.model.from_orm(obj_in)
+        #     db_objs.append(db_obj)
 
         try:
-            db_session.add_all(db_objs)
+            db_session.add_all(obj_ins)
             await db_session.commit()
         except exc.IntegrityError:
             await db_session.rollback()
             raise HTTPException(status_code=409, detail="Resource already exists")
         
-        await db_session.refresh(db_objs)
-        return db_objs
+        for item in obj_ins:
+            await db_session.refresh(item)
+            
+        return obj_ins
     
     async def create_with_dict(self, db_session: AsyncSession | None = None, created_by_id : UUID | str | None = None, **kwargs) -> ModelType:
         db_session = db_session or db.session

@@ -14,8 +14,8 @@ class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
     desa_id:UUID = Field(default=None, foreign_key="desa.id")
     luas:Decimal
-    name:str = Field(nullable=True, max_length=100)
-    code:str = Field(nullable=True, max_length=50)
+    name:str | None = Field(nullable=True, max_length=100)
+    code:str | None = Field(nullable=True, max_length=50)
 
 class PlaningRawBase(BaseUUIDModel, PlaningBase):
     pass
