@@ -12,7 +12,7 @@ class BundleHdBase(SQLModel):
     code:str | None = Field(nullable=False)
     keyword:str | None = Field(default="")
 
-    planing_id:UUID | None = Field(default=None, foreign_key="planing.id", nullable=False)
+    planing_id:UUID | None = Field(default=None, foreign_key="planing.id", nullable=True)
 
 class BundleHdFullBase(BaseUUIDModel, BundleHdBase):
     pass
@@ -50,7 +50,7 @@ class BundleHd(BundleHdFullBase, table=True):
 class BundleDtBase(SQLModel):
     code:str | None = Field(nullable=False)
     meta_data:str | None
-    
+    history_data:str | None
     bundle_hd_id:UUID | None = Field(default=None, foreign_key="bundle_hd.id", nullable=False)
     dokumen_id:UUID | None = Field(default=None, foreign_key="dokumen.id", nullable=False)
 
