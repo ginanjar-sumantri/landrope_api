@@ -27,7 +27,7 @@ async def create(sch: RequestPetaLokasiCreateSch):
 async def creates(sch: RequestPetaLokasiCreatesSch):
 
     datas = []
-    code = ""
+    code = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
     current_datetime = datetime.now()
     for id in sch.kjb_dt_ids:
         kjb_dt = await crud.kjb_dt.get(id=id)
@@ -35,7 +35,8 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
         if kjb_dt is None:
             raise IdNotFoundException(KjbDt, id)
         
-        data = RequestPetaLokasi(kjb_dt_id=id,
+        data = RequestPetaLokasi(code=code,
+                                 kjb_dt_id=id,
                                  remark=sch.remark,
                                  tanggal=current_datetime,
                                  created_at=current_datetime,
