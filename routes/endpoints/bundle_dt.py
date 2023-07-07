@@ -38,9 +38,23 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
     """Update a obj by its id"""
 
     obj_current = await crud.bundledt.get(id=id)
-
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
+    
+    ## Memeriksa apakah ada key "Nomor" dalam metadata
+    o_json = eval(sch.meta_data)
+    Nomor = ""
+    if "Nomor" in o_json:
+        Nomor = o_json['Nomor']
+
+    if obj_current.history_data is None:
+        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+    else:
+        history_data = eval(obj_current.history_data)
+        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': eval(sch.meta_data)}
+        history_data['history'].append(new_metadata)
+
+    sch.history_data = str(history_data)
     
     dokumen = await crud.dokumen.is_dokumen_for_keyword(id=sch.dokumen_id)
     

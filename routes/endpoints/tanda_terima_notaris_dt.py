@@ -8,6 +8,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
+from datetime import datetime
 import crud
 import json
 
@@ -29,15 +30,33 @@ async def create(sch: TandaTerimaNotarisDtCreateSch):
     
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
 
+    ## Memeriksa apakah ada key "Nomor" dalam metadata
+    o_json = eval(sch.meta_data)
+    Nomor = ""
+    if "Nomor" in o_json:
+        Nomor = o_json['Nomor']
+
+    # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
     bundledt_obj_current = next((x for x in bundlehd_obj_current.bundledts if x.dokumen_id == sch.dokumen_id and x.bundle_hd_id == bundlehd_obj_current.id), None)
     if bundledt_obj_current is None:
         code = bundlehd_obj_current.code + dokumen.code
-        new_dokumen = BundleDt(code=code, dokumen_id=dokumen.id, meta_data=sch.meta_data, bundle_hd_id=bundlehd_obj_current.id)
+        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+        new_dokumen = BundleDt(code=code, dokumen_id=dokumen.id, meta_data=sch.meta_data, 
+                               history_data=str(history_data), bundle_hd_id=bundlehd_obj_current.id)
 
         bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen)
     else:
+        if bundledt_obj_current.history_data is None or bundledt_obj_current.history_data == "":
+            history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+        
+        else:
+            history_data = eval(bundledt_obj_current.history_data)
+            new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': eval(sch.meta_data)}
+            history_data['history'].append(new_metadata)
+
         bundledt_obj_updated = bundledt_obj_current
         bundledt_obj_updated.meta_data = sch.meta_data
+        bundledt_obj_current.history_data = str(history_data)
 
         await crud.bundledt.update(obj_current=bundledt_obj_current, obj_new=bundledt_obj_updated)
     
@@ -97,6 +116,21 @@ async def update(id:UUID, sch:TandaTerimaNotarisDtUpdateSch):
     
     obj_updated = await crud.tandaterimanotaris_dt.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
+
+@router.get("extract_dictionary")
+async def extract_dict(value:str | None = None):
+    metadata = eval(value)
+    curr_datetime = datetime.now()
+
+    if "Nomor" in metadata:
+            Nomor = metadata['Nomor']
+    
+    history_data = {'history':[{'tanggal': str(curr_datetime),'nomor': Nomor,'meta_data': metadata}]}
+    new_metadata = {'tanggal': str(curr_datetime), 'nomor': 'AJB 789', 'meta_data': metadata}
+    history_data['history'].append(new_metadata)
+
+
+    return str(history_data)
 
 
    
