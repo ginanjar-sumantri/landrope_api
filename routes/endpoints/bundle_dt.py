@@ -49,16 +49,23 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
         metadata = sch.meta_data.replace("'",'"')
         obj_json = json.loads(metadata)
         current_bundle_hd = await crud.bundlehd.get(id=sch.bundle_hd_id)
-        values = []
-        for data in obj_json['history']:
-            value = data['meta_data'][f'{dokumen.key_field}']
-            values.append(value)
-        
-        edit_keyword_hd = current_bundle_hd
-        edit_keyword_hd.keyword = ','.join(values) if current_bundle_hd.keyword is None else f"{current_bundle_hd.keyword},{','.join(values)}"
 
-        await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
-    
+        # values = []
+        # for data in obj_json['history']:
+        #     value = data['meta_data'][f'{dokumen.key_field}']
+        #     values.append(value)
+
+        metadata_keyword = obj_json[f'{dokumen.key_field}']
+
+        if metadata_keyword not in current_bundle_hd.keyword:
+            
+            edit_keyword_hd = current_bundle_hd
+            if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
+                edit_keyword_hd.keyword = metadata_keyword
+            else:
+                edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
+                await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
+        
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 

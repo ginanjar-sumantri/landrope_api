@@ -46,15 +46,21 @@ async def create(sch: TandaTerimaNotarisDtCreateSch):
         metadata = sch.meta_data.replace("'",'"')
         obj_json = json.loads(metadata)
 
-        values = []
-        for data in obj_json['history']:
-            value = data['meta_data'][f'{dokumen.key_field}']
-            values.append(value)
-        
-        edit_keyword_hd = bundlehd_obj_current
-        edit_keyword_hd.keyword = ','.join(values) if bundlehd_obj_current.keyword is None else f"{bundlehd_obj_current.keyword},{','.join(values)}"
+        # values = []
+        # for data in obj_json['history']:
+        #     value = data['meta_data'][f'{dokumen.key_field}']
+        #     values.append(value)
 
-        await crud.bundlehd.update(obj_current=bundlehd_obj_current, obj_new=edit_keyword_hd)
+        metadata_keyword = obj_json[f'{dokumen.key_field}']
+
+        if metadata_keyword not in bundlehd_obj_current.keyword:
+            
+            edit_keyword_hd = bundlehd_obj_current
+            if bundlehd_obj_current.keyword is None or bundlehd_obj_current.keyword == "":
+                edit_keyword_hd.keyword = metadata_keyword
+            else:
+                edit_keyword_hd.keyword = f"{bundlehd_obj_current.keyword},{metadata_keyword}"
+                await crud.bundlehd.update(obj_current=bundlehd_obj_current, obj_new=edit_keyword_hd)
 
     new_obj = await crud.tandaterimanotaris_dt.create(obj_in=sch)
     

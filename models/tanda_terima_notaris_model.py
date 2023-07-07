@@ -35,7 +35,7 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
-    def alahak(self) -> str:
+    def alashak(self) -> str:
         return self.kjb_dt.alashak
     
     @property
