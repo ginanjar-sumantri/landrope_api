@@ -6,7 +6,7 @@ from models.kjb_model import KjbDt
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.exceptions import (IdNotFoundException, ContentNoChangeException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 from common.enum import StatusPetaLokasiEnum
@@ -24,13 +24,20 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
 
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
+    
+    if kjb_dt.status_peta_lokasi is not None:
+        if kjb_dt.status_peta_lokasi != sch.status_peta_lokasi:
+            raise ContentNoChangeException(detail=f"""status peta lokasi tidak dapat berubah dari 
+                                           {str(kjb_dt.status_peta_lokasi)} ke {str(sch.status_peta_lokasi)}""")
         
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch)
 
-    if new_obj.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+    if sch.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
         return create_response(data=new_obj)
     
     kjb_dt_update = kjb_dt
+
+    
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
     if kjb_dt.bundle_hd_id is None :
         ## Match bundle with kjb detail by alashak
@@ -46,6 +53,7 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
     
     kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
     kjb_dt_update.planing_by_ttn_id = new_obj.planing_id
+    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
     
@@ -87,7 +95,7 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
     
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch)
 
-    if obj_updated.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
+    if kjb_dt.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
         return create_response(data=obj_updated)
     
     kjb_dt_update = kjb_dt

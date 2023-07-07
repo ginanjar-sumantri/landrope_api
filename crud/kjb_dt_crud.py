@@ -8,6 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
+from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbDt
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch
@@ -23,7 +24,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                     kjb_hd_id:UUID | None,
                                     db_session : AsyncSession | None = None) -> List[KjbDt] | None:
         db_session = db_session or db.session
-        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id, 
+        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id,
+                                              self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
                                               self.model.tanda_terima_notaris_hd != None,
                                               self.model.request_peta_lokasi == None))
         return await paginate(db_session, query, params)

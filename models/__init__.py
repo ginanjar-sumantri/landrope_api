@@ -19,4 +19,4 @@ from .dokumen_model import Dokumen
 from .bundle_model import BundleHd, BundleDt
 from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisDt
 from .notaris_model import Notaris
-from .request_peta_lokasi import RequestPetaLokasi
+from .request_peta_lokasi_model import RequestPetaLokasi

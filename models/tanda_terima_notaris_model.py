@@ -21,7 +21,6 @@ class TandaTerimaNotarisHdBase(SQLModel):
     notaris_id:UUID = Field(nullable=False, foreign_key="notaris.id")
     planing_id:UUID | None = Field(nullable=True, foreign_key="planing.id")
     luas_surat:Decimal
-    status_peta_lokasi:StatusPetaLokasiEnum
 
 
 class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):

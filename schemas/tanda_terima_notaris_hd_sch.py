@@ -1,9 +1,10 @@
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisHdBase, TandaTerimaNotarisHdFullBase
 from common.partial import optional
+from common.enum import StatusPetaLokasiEnum
 from sqlmodel import Field
 
 class TandaTerimaNotarisHdCreateSch(TandaTerimaNotarisHdBase):
-    pass
+    status_peta_lokasi:StatusPetaLokasiEnum | None
 
 class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
     alashak:str | None = Field(alias="alashak")

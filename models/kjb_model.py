@@ -2,7 +2,9 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum
+from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, 
+                         PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, 
+                         JenisBayarEnum, StatusPetaLokasiEnum)
 from decimal import Decimal
 from datetime import datetime
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
     from models.master_model import JenisSurat, BebanBiaya
     from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
     from models.bundle_model import BundleHd
-    from models.request_peta_lokasi import RequestPetaLokasi
+    from models.request_peta_lokasi_model import RequestPetaLokasi
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
@@ -92,6 +94,7 @@ class KjbDtBase(SQLModel):
     harga_transaksi:Decimal
     luas_surat:Decimal
     luas_surat_by_ttn:Decimal | None = Field(nullable=True)
+    status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
     planing_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
     planing_by_ttn_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
     

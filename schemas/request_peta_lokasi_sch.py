@@ -1,11 +1,18 @@
-from models.request_peta_lokasi import RequestPetaLokasiBase, RequestPetaLokasiFullBase
+from models.request_peta_lokasi_model import RequestPetaLokasiBase, RequestPetaLokasiFullBase
 from common.partial import optional
 from sqlmodel import Field
 from typing import List
 from decimal import Decimal
+from pydantic import BaseModel
+from uuid import UUID
+
 
 class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
     pass
+
+class RequestPetaLokasiCreatesSch(BaseModel):
+    kjb_dt_ids: List[UUID]
+    remark:str | None
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     kjb_hd_code:str = Field(alias="kjb_hd_code")

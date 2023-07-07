@@ -1,10 +1,12 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
-from models.request_peta_lokasi import RequestPetaLokasi
-from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiCreateSch, RequestPetaLokasiUpdateSch)
+from models.request_peta_lokasi_model import RequestPetaLokasi
+from models.kjb_model import KjbDt
+from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, RequestPetaLokasiUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
+from datetime import datetime
 import crud
 
 
@@ -18,6 +20,32 @@ async def create(sch: RequestPetaLokasiCreateSch):
     new_obj = await crud.request_peta_lokasi.create(obj_in=sch)
     
     return create_response(data=new_obj)
+
+@router.post("")
+async def creates(sch: RequestPetaLokasiCreatesSch):
+
+    datas = []
+    code = ""
+    current_datetime = datetime.now()
+    for id in sch.kjb_dt_ids:
+        kjb_dt = await crud.kjb_dt.get(id=id)
+
+        if kjb_dt is None:
+            raise IdNotFoundException(KjbDt, id)
+        
+        data = RequestPetaLokasi(kjb_dt_id=id,
+                                 remark=sch.remark,
+                                 tanggal=current_datetime,
+                                 created_at=current_datetime,
+                                 updated_at=current_datetime)
+        datas.append(data)
+    
+    if len(datas) > 0:
+        objs = await crud.request_peta_lokasi.create_all(obj_ins=datas)
+
+    return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
+
+        
 
 @router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiSch])
 async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
