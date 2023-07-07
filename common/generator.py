@@ -2,6 +2,8 @@ import crud
 from geoalchemy2.shape import to_shape
 from models.code_counter_model import CodeCounter, CodeCounterEnum
 from uuid import UUID
+import string
+import random
 
 
 async def generate_id_bidang(planing_id:UUID | str) -> str:
@@ -35,13 +37,16 @@ async def generate_id_bidang(planing_id:UUID | str) -> str:
     id_bidang = f"{code_section}{code_project}{code_desa}{number}"
     return id_bidang
 
-async def generate_code_bundle(planing_id:UUID | str) -> str:
-    planing = await crud.planing.get(id=planing_id)
-    bundle_code = await generate_code(entity=CodeCounterEnum.Bundle)
-    project_code = planing.project.code
-    desa_code = planing.desa.code
+async def generate_code_bundle(planing_id:UUID | None) -> str:
+    if planing_id is not None:
+        planing = await crud.planing.get(id=planing_id)
+        bundle_code = await generate_code(entity=CodeCounterEnum.Bundle)
+        project_code = planing.project.code
+        desa_code = planing.desa.code
 
-    codes = [project_code, desa_code, bundle_code]
+        codes = [project_code, desa_code, bundle_code]
+    else:
+        codes = "-GEN" + "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
     code = f"D" + "".join(codes)
     return code
