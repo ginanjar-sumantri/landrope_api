@@ -23,7 +23,7 @@ async def create(sch: RequestPetaLokasiCreateSch):
     
     return create_response(data=new_obj)
 
-@router.post("")
+@router.post("/creates")
 async def creates(sch: RequestPetaLokasiCreatesSch):
 
     datas = []
