@@ -46,14 +46,22 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
         
         bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
         if bundle is None:
-            bundle_sch = BundleHdCreateSch(planing_id=sch.planing_id)
+            planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
+            if planing:
+                planing_id = planing.id
+            else:
+                planing_id = None
+
+            bundle_sch = BundleHdCreateSch(planing_id=planing_id)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
         
         kjb_dt_update.bundle_hd_id = bundle.id
     
     kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
-    kjb_dt_update.planing_by_ttn_id = new_obj.planing_id
+    kjb_dt_update.desa_by_ttn_id = new_obj.desa_id
+    kjb_dt_update.project_by_ttn_id = new_obj.project_id
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
+    kjb_dt_update.pemilik_id = new_obj.pemilik_id
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
     
@@ -107,13 +115,22 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
         
         bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
         if bundle is None:
-            bundle_sch = BundleHdCreateSch(planing_id=sch.planing_id)
+            planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
+            if planing:
+                planing_id = planing.id
+            else:
+                planing_id = None
+
+            bundle_sch = BundleHdCreateSch(planing_id=planing_id)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
 
         kjb_dt_update.bundle_hd_id = bundle.id
     
     kjb_dt_update.luas_surat_by_ttn = obj_updated.luas_surat
-    kjb_dt_update.planing_by_ttn_id = obj_updated.planing_id
+    kjb_dt_update.desa_by_ttn_id = obj_updated.desa_id
+    kjb_dt_update.project_by_ttn_id = obj_updated.project_id
+    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
+    kjb_dt_update.pemilik_id = obj_updated.pemilik_id
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
 

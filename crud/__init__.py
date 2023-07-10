@@ -26,6 +26,7 @@ from .kjb_rekening_crud import kjb_rekening
 from .kjb_beban_biaya_crud import kjb_bebanbiaya
 from .kjb_harga_crud import kjb_harga
 from .kjb_termin_crud import kjb_termin
+from .kjb_penjual_crud import kjb_penjual
 
 from .tanda_terima_notaris_hd_crud import tandaterimanotaris_hd
 from .tanda_terima_notaris_dt_crud import tandaterimanotaris_dt

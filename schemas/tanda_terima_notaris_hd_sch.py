@@ -2,6 +2,7 @@ from models.tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaN
 from common.partial import optional
 from common.enum import StatusPetaLokasiEnum
 from sqlmodel import Field
+from typing import List
 
 class TandaTerimaNotarisHdCreateSch(TandaTerimaNotarisHdBase):
     status_peta_lokasi:StatusPetaLokasiEnum | None
@@ -10,8 +11,12 @@ class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
     alashak:str | None = Field(alias="alashak")
     jenis_surat_name:str | None = Field(alias="jenis_surat_name")
     notaris_name:str | None = Field(alias="notaris_name")
-    planing_name:str | None = Field(alias="planing_name")
+    desa_name:str | None = Field(alias="desa_name")
+    project_name:str | None = Field(alias="project_name")
+    done_request_petlok:bool | None = Field(alias="done_request_petlok")
+    penjual_tanah:str = Field(alias="penjual_tanah")
+    nomor_telepon:List[str] = Field(alias="nomor_telepon")
 
 @optional
 class TandaTerimaNotarisHdUpdateSch(TandaTerimaNotarisHdBase):
-    pass
+    status_peta_lokasi:StatusPetaLokasiEnum | None

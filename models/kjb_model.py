@@ -11,6 +11,7 @@ from datetime import datetime
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.desa_model import Desa
+    from models.project_model import Project
     from models.marketing_model import Manager, Sales
     from models.pemilik_model import Pemilik
     from models.master_model import JenisSurat, BebanBiaya
@@ -31,7 +32,6 @@ class KjbHdBase(SQLModel):
     sales_id:UUID = Field(foreign_key="sales.id")
     mediator:str | None
     telepon_mediator:str | None
-    pemilik_id:UUID = Field(foreign_key="pemilik.id")
     ada_utj:bool
     utj_amount:Decimal
     satuan_bayar:SatuanBayarEnum
@@ -44,12 +44,12 @@ class KjbHd(KjbHdFullBase, table=True):
     desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     manager:"Manager" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     sales:"Sales" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
@@ -70,6 +70,90 @@ class KjbHd(KjbHdFullBase, table=True):
         if self.sales is None:
             return ""
         return self.sales.name
+
+##########################################################################
+
+class KjbDtBase(SQLModel):
+    jenis_alashak:JenisAlashakEnum
+    alashak:str
+    posisi_bidang:PosisiBidangEnum
+    harga_akta:Decimal
+    harga_transaksi:Decimal
+    luas_surat:Decimal
+    luas_surat_by_ttn:Decimal | None = Field(nullable=True)
+    status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
+
+    desa_id:Optional[UUID] = Field(foreign_key="desa.id", nullable=True)
+    desa_by_ttn_id:Optional[UUID] = Field(foreign_key="desa.id", nullable=True)
+    project_id:Optional[UUID] = Field(foreign_key="project.id", nullable=True)
+    project_by_ttn_id:Optional[UUID] = Field(foreign_key="project.id", nullable=True)
+    kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
+    pemilik_id:UUID = Field(foreign_key="pemilik.id", nullable=True)
+    jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
+    bundle_hd_id:Optional[UUID] = Field(foreign_key="bundle_hd.id", nullable=True)
+
+
+class KjbDtFullBase(BaseUUIDModel, KjbDtBase):
+    pass
+
+class KjbDt(KjbDtFullBase, table=True): 
+    desa:Optional["Desa"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.desa_id==Desa.id", "lazy": "joined"})
+    desa_by_ttn:Optional["Desa"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.desa_by_ttn_id==Desa.id", "lazy": "joined"})
+    project:Optional["Project"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.project_id==Project.id", "lazy": "joined"})
+    project_by_ttn:Optional["Project"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.project_by_ttn_id==Project.id", "lazy": "joined"})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+    request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def desa_name(self) -> str | None :
+        if self.desa is None:
+            return ""
+        return self.desa.name
+    
+    @property
+    def desa_name_by_ttn(self) -> str :
+        if self.desa_by_ttn is None:
+            return ""
+        
+        return self.desa_by_ttn.name
+    
+    @property
+    def project_name(self) -> str | None :
+        if self.project is None:
+            return ""
+        return self.project.name
+    
+    @property
+    def project_name_by_ttn(self) -> str :
+        if self.project_by_ttn is None:
+            return ""
+        
+        return self.project_by_ttn.name
+    
+    @property
+    def jenis_surat_name(self) -> str | None :
+        return self.jenis_surat.name
+    
+    @property
+    def kjb_code(self) -> str :
+        return self.kjb_hd.code
+    
+    @property
+    def kategori_penjual(self) -> str:
+        return str(self.kjb_hd.kategori_penjual)
+    
+    @property
+    def done_request_petlok(self) -> bool:
+        status = False
+
+        if self.request_peta_lokasi:
+            status = True
+        
+        return status
     
     @property
     def nomor_telepon(self) -> list[str] | None:
@@ -85,71 +169,27 @@ class KjbHd(KjbHdFullBase, table=True):
             return ""
         return self.pemilik.name
 
+##########################################################################
 
-class KjbDtBase(SQLModel):
-    jenis_alashak:JenisAlashakEnum
-    alashak:str
-    posisi_bidang:PosisiBidangEnum
-    harga_akta:Decimal
-    harga_transaksi:Decimal
-    luas_surat:Decimal
-    luas_surat_by_ttn:Decimal | None = Field(nullable=True)
-    status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
-    planing_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
-    planing_by_ttn_id:Optional[UUID] = Field(foreign_key="planing.id", nullable=True)
-    
+class KjbPenjualBase(SQLModel):
+    pemilik_id:UUID = Field(foreign_key="pemilik.id")
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
-    
-    jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
-    bundle_hd_id:Optional[UUID] = Field(foreign_key="bundle_hd.id", nullable=True)
 
-
-class KjbDtFullBase(BaseUUIDModel, KjbDtBase):
+class KjbPenjualFullBase(BaseUUIDModel, KjbPenjualBase):
     pass
 
-class KjbDt(KjbDtFullBase, table=True): 
-    planing:Optional["Planing"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.planing_id==Planing.id", "lazy": "joined"})
-    planing_by_ttn:Optional["Planing"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.planing_by_ttn_id==Planing.id", "lazy": "joined"})
-
-    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
-    request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+class KjbPenjual(KjbPenjualFullBase, table=True):
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="penjuals", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
-    def planing_name(self) -> str | None :
-        return self.planing.name
-    
-    @property
-    def jenis_surat_name(self) -> str | None :
-        return self.jenis_surat.name
-    
-    @property
-    def kjb_code(self) -> str :
-        return self.kjb_hd.code
-    
-    @property
-    def planing_name_by_ttn(self) -> str :
-        if self.planing_by_ttn is None:
+    def penjual_tanah(self) -> str | None:
+        if self.pemilik is None:
             return ""
-        
-        return self.planing_by_ttn.name
+        return self.pemilik.name
+
+###########################################################################
     
-    @property
-    def kategori_penjual(self) -> str:
-        return str(self.kjb_hd.kategori_penjual)
-    
-    @property
-    def done_request_petlok(self) -> bool:
-        status = False
-
-        if self.request_peta_lokasi:
-            status = True
-        
-        return status
-
-
 class KjbRekeningBase(SQLModel):
     nama_pemilik_rekening:str
     bank_rekening:str
@@ -163,6 +203,7 @@ class KjbRekeningFullBase(BaseUUIDModel, KjbRekeningBase):
 class KjbRekening(KjbRekeningFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="rekenings", sa_relationship_kwargs={'lazy':'selectin'})
 
+########################################################################################
 
 class KjbHargaBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
@@ -178,6 +219,7 @@ class KjbHarga(KjbHargaFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'selectin'})
     termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'selectin'})
 
+################################################################################################
 
 class KjbTerminBase(SQLModel):
     jenis_bayar:JenisBayarEnum
@@ -191,6 +233,7 @@ class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
 class KjbTermin(KjbTerminFullBase, table=True):
     harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'selectin'})
 
+#################################################################################
 
 class KjbBebanBiayaBase(SQLModel):
     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)

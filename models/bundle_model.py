@@ -37,14 +37,20 @@ class BundleHd(BundleHdFullBase, table=True):
     
     @property
     def planing_name(self) -> str | None:
+        if self.planing is None:
+            return ""
         return self.planing.name or ""
     
     @property
     def project_name(self) -> str | None:
+        if self.planing is None:
+            return ""
         return self.planing.project.name or ""
     
     @property
     def desa_name(self) -> str | None:
+        if self.planing is None:
+            return ""
         return self.planing.desa.name or ""
 
 class BundleDtBase(SQLModel):

@@ -9,7 +9,7 @@ from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening
+from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch
 from typing import List
@@ -69,7 +69,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     
                 bebanbiaya = KjbBebanBiaya(beban_biaya_id=obj_bebanbiaya.id,
                                                 beban_pembeli=k.beban_pembeli)
-                db_obj.bebanbiayas.append(bebanbiaya)  
+                db_obj.bebanbiayas.append(bebanbiaya)
+            
+            for p in obj_in.penjuals:
+                penjual = KjbPenjual(pemilik_id=p.pemilik_id)
+                db_obj.penjuals.append(penjual)
 
             db_session.add(db_obj)
             await db_session.commit()

@@ -10,8 +10,10 @@ if TYPE_CHECKING:
     from models.kjb_model import KjbHd, KjbDt
     from models.master_model import JenisSurat
     from models.notaris_model import Notaris
-    from models.planing_model import Planing
+    from models.desa_model import Desa
+    from models.project_model import Project
     from models.dokumen_model import Dokumen
+    from models.pemilik_model import Pemilik
 
 class TandaTerimaNotarisHdBase(SQLModel):
     # kjb_hd_id:UUID = Field(nullable=False, foreign_key="kjb_hd.id")
@@ -19,8 +21,10 @@ class TandaTerimaNotarisHdBase(SQLModel):
     tanggal_tanda_terima:date | None = Field(default=date.today())
     nomor_tanda_terima:str
     notaris_id:UUID = Field(nullable=False, foreign_key="notaris.id")
-    planing_id:UUID | None = Field(nullable=True, foreign_key="planing.id")
+    desa_id:UUID | None = Field(nullable=True, foreign_key="desa.id")
+    project_id:UUID | None = Field(nullable=True, foreign_key="project.id")
     luas_surat:Decimal
+    pemilik_id:UUID = Field(foreign_key="pemilik.id", nullable=True)
 
 
 class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
@@ -30,8 +34,9 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     # kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
     notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-
+    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    project:"Project" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
@@ -47,8 +52,16 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
         return self.notaris.name
     
     @property
-    def planing_name(self) -> str:
-        return self.planing.name
+    def desa_name(self) -> str:
+        if self.desa is None:
+            return ""
+        return self.desa.name
+    
+    @property
+    def project_name(self) -> str:
+        if self.project is None:
+            return ""
+        return self.project.name
     
     @property
     def done_request_petlok(self) -> bool:
@@ -58,6 +71,20 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
             status = True
         
         return status
+    
+    @property
+    def nomor_telepon(self) -> list[str] | None:
+        kontaks = []
+        for i in self.pemilik.kontaks:
+            kontaks.append(i.nomor_telepon)
+        
+        return kontaks
+    
+    @property
+    def penjual_tanah(self) -> str | None:
+        if self.pemilik is None:
+            return ""
+        return self.pemilik.name
 
 
 
