@@ -3,7 +3,9 @@ from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
-from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, RequestPetaLokasiUpdateSch)
+from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, 
+                                             RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
+                                             RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from datetime import datetime
@@ -76,16 +78,32 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(RequestPetaLokasi, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
-async def update(id:UUID, sch:RequestPetaLokasiUpdateSch):
+async def update(sch:RequestPetaLokasiUpdateExtSch):
     
     """Update a obj by its id"""
 
-    obj_current = await crud.request_peta_lokasi.get(id=id)
+    obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=sch.code)
 
-    if not obj_current:
-        raise IdNotFoundException(RequestPetaLokasi, id)
+    for i in obj_currents:
+        if i.kjb_dt_id not in sch.kjb_dt_ids:
+            await crud.request_peta_lokasi.remove(id=i.kjb_dt_id)
     
-    obj_updated = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=sch)
+    for j in sch.kjb_dt_ids:
+        if j not in obj_currents["id"]:
+            new_obj = RequestPetaLokasi(code=sch.code,
+                                 kjb_dt_id=j,
+                                 remark=sch.remark,
+                                 tanggal=sch.tanggal)
+            await crud.request_peta_lokasi.create(obj_in=new_obj)
+        else:
+            obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
+            obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
+                                                     tanggal=sch.tanggal,
+                                                     remark=sch.remark,
+                                                     kjb_dt_id=j)
+            
+            await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated)
+
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[RequestPetaLokasiSch], status_code=status.HTTP_200_OK)

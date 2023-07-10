@@ -12,9 +12,9 @@ class RequestPetaLokasiBase(SQLModel):
     code:str = Field(nullable=True)
     tanggal:datetime = Field(default=datetime.now(), nullable=False)
     remark:str
-    dibuat_oleh:str
-    diperiksa_oleh:str
-    diterima_oleh:str
+    dibuat_oleh:str | None = Field(default_factory="Land Adm Acquisition Officer")
+    diperiksa_oleh:str | None = Field(default_factory="Land Adm & Verification Section Head")
+    diterima_oleh:str | None = Field(default_factory="Land Measurement Analyst")
 
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 
@@ -38,11 +38,11 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     
     @property
     def nama_pemilik_tanah(self) -> str:
-        return self.kjb_dt.kjb_hd.pemilik.name
+        return self.kjb_dt.pemilik.name
     
     @property
     def nomor_pemilik_tanah(self) -> str:
-        nomors = [i.nomor_telepon for i in self.kjb_dt.kjb_hd.pemilik.kontaks]
+        nomors = [i.nomor_telepon for i in self.kjb_dt.pemilik.kontaks]
 
         if len(nomors) == 0:
             return ""
@@ -57,9 +57,9 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     
     @property
     def desa_name(self) -> str:
-        return self.kjb_dt.planing_by_ttn.desa.name
+        return self.kjb_dt.desa.name
     
     @property
     def project_name(self) -> str:
-        return self.kjb_dt.planing_by_ttn.project.name
+        return self.kjb_dt.project.name
     

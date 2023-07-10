@@ -5,6 +5,7 @@ from typing import List
 from decimal import Decimal
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import datetime
 
 
 class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
@@ -29,4 +30,13 @@ class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
 
 @optional
 class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
-    pass
+    kjb_dt_ids: List[UUID]
+    remark:str | None
+
+@optional
+class RequestPetaLokasiUpdateExtSch(BaseModel):
+    code:str = Field(nullable=True)
+    tanggal:datetime = Field(default=datetime.now(), nullable=False)
+    remark:str
+    kjb_dt_ids: List[UUID]
+    remark:str | None

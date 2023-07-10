@@ -39,6 +39,12 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         print(query)
         
         return await paginate(db_session, query, params)
+    
+    async def get_all_by_code(self, *, code: str, db_session : AsyncSession | None = None) -> List[RequestPetaLokasi] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.code == code)
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 
     
 request_peta_lokasi = CRUDRequestPetaLokasi(RequestPetaLokasi)
