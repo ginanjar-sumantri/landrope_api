@@ -56,6 +56,7 @@ class TandaTerimaNotarisDtBase(SQLModel):
     tanggal_tanda_terima:datetime | None = Field(default=datetime.now())
     dokumen_id:UUID = Field(foreign_key="dokumen.id")
     meta_data:str | None
+    history_data:str | None
     tanggal_terima_dokumen:date | None = Field(default=date.today())
 
     tanda_terima_notaris_hd_id:UUID = Field(foreign_key="tanda_terima_notaris_hd.id", nullable=False)
@@ -66,5 +67,13 @@ class TandaTerimaNotarisDtFullBase(BaseUUIDModel, TandaTerimaNotarisDtBase):
 class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+
+    @property
+    def dokumen_name(self) -> str:
+        return self.dokumen.name
+    
+    @property
+    def nomor_tanda_terima(self) -> str:
+        return self.tanda_terima_notaris_hd.nomor_tanda_terima
 
 
