@@ -9,13 +9,13 @@ class KjbDtCreateSch(KjbDtBase):
 class KjbDtSch(KjbDtFullBase):
     kjb_code:str | None = Field(alias="kjb_code")
     jenis_surat_name:str | None = Field(alias="jenis_surat_name")
-    desa_name:str | None = Field(alias="planing_name")
-    desa_name_by_ttn:str | None = Field(alias="planing_name_by_ttn")
-    project_name:str | None = Field(alias="planing_name")
-    project_name_by_ttn:str | None = Field(alias="planing_name_by_ttn")
+    desa_name:str | None = Field(alias="desa_name")
+    desa_name_by_ttn:str | None = Field(alias="desa_name_by_ttn")
+    project_name:str | None = Field(alias="project_name")
+    project_name_by_ttn:str | None = Field(alias="project_name_by_ttn")
     kategori_penjual:str | None = Field(alias="kategori_penjual")
     done_request_petlok:bool | None = Field(alias="done_request_petlok")
-    penjual_tanah:str = Field(alias="penjual_tanah")
+    pemilik_name:str = Field(alias="pemilik_name")
     nomor_telepon:List[str] = Field(alias="nomor_telepon")
 
 @optional

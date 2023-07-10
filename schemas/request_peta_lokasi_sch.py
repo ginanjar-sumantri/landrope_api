@@ -12,6 +12,7 @@ class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
     pass
 
 class RequestPetaLokasiCreatesSch(BaseModel):
+    tanggal:datetime | None
     kjb_dt_ids: List[UUID]
     remark:str | None
 

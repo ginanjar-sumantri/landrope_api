@@ -8,11 +8,13 @@ from crud.base_crud import CRUDBase
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from schemas.request_peta_lokasi_sch import RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch
 from typing import List
+from common.ordered import OrderEnumSch
 
 from datetime import datetime
 
 class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateSch, RequestPetaLokasiUpdateSch]):
     async def get_multi_paginated(self, *, params: Params | None = Params(),
+                                  order: OrderEnumSch | None = OrderEnumSch.descendent,
                                   keyword:str | None,
                                   db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiHdSch]:
         db_session = db_session or db.session
@@ -35,6 +37,11 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
 
         if filter_clause is not None:        
             query = query.filter(filter_clause)
+        
+        if order == OrderEnumSch.ascendent:
+            query = query.order_by(columns["code"].asc())
+        else:
+            query = query.order_by(columns["code"].desc())
 
         print(query)
         

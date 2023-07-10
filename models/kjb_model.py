@@ -164,7 +164,7 @@ class KjbDt(KjbDtFullBase, table=True):
         return kontaks
     
     @property
-    def penjual_tanah(self) -> str | None:
+    def pemilik_nsme(self) -> str | None:
         if self.pemilik is None:
             return ""
         return self.pemilik.name

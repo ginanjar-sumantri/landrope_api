@@ -15,6 +15,7 @@ class RequestPetaLokasiBase(SQLModel):
     dibuat_oleh:str | None = Field(default_factory="Land Adm Acquisition Officer")
     diperiksa_oleh:str | None = Field(default_factory="Land Adm & Verification Section Head")
     diterima_oleh:str | None = Field(default_factory="Land Measurement Analyst")
+    is_disabled:bool | None = Field(nullable=True, default_factory=False)
 
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 

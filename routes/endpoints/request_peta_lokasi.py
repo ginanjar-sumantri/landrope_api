@@ -51,11 +51,11 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
     return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
 
 @router.get("/header", response_model=GetResponsePaginatedSch[RequestPetaLokasiHdSch])
-async def get_list_header(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list_header(params: Params=Depends(), keyword:str = None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_paginated(params=params)
+    objs = await crud.request_peta_lokasi.get_multi_paginated(params=params, keyword=keyword)
     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiSch])
