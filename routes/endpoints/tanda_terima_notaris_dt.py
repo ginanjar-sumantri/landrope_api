@@ -114,6 +114,63 @@ async def update(id:UUID, sch:TandaTerimaNotarisDtUpdateSch):
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisDt, id)
     
+    tanda_terima_hd = await crud.tandaterimanotaris_hd.get(id=sch.tanda_terima_notaris_hd_id)
+    if not tanda_terima_hd:
+        raise IdNotFoundException(TandaTerimaNotarisHd, id)
+    
+    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    if not bundlehd_obj_current:
+        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+    
+    dokumen = await crud.dokumen.get(id=sch.dokumen_id)
+    
+    ## Memeriksa apakah ada key "Nomor" dalam metadata
+    o_json = eval(sch.meta_data)
+    Nomor = ""
+    if "Nomor" in o_json:
+        Nomor = o_json['Nomor']
+    
+    if obj_current.history_data is None:
+        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+    else:
+        history_data = eval(obj_current.history_data)
+        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': eval(sch.meta_data)}
+        history_data['history'].append(new_metadata)
+
+    sch.history_data = str(history_data)
+
+    # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
+    bundledt_obj_current = next((x for x in bundlehd_obj_current.bundledts if x.dokumen_id == sch.dokumen_id and x.bundle_hd_id == bundlehd_obj_current.id), None)
+    if bundledt_obj_current.history_data is None or bundledt_obj_current.history_data == "":
+        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+        
+    else:
+        history_data = eval(bundledt_obj_current.history_data)
+        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': eval(sch.meta_data)}
+        history_data['history'].append(new_metadata)
+
+    bundledt_obj_updated = bundledt_obj_current
+    bundledt_obj_updated.meta_data = sch.meta_data
+    bundledt_obj_current.history_data = str(history_data)
+
+    await crud.bundledt.update(obj_current=bundledt_obj_current, obj_new=bundledt_obj_updated)
+
+    #updated bundle header keyword when dokumen metadata is_keyword true
+    if dokumen.is_keyword:
+        metadata = sch.meta_data.replace("'",'"')
+        obj_json = json.loads(metadata)
+
+        metadata_keyword = obj_json[f'{dokumen.key_field}']
+
+        if metadata_keyword not in bundlehd_obj_current.keyword:
+            
+            edit_keyword_hd = bundlehd_obj_current
+            if bundlehd_obj_current.keyword is None or bundlehd_obj_current.keyword == "":
+                edit_keyword_hd.keyword = metadata_keyword
+            else:
+                edit_keyword_hd.keyword = f"{bundlehd_obj_current.keyword},{metadata_keyword}"
+                await crud.bundlehd.update(obj_current=bundlehd_obj_current, obj_new=edit_keyword_hd)
+
     obj_updated = await crud.tandaterimanotaris_dt.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
