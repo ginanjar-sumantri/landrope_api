@@ -49,6 +49,15 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     @property
     def planing_name(self) -> str:
         return self.planing.name
+    
+    @property
+    def done_request_petlok(self) -> bool:
+        status = False
+
+        if self.kjb_dt.request_peta_lokasi:
+            status = True
+        
+        return status
 
 
 

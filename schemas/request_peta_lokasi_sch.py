@@ -14,6 +14,9 @@ class RequestPetaLokasiCreatesSch(BaseModel):
     kjb_dt_ids: List[UUID]
     remark:str | None
 
+class RequestPetaLokasiHdSch(BaseModel):
+    code:str | None
+
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     kjb_hd_code:str = Field(alias="kjb_hd_code")
     mediator:str = Field(alias="mediator")

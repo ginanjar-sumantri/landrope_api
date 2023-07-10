@@ -139,6 +139,15 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def kategori_penjual(self) -> str:
         return str(self.kjb_hd.kategori_penjual)
+    
+    @property
+    def done_request_petlok(self) -> bool:
+        status = False
+
+        if self.request_peta_lokasi:
+            status = True
+        
+        return status
 
 
 class KjbRekeningBase(SQLModel):

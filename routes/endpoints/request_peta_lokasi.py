@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
-from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, RequestPetaLokasiUpdateSch)
+from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, RequestPetaLokasiUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from datetime import datetime
@@ -48,14 +48,20 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
 
     return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
 
-        
+@router.get("/header", response_model=GetResponsePaginatedSch[RequestPetaLokasiHdSch])
+async def get_list_header(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+    
+    """Gets a paginated list objects"""
+
+    objs = await crud.request_peta_lokasi.get_multi_paginated(params=params)
+    return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiSch])
 async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query, join=True)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[RequestPetaLokasiSch])

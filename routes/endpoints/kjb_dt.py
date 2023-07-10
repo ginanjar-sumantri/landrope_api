@@ -28,7 +28,7 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     return create_response(data=objs)
 
 @router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtSch])
-async def get_list_for_petlok(kjb_hd_id:UUID, params: Params=Depends()):
+async def get_list_for_petlok(kjb_hd_id:UUID | None, params: Params=Depends()):
     
     """Gets a paginated list objects"""
 
