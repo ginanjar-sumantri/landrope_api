@@ -37,12 +37,16 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
         if kjb_dt is None:
             raise IdNotFoundException(KjbDt, id)
         
-        data = RequestPetaLokasi(code=code,
-                                 kjb_dt_id=id,
+        data = RequestPetaLokasi(code=str(code),
+                                 kjb_dt_id=kjb_dt.id,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
                                  created_at=current_datetime,
-                                 updated_at=current_datetime)
+                                 updated_at=current_datetime,
+                                 dibuat_oleh="Land Adm Acquisition Officer",
+                                 diperiksa_oleh="Land Adm & Verification Section Head",
+                                 diterima_oleh="Land Measurement Analyst",
+                                 is_disabled=False)
         datas.append(data)
     
     if len(datas) > 0:

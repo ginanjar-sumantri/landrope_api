@@ -12,10 +12,10 @@ class RequestPetaLokasiBase(SQLModel):
     code:str = Field(nullable=True)
     tanggal:date = Field(default=date.today(), nullable=False)
     remark:str
-    dibuat_oleh:str | None = Field(default_factory="Land Adm Acquisition Officer")
-    diperiksa_oleh:str | None = Field(default_factory="Land Adm & Verification Section Head")
-    diterima_oleh:str | None = Field(default_factory="Land Measurement Analyst")
-    is_disabled:bool | None = Field(nullable=True, default_factory=False)
+    dibuat_oleh:str | None
+    diperiksa_oleh:str | None 
+    diterima_oleh:str | None
+    is_disabled:bool | None = Field(nullable=True)
 
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 
