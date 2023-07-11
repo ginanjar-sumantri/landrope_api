@@ -19,4 +19,4 @@ class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
 
 @optional
 class TandaTerimaNotarisHdUpdateSch(TandaTerimaNotarisHdBase):
-    status_peta_lokasi:StatusPetaLokasiEnum | None
+    pass
