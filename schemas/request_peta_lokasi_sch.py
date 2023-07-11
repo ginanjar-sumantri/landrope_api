@@ -5,14 +5,14 @@ from typing import List
 from decimal import Decimal
 from pydantic import BaseModel
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 
 class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
     pass
 
 class RequestPetaLokasiCreatesSch(BaseModel):
-    tanggal:datetime | None
+    tanggal:date | None
     kjb_dt_ids: List[UUID]
     remark:str | None
 
