@@ -34,9 +34,10 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
             self.model).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id).where(
             and_(
                 self.model.kjb_hd_id == kjb_hd_id,
+                self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
                 or_(
-                    self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
-                    RequestPetaLokasi.code == no_order
+                    RequestPetaLokasi.code == no_order,
+                    self.model.request_peta_lokasi == None
                 )
             )
         )

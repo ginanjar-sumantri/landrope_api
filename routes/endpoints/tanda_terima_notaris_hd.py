@@ -102,9 +102,6 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
     
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch)
-
-    if kjb_dt.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
-        return create_response(data=obj_updated)
     
     kjb_dt_update = kjb_dt
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
