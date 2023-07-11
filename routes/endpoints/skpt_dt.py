@@ -149,7 +149,7 @@ async def bulk_skpt(file:UploadFile=File()):
             
             sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
 
-            if sk is None:
+            if sk is None or shp_data.no_sk == "":
                  new_sk = SkptSch(ptsk_id=pt.id,
                           status=StatusSK(shp_data.status),
                           kategori=KategoriSk(shp_data.kategori),

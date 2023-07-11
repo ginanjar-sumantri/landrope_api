@@ -27,14 +27,21 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                     db_session : AsyncSession | None = None) -> List[KjbDt] | None:
         db_session = db_session or db.session
 
-        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id,
-                                     self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
-                                     self.model.tanda_terima_notaris_hd != None))
+        if no_order is None:
+            no_order = ""
 
-        if no_order and no_order != "":
-            query = query.where(or_(self.model.request_peta_lokasi == None, RequestPetaLokasi.code == no_order)).join(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id)
-        else:
-            query = query.where(and_(self.model.request_peta_lokasi == None))
+        query = select(self.model).select_from(
+            self.model).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id).where(
+            and_(
+                self.model.kjb_hd_id == kjb_hd_id,
+                or_(
+                    self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
+                    RequestPetaLokasi.code == no_order
+                )
+            )
+        )
+
+        
 
         print(query)    
         

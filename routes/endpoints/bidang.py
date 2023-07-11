@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTP
 from fastapi_pagination import Params
 import crud
 from models.bidang_model import Bidang, StatusEnum, TipeProsesEnum, TipeBidangEnum
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangExtSch)
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangExtSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
@@ -235,6 +235,30 @@ async def export(filter_query:str = None):
                            nomor_sk=data.nomor_sk,
                            tipeproses=data.tipe_proses,
                            tipebidang=data.tipe_bidang,
+                           geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
+                           )
+        
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].id_bidang}"
+
+        return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+    else:
+        raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+
+@router.get("/export/shp", response_class=Response)
+async def export(filter_query:str = None):
+    
+    results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
+    schemas = []
+    for data in results:
+        sch = BidangShpSch(n_idbidang=data.id_bidang,
+                           o_idbidang=data.id_bidang_lama,
+                           pemilik=data.nama_pemilik,
+                           code_desa=data.planing.desa.code,
                            geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
                            )
         
