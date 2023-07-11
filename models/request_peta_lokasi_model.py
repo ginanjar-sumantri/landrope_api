@@ -67,6 +67,12 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
         return self.kjb_dt.desa.name
     
     @property
+    def desa_hd_name(self) -> str | None:
+        if self.kjb_dt.kjb_hd.desa is None:
+            return "" 
+        return self.kjb_dt.kjb_hd.desa.name
+    
+    @property
     def project_name(self) -> str:
         return self.kjb_dt.project.name
     

@@ -99,7 +99,7 @@ async def get_by_code(code:str = None):
             kjb_dt_ids.append(i.kjb_dt_id)
 
         obj = RequestPetaLokasiHdbyCodeSch(code=data.code,
-                                           desa_name=data.desa_name,
+                                           desa_name=data.desa_hd_name,
                                            mediator=data.mediator,
                                            group=data.group,
                                            tanggal=data.tanggal,

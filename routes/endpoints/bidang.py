@@ -261,7 +261,7 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
                 else:
                     plan_id = None
             
-            if shp_data.n_idbidang is None or shp_data.n_idbidang == "":
+            if shp_data.n_idbidang is None or shp_data.n_idbidang == "nan":
                 if plan_id:
                     shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
             
@@ -332,15 +332,15 @@ async def export(filter_query:str = None):
 
 def FindStatusBidang(status:str|None = None):
     if status:
-        if status.replace(" ", "").lower() == str(StatusEnum.Bebas).replace("_", "").lower():
+        if status.replace(" ", "").lower() == StatusEnum.Bebas.replace("_", "").lower():
             return StatusEnum.Bebas
-        elif status.replace(" ", "").lower() == str(StatusEnum.Belum_Bebas).replace("_", "").lower():
+        elif status.replace(" ", "").lower() == StatusEnum.Belum_Bebas.replace("_", "").lower():
             return StatusEnum.Belum_Bebas
-        elif status.replace(" ", "").lower() == str(StatusEnum.Batal).replace("_", "").lower():
+        elif status.replace(" ", "").lower() == StatusEnum.Batal.replace("_", "").lower():
             return StatusEnum.Batal
-        elif status.replace(" ", "").lower() == str(StatusEnum.Lanjut).replace("_", "").lower():
+        elif status.replace(" ", "").lower() == StatusEnum.Lanjut.replace("_", "").lower():
             return StatusEnum.Lanjut
-        elif status.replace(" ", "").lower() == str(StatusEnum.Pending).replace("_", "").lower():
+        elif status.replace(" ", "").lower() == StatusEnum.Pending.replace("_", "").lower():
             return StatusEnum.Pending
         else:
             return StatusEnum.Batal
@@ -349,11 +349,11 @@ def FindStatusBidang(status:str|None = None):
 
 def FindTipeProses(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == str(TipeProsesEnum.Bintang).lower():
+        if type.replace(" ", "").lower() == TipeProsesEnum.Bintang.lower():
             return TipeProsesEnum.Bintang
-        elif type.replace(" ", "").lower() == str(TipeProsesEnum.Standard).lower():
+        elif type.replace(" ", "").lower() == TipeProsesEnum.Standard.lower():
             return TipeProsesEnum.Standard
-        elif type.replace(" ", "").lower() == str(TipeProsesEnum.Overlap).lower():
+        elif type.replace(" ", "").lower() == TipeProsesEnum.Overlap.lower():
             return TipeProsesEnum.Overlap
         else:
             return TipeProsesEnum.Standard

@@ -50,7 +50,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> ModelType:
         db_session = db_session or db.session
         query = select(self.model).where(func.lower(func.trim(func.replace(self.model.name, ' ', ''))) == name.strip().lower().replace(' ', ''))
-        print(query)
+        
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
 
