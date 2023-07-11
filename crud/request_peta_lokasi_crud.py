@@ -31,8 +31,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             KjbHd.code.label("kjb_hd_code")
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
-                    ).outerjoin(Desa, Desa.id == KjbHd.desa_id
-                    ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id).distinct()
+                    ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                    ).outerjoin(Desa, Desa.id == KjbHd.desa_id).distinct()
 
         filter_clause = None
 
