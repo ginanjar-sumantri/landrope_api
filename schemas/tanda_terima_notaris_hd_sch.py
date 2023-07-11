@@ -5,7 +5,7 @@ from sqlmodel import Field
 from typing import List
 
 class TandaTerimaNotarisHdCreateSch(TandaTerimaNotarisHdBase):
-    status_peta_lokasi:StatusPetaLokasiEnum | None
+    pass
 
 class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
     alashak:str | None = Field(alias="alashak")
