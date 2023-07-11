@@ -246,8 +246,6 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
 #                                     desa=geo_data['desa'],
 #                                     project=geo_data['project']
 #             )
-
-            
             
 #             luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
 
@@ -263,15 +261,11 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
 #                 else:
 #                     plan_id = None
             
-#             sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
-#                         nama_pemilik=geo_data['NAMA'],
-#                         luas_surat=luas_surat,
-#                         alas_hak="",
-#                         # no_peta=no_peta,
-#                         # status=FindStatusBidang(status_bidang),
-#                         # tipe_proses=FindTipeProses(t_proses),
-#                         tipe_bidang=FindTipeBidang(tipeproses),
-#                         planing_id=plan_id,
+#             if shp_data.n_idbidang is None or shp_data.n_idbidang == "":
+#                 if plan_id:
+#                     shp_data.n_idbidang = await generate_id_bidang(sch.planing_id)
+            
+#             sch = BidangSch(id_bidang=shp_data.n_idbidang,
 #                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
 #             obj = await crud.bidang.create(obj_in=sch)

@@ -26,7 +26,7 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
-    def alashak(self) -> str:
+    def alashak(self) -> str | None:
         return self.kjb_dt.alashak
     
     @property
@@ -61,7 +61,9 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
         return self.kjb_dt.luas_surat_by_ttn
     
     @property
-    def desa_name(self) -> str:
+    def desa_name(self) -> str | None:
+        if self.kjb_dt.desa is None:
+            return ""
         return self.kjb_dt.desa.name
     
     @property

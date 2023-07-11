@@ -5,7 +5,8 @@ from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, 
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
-                                             RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch)
+                                             RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
+                                             RequestPetaLokasiHdbyCodeSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from datetime import datetime
@@ -83,6 +84,32 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
 
     objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
+
+@router.get("/{code}", response_model=GetResponseBaseSch[RequestPetaLokasiHdbyCodeSch])
+async def get_by_code(code:str = None):
+
+    """Get an object by id"""
+
+    objs = await crud.request_peta_lokasi.get_all_by_code(code=code)
+    if objs:
+        
+        data = objs[0]
+        kjb_dt_ids = []
+        for i in objs:
+            kjb_dt_ids.append(i.kjb_dt_id)
+
+        obj = RequestPetaLokasiHdbyCodeSch(code=data.code,
+                                           desa_name=data.desa_name,
+                                           mediator=data.mediator,
+                                           group=data.group,
+                                           tanggal=data.tanggal,
+                                           remark=data.remark,
+                                           kjb_hd_code=data.kjb_hd_code,
+                                           kjb_hd_id=data.kjb_dt.kjb_hd_id,
+                                           kjb_dt_ids=kjb_dt_ids)
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(RequestPetaLokasi, id)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[RequestPetaLokasiSch])
 async def get_by_id(id:UUID):

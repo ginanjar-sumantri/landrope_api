@@ -23,6 +23,17 @@ class RequestPetaLokasiHdSch(BaseModel):
     group:str | None = Field(alias="group")
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
 
+class RequestPetaLokasiHdbyCodeSch(BaseModel):
+    code:str | None
+    desa_name:str | None 
+    mediator:str | None 
+    group:str | None
+    tanggal:date | None
+    remark:str | None
+    kjb_hd_code:str | None 
+    kjb_hd_id:UUID | None
+    kjb_dt_ids: List[UUID]
+
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
     mediator:str | None = Field(alias="mediator")
