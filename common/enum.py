@@ -19,6 +19,7 @@ class KategoriSKEnum(str, Enum):
 class TipeProsesEnum(str, Enum):
     Standard = "Standard"
     Bintang = "Bintang"
+    Overlap = "Overlap"
 
 class TipeBidangEnum(str, Enum):
     Rincik = "Rincik"

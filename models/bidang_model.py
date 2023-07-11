@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class BidangBase(SQLModel):
     id_bidang:str | None = Field(nullable=False, max_length=100)
-    # id_bidang_lama:str | None =  Field(nullable=True)
+    id_bidang_lama:str | None =  Field(nullable=True)
     nama_pemilik:str | None
     luas_surat:Decimal
     alas_hak:str
