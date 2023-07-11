@@ -40,7 +40,7 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
         data = RequestPetaLokasi(code=code,
                                  kjb_dt_id=id,
                                  remark=sch.remark,
-                                 tanggal=current_datetime,
+                                 tanggal=sch.tanggal,
                                  created_at=current_datetime,
                                  updated_at=current_datetime)
         datas.append(data)
