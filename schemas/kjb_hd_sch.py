@@ -19,14 +19,14 @@ class KjbHdSch(KjbHdFullBase):
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")
     sales_name:str = Field(alias="sales_name")
-    
+    penjuals:List[KjbPenjualSch] | None
 
 class KjbHdByIdSch(KjbHdFullBase):
-    kjb_dts:List[KjbDtSch]
-    rekenings:List[KjbRekeningSch]
-    hargas:List[KjbHargaExtSch]
-    bebanbiayas:List[KjbBebanBiayaSch]
-    penjuals:List[KjbPenjualSch]
+    kjb_dts:List[KjbDtSch] | None
+    rekenings:List[KjbRekeningSch] | None
+    hargas:List[KjbHargaExtSch] | None
+    bebanbiayas:List[KjbBebanBiayaSch] | None
+    penjuals:List[KjbPenjualSch] | None
 
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")

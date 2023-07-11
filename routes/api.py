@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat,
                               draft, gps, skpt, worker, role, dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, marketing, pemilik, beban_biaya,
-                              kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, 
+                              kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi)
 
 api_router = APIRouter()
@@ -30,6 +30,7 @@ api_router.include_router(kjb_rekening.router, prefix="/kjbrekening", tags=["kjb
 api_router.include_router(kjb_harga.router, prefix="/kjbharga", tags=["kjbharga"])
 api_router.include_router(kjb_termin.router, prefix="/kjbtermin", tags=["kjbtermin"])
 api_router.include_router(kjb_beban_biaya.router, prefix="/kjbbebanbiaya", tags=["kjbbebanbiaya"])
+api_router.include_router(kjb_penjual.router, prefix="/kjbpenjual", tags=["kjbpenjual"])
 api_router.include_router(tanda_terima_notaris_hd.router, prefix="/tandaterimanotaris_hd", tags=["tandaterimanotaris_hd"])
 api_router.include_router(tanda_terima_notaris_dt.router, prefix="/tandaterimanotaris_dt", tags=["tandaterimanotaris_dt"])
 api_router.include_router(request_peta_lokasi.router, prefix="/requestpetalokasi", tags=["requestpetalokasi"])
