@@ -6,6 +6,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql import func
 from crud.base_crud import CRUDBase
 from models.request_peta_lokasi_model import RequestPetaLokasi
+from models.kjb_model import KjbDt, KjbHd
+from models.desa_model import Desa
 from schemas.request_peta_lokasi_sch import RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch
 from typing import List
 from common.ordered import OrderEnumSch
@@ -19,9 +21,10 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                                   db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiHdSch]:
         db_session = db_session or db.session
 
-        columns = self.model.__table__.columns
+        columns = RequestPetaLokasi.__table__.columns
 
-        query = select(self.model.code).distinct()
+        query = select(RequestPetaLokasi.code, Desa.name.label("desa_name"), KjbHd.mediator, KjbHd.nama_group.label("group"), KjbHd.code.label("kjb_hd_code")).join(KjbDt, RequestPetaLokasi.kjb_dt_id == KjbDt.id).join(Desa, KjbDt.desa_by_ttn_id == Desa.id).join(KjbHd, KjbDt.kjb_hd_id == KjbHd.id).distinct()
+        
         filter_clause = None
 
         if keyword:
@@ -42,8 +45,6 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             query = query.order_by(columns["code"].asc())
         else:
             query = query.order_by(columns["code"].desc())
-
-        print(query)
         
         return await paginate(db_session, query, params)
     

@@ -18,16 +18,21 @@ class RequestPetaLokasiCreatesSch(BaseModel):
 
 class RequestPetaLokasiHdSch(BaseModel):
     code:str | None
+    desa_name:str | None = Field(alias="desa_name")
+    mediator:str | None = Field(alias="mediator")
+    group:str | None = Field(alias="group")
+    kjb_hd_code:str | None = Field(alias="kjb_hd_code")
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
-    kjb_hd_code:str = Field(alias="kjb_hd_code")
-    mediator:str = Field(alias="mediator")
-    group:str = Field(alias="group")
-    nama_pemilik_tanah:str = Field(alias="nama_pemilik_tanah")
-    nomor_pemilik_tanah:str = Field(alias="nomor_pemilik_tanah")
-    luas:Decimal = Field(alias="luas")
-    desa_name:str = Field(alias="desa_name")
-    project_name:str = Field(alias="project_name")
+    kjb_hd_code:str | None = Field(alias="kjb_hd_code")
+    mediator:str | None = Field(alias="mediator")
+    group:str | None = Field(alias="group")
+    nama_pemilik_tanah:str  | None= Field(alias="nama_pemilik_tanah")
+    nomor_pemilik_tanah:str | None = Field(alias="nomor_pemilik_tanah")
+    luas:Decimal | None = Field(alias="luas")
+    desa_name:str | None = Field(alias="desa_name")
+    project_name:str | None = Field(alias="project_name")
+    alashak:str | None = Field(alias="alashak")
 
 @optional
 class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):

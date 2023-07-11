@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
-from datetime import datetime
+from datetime import datetime, date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from uuid import UUID
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class RequestPetaLokasiBase(SQLModel):
     code:str = Field(nullable=True)
-    tanggal:datetime = Field(default=datetime.now(), nullable=False)
+    tanggal:date = Field(default=date.today(), nullable=False)
     remark:str
     dibuat_oleh:str | None = Field(default_factory="Land Adm Acquisition Officer")
     diperiksa_oleh:str | None = Field(default_factory="Land Adm & Verification Section Head")
@@ -25,6 +25,10 @@ class RequestPetaLokasiFullBase(BaseUUIDModel, RequestPetaLokasiBase):
 class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'selectin'})
 
+    @property
+    def alashak(self) -> str:
+        return self.kjb_dt.alashak
+    
     @property
     def kjb_hd_code(self) -> str:
         return self.kjb_dt.kjb_hd.code
