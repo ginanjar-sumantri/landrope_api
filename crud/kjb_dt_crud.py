@@ -40,10 +40,6 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                 )
             )
         )
-
-        
-
-        print(query)    
         
         return await paginate(db_session, query, params)
 

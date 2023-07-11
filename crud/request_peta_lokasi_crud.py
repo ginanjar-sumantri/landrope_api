@@ -11,7 +11,7 @@ from models.desa_model import Desa
 from schemas.request_peta_lokasi_sch import RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch
 from typing import List
 from common.ordered import OrderEnumSch
-
+from uuid import UUID
 from datetime import datetime
 
 class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateSch, RequestPetaLokasiUpdateSch]):
@@ -53,6 +53,13 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         query = select(self.model).where(self.model.code == code)
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_by_kjb_dt_id(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> RequestPetaLokasi | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.kjb_dt_id == id)
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
     
 request_peta_lokasi = CRUDRequestPetaLokasi(RequestPetaLokasi)

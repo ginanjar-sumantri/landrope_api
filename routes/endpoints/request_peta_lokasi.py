@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
@@ -20,6 +20,15 @@ router = APIRouter()
 async def create(sch: RequestPetaLokasiCreateSch):
     
     """Create a new object"""
+
+    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+
+    if kjb_dt is None:
+        raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
+        
+    exists = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=kjb_dt.id)
+    if exists:
+        raise HTTPException(status_code=409, detail="Resource already exists")
         
     new_obj = await crud.request_peta_lokasi.create(obj_in=sch)
     
@@ -37,6 +46,10 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
         if kjb_dt is None:
             raise IdNotFoundException(KjbDt, id)
         
+        exists = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=kjb_dt.id)
+        if exists:
+            raise HTTPException(status_code=409, detail="Resource already exists")
+        
         data = RequestPetaLokasi(code=str(code),
                                  kjb_dt_id=kjb_dt.id,
                                  remark=sch.remark,
@@ -48,6 +61,7 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
                                  diterima_oleh="Land Measurement Analyst",
                                  is_disabled=False)
         datas.append(data)
+
     
     if len(datas) > 0:
         objs = await crud.request_peta_lokasi.create_all(obj_ins=datas)
@@ -67,7 +81,7 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query, join=True)
+    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[RequestPetaLokasiSch])
