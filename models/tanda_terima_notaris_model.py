@@ -24,7 +24,7 @@ class TandaTerimaNotarisHdBase(SQLModel):
     desa_id:UUID | None = Field(nullable=True, foreign_key="desa.id")
     project_id:UUID | None = Field(nullable=True, foreign_key="project.id")
     luas_surat:Decimal
-    pemilik_id:UUID = Field(foreign_key="pemilik.id", nullable=True)
+    pemilik_id:UUID | None = Field(foreign_key="pemilik.id", nullable=True)
 
 
 class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
@@ -75,13 +75,15 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     @property
     def nomor_telepon(self) -> list[str] | None:
         kontaks = []
+        if self.pemilik is None:
+            return kontaks
         for i in self.pemilik.kontaks:
             kontaks.append(i.nomor_telepon)
         
         return kontaks
     
     @property
-    def penjual_tanah(self) -> str | None:
+    def pemilik_name(self) -> str | None:
         if self.pemilik is None:
             return ""
         return self.pemilik.name

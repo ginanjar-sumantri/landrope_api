@@ -15,8 +15,8 @@ class KjbDtSch(KjbDtFullBase):
     project_name_by_ttn:str | None = Field(alias="project_name_by_ttn")
     kategori_penjual:str | None = Field(alias="kategori_penjual")
     done_request_petlok:bool | None = Field(alias="done_request_petlok")
-    pemilik_name:str = Field(alias="pemilik_name")
-    nomor_telepon:List[str] = Field(alias="nomor_telepon")
+    pemilik_name:str | None = Field(alias="pemilik_name")
+    nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
 
 @optional
 class KjbDtUpdateSch(KjbDtBase):

@@ -88,8 +88,8 @@ class KjbDtBase(SQLModel):
     project_id:Optional[UUID] = Field(foreign_key="project.id", nullable=True)
     project_by_ttn_id:Optional[UUID] = Field(foreign_key="project.id", nullable=True)
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
-    pemilik_id:UUID = Field(foreign_key="pemilik.id", nullable=True)
-    jenis_surat_id:UUID = Field(foreign_key="jenis_surat.id", nullable=False)
+    pemilik_id:UUID | None = Field(foreign_key="pemilik.id", nullable=True)
+    jenis_surat_id:UUID | None = Field(foreign_key="jenis_surat.id", nullable=False)
     bundle_hd_id:Optional[UUID] = Field(foreign_key="bundle_hd.id", nullable=True)
 
 
@@ -158,13 +158,15 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def nomor_telepon(self) -> list[str] | None:
         kontaks = []
+        if self.pemilik is None:
+            return kontaks
         for i in self.pemilik.kontaks:
             kontaks.append(i.nomor_telepon)
         
         return kontaks
     
     @property
-    def pemilik_nsme(self) -> str | None:
+    def pemilik_name(self) -> str | None:
         if self.pemilik is None:
             return ""
         return self.pemilik.name
