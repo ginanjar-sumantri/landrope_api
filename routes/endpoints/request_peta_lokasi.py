@@ -132,14 +132,20 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
     for i in obj_currents:
         if i.kjb_dt_id not in sch.kjb_dt_ids:
             await crud.request_peta_lokasi.remove(id=i.kjb_dt_id)
-    
+
+    ids = [x.kjb_dt_id for x in obj_currents]  
+
     for j in sch.kjb_dt_ids:
-        if j not in obj_currents["id"]:
+        if j not in ids:
             new_obj = RequestPetaLokasi(code=sch.code,
                                  kjb_dt_id=j,
                                  remark=sch.remark,
-                                 tanggal=sch.tanggal)
-            await crud.request_peta_lokasi.create(obj_in=new_obj)
+                                 tanggal=sch.tanggal,
+                                 dibuat_oleh="Land Adm Acquisition Officer",
+                                 diperiksa_oleh="Land Adm & Verification Section Head",
+                                 diterima_oleh="Land Measurement Analyst",
+                                 is_disabled=False)
+            obj = await crud.request_peta_lokasi.create(obj_in=new_obj)
         else:
             obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
             obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
@@ -147,9 +153,9 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
                                                      remark=sch.remark,
                                                      kjb_dt_id=j)
             
-            await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated)
+            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated)
 
-    return create_response(data=obj_updated)
+    return create_response(data=obj)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[RequestPetaLokasiSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID):

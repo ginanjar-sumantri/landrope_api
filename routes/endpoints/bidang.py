@@ -215,7 +215,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 async def bulk_create(tipeproses:str, file:UploadFile=File()):
 
     """Create bulk or import data"""
-
+    project = await crud.project.get_by_name(name="PIK 6")  
     try:
         # file = await file.read()
         geo_dataframe = GeomService.file_to_geodataframe(file.file)
@@ -263,7 +263,7 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
             
             if shp_data.n_idbidang is None or shp_data.n_idbidang == "":
                 if plan_id:
-                    shp_data.n_idbidang = await generate_id_bidang(sch.planing_id)
+                    shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
             
             sch = BidangSch(id_bidang=shp_data.n_idbidang,
                             id_bidang_lama=shp_data.o_idbidang,
