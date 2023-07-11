@@ -23,8 +23,17 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
 
         columns = RequestPetaLokasi.__table__.columns
 
-        query = select(RequestPetaLokasi.code, Desa.name.label("desa_name"), KjbHd.mediator, KjbHd.nama_group.label("group"), KjbHd.code.label("kjb_hd_code")).join(KjbDt, RequestPetaLokasi.kjb_dt_id == KjbDt.id).join(Desa, KjbDt.desa_by_ttn_id == Desa.id).join(KjbHd, KjbDt.kjb_hd_id == KjbHd.id).distinct()
-        
+        query = select(
+            RequestPetaLokasi.code,
+            Desa.name.label("desa_name"),
+            KjbHd.mediator,
+            KjbHd.nama_group.label("group"),
+            KjbHd.code.label("kjb_hd_code")
+        ).select_from(RequestPetaLokasi
+                    ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+                    ).outerjoin(Desa, Desa.id == KjbDt.desa_by_ttn_id
+                    ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id).distinct()
+
         filter_clause = None
 
         if keyword:

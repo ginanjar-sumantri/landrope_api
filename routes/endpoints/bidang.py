@@ -211,43 +211,75 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
     
     return create_response(data=obj)
 
-@router.get("/export/shp", response_class=Response)
-async def export(filter_query:str = None):
+# @router.post("/{tipeproses}/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+# async def bulk_create(tipeproses:str, file:UploadFile=File()):
+
+#     """Create bulk or import data"""
+
+#     try:
+#         # file = await file.read()
+#         geo_dataframe = GeomService.file_to_geodataframe(file.file)
+
+#         for i, geo_data in geo_dataframe.iterrows():
+
+#             shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
+#                                     o_idbidang=geo_data['o_idbidang'],
+#                                     pemilik=geo_data['pemilik'],
+#                                     code_desa=geo_data['code_desa'],
+#                                     dokumen=geo_data['dokumen'],
+#                                     sub_surat=geo_data['sub_surat'],
+#                                     alashak=geo_data['alashak'],
+#                                     luassurat=geo_data['luassurat'],
+#                                     kat=geo_data['kat'],
+#                                     kat_bidang=geo_data['kat_bidang'],
+#                                     ptsk=geo_data['ptsk'],
+#                                     penampung=geo_data['penampung'],
+#                                     no_sk=geo_data['no_sk'],
+#                                     status_sk=geo_data['status_sk'],
+#                                     manager=geo_data['manager'],
+#                                     sales=geo_data['sales'],
+#                                     mediator=geo_data['mediator'],
+#                                     proses=geo_data['proses'],
+#                                     status=geo_data['status'],
+#                                     group=geo_data['group'],
+#                                     no_peta=geo_data['no_peta'],
+#                                     desa=geo_data['desa'],
+#                                     project=geo_data['project']
+#             )
+
+            
+            
+#             luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
+
+#             project = await crud.project.get_by_name(name=shp_data.project)            
+#             desa = await crud.desa.get_by_name(name=shp_data.desa)
+            
+#             if project is None or desa is None:
+#                 plan_id = None
+#             else:
+#                 plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+#                 if plan:
+#                     plan_id = plan.id
+#                 else:
+#                     plan_id = None
+            
+#             sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
+#                         nama_pemilik=geo_data['NAMA'],
+#                         luas_surat=luas_surat,
+#                         alas_hak="",
+#                         # no_peta=no_peta,
+#                         # status=FindStatusBidang(status_bidang),
+#                         # tipe_proses=FindTipeProses(t_proses),
+#                         tipe_bidang=FindTipeBidang(tipeproses),
+#                         planing_id=plan_id,
+#                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+
+#             obj = await crud.bidang.create(obj_in=sch)
+
+#     except:
+#         raise ImportFailedException(filename=file.filename)
     
-    results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
-    schemas = []
-    for data in results:
-        sch = BidangExtSch(id=str(data.id),
-                           id_bidang=data.id_bidang,
-                           nama_pemilik=data.nama_pemilik,
-                           luas_surat=str(data.luas_surat),
-                           alas_hak=data.alas_hak,
-                           no_peta=data.no_peta,
-                           category=data.category,
-                           jnsdokumen=data.jenis_dokumen,
-                           status=data.status,
-                           jenis_lahan=data.jenis_lahan_name,
-                           pt=data.ptsk_name, 
-                           planing=data.planing_name,
-                           project=data.project_name,
-                           desa=data.desa_name,
-                           section=data.section_name,
-                           nomor_sk=data.nomor_sk,
-                           tipeproses=data.tipe_proses,
-                           tipebidang=data.tipe_bidang,
-                           geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
-                           )
-        
-        schemas.append(sch)
-
-    if results:
-        obj_name = results[0].__class__.__name__
-        if len(results) == 1:
-            obj_name = f"{obj_name}-{results[0].id_bidang}"
-
-        return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
-    else:
-        raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+#     return create_response(data=obj)
 
 @router.get("/export/shp", response_class=Response)
 async def export(filter_query:str = None):
@@ -258,7 +290,26 @@ async def export(filter_query:str = None):
         sch = BidangShpSch(n_idbidang=data.id_bidang,
                            o_idbidang=data.id_bidang_lama,
                            pemilik=data.nama_pemilik,
-                           code_desa=data.planing.desa.code,
+                           code_desa=data.desa_code,
+                           dokumen="",
+                           sub_surat="",
+                           alashak=data.alas_hak,
+                           luassurat=data.luas_surat,
+                           kat=data.category,
+                           kat_bidang="",
+                           ptsk=data.ptsk_name,
+                           penampung=data.ptsk_name,
+                           no_sk=data.nomor_sk,
+                           status_sk="",
+                           manager="",
+                           sales="",
+                           mediator="",
+                           proses=data.tipe_proses,
+                           status=data.status,
+                           group="",
+                           no_peta=data.no_peta,
+                           desa=data.desa_name,
+                           project=data.project_name,
                            geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
                            )
         

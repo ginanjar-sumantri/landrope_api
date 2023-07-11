@@ -70,6 +70,15 @@ class Bidang(BidangFullBase, table=True):
         return self.planing.desa.name or ""
     
     @property
+    def desa_code(self)-> str | None:
+        if self.planing is None:
+            return ""
+        if self.planing.desa is None:
+            return ""
+        
+        return self.planing.desa.code or ""
+    
+    @property
     def section_name(self)-> str | None:
         if self.planing is None:
             return ""
