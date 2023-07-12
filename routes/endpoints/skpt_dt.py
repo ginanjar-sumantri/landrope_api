@@ -82,7 +82,7 @@ async def update(id:UUID, sch:SkptDtUpdateSch = Depends(SkptDtUpdateSch.as_form)
 
     obj_current = await crud.skpt.get(id=id)
 
-    if not obj_current:
+    if obj_current is None:
         raise IdNotFoundException(Skpt, id)
     
     if obj_current.geom :
