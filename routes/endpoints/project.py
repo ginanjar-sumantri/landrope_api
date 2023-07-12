@@ -67,7 +67,7 @@ async def bulk_create(file:UploadFile=File()):
         
         for i, geo_data in geo_dataframe.iterrows():
             
-            name:str = geo_data['PROJECT']
+            name:str = geo_data['project']
 
             sch = ProjectSch(name=name, code=name.replace(" ", ""))
             
