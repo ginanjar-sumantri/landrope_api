@@ -29,11 +29,11 @@ async def create(sch: SkptDtCreateSch = Depends(SkptDtCreateSch.as_form), file:U
     """Create a new object"""
     
     skpt_current = await crud.skpt.get(id=sch.skpt_id)
-    if skpt_current:
+    if skpt_current is None:
         raise IdNotFoundException(Skpt, id=sch.skpt_id)
     
     planing_current = await crud.planing.get(id=sch.planing_id)
-    if planing_current:
+    if planing_current is None:
         raise IdNotFoundException(Planing, id=sch.planing_id)
     
     if file:
