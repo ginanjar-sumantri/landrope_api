@@ -97,6 +97,13 @@ class SkptDt(SkptDtFullBase, table=True):
         return self.planing.project.section.name
     
     @property
+    def planing_name(self) -> str:
+        if self.planing is None:
+            return ""
+        
+        return self.planing.name
+
+    @property
     def project_name(self) -> str:
         if self.planing is None:
             return ""
