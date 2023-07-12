@@ -281,8 +281,12 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
                         tipe_proses=FindTipeProses(shp_data.proses),
                         tipe_bidang=FindTipeBidang(shp_data.proses),
                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-
-        obj = await crud.bidang.create(obj_in=sch)
+        
+        obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+        if obj_current:
+            obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
+        else:
+            obj = await crud.bidang.create(obj_in=sch)
 
     # except:
     #     raise ImportFailedException(filename=file.filename)

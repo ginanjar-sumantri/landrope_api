@@ -1,7 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_
+from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
@@ -17,6 +17,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
     ) -> Bidang:
         db_session = db_session or db.session
         obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang == idbidang))
+        return obj.scalar_one_or_none()
+    
+    async def get_by_id_bidang_id_bidang_lama(
+        self, *, idbidang: str, idbidang_lama: str, db_session: AsyncSession | None = None
+    ) -> Bidang:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Bidang).where(and_(Bidang.id_bidang == idbidang, Bidang.id_bidang_lama == idbidang_lama)))
         return obj.scalar_one_or_none()
     
     async def get_filtered_bidang(
