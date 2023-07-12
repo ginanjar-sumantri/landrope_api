@@ -216,74 +216,76 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
 
     """Create bulk or import data"""
     project = await crud.project.get_by_name(name="PIK 6")  
-    try:
+    # try:
         # file = await file.read()
-        geo_dataframe = GeomService.file_to_geodataframe(file.file)
+    geo_dataframe = GeomService.file_to_geodataframe(file.file)
 
-        for i, geo_data in geo_dataframe.iterrows():
+    for i, geo_data in geo_dataframe.iterrows():
 
-            shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
-                                    o_idbidang=geo_data['o_idbidang'],
-                                    pemilik=geo_data['pemilik'],
-                                    code_desa=geo_data['code_desa'],
-                                    dokumen=geo_data['dokumen'],
-                                    sub_surat=geo_data['sub_surat'],
-                                    alashak=geo_data['alashak'],
-                                    luassurat=geo_data['luassurat'],
-                                    kat=geo_data['kat'],
-                                    kat_bidang=geo_data['kat_bidang'],
-                                    ptsk=geo_data['ptsk'],
-                                    penampung=geo_data['penampung'],
-                                    no_sk=geo_data['no_sk'],
-                                    status_sk=geo_data['status_sk'],
-                                    manager=geo_data['manager'],
-                                    sales=geo_data['sales'],
-                                    mediator=geo_data['mediator'],
-                                    proses=geo_data['proses'],
-                                    status=geo_data['status'],
-                                    group=geo_data['group'],
-                                    no_peta=geo_data['no_peta'],
-                                    desa=geo_data['desa'],
-                                    project=geo_data['project']
-            )
-            
-            luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+        shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
+                                o_idbidang=geo_data['o_idbidang'],
+                                pemilik=geo_data['pemilik'],
+                                code_desa=geo_data['code_desa'],
+                                dokumen=geo_data['dokumen'],
+                                sub_surat=geo_data['sub_surat'],
+                                alashak=geo_data['alashak'],
+                                luassurat=geo_data['luassurat'],
+                                kat=geo_data['kat'],
+                                kat_bidang=geo_data['kat_bidang'],
+                                ptsk=geo_data['ptsk'],
+                                penampung=geo_data['penampung'],
+                                no_sk=geo_data['no_sk'],
+                                status_sk=geo_data['status_sk'],
+                                manager=geo_data['manager'],
+                                sales=geo_data['sales'],
+                                mediator=geo_data['mediator'],
+                                proses=geo_data['proses'],
+                                status=geo_data['status'],
+                                group=geo_data['group'],
+                                no_peta=geo_data['no_peta'],
+                                desa=geo_data['desa'],
+                                project=geo_data['project'],
+                                geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
+        )
+        
+        luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
-            project = await crud.project.get_by_name(name=shp_data.project)            
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
-            
-            if project is None or desa is None:
-                plan_id = None
+        project = await crud.project.get_by_name(name=shp_data.project)            
+        desa = await crud.desa.get_by_name(name=shp_data.desa)
+        
+        if project is None or desa is None:
+            plan_id = None
+        else:
+            plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+            if plan:
+                plan_id = plan.id
             else:
-                plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
-                if plan:
-                    plan_id = plan.id
-                else:
-                    plan_id = None
-            
-            if shp_data.n_idbidang is None or shp_data.n_idbidang == "nan":
-                if plan_id:
-                    shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
-            
-            sch = BidangSch(id_bidang=shp_data.n_idbidang,
-                            id_bidang_lama=shp_data.o_idbidang,
-                            nama_pemilik=shp_data.pemilik,
-                            luas_surat=luas_surat,
-                            alas_hak=shp_data.alashak,
-                            no_peta=shp_data.no_peta,
-                            category=shp_data.kat,
-                            jenis_dokumen=None,
-                            status=FindStatusBidang(shp_data.status),
-                            jenis_lahan_id=None,
-                            planing_id=plan_id,
-                            skpt_id=None,
-                            tipe_proses=FindTipeProses(shp_data.proses),
-                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+                plan_id = None
+        
+        if shp_data.n_idbidang is None or shp_data.n_idbidang == "nan" or shp_data.n_idbidang == "None":
+            if plan_id:
+                shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
+        
+        sch = BidangSch(id_bidang=shp_data.n_idbidang,
+                        id_bidang_lama=shp_data.o_idbidang,
+                        nama_pemilik=shp_data.pemilik,
+                        luas_surat=luas_surat,
+                        alas_hak=shp_data.alashak,
+                        no_peta=shp_data.no_peta,
+                        category=shp_data.kat,
+                        jenis_dokumen=None,
+                        status=FindStatusBidang(shp_data.status),
+                        jenis_lahan_id=None,
+                        planing_id=plan_id,
+                        skpt_id=None,
+                        tipe_proses=FindTipeProses(shp_data.proses),
+                        tipe_bidang=FindTipeBidang(shp_data.proses),
+                    geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
-            obj = await crud.bidang.create(obj_in=sch)
+        obj = await crud.bidang.create(obj_in=sch)
 
-    except:
-        raise ImportFailedException(filename=file.filename)
+    # except:
+    #     raise ImportFailedException(filename=file.filename)
     
     return create_response(data=obj)
 
@@ -362,9 +364,9 @@ def FindTipeProses(type:str|None = None):
 
 def FindTipeBidang(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == TipeBidangEnum.Bidang.lower() or type.replace(" ", "").lower() == "Bintang".lower():
+        if type.replace(" ", "").lower() == "Standard".lower() or type.replace(" ", "").lower() == "Bintang".lower():
             return TipeBidangEnum.Bidang
-        elif type.replace(" ", "").lower() == TipeBidangEnum.Rincik.lower():
-            return TipeBidangEnum.Rincik
+        elif type.replace(" ", "").lower() == "Overlap".lower():
+            return TipeBidangEnum.Overlap
     else:
-        return None
+        return TipeBidangEnum.Bidang

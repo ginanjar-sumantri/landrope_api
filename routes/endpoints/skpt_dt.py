@@ -129,10 +129,10 @@ async def bulk_skpt(file:UploadFile=File()):
                                 project=geo_data['project'],
                                 desa=geo_data['desa'])
         tgl_sk = str(geo_data['tgl_sk'])
-        if tgl_sk != "nan":
+        if tgl_sk != "nan" and tgl_sk != "None":
             shp_data.tgl_sk = date(geo_data['tgl_sk'])
         jatuhtempo = str(geo_data['jatuhtempo'])    
-        if jatuhtempo != "nan":
+        if jatuhtempo != "nan" and jatuhtempo != "None":
             shp_data.tgl_sk = date(geo_data['tgl_sk'])
         
         project = await crud.project.get_by_name(name=shp_data.project)
@@ -157,7 +157,7 @@ async def bulk_skpt(file:UploadFile=File()):
             pt = await crud.ptsk.create(obj_in=new_pt)
         
         sk = None
-        if shp_data.no_sk != "nan":
+        if shp_data.no_sk != "nan" and shp_data.no_sk != "None":
             sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
 
         if sk is None or shp_data.no_sk == "nan" or shp_data.no_sk == "" or shp_data.no_sk == "None":

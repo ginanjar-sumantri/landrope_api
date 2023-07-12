@@ -1,4 +1,5 @@
 from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase, BidangExtBase
+from models.base_model import BaseGeoModel
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import Field
@@ -33,7 +34,7 @@ class BidangExtSch(BidangFullBase):
 
 class BidangSch(BidangFullBase):pass
 
-class BidangShpSch(BaseModel):
+class BidangShpSch(BaseGeoModel):
     n_idbidang:str | None
     o_idbidang:str | None
     pemilik:str | None
