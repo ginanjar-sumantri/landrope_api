@@ -12,7 +12,7 @@ class CRUDSKPT(CRUDBase[Skpt, SkptCreateSch, SkptUpdateSch]):
         self, *, number: str, db_session: AsyncSession | None = None
     ) -> Skpt:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Skpt).where(Skpt.nomor_sk == number))
+        obj = await db_session.execute(select(Skpt).where(Skpt.nomor_sk == number).limit(1))
         return obj.scalar_one_or_none()
     
     async def get_by_ptsk_id(

@@ -18,7 +18,7 @@ from shapely.geometry import shape
 from common.rounder import RoundTwo
 from common.enum import StatusSKEnum, KategoriSKEnum
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 import json
 
 router = APIRouter()
@@ -108,79 +108,90 @@ async def bulk_skpt(file:UploadFile=File()):
 
     """Create bulk or import data"""
 
-    try:
-        datas = []
-        current_datetime = datetime.now()
-        geo_dataframe = GeomService.file_to_geodataframe(file.file)
+    # try:
+    datas = []
+    current_datetime = datetime.now()
+    geo_dataframe = GeomService.file_to_geodataframe(file.file)
 
-        for i, geo_data in geo_dataframe.iterrows():
+    for i, geo_data in geo_dataframe.iterrows():
 
-            shp_data = SkptShpSch(geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                                  code=geo_data['code'],
-                                  name=geo_data['name'],
-                                  luas=RoundTwo(Decimal(geo_data['luas'])),
-                                  no_sk=geo_data['no_sk'],
-                                  status=geo_data['status'],
-                                  tgl_sk=geo_data['tgl_sk'],
-                                  jatuhtempo=geo_data['jatuhtempo'],
-                                  project=geo_data['project'],
-                                  desa=geo_data['desa'])
+        shp_data = SkptShpSch(geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
+                                code=geo_data['code'],
+                                name=geo_data['name'],
+                                kategori=geo_data['kategori'],
+                                luas=RoundTwo(Decimal(geo_data['luas'])),
+                                no_sk=geo_data['no_sk'],
+                                status=geo_data['status'],
+                                section=geo_data['section'],
+                            #   tgl_sk=geo_data['tgl_sk'],
+                            #   jatuhtempo=geo_data['jatuhtempo'],
+                                code_desa=geo_data['code_desa'],
+                                project=geo_data['project'],
+                                desa=geo_data['desa'])
+        tgl_sk = str(geo_data['tgl_sk'])
+        if tgl_sk != "nan":
+            shp_data.tgl_sk = date(geo_data['tgl_sk'])
+        jatuhtempo = str(geo_data['jatuhtempo'])    
+        if jatuhtempo != "nan":
+            shp_data.tgl_sk = date(geo_data['tgl_sk'])
+        
+        project = await crud.project.get_by_name(name=shp_data.project)
+
+        if project is None:
+            raise NameNotFoundException(Project, name=shp_data.project)
+        
+        desa = await crud.desa.get_by_name(name=shp_data.desa)
+
+        if desa is None:
+            raise NameNotFoundException(Desa, name=shp_data.desa)
+        
+        planing = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+        if planing is None:
+            raise NameNotFoundException(Planing, name=f"{project.name} - {desa.name}")
+
+        pt = await crud.ptsk.get_by_name(name=shp_data.name)
+
+        if pt is None:
+            new_pt =  PtskSch(name=shp_data.name, code= shp_data.code or "")
             
-            project = await crud.project.get_by_name(name=shp_data.project)
-
-            if project is None:
-                raise NameNotFoundException(Project, name=shp_data.project)
-            
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
-
-            if desa is None:
-                raise NameNotFoundException(Desa, name=shp_data.desa)
-            
-            planing = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
-            if planing is None:
-                raise NameNotFoundException(Planing, name=f"{project.name} - {desa.name}")
-
-            pt = await crud.ptsk.get_by_name(name=shp_data.name)
-
-            if pt is None:
-                new_pt =  PtskSch(name=shp_data.name, code= shp_data.code or "")
-                
-                pt = await crud.ptsk.create(obj_in=new_pt)
-            
+            pt = await crud.ptsk.create(obj_in=new_pt)
+        
+        sk = None
+        if shp_data.no_sk != "nan":
             sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
 
-            if sk is None or shp_data.no_sk == "":
-                 new_sk = SkptSch(ptsk_id=pt.id,
-                          status=StatusSK(shp_data.status),
-                          kategori=KategoriSk(shp_data.kategori),
-                          nomor_sk=shp_data.no_sk,
-                          tanggal_tahun_SK=shp_data.tgl_sk,
-                          tanggal_jatuh_tempo=shp_data.jatuhtempo)
-                 
-                 sk = await crud.skpt.create(obj_in=new_sk)
-            else:
-                update_sk = SkptSch(ptsk_id=pt.id,
-                          status=StatusSK(shp_data.status),
-                          kategori=KategoriSk(shp_data.kategori),
-                          nomor_sk=shp_data.no_sk,
-                          tanggal_tahun_SK=shp_data.tgl_sk,
-                          tanggal_jatuh_tempo=shp_data.jatuhtempo)
+        if sk is None or shp_data.no_sk == "nan" or shp_data.no_sk == "" or shp_data.no_sk == "None":
+                new_sk = SkptSch(ptsk_id=pt.id,
+                        status=StatusSK(shp_data.status),
+                        kategori=KategoriSk(shp_data.kategori),
+                        nomor_sk=shp_data.no_sk,
+                        tanggal_tahun_SK=shp_data.tgl_sk,
+                        tanggal_jatuh_tempo=shp_data.jatuhtempo)
                 
-                sk = await crud.skpt.update(obj_current=sk, obj_new=update_sk)
-
-            data = SkptDtSch(planing_id=planing.id, 
-                             skpt_id=sk.id,
-                             luas=shp_data.luas,
-                             updated_at=current_datetime,
-                             created_at=current_datetime,
-                             geom=shp_data.geom)
+                sk = await crud.skpt.create(obj_in=new_sk)
+        else:
+            update_sk = SkptSch(ptsk_id=pt.id,
+                        status=StatusSK(shp_data.status),
+                        kategori=KategoriSk(shp_data.kategori),
+                        nomor_sk=shp_data.no_sk,
+                        tanggal_tahun_SK=shp_data.tgl_sk,
+                        tanggal_jatuh_tempo=shp_data.jatuhtempo)
             
-            datas.append(data)
+            sk = await crud.skpt.update(obj_current=sk, obj_new=update_sk)
 
-        objs = await crud.skptdt.create_all(obj_ins=datas)
+        data = SkptDt(planing_id=planing.id, 
+                            skpt_id=sk.id,
+                            luas=shp_data.luas,
+                            updated_at=current_datetime,
+                            created_at=current_datetime,
+                            geom=shp_data.geom)
+        
+        datas.append(data)
 
-    except:
-        raise ImportFailedException(filename=file.filename)
+    objs = await crud.skptdt.create_all(obj_ins=datas)
+
+    # except:
+    #     raise ImportFailedException(filename=file.filename)
     
     return create_response(data=objs)
 
@@ -201,6 +212,8 @@ async def export_shp(filter_query:str = None):
                       status=str(data.skpt.status).replace("_", ""),
                       tgl_sk=data.skpt.tanggal_tahun_SK,
                       jatuhtempo=data.skpt.tanggal_jatuh_tempo,
+                      section=data.section_name,
+                      code_desa=data.desa_code,
                       project=data.project_name,
                       desa=data.desa_name)
         schemas.append(sch)
@@ -218,11 +231,11 @@ def StatusSK(status:str|None = None):
             return StatusSKEnum.Belum_Pengajuan_SK
         elif status.replace(" ", "").replace("_", "").lower() == "sudahil":
             return StatusSKEnum.Final_SK
-        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Belum_Pengajuan_SK).replace(" ", "").replace("_", "").lower():
+        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Belum_Pengajuan_SK.replace(" ", "").replace("_", "").lower():
             return StatusSKEnum.Belum_Pengajuan_SK
-        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Final_SK).replace(" ", "").replace("_", "").lower():
+        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Final_SK.replace(" ", "").replace("_", "").lower():
             return StatusSKEnum.Final_SK
-        elif status.replace(" ", "").replace("_", "").lower() == str(StatusSKEnum.Pengajuan_Awal_SK).replace(" ", "").replace("_", "").lower():
+        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Pengajuan_Awal_SK.replace(" ", "").replace("_", "").lower():
             return StatusSKEnum.Pengajuan_Awal_SK
         else:
             return StatusSKEnum.Belum_Pengajuan_SK
@@ -231,9 +244,9 @@ def StatusSK(status:str|None = None):
 
 def KategoriSk(kategori:str|None = None):
     if kategori:
-        if kategori.replace(" ", "").replace("_", "").lower() == str(KategoriSKEnum.SK_ASG).replace(" ", "").replace("_", "").lower():
+        if kategori.replace(" ", "").replace("_", "").lower() == KategoriSKEnum.SK_ASG.replace(" ", "").replace("_", "").lower():
             return KategoriSKEnum.SK_ASG
-        elif kategori.replace(" ", "").replace("_", "").lower() == str(KategoriSKEnum.SK_Orang).replace(" ", "").replace("_", "").lower():
+        elif kategori.replace(" ", "").replace("_", "").lower() == KategoriSKEnum.SK_Orang.replace(" ", "").replace("_", "").lower():
             return KategoriSKEnum.SK_Orang
     else:
         return KategoriSKEnum.SK_ASG

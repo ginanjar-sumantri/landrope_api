@@ -55,9 +55,9 @@ class Skpt(SkptFullBase, table=True):
         
     
 class SkptDtBase(SQLModel):
-    planing_id:UUID = Field(default=None, foreign_key="planing.id", primary_key=True)
-    skpt_id:UUID = Field(default=None, foreign_key="skpt.id", primary_key=True)
-    luas:Decimal
+    planing_id:UUID | None = Field(foreign_key="planing.id", nullable=True)
+    skpt_id:UUID | None = Field(foreign_key="skpt.id", nullable=True)
+    luas:Decimal | None = Field(nullable=True)
 
 class SkptDtRawBase(BaseUUIDModel, SkptDtBase):
     pass
@@ -67,7 +67,7 @@ class SkptDtFullBase(BaseGeoModel, SkptDtRawBase):
 
 class SkptDt(SkptDtFullBase, table=True):
     skpt:"Skpt" = Relationship(back_populates="skpt_planings", sa_relationship_kwargs={'lazy':'selectin'})
-    planing:"Planing" = Relationship(sa_relationship={'lazy':'selectin'})
+    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def nomor_sk(self) -> str | None:
@@ -86,6 +86,17 @@ class SkptDt(SkptDtFullBase, table=True):
         return self.skpt.ptsk.name
     
     @property
+    def section_name(self) -> str:
+        if self.planing is None:
+            return ""
+        if self.planing.project is None:
+            return ""
+        if self.planing.project.section is None:
+            return ""
+        
+        return self.planing.project.section.name
+    
+    @property
     def project_name(self) -> str:
         if self.planing is None:
             return ""
@@ -102,3 +113,12 @@ class SkptDt(SkptDtFullBase, table=True):
             return ""
         
         return self.planing.desa.name
+    
+    @property
+    def desa_code(self) -> str:
+        if self.planing is None:
+            return ""
+        if self.planing.desa is None:
+            return ""
+        
+        return self.planing.desa.code

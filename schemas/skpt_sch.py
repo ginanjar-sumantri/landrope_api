@@ -38,6 +38,7 @@ class SkptShpSch(BaseGeoModel):
     project:str | None
     luas:Decimal | None
     desa:str | None
+    code_desa:str | None
 
 @optional
 class SkptUpdateSch(SkptBase):
