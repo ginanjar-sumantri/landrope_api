@@ -159,8 +159,10 @@ async def bulk_skpt(file:UploadFile=File()):
         sk = None
         if shp_data.no_sk != "nan" and shp_data.no_sk != "None":
             sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
+        
+        sk = await crud.skpt.get_by_sk_number_and_ptsk_id(no_sk=shp_data.no_sk, ptsk_id=pt.id)
 
-        if sk is None or shp_data.no_sk == "nan" or shp_data.no_sk == "" or shp_data.no_sk == "None":
+        if sk is None:
                 new_sk = SkptSch(ptsk_id=pt.id,
                         status=StatusSK(shp_data.status),
                         kategori=KategoriSk(shp_data.kategori),
