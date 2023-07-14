@@ -20,7 +20,12 @@ class ImportLogFullBase(BaseUUIDModel, ImportLogBase):
 
 
 class ImportLog(ImportLogFullBase, table=True):
-    worker:"Worker"=Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "ImportLog.created_by_id==Worker.id",
+        }
+    )
     
     @property
     def created_by_name(self) -> str | None:

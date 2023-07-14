@@ -129,10 +129,12 @@ async def bulk(file:UploadFile=File()):
                 await crud.desa.update(obj_current=obj_current, obj_new=sch_update)
                 continue
             
-            if code is None or code == "":
-                code = await generate_code(entity=CodeCounterEnum.Desa)
-            else:
-                code = str(code).zfill(3)
+            # if code is None or code == "":
+            #     code = await generate_code(entity=CodeCounterEnum.Desa)
+            # else:
+            #     code = str(code).zfill(3)
+
+            code = await generate_code(entity=CodeCounterEnum.Desa)
 
             sch = Desa(
                           name=name,
