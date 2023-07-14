@@ -1,20 +1,27 @@
-from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException
-from fastapi_pagination import Params
+import json
 import crud
-from models.bidang_model import Bidang, StatusEnum, TipeProsesEnum, TipeBidangEnum
+from uuid import UUID
+from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException, Request
+from fastapi_pagination import Params
+from models.bidang_model import Bidang
+from models.worker_model import Worker
+from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangExtSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, 
                                   ImportResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
-from services.geom_service import GeomService
-from shapely.geometry import shape
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from decimal import Decimal
-import json
+from common.enum import TaskStatusEnum, StatusEnum, TipeProsesEnum, TipeBidangEnum
+from services.geom_service import GeomService
+from services.gcloud_task_service import GCloudTaskService
+from services.gcloud_storage_service import GCStorage
+from shapely.geometry import shape
 from shapely import wkt, wkb
+from decimal import Decimal
+
+
 
 router = APIRouter()
 
@@ -52,20 +59,10 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
                         geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     else:
         raise ImportFailedException()
-    
-    #add maping planing when not exists
-    # await addMappingPlaningSKPT(sk_id=sch.skpt_id, plan_id=sch.planing_id)
 
     new_obj = await crud.bidang.create(obj_in=sch)
 
     return create_response(data=new_obj)
-    
-# async def addMappingPlaningSKPT(sk_id:str, plan_id:str):
-#     obj = await crud.planing_skpt.get_mapping_by_plan_sk_id(plan_id=plan_id, sk_id=sk_id)
-#     if obj is None :
-#         sch = MappingPlaningSkptSch(planing_id=plan_id, skpt_id=sk_id)
-#         obj = await crud.planing_skpt.create(obj_in=sch)
-#     return obj
 
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
@@ -126,99 +123,36 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
-# @router.post("/{tipeproses}/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-# async def bulk_create(tipeproses:str, file:UploadFile=File()):
-
-#     """Create bulk or import data"""
-
-#     try:
-#         # file = await file.read()
-#         geo_dataframe = GeomService.file_to_geodataframe(file.file)
-
-#         projects = await crud.project.get_all()
-#         desas = await crud.desa.get_all()
-#         planings = await crud.planing.get_all()
-
-#         for i, geo_data in geo_dataframe.iterrows():
-#             p = geo_data.get("PROJECT", "None")
-#             if p != "None":
-#                  p = geo_data['PROJECT']
-            
-#             d = geo_data.get("DESA", "None")
-#             if d != "None":
-#                  d = geo_data['DESA']
-            
-#             no_peta = geo_data.get("NO_PETA", "")
-#             if no_peta != "":
-#                  no_peta = geo_data['NO_PETA']
-            
-#             status_bidang = geo_data.get("STATUS", "None")
-#             if status_bidang != "None":
-#                  status_bidang = geo_data['STATUS']
-#             elif status_bidang == "None" and tipeproses.lower() == "Rincik".lower():
-#                 status_bidang = None
-            
-#             t_proses = geo_data.get("PROSES", "None")
-#             if t_proses != "None":
-#                 t_proses = geo_data['PROSES']
-#             elif t_proses == "None" and tipeproses.lower() != "Rincik".lower():
-#                 t_proses = tipeproses
-#             else:
-#                 t_proses = None
-            
-#             luas_surat:Decimal = RoundTwo(Decimal(geo_data['LUAS']))
-
-#             project = next((obj for obj in projects 
-#                             if obj.name.replace(" ", "").lower() == p.replace(" ", "").lower()), None)
-            
-#             # if project is None:
-#             #     continue
-#                 # raise HTTPException(status_code=404, detail=f"{p} Not Exists in Project Data Master")
-            
-#             desa = next((obj for obj in desas 
-#                          if obj.name.replace(" ", "").lower() == d.replace(" ", "").lower()), None)
-
-#             # if desa is None:
-#             #     continue
-#                 # raise HTTPException(status_code=404, detail=f"{d} Not Exists in Desa Data Master")
-            
-            
-#             if project is None or desa is None:
-#                 plan_id = None
-#             else:
-#                 plan_filter = list(filter(lambda x: [x.project_id == project.id, x.desa_id == desa.id], planings))
-#                 plan = plan_filter[0]
-#                 if plan is None:
-#                     plan_id = None
-#                 else:
-#                     plan_id = plan.id
-            
-#             sch = BidangSch(id_bidang=geo_data['IDBIDANG'],
-#                         nama_pemilik=geo_data['NAMA'],
-#                         luas_surat=luas_surat,
-#                         alas_hak="",
-#                         no_peta=no_peta,
-#                         status=FindStatusBidang(status_bidang),
-#                         tipe_proses=FindTipeProses(t_proses),
-#                         tipe_bidang=FindTipeBidang(tipeproses),
-#                         planing_id=plan_id,
-#                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-
-#             obj = await crud.bidang.create(obj_in=sch)
-
-#     except:
-#         raise ImportFailedException(filename=file.filename)
+@router.post(
+        "/bulk", 
+        response_model=PostResponseBaseSch[ImportLogSch], 
+        status_code=status.HTTP_201_CREATED
+)
+async def create_bulking_task(
+    file:UploadFile,
+    request: Request,
+    current_worker: Worker = Depends(crud.worker.get_current_user)):
     
-#     return create_response(data=obj)
+    """Create a new object"""
 
-@router.post("/{tipeproses}/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-async def bulk_create(tipeproses:str, file:UploadFile=File()):
+    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress)
+    new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id, file=file)
+    
+    url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
+
+    GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
+
+    return create_response(data=new_obj)
+
+@router.post("/cloud-task-bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+async def bulk_create(sch:ImportLogCloudTaskSch):
 
     """Create bulk or import data"""
-    project = await crud.project.get_by_name(name="PIK 6")  
     # try:
         # file = await file.read()
-    geo_dataframe = GeomService.file_to_geodataframe(file.file)
+    
+    file = await GCStorage().download_file(sch.file_path)
+    geo_dataframe = GeomService.file_to_geodataframe(file)
 
     for i, geo_data in geo_dataframe.iterrows():
 
@@ -292,6 +226,87 @@ async def bulk_create(tipeproses:str, file:UploadFile=File()):
     #     raise ImportFailedException(filename=file.filename)
     
     return create_response(data=obj)
+
+# @router.post("/bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+# async def bulk_create(tipeproses:str, file:UploadFile=File()):
+
+#     """Create bulk or import data"""
+#     # try:
+#         # file = await file.read()
+#     geo_dataframe = GeomService.file_to_geodataframe(file.file)
+
+#     for i, geo_data in geo_dataframe.iterrows():
+
+#         shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
+#                                 o_idbidang=geo_data['o_idbidang'],
+#                                 pemilik=geo_data['pemilik'],
+#                                 code_desa=geo_data['code_desa'],
+#                                 dokumen=geo_data['dokumen'],
+#                                 sub_surat=geo_data['sub_surat'],
+#                                 alashak=geo_data['alashak'],
+#                                 luassurat=geo_data['luassurat'],
+#                                 kat=geo_data['kat'],
+#                                 kat_bidang=geo_data['kat_bidang'],
+#                                 ptsk=geo_data['ptsk'],
+#                                 penampung=geo_data['penampung'],
+#                                 no_sk=geo_data['no_sk'],
+#                                 status_sk=geo_data['status_sk'],
+#                                 manager=geo_data['manager'],
+#                                 sales=geo_data['sales'],
+#                                 mediator=geo_data['mediator'],
+#                                 proses=geo_data['proses'],
+#                                 status=geo_data['status'],
+#                                 group=geo_data['group'],
+#                                 no_peta=geo_data['no_peta'],
+#                                 desa=geo_data['desa'],
+#                                 project=geo_data['project'],
+#                                 geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
+#         )
+        
+#         luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+
+#         project = await crud.project.get_by_name(name=shp_data.project)            
+#         desa = await crud.desa.get_by_name(name=shp_data.desa)
+        
+#         if project is None or desa is None:
+#             plan_id = None
+#         else:
+#             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+#             if plan:
+#                 plan_id = plan.id
+#             else:
+#                 plan_id = None
+        
+#         if shp_data.n_idbidang is None or shp_data.n_idbidang == "nan" or shp_data.n_idbidang == "None":
+#             if plan_id:
+#                 shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
+        
+#         sch = BidangSch(id_bidang=shp_data.n_idbidang,
+#                         id_bidang_lama=shp_data.o_idbidang,
+#                         nama_pemilik=shp_data.pemilik,
+#                         luas_surat=luas_surat,
+#                         alas_hak=shp_data.alashak,
+#                         no_peta=shp_data.no_peta,
+#                         category=shp_data.kat,
+#                         jenis_dokumen=None,
+#                         status=FindStatusBidang(shp_data.status),
+#                         jenis_lahan_id=None,
+#                         planing_id=plan_id,
+#                         skpt_id=None,
+#                         tipe_proses=FindTipeProses(shp_data.proses),
+#                         tipe_bidang=FindTipeBidang(shp_data.proses),
+#                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+        
+#         obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+#         if obj_current:
+#             obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
+#         else:
+#             obj = await crud.bidang.create(obj_in=sch)
+
+#     # except:
+#     #     raise ImportFailedException(filename=file.filename)
+    
+#     return create_response(data=obj)
 
 @router.get("/export/shp", response_class=Response)
 async def export(filter_query:str = None):

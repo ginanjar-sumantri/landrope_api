@@ -15,6 +15,9 @@ class BaseUUIDModel(SQLModel):
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True, nullable=False)
     updated_at : datetime | None = Field(default=datetime.now())
     created_at : datetime | None = Field(default=datetime.now())
+    created_by_id: UUID | None = Field(default=None, foreign_key='worker.id', nullable=True)
+    updated_by_id: UUID | None = Field(default=None, foreign_key='worker.id', nullable=True)
+
 
 class BaseGeoModel(_SQLModel):
     geom:str = Field(sa_column=Column(Geometry))

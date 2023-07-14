@@ -254,6 +254,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_obj.updated_at = datetime.utcnow()
         if created_by_id:
             db_obj.created_by_id = created_by_id
+            db_obj.updated_by_id = created_by_id
         
         try:
             db_session.add(db_obj)
@@ -309,7 +310,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             
         return db_obj
     
-    async def update(self, *, obj_current : ModelType, obj_new : UpdateSchemaType | Dict[str, Any] | ModelType,
+    async def update(self, 
+                     *, 
+                     obj_current : ModelType, 
+                     obj_new : UpdateSchemaType | Dict[str, Any] | ModelType,
+                     updated_by_id: UUID | str | None = None,
                      db_session : AsyncSession | None = None) -> ModelType :
         db_session =  db_session or db.session
         obj_data = jsonable_encoder(obj_current)
@@ -324,6 +329,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 setattr(obj_current, field, update_data[field])
             if field == "updated_at":
                 setattr(obj_current, field, datetime.utcnow())
+        
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
             
         db_session.add(obj_current)
         await db_session.commit()

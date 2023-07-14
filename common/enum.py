@@ -80,3 +80,8 @@ class SatuanHargaEnum(str, Enum):
 class StatusPetaLokasiEnum(str, Enum):
     Lanjut_Peta_Lokasi = "Lanjut_Peta_Lokasi"
     Tidak_Lanjut = "Tidak_Lanjut"
+
+class TaskStatusEnum(str, Enum):
+    OnProgress = "OnProgress"
+    Done = "Done"
+    Failed = "Failed"

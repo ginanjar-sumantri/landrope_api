@@ -40,4 +40,5 @@ from .jenis_surat_crud import jenissurat
 from .marketing_crud import manager, sales
 from .notaris_crud import notaris
 
+from .import_log_crud import import_log
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

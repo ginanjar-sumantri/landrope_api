@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.logger import logger as fastapi_logger
@@ -43,6 +44,8 @@ def init_app():
     
     app.include_router(api.api_router, prefix="/landrope")
     add_pagination(app)
+
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.GOOGLE_APPLICATION_CREDENTIALS
     
     gunicorn_error_logger = logging.getLogger("gunicorn.error")
     gunicorn_logger = logging.getLogger("gunicorn")
