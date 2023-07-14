@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 
 class ImportLogBase(SQLModel):
+    name: str = Field(nullable=True)
     status: TaskStatusEnum | None = Field(nullable=True)
     file_path: str | None = Field(nullable=True)
     file_name: str | None = Field(nullable=True)

@@ -137,7 +137,8 @@ async def create_bulking_task(
     
     """Create a new object"""
 
-    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress)
+    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
+                             name="Upload Bidang Bulking")
     new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id, file=file)
     
     url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
