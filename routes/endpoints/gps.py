@@ -31,7 +31,7 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
         geo_dataframe['geometry'] = polygon.geometry
 
 
-    sch = GpsSch(
+    sch = GpsSch(nama=geo_dataframe['pemilik'][0],
                 alas_hak=geo_dataframe['alas_hak'][0],
                 luas=RoundTwo(Decimal(geo_dataframe['luas_surat'][0])),
                 desa=geo_dataframe['desa'][0],
