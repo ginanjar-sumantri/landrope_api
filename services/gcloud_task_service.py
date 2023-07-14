@@ -23,7 +23,7 @@ class GCloudTaskService:
                      http_method: str = 'POST',
                      with_token: str = 'SETTING',
                      in_seconds: int = 1,
-                     queue_name: str = 'landrope-upload',
+                     queue_name: str = 'landrope-queue',
                      task_name: str | None = None,
                      execute_at=None) -> str:
         parent = self.client.queue_path(
@@ -101,7 +101,7 @@ class GCloudTaskService:
         try:
             task = self._create_task(
                 url=url,
-                queue_name='landrope-upload',
+                queue_name='landrope-queue',
                 payload=payload
             )
         except Exception as e:
