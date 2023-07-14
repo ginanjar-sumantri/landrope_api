@@ -1,17 +1,11 @@
 from datetime import datetime
-from uuid import UUID
-
-import pytz
-from pydantic import validator
-from sqlalchemy import Column, func
-from sqlalchemy.dialects.mysql import TEXT
-from sqlalchemy.orm import column_property, declared_attr, object_session
-from sqlmodel import Field, Relationship, SQLModel, select
-
+from sqlmodel import Field, Relationship, SQLModel
 from models.base_model import BaseUUIDModel
-from models.worker_model import Worker
-
 from common.enum import TaskStatusEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from models.worker_model import Worker
 
 
 class ImportLogBase(SQLModel):
@@ -26,4 +20,8 @@ class ImportLogFullBase(BaseUUIDModel, ImportLogBase):
 
 
 class ImportLog(ImportLogFullBase, table=True):
-    pass
+    worker:"Worker"=Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    
+    @property
+    def created_by_name(self) -> str | None:
+        return self.worker.name

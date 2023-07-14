@@ -19,6 +19,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang == idbidang))
         return obj.scalar_one_or_none()
     
+    async def get_by_id_bidang_lama(
+        self, *, idbidang_lama: str, db_session: AsyncSession | None = None
+    ) -> Bidang:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama))
+        return obj.scalar_one_or_none()
+    
     async def get_by_id_bidang_id_bidang_lama(
         self, *, idbidang: str, idbidang_lama: str, db_session: AsyncSession | None = None
     ) -> Bidang:

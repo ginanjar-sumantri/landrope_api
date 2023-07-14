@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTP
 from fastapi_pagination import Params
 from models.bidang_model import Bidang
 from models.worker_model import Worker
+from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangExtSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -20,6 +21,7 @@ from services.gcloud_storage_service import GCStorage
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
+from datetime import datetime
 
 
 
@@ -145,13 +147,20 @@ async def create_bulking_task(
     return create_response(data=new_obj)
 
 @router.post("/cloud-task-bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-async def bulk_create(sch:ImportLogCloudTaskSch):
+async def bulk_create(payload:ImportLogCloudTaskSch):
 
     """Create bulk or import data"""
     # try:
         # file = await file.read()
     
-    file = await GCStorage().download_file(sch.file_path)
+    log = await crud.import_log.get(id=payload.import_log_id)
+    if log is None:
+        raise IdNotFoundException(ImportLog, payload.import_log_id)
+    
+    file = await GCStorage().download_file(payload.file_path)
+    if not file:
+        raise FileNotFoundError()
+    
     geo_dataframe = GeomService.file_to_geodataframe(file)
 
     for i, geo_data in geo_dataframe.iterrows():
@@ -196,9 +205,14 @@ async def bulk_create(sch:ImportLogCloudTaskSch):
             else:
                 plan_id = None
         
-        if shp_data.n_idbidang is None or shp_data.n_idbidang == "nan" or shp_data.n_idbidang == "None":
-            if plan_id:
+        null_values = ["", "None", "nan", None]
+
+        if shp_data.n_idbidang in null_values:
+            bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
+            if bidang_lama is None:
                 shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
+            else:
+                shp_data.n_idbidang = bidang_lama.id_bidang
         
         sch = BidangSch(id_bidang=shp_data.n_idbidang,
                         id_bidang_lama=shp_data.o_idbidang,
@@ -217,13 +231,19 @@ async def bulk_create(sch:ImportLogCloudTaskSch):
                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
         
         obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+
         if obj_current:
+            if obj_current.geom :
+                obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
             obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
         else:
             obj = await crud.bidang.create(obj_in=sch)
 
     # except:
     #     raise ImportFailedException(filename=file.filename)
+
+    log.status = TaskStatusEnum.Done
+    log.completed_at = datetime.now()
     
     return create_response(data=obj)
 

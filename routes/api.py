@@ -3,7 +3,7 @@ from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, 
                               draft, gps, skpt, skpt_dt, worker, role, dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, marketing, pemilik, beban_biaya,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
-                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi)
+                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, import_log)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -45,3 +45,6 @@ api_router.include_router(pemilik.router_rekening, prefix="/rekening", tags=["re
 api_router.include_router(marketing.manager, prefix="/manager", tags=["manager"])
 api_router.include_router(marketing.sales, prefix="/sales", tags=["sales"])
 api_router.include_router(beban_biaya.router, prefix="/bebanbiaya", tags=["bebanbiaya"])
+
+api_router.include_router(import_log.router, prefix="/importlog", tags=["importlog"])
+
