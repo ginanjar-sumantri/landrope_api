@@ -1,21 +1,25 @@
-from uuid import UUID, uuid4
-from fastapi import APIRouter, Depends, status, UploadFile, File, Form, HTTPException, Response
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response, Request
 from fastapi_pagination import Params
-import crud
 from models.desa_model import Desa
+from models.import_log_model import ImportLog
+from models.worker_model import Worker
+from models.code_counter_model import CodeCounterEnum
 from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch, DesaExportSch)
+from schemas.import_log_sch import (ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException)
-from services.geom_service import GeomService
-from shapely.geometry import shape
-from geoalchemy2.shape import to_shape
 from common.generator import generate_code
-from models.code_counter_model import CodeCounterEnum
 from common.rounder import RoundTwo
+from common.enum import TaskStatusEnum
+from services.geom_service import GeomService
+from services.gcloud_task_service import GCloudTaskService
+from shapely.geometry import shape
 from decimal import Decimal
 from datetime import datetime
 from shapely import wkt, wkb
+from uuid import UUID
+import crud
 
 router = APIRouter()
 
@@ -98,6 +102,27 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
 
+# @router.post(
+#         "/bulk", 
+#         response_model=PostResponseBaseSch[ImportLogSch], 
+#         status_code=status.HTTP_201_CREATED
+# )
+# async def create_bulking_task(
+#     file:UploadFile,
+#     request: Request,
+#     current_worker: Worker = Depends(crud.worker.get_current_user)):
+    
+#     """Create a new object"""
+
+#     sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
+#                              name="Upload Desa Bulking")
+#     new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id, file=file)
+    
+#     url = f'{request.base_url}landrope/desa/cloud-task-bulk'
+
+#     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
+
+#     return create_response(data=new_obj)
 
 @router.post("/bulk")
 async def bulk(file:UploadFile=File()):
@@ -108,7 +133,8 @@ async def bulk(file:UploadFile=File()):
         current_datetime = datetime.now()
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         
-        for i, geo_data in geo_dataframe.iterrows():
+        
+        for i, geo_data in geo_dataframe.iterrows()[3:]:
             code:str = geo_data['code']
             name:str = geo_data['name']
             kota:str = geo_data['kota']
