@@ -134,7 +134,7 @@ async def bulk(file:UploadFile=File()):
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         
         
-        for i, geo_data in geo_dataframe.iterrows()[3:]:
+        for i, geo_data in geo_dataframe.iterrows():
             code:str = geo_data['code']
             name:str = geo_data['name']
             kota:str = geo_data['kota']
