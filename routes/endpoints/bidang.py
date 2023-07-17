@@ -263,7 +263,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
     obj_updated.status = TaskStatusEnum.Done
     obj_updated.completed_at = datetime.now()
 
-    await crud.import_log(obj_current=log, obj_updated=obj_updated)
+    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
     return create_response(data=obj)
 
