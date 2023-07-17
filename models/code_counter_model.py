@@ -8,6 +8,7 @@ class CodeCounterEnum(str, Enum):
     Desa = "Desa"
     Dokumen = "Dokumen"
     Bundle = "Bundle"
+    Kjb = "Kjb"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

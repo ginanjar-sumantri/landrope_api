@@ -2,9 +2,11 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbHd
+from models.code_counter_model import CodeCounterEnum
 from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.generator import generate_code
 import crud
 
 
@@ -14,7 +16,7 @@ router = APIRouter()
 async def create(sch: KjbHdCreateSch):
     
     """Create a new object"""
-        
+    sch.code = await generate_code(CodeCounterEnum.Kjb)   
     new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch)
     
     return create_response(data=new_obj)
