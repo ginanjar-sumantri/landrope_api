@@ -254,7 +254,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
         obj_updated = log
         obj_updated.done_count = start
 
-        await crud.import_log(obj_current=log, obj_updated=obj_updated)
+        await crud.import_log.update(obj_current=log, obj_updated=obj_updated)
 
     # except:
     #     raise ImportFailedException(filename=file.filename)

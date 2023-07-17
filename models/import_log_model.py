@@ -14,8 +14,8 @@ class ImportLogBase(SQLModel):
     file_path: str | None = Field(nullable=True)
     file_name: str | None = Field(nullable=True)
     completed_at: datetime | None = Field(nullable=True)
-    total_row:int = Field(nullable=True)
-    done_count:int = Field(nullable=True)
+    total_row:int | None = Field(nullable=True)
+    done_count:int | None = Field(nullable=True)
 
 
 class ImportLogFullBase(BaseUUIDModel, ImportLogBase):
