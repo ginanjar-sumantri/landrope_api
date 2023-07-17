@@ -22,6 +22,7 @@ from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
 from datetime import datetime
+from itertools import islice
 
 
 
@@ -65,7 +66,6 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     new_obj = await crud.bidang.create(obj_in=sch)
 
     return create_response(data=new_obj)
-
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, filter_query:str=None):
@@ -133,13 +133,19 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 async def create_bulking_task(
     file:UploadFile,
     request: Request,
-    current_worker: Worker = Depends(crud.worker.get_current_user)):
+    # current_worker: Worker = Depends(crud.worker.get_current_user)
+    ):
     
     """Create a new object"""
 
+    rows = GeomService.total_row_geodataframe(file.file)
+
     sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
-                             name="Upload Bidang Bulking")
-    new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id, file=file)
+                             name="Upload Bidang Bulking",
+                             total_row=rows,
+                             done_count=0)
+    
+    new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4", file=file)
     
     url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
 
@@ -158,13 +164,15 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
     if log is None:
         raise IdNotFoundException(ImportLog, payload.import_log_id)
     
+    start:int = log.done_count
+
     file = await GCStorage().download_file(payload.file_path)
     if not file:
         raise FileNotFoundError()
     
     geo_dataframe = GeomService.file_to_geodataframe(file)
 
-    for i, geo_data in geo_dataframe.iterrows():
+    for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
         shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
                                 o_idbidang=geo_data['o_idbidang'],
@@ -239,12 +247,21 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
             obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
         else:
             obj = await crud.bidang.create(obj_in=sch)
+        
+        start = start + 1
+        obj_updated = log
+        obj_updated.done_count = start
+
+        await crud.import_log(obj_current=log, obj_updated=obj_updated)
 
     # except:
     #     raise ImportFailedException(filename=file.filename)
 
-    log.status = TaskStatusEnum.Done
-    log.completed_at = datetime.now()
+    obj_updated = log
+    obj_updated.status = TaskStatusEnum.Done
+    obj_updated.completed_at = datetime.now()
+    
+    await crud.import_log(obj_current=log, obj_updated=obj_updated)
     
     return create_response(data=obj)
 

@@ -46,6 +46,12 @@ class GeomService(Generic[T]):
 
         return geo_dataframe
     
+    def total_row_geodataframe(file:BytesIO = None) -> int:
+        """Get total row on file shp with geo data frame"""
+
+        geo_dataframe = geopandas.GeoDataFrame.from_file(file)
+        return geo_dataframe.shape[0]
+    
     def single_geometry_to_wkt(geometry):
         """Convert geometry geo data frame"""
         return geopandas.GeoSeries(geometry).geometry.to_wkt()[0]
