@@ -181,7 +181,7 @@ class KjbPenjualFullBase(BaseUUIDModel, KjbPenjualBase):
     pass
 
 class KjbPenjual(KjbPenjualFullBase, table=True):
-    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbPenjual.pemilik_id==Pemilik.id", "lazy": "joined"})
     kjb_hd:"KjbHd" = Relationship(back_populates="penjuals", sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
