@@ -148,7 +148,7 @@ async def create_bulking_task(
     file.file.seek(0)
     file_path, file_name = await GCStorage().upload_zip(file=file)
 
-    batch_size = 1000
+    batch_size = 2000
 
     for i in range(0, rows, batch_size):
         if i > 0:
@@ -163,7 +163,7 @@ async def create_bulking_task(
             total = end_index - start_index
 
         sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
-                             name=f"Upload Bidang Bulking {start_index} - {start_index} of {rows} datas",
+                             name=f"Upload Bidang Bulking {start_index} - {end_index} of {rows} datas",
                              file_name=file_name,
                              file_path=file_path,
                              total_row=total,
