@@ -186,7 +186,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
         if luassurat in null_values:
             geo_data['luassurat'] = RoundTwo(Decimal(0))
 
-        shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
+        shp_data = BidangShpSch(n_idbidang=str(geo_data['n_idbidang']),
                                 o_idbidang=geo_data['o_idbidang'],
                                 pemilik=geo_data['pemilik'],
                                 code_desa=geo_data['code_desa'],
