@@ -30,7 +30,36 @@ class ImportLog(ImportLogFullBase, table=True):
             "primaryjoin": "ImportLog.created_by_id==Worker.id",
         }
     )
+
+    import_log_errors: list["ImportLogError"] = Relationship(
+        back_populates="import_log",
+        sa_relationship_kwargs={
+            'lazy' : 'selectin'
+        }
+    )
     
     @property
     def created_by_name(self) -> str | None:
         return self.worker.name
+    
+    @property
+    def total_error_log(self):
+        return len(self.import_log_errors)
+    
+
+class ImportLogErrorBase(SQLModel):
+    row: int | None = Field(nullable=False)
+    error_message : str | None
+
+    import_log_id : UUID | None = Field(nullable=False, foreign_key="import_log.id")
+
+class ImportLogErrorFullBase(BaseUUIDModel, ImportLogErrorBase):
+    pass
+
+class ImportLogError(ImportLogErrorFullBase, table=True):
+    import_log: ImportLog = Relationship(
+        back_populates="import_log_errors",
+        sa_relationship_kwargs={
+            'lazy' : 'selectin'
+        }
+    )

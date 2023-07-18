@@ -4,14 +4,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException, Request
 from fastapi_pagination import Params
 from models.bidang_model import Bidang
+from models.project_model import Project
+from models.desa_model import Desa
+from models.planing_model import Planing
 from models.worker_model import Worker
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
+from schemas.import_log_error_sch import ImportLogErrorSch
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangExtSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch,
                                   ImportResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
+from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
 from common.enum import TaskStatusEnum, StatusEnum, TipeProsesEnum, TipeBidangEnum
@@ -155,7 +159,7 @@ async def create_bulking_task(
 
     return create_response(data=new_obj)
 
-@router.post("/cloud-task-bulk", response_model=ImportResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
+@router.post("/cloud-task-bulk")
 async def bulk_create(payload:ImportLogCloudTaskSch):
 
     """Create bulk or import data"""
@@ -211,22 +215,42 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
         luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
         project = await crud.project.get_by_name(name=shp_data.project)
+        if project is None:
+            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
+            log_error = ImportLogErrorSch(row=i+1,
+                                              error_message=error_m,
+                                              import_log_id=log.id)
+
+            log_error = await crud.import_log_error.create(obj_in=log_error)
+
+            raise NameNotFoundException(Project, name=shp_data.project)
+
         desa = await crud.desa.get_by_name(name=shp_data.desa)
+        if desa is None:
+            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} not exists in table master. "
+            log_error = ImportLogErrorSch(row=i+1,
+                                              error_message=error_m,
+                                              import_log_id=log.id)
 
-        if project is None or desa is None:
-            plan_id = None
-            continue
-        else:
-            plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
-            if plan:
-                plan_id = plan.id
-            else:
-                plan_id = None
+            log_error = await crud.import_log_error.create(obj_in=log_error)
 
+            raise NameNotFoundException(Desa, name=shp_data.desa)
+
+        plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+        if plan is None:
+            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
+            log_error = ImportLogErrorSch(row=i+1,
+                                              error_message=error_m,
+                                              import_log_id=log.id)
+
+            log_error = await crud.import_log_error.create(obj_in=log_error)
+
+            raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
+            
         if shp_data.n_idbidang in null_values:
             bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
-            if bidang_lama is None and plan_id is not None:
-                shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
+            if bidang_lama is None and plan is not None:
+                shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
             else:
                 shp_data.n_idbidang = bidang_lama.id_bidang
 
@@ -240,11 +264,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
                         jenis_dokumen=None,
                         status=FindStatusBidang(shp_data.status),
                         jenis_lahan_id=None,
-                        planing_id=plan_id,
+                        planing_id=plan.id,
                         skpt_id=None,
                         tipe_proses=FindTipeProses(shp_data.proses),
                         tipe_bidang=FindTipeBidang(shp_data.proses),
-                    geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
 
         obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
 
@@ -270,7 +294,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
     await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
-    return create_response(data=obj)
+    return {'message': 'success import'}
 
 
 @router.get("/export/shp", response_class=Response)

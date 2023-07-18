@@ -41,4 +41,5 @@ from .marketing_crud import manager, sales
 from .notaris_crud import notaris
 
 from .import_log_crud import import_log
+from .import_log_error_crud import import_log_error
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap
