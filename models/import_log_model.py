@@ -3,6 +3,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from models.base_model import BaseUUIDModel
 from common.enum import TaskStatusEnum
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 if TYPE_CHECKING:
     from models.worker_model import Worker

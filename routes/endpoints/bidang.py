@@ -168,6 +168,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
     start:int = log.done_count
     count:int = log.done_count
+    null_values = ["", "None", "nan", None]
 
     file = await GCStorage().download_file(payload.file_path)
     if not file:
@@ -203,13 +204,17 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
                                 geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
         )
 
-        luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+        if shp_data.luassurat in null_values:
+            luas_surat:Decimal = RoundTwo(Decimal(0))
+        else:
+            luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
         project = await crud.project.get_by_name(name=shp_data.project)
         desa = await crud.desa.get_by_name(name=shp_data.desa)
 
         if project is None or desa is None:
             plan_id = None
+            continue
         else:
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan:
@@ -217,11 +222,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
             else:
                 plan_id = None
 
-        null_values = ["", "None", "nan", None]
-
         if shp_data.n_idbidang in null_values:
             bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
-            if bidang_lama is None:
+            if bidang_lama is None and plan_id is not None:
                 shp_data.n_idbidang = await generate_id_bidang(planing_id=plan_id)
             else:
                 shp_data.n_idbidang = bidang_lama.id_bidang
