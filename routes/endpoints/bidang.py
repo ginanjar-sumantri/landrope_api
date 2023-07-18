@@ -163,130 +163,137 @@ async def create_bulking_task(
 async def bulk_create(payload:ImportLogCloudTaskSch):
 
     """Create bulk or import data"""
-    # try:
+    try:
         # file = await file.read()
 
-    log = await crud.import_log.get(id=payload.import_log_id)
-    if log is None:
-        raise IdNotFoundException(ImportLog, payload.import_log_id)
+        log = await crud.import_log.get(id=payload.import_log_id)
+        if log is None:
+            raise IdNotFoundException(ImportLog, payload.import_log_id)
 
-    start:int = log.done_count
-    count:int = log.done_count
-    null_values = ["", "None", "nan", None]
+        start:int = log.done_count
+        count:int = log.done_count
+        null_values = ["", "None", "nan", None]
 
-    file = await GCStorage().download_file(payload.file_path)
-    if not file:
-        raise FileNotFoundError()
+        file = await GCStorage().download_file(payload.file_path)
+        if not file:
+            raise FileNotFoundError()
 
-    geo_dataframe = GeomService.file_to_geodataframe(file)
+        geo_dataframe = GeomService.file_to_geodataframe(file)
 
-    for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
+        for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
-        luassurat = str(geo_data['luassurat'])
-        if luassurat in null_values:
-            geo_data['luassurat'] = RoundTwo(Decimal(0))
+            luassurat = str(geo_data['luassurat'])
+            if luassurat in null_values:
+                geo_data['luassurat'] = RoundTwo(Decimal(0))
 
-        shp_data = BidangShpSch(n_idbidang=str(geo_data['n_idbidang']),
-                                o_idbidang=geo_data['o_idbidang'],
-                                pemilik=geo_data['pemilik'],
-                                code_desa=geo_data['code_desa'],
-                                dokumen=geo_data['dokumen'],
-                                sub_surat=geo_data['sub_surat'],
-                                alashak=geo_data['alashak'],
-                                luassurat=geo_data['luassurat'],
-                                kat=geo_data['kat'],
-                                kat_bidang=geo_data['kat_bidang'],
-                                ptsk=geo_data['ptsk'],
-                                penampung=geo_data['penampung'],
-                                no_sk=geo_data['no_sk'],
-                                status_sk=geo_data['status_sk'],
-                                manager=geo_data['manager'],
-                                sales=geo_data['sales'],
-                                mediator=geo_data['mediator'],
-                                proses=geo_data['proses'],
-                                status=geo_data['status'],
-                                group=geo_data['group'],
-                                no_peta=geo_data['no_peta'],
-                                desa=geo_data['desa'],
-                                project=geo_data['project'],
-                                geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
-        )
+            shp_data = BidangShpSch(n_idbidang=str(geo_data['n_idbidang']),
+                                    o_idbidang=geo_data['o_idbidang'],
+                                    pemilik=geo_data['pemilik'],
+                                    code_desa=geo_data['code_desa'],
+                                    dokumen=geo_data['dokumen'],
+                                    sub_surat=geo_data['sub_surat'],
+                                    alashak=geo_data['alashak'],
+                                    luassurat=geo_data['luassurat'],
+                                    kat=geo_data['kat'],
+                                    kat_bidang=geo_data['kat_bidang'],
+                                    ptsk=geo_data['ptsk'],
+                                    penampung=geo_data['penampung'],
+                                    no_sk=geo_data['no_sk'],
+                                    status_sk=geo_data['status_sk'],
+                                    manager=geo_data['manager'],
+                                    sales=geo_data['sales'],
+                                    mediator=geo_data['mediator'],
+                                    proses=geo_data['proses'],
+                                    status=geo_data['status'],
+                                    group=geo_data['group'],
+                                    no_peta=geo_data['no_peta'],
+                                    desa=geo_data['desa'],
+                                    project=geo_data['project'],
+                                    geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
+            )
 
-        luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+            luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
-        project = await crud.project.get_by_name(name=shp_data.project)
-        if project is None:
-            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
-            log_error = ImportLogErrorSch(row=i+1,
-                                              error_message=error_m,
-                                              import_log_id=log.id)
+            project = await crud.project.get_by_name(name=shp_data.project)
+            if project is None:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=error_m,
+                                                import_log_id=log.id)
 
-            log_error = await crud.import_log_error.create(obj_in=log_error)
+                log_error = await crud.import_log_error.create(obj_in=log_error)
 
-            raise NameNotFoundException(Project, name=shp_data.project)
+                raise NameNotFoundException(Project, name=shp_data.project)
 
-        desa = await crud.desa.get_by_name(name=shp_data.desa)
-        if desa is None:
-            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} not exists in table master. "
-            log_error = ImportLogErrorSch(row=i+1,
-                                              error_message=error_m,
-                                              import_log_id=log.id)
+            desa = await crud.desa.get_by_name(name=shp_data.desa)
+            if desa is None:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} not exists in table master. "
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=error_m,
+                                                import_log_id=log.id)
 
-            log_error = await crud.import_log_error.create(obj_in=log_error)
+                log_error = await crud.import_log_error.create(obj_in=log_error)
 
-            raise NameNotFoundException(Desa, name=shp_data.desa)
+                raise NameNotFoundException(Desa, name=shp_data.desa)
 
-        plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
-        if plan is None:
-            error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
-            log_error = ImportLogErrorSch(row=i+1,
-                                              error_message=error_m,
-                                              import_log_id=log.id)
+            plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
+            if plan is None:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=error_m,
+                                                import_log_id=log.id)
 
-            log_error = await crud.import_log_error.create(obj_in=log_error)
+                log_error = await crud.import_log_error.create(obj_in=log_error)
 
-            raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
-            
-        if shp_data.n_idbidang in null_values:
-            bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
-            if bidang_lama is None and plan is not None:
-                shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
+                raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
+                
+            if shp_data.n_idbidang in null_values:
+                bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
+                if bidang_lama is None and plan is not None:
+                    shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
+                else:
+                    shp_data.n_idbidang = bidang_lama.id_bidang
+
+            sch = BidangSch(id_bidang=shp_data.n_idbidang,
+                            id_bidang_lama=shp_data.o_idbidang,
+                            nama_pemilik=shp_data.pemilik,
+                            luas_surat=luas_surat,
+                            alas_hak=shp_data.alashak,
+                            no_peta=shp_data.no_peta,
+                            category=shp_data.kat,
+                            jenis_dokumen=None,
+                            status=FindStatusBidang(shp_data.status),
+                            jenis_lahan_id=None,
+                            planing_id=plan.id,
+                            skpt_id=None,
+                            tipe_proses=FindTipeProses(shp_data.proses),
+                            tipe_bidang=FindTipeBidang(shp_data.proses),
+                            geom=shp_data.geom)
+
+            # obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+            obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
+
+            if obj_current:
+                if obj_current.geom :
+                    obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
             else:
-                shp_data.n_idbidang = bidang_lama.id_bidang
+                obj = await crud.bidang.create(obj_in=sch)
 
-        sch = BidangSch(id_bidang=shp_data.n_idbidang,
-                        id_bidang_lama=shp_data.o_idbidang,
-                        nama_pemilik=shp_data.pemilik,
-                        luas_surat=luas_surat,
-                        alas_hak=shp_data.alashak,
-                        no_peta=shp_data.no_peta,
-                        category=shp_data.kat,
-                        jenis_dokumen=None,
-                        status=FindStatusBidang(shp_data.status),
-                        jenis_lahan_id=None,
-                        planing_id=plan.id,
-                        skpt_id=None,
-                        tipe_proses=FindTipeProses(shp_data.proses),
-                        tipe_bidang=FindTipeBidang(shp_data.proses),
-                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            count = count + 1
+            obj_updated = log
+            obj_updated.done_count = count
 
-        obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+            log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
-        if obj_current:
-            if obj_current.geom :
-                obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-            obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
-        else:
-            obj = await crud.bidang.create(obj_in=sch)
+    except:
+        error_m = f"Failed import, please check your data or contact administrator"
+        log_error = ImportLogErrorSch(row=i+1,
+                                        error_message=error_m,
+                                        import_log_id=log.id)
 
-        count = count + 1
-        obj_updated = log
-        obj_updated.done_count = count
-
-        log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-    # except:
-    #     raise ImportFailedException(filename=file.filename)
+        log_error = await crud.import_log_error.create(obj_in=log_error)
+        raise ImportFailedException(filename=log.file_name)
 
     obj_updated = log
     obj_updated.status = TaskStatusEnum.Done
