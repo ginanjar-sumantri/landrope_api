@@ -27,7 +27,8 @@ from shapely import wkt, wkb
 from decimal import Decimal
 from datetime import datetime
 from itertools import islice
-import copy
+from math import ceil
+
 
 
 
@@ -145,19 +146,36 @@ async def create_bulking_task(
 
     rows = GeomService.total_row_geodataframe(file=file.file)
     file.file.seek(0)
+    file_path, file_name = await GCStorage().upload_zip(file=file)
 
-    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
-                             name="Upload Bidang Bulking",
-                             total_row=rows,
+    batch_size = 1000
+
+    for i in range(0, rows, batch_size):
+        if i > 0:
+            start_index = i + 1
+            end_index = min(i + batch_size, rows)
+
+            total = end_index - (start_index - 1)
+        else:
+            start_index = i
+            end_index = min(i + batch_size, rows)
+
+            total = end_index - start_index
+
+        sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
+                             name=f"Upload Bidang Bulking {start_index} - {start_index} of {rows} datas",
+                             file_name=file_name,
+                             file_path=file_path,
+                             total_row=total,
+                             start_row=start_index,
+                             end_row=end_index,
                              done_count=0)
 
-    new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4", file=file)
+        new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4")
+        url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
+        GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
-    url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
-
-    GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
-
-    return create_response(data=new_obj)
+    return create_response(data=sch)
 
 @router.post("/cloud-task-bulk")
 async def bulk_create(payload:ImportLogCloudTaskSch):
@@ -170,7 +188,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
         if log is None:
             raise IdNotFoundException(ImportLog, payload.import_log_id)
 
-        start:int = log.done_count
+        start:int = log.start_row
+        end:int = log.end_row
         count:int = log.done_count
         null_values = ["", "None", "nan", None]
 
@@ -180,7 +199,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
-        for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
+        for i, geo_data in islice(geo_dataframe.iterrows(), start, end):
 
             luassurat = str(geo_data['luassurat'])
             if luassurat in null_values:
@@ -270,8 +289,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
                             tipe_bidang=FindTipeBidang(shp_data.proses),
                             geom=shp_data.geom)
 
-            # obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
-            obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
+            obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+            # obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
 
             if obj_current:
                 if obj_current.geom :
