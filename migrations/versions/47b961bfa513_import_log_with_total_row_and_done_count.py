@@ -1,8 +1,8 @@
-"""import total row & done row
+"""import log with total row and done count
 
-Revision ID: 052210aca9c9
+Revision ID: 47b961bfa513
 Revises: 
-Create Date: 2023-07-17 15:23:05.193135
+Create Date: 2023-07-18 11:51:43.855141
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '052210aca9c9'
+revision = '47b961bfa513'
 down_revision = None
 branch_labels = None
 depends_on = None

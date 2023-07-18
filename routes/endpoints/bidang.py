@@ -178,6 +178,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
     for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
+        luassurat = str(geo_data['luassurat'])
+        if luassurat in null_values:
+            geo_data['luassurat'] = RoundTwo(Decimal(0))
+
         shp_data = BidangShpSch(n_idbidang=geo_data['n_idbidang'],
                                 o_idbidang=geo_data['o_idbidang'],
                                 pemilik=geo_data['pemilik'],
@@ -204,10 +208,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
                                 geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
         )
 
-        if shp_data.luassurat in null_values:
-            luas_surat:Decimal = RoundTwo(Decimal(0))
-        else:
-            luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+        luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
         project = await crud.project.get_by_name(name=shp_data.project)
         desa = await crud.desa.get_by_name(name=shp_data.desa)
