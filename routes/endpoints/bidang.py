@@ -291,6 +291,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 if obj_current.geom :
                     obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=shp_data.o_idbidang,
+                                                import_log_id=log.id)
+
+                log_error = await crud.import_log_error.create(obj_in=log_error)
             else:
                 obj = await crud.bidang.create(obj_in=sch)
             
@@ -311,7 +316,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 GCloudTaskService().create_task_import_data(import_instance=log, base_url=url)
                 break  # Hentikan looping setelah 5 menit berlalu
 
-            time.sleep(1)
+            time.sleep(0.2)
 
     except:
         error_m = f"Failed import, please check your data or contact administrator"
