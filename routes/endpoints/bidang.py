@@ -151,17 +151,9 @@ async def create_bulking_task(
     batch_size = 2000
 
     for i in range(0, rows, batch_size):
-        if i > 0:
-            start_index = i + 1
-            end_index = min(i + batch_size, rows)
-
-            total = end_index - (start_index - 1)
-        else:
-            start_index = i
-            end_index = min(i + batch_size, rows)
-
-            total = end_index - start_index
-
+        start_index = i
+        end_index = min(i + batch_size, rows)
+        total = end_index - start_index
         sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
                              name=f"Upload Bidang Bulking {start_index} - {end_index} of {rows} datas",
                              file_name=file_name,
@@ -186,16 +178,20 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
         log = await crud.import_log.get(id=payload.import_log_id)
         if log is None:
-            raise IdNotFoundException(ImportLog, payload.import_log_id)
+            return IdNotFoundException(ImportLog, payload.import_log_id)
 
         start:int = log.start_row
         end:int = log.end_row
         count:int = log.done_count
+
+        if log.done_count > 0:
+            start = log.done_count
+
         null_values = ["", "None", "nan", None]
 
         file = await GCStorage().download_file(payload.file_path)
         if not file:
-            raise FileNotFoundError()
+            return FileNotFoundError()
 
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
@@ -242,7 +238,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                raise NameNotFoundException(Project, name=shp_data.project)
+                return NameNotFoundException(Project, name=shp_data.project)
 
             desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
@@ -253,7 +249,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                raise NameNotFoundException(Desa, name=shp_data.desa)
+                return NameNotFoundException(Desa, name=shp_data.desa)
 
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
@@ -264,7 +260,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
+                return NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
                 
             if shp_data.n_idbidang in null_values:
                 bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
@@ -298,9 +294,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
             else:
                 obj = await crud.bidang.create(obj_in=sch)
-
-            count = count + 1
+            
+        
             obj_updated = log
+            count = count + 1
             obj_updated.done_count = count
 
             log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
@@ -320,8 +317,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
     await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
-    return {'message': 'success import'}
-
+    return {'message' : 'successfully import'}
 
 @router.get("/export/shp", response_class=Response)
 async def export(filter_query:str = None):
