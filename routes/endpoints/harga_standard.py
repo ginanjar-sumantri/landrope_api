@@ -42,12 +42,12 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(HargaStandard, id)
 
-@router.get("/cekharga/{planing_id}", response_model=GetResponseBaseSch[HargaStandardSch])
-async def CheckHarga(planing_id:UUID, harga:Decimal):
+@router.get("/desa/{desa_id}", response_model=GetResponseBaseSch[HargaStandardSch])
+async def get_by_desa_id(desa_id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.harga_standard.check_harga(planing_id=planing_id, harga=harga)
+    obj = await crud.harga_standard.get_by_desa_id(desa_id=desa_id)
     if obj:
         return create_response(data=obj)
     else:
