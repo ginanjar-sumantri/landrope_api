@@ -302,6 +302,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
             log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
+            if log.done_count == log.total_row or log.done_count > log.total_row:
+                break
+
     except:
         error_m = f"Failed import, please check your data or contact administrator"
         log_error = ImportLogErrorSch(row=i+1,
