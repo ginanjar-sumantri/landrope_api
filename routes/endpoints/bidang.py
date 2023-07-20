@@ -1,5 +1,6 @@
 import json
 import crud
+import time
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException, Request
 from fastapi_pagination import Params
@@ -148,29 +149,25 @@ async def create_bulking_task(
     file.file.seek(0)
     file_path, file_name = await GCStorage().upload_zip(file=file)
 
-    batch_size = 500
+    
+    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
+                            name=f"Upload Bidang Bulking {rows} datas",
+                            file_name=file_name,
+                            file_path=file_path,
+                            total_row=rows,
+                            start_row=0,
+                            end_row=0,
+                            done_count=0)
 
-    for i in range(0, rows, batch_size):
-        start_index = i
-        end_index = min(i + batch_size, rows)
-        total = end_index - start_index
-        sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
-                             name=f"Upload Bidang Bulking {start_index} - {end_index} of {rows} datas",
-                             file_name=file_name,
-                             file_path=file_path,
-                             total_row=total,
-                             start_row=start_index,
-                             end_row=end_index,
-                             done_count=0)
-
-        new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4")
-        url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
-        GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
+    new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4")
+    url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
+    GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
     return create_response(data=sch)
 
 @router.post("/cloud-task-bulk")
-async def bulk_create(payload:ImportLogCloudTaskSch):
+async def bulk_create(payload:ImportLogCloudTaskSch,
+                      request:Request):
 
     """Create bulk or import data"""
     try:
@@ -181,7 +178,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
             return IdNotFoundException(ImportLog, payload.import_log_id)
 
         start:int = log.start_row
-        end:int = log.end_row
         count:int = log.done_count
 
         if log.done_count > 0:
@@ -195,7 +191,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
-        for i, geo_data in islice(geo_dataframe.iterrows(), start, end):
+        start_time = time.time()
+        max_duration = 2 * 60
+
+        for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
             luassurat = str(geo_data['luassurat'])
             if luassurat in null_values:
@@ -302,8 +301,17 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
 
             log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
-            if log.done_count == log.total_row or log.done_count > log.total_row:
-                break
+            # Waktu sekarang
+            current_time = time.time()
+
+            # Cek apakah sudah mencapai 2 menit
+            elapsed_time = current_time - start_time
+            if elapsed_time >= max_duration:
+                url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
+                GCloudTaskService().create_task_import_data(import_instance=log, base_url=url)
+                break  # Hentikan looping setelah 5 menit berlalu
+
+            time.sleep(1)
 
     except:
         error_m = f"Failed import, please check your data or contact administrator"
@@ -314,11 +322,12 @@ async def bulk_create(payload:ImportLogCloudTaskSch):
         log_error = await crud.import_log_error.create(obj_in=log_error)
         raise ImportFailedException(filename=log.file_name)
 
-    obj_updated = log
-    obj_updated.status = TaskStatusEnum.Done
-    obj_updated.completed_at = datetime.now()
+    if log.total_row == log.done_count:
+        obj_updated = log
+        obj_updated.status = TaskStatusEnum.Done
+        obj_updated.completed_at = datetime.now()
 
-    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+        await crud.import_log.update(obj_current=log, obj_new=obj_updated)
 
     return {'message' : 'successfully import'}
 
