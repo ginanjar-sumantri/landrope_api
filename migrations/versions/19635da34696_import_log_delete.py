@@ -1,8 +1,8 @@
-"""import log error
+"""import log delete
 
-Revision ID: 0d9eba7415c8
+Revision ID: 19635da34696
 Revises: 
-Create Date: 2023-07-18 16:03:36.485872
+Create Date: 2023-07-20 15:45:21.637926
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '0d9eba7415c8'
+revision = '19635da34696'
 down_revision = None
 branch_labels = None
 depends_on = None
