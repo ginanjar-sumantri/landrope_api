@@ -45,7 +45,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Ptsk, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PtskRawSch])
-async def update(id:UUID, sch:PtskUpdateSch, file:UploadFile = None):
+async def update(id:UUID, sch:PtskUpdateSch):
     
     """Update a obj by its id"""
 

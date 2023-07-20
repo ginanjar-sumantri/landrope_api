@@ -16,8 +16,6 @@ class ImportLogBase(SQLModel):
     file_name: str | None = Field(nullable=True)
     completed_at: datetime | None = Field(nullable=True)
     total_row:int | None = Field(nullable=True)
-    start_row:int | None = Field(nullable=True)
-    end_row:int | None = Field(nullable=True)
     done_count:int | None = Field(nullable=True)
 
 

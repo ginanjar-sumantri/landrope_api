@@ -14,7 +14,7 @@ import crud
 #region Pemilik
 router_pemilik = APIRouter()
 
-@router_pemilik.post("/create", response_model=PostResponseBaseSch[PemilikCreateSch], status_code=status.HTTP_201_CREATED)
+@router_pemilik.post("/create", response_model=PostResponseBaseSch[PemilikSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: PemilikCreateSch):
     
     """Create a new object"""

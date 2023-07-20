@@ -140,7 +140,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 async def create_bulking_task(
     file:UploadFile,
     request: Request,
-    # current_worker: Worker = Depends(crud.worker.get_current_user)
+    current_worker: Worker = Depends(crud.worker.get_current_user)
     ):
 
     """Create a new object"""
@@ -149,17 +149,14 @@ async def create_bulking_task(
     file.file.seek(0)
     file_path, file_name = await GCStorage().upload_zip(file=file)
 
-    
     sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
                             name=f"Upload Bidang Bulking {rows} datas",
                             file_name=file_name,
                             file_path=file_path,
                             total_row=rows,
-                            start_row=0,
-                            end_row=0,
                             done_count=0)
 
-    new_obj = await crud.import_log.create(obj_in=sch, worker_id="be39994c-5122-4227-91d8-a6765640b4d4")
+    new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id)
     url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
@@ -177,7 +174,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         if log is None:
             return IdNotFoundException(ImportLog, payload.import_log_id)
 
-        start:int = log.start_row
+        start:int = log.done_count
         count:int = log.done_count
 
         if log.done_count > 0:
@@ -192,7 +189,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
         start_time = time.time()
-        max_duration = 5 * 60
+        max_duration = 7 * 60
 
         for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
@@ -291,15 +288,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 if obj_current.geom :
                     obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
-                log_error = ImportLogErrorSch(row=i+1,
-                                                error_message=shp_data.o_idbidang,
-                                                import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
             else:
                 obj = await crud.bidang.create(obj_in=sch)
             
-        
             obj_updated = log
             count = count + 1
             obj_updated.done_count = count
@@ -309,12 +300,12 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             # Waktu sekarang
             current_time = time.time()
 
-            # Cek apakah sudah mencapai 2 menit
+            # Cek apakah sudah mencapai 7 menit
             elapsed_time = current_time - start_time
             if elapsed_time >= max_duration:
                 url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
                 GCloudTaskService().create_task_import_data(import_instance=log, base_url=url)
-                break  # Hentikan looping setelah 5 menit berlalu
+                break  # Hentikan looping setelah 7 menit berlalu
 
             time.sleep(0.2)
 
