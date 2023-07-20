@@ -192,7 +192,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
         start_time = time.time()
-        max_duration = 2 * 60
+        max_duration = 5 * 60
 
         for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
 
