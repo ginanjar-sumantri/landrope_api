@@ -148,7 +148,7 @@ async def create_bulking_task(
     file.file.seek(0)
     file_path, file_name = await GCStorage().upload_zip(file=file)
 
-    batch_size = 2000
+    batch_size = 500
 
     for i in range(0, rows, batch_size):
         start_index = i
