@@ -19,7 +19,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusEnum, TipeProsesEnum, TipeBidangEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, TipeProsesEnum, TipeBidangEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorage
@@ -372,20 +372,20 @@ async def export(filter_query:str = None):
 
 def FindStatusBidang(status:str|None = None):
     if status:
-        if status.replace(" ", "").lower() == StatusEnum.Bebas.replace("_", "").lower():
-            return StatusEnum.Bebas
-        elif status.replace(" ", "").lower() == StatusEnum.Belum_Bebas.replace("_", "").lower():
-            return StatusEnum.Belum_Bebas
-        elif status.replace(" ", "").lower() == StatusEnum.Batal.replace("_", "").lower():
-            return StatusEnum.Batal
-        elif status.replace(" ", "").lower() == StatusEnum.Lanjut.replace("_", "").lower():
-            return StatusEnum.Lanjut
-        elif status.replace(" ", "").lower() == StatusEnum.Pending.replace("_", "").lower():
-            return StatusEnum.Pending
+        if status.replace(" ", "").lower() == StatusBidangEnum.Bebas.replace("_", "").lower():
+            return StatusBidangEnum.Bebas
+        elif status.replace(" ", "").lower() == StatusBidangEnum.Belum_Bebas.replace("_", "").lower():
+            return StatusBidangEnum.Belum_Bebas
+        elif status.replace(" ", "").lower() == StatusBidangEnum.Batal.replace("_", "").lower():
+            return StatusBidangEnum.Batal
+        elif status.replace(" ", "").lower() == StatusBidangEnum.Lanjut.replace("_", "").lower():
+            return StatusBidangEnum.Lanjut
+        elif status.replace(" ", "").lower() == StatusBidangEnum.Pending.replace("_", "").lower():
+            return StatusBidangEnum.Pending
         else:
-            return StatusEnum.Batal
+            return StatusBidangEnum.Batal
     else:
-        return StatusEnum.Batal
+        return StatusBidangEnum.Batal
 
 def FindTipeProses(type:str|None = None):
     if type:

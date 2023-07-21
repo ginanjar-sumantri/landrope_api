@@ -10,15 +10,6 @@ if TYPE_CHECKING:
     # from models.rincik_model import Rincik
     # from models.bidang_model import Bidang, Bidangoverlap
 
-# class StatusSKEnum(str, Enum):
-#     Belum_Pengajuan_SK = "Belum_Pengajuan_SK"
-#     Pengajuan_Awal_SK  = "Pengajuan_Awal_SK"
-#     Final_SK = "Final_SK"
-
-# class KategoriEnum(str, Enum):
-#     SK_Orang = "SK_Orang"
-#     SK_ASG = "SK_ASG"
-
 class PtskBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
     code:str | None  = Field(nullable=True, max_length=50)

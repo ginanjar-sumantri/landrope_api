@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, gps, skpt, skpt_dt, worker, role, dokumen, bundle_hd, bundle_dt,
-                              checklist_dokumen, marketing, pemilik, beban_biaya,
+                              checklist_dokumen, marketing, pemilik, beban_biaya, kategori, kategori_sub, kategori_proyek,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, import_log)
 
@@ -46,6 +46,9 @@ api_router.include_router(marketing.manager, prefix="/manager", tags=["manager"]
 api_router.include_router(marketing.sales, prefix="/sales", tags=["sales"])
 api_router.include_router(beban_biaya.router, prefix="/bebanbiaya", tags=["bebanbiaya"])
 api_router.include_router(harga_standard.router, prefix="/hargastandard", tags=["hargastandard"])
+api_router.include_router(kategori.router, prefix="/kategori", tags=["kategori"])
+api_router.include_router(kategori_sub.router, prefix="/kategorisub", tags=["kategorisub"])
+api_router.include_router(kategori_proyek.router, prefix="/kategoriproyek", tags=["kategoriproyek"])
 
 api_router.include_router(import_log.router, prefix="/importlog", tags=["importlog"])
 

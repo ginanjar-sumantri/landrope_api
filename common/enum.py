@@ -1,6 +1,6 @@
 from enum import Enum
 
-class StatusEnum(str, Enum):
+class StatusBidangEnum(str, Enum):
     Bebas = "Bebas"
     Belum_Bebas = "Belum_Bebas"
     Batal = "Batal"
@@ -15,6 +15,11 @@ class StatusSKEnum(str, Enum):
 class KategoriSKEnum(str, Enum):
     SK_Orang = "SK_Orang"
     SK_ASG = "SK_ASG"
+
+class JenisBidangEnum(str, Enum):
+    Bintang = "Bintang"
+    Standard = "Standard"
+    Overlap = "Overlap"
 
 class TipeProsesEnum(str, Enum):
     Standard = "Standard"

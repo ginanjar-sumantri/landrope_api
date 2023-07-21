@@ -21,3 +21,4 @@ from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotaris
 from .notaris_model import Notaris
 from .request_peta_lokasi_model import RequestPetaLokasi
 from .import_log_model import ImportLog, ImportLogError
+from .kategori_model import Kategori, KategoriSub, KategoriProyek

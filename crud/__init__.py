@@ -39,6 +39,9 @@ from .jenis_lahan_crud import jenislahan
 from .jenis_surat_crud import jenissurat
 from .marketing_crud import manager, sales
 from .notaris_crud import notaris
+from .kategori_crud import kategori
+from .kategori_sub_crud import kategori_sub
+from .kategori_proyek_crud import kategori_proyek
 
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error

@@ -59,6 +59,7 @@ class BundleDtBase(SQLModel):
     history_data:str | None
     bundle_hd_id:UUID | None = Field(default=None, foreign_key="bundle_hd.id", nullable=False)
     dokumen_id:UUID | None = Field(default=None, foreign_key="dokumen.id", nullable=False)
+    file_path:str | None = Field(nullable=True)
 
 class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass

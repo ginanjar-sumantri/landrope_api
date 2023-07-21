@@ -2,11 +2,11 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
 from models.mapping_model import MappingBidangOverlap
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from decimal import Decimal
 from pydantic import BaseModel
-from common.enum import CategoryEnum, JenisDokumenEnum, StatusEnum, TipeProsesEnum, TipeBidangEnum
+from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, CategoryEnum, JenisDokumenEnum, StatusBidangEnum, TipeProsesEnum, TipeBidangEnum)
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -23,11 +23,31 @@ class BidangBase(SQLModel):
     no_peta:str
     category:CategoryEnum | None = Field(nullable=True)
     jenis_dokumen: JenisDokumenEnum | None = Field(nullable=True)
-    status:StatusEnum | None = Field(nullable=True)
+    status:StatusBidangEnum | None = Field(nullable=True)
 
     jenis_lahan_id:UUID | None = Field(default=None, foreign_key="jenis_lahan.id", nullable=True)
     planing_id:UUID | None = Field(default=None, foreign_key="planing.id", nullable=True)
     skpt_id:UUID | None = Field(default=None, foreign_key="skpt.id", nullable=True)
+
+# class BidangBase(SQLModel):
+#     id_bidang:Optional[str] = Field(nullable=False, max_length=150)
+#     id_bidang_lama:Optional[str] = Field(nullable=True)
+#     no_peta:Optional[str] = Field(nullable=True)
+#     pemilik_id:Optional[UUID] = Field(nullable=True, foreign_key="pemilik.id")
+#     jenis_bidang:JenisBidangEnum = Field(nullable=False)
+#     status:StatusBidangEnum = Field(nullable=False)
+#     planing_id:Optional[UUID] = Field(nullable=True, foreign_key="planing.id")
+#     group:Optional[str] = Field(nullable=True)
+#     jenis_alashak:Optional[JenisAlashakEnum]
+#     jenis_surat_id:Optional[UUID] = Field(nullable=True, foreign_key="jenis_surat.id")
+#     alashak:Optional[str] = Field(nullable=True)
+#     luas_surat:Optional[Decimal] = Field(nullable=True)
+#     kategori_id:Optional[UUID] = Field(nullable=True)
+#     sub_kategori_id:Optional[UUID] = Field(nullable=True)
+#     kategori_proyek_id:Optional[UUID] = Field(nullable=True)
+#     skpt_id:Optional[UUID] = Field(nullable=True) #PT SK
+#     penampung_id:Optional[UUID] = Field(nullable=True) #PT Penampung
+
     
 class BidangExtBase(BidangBase):
     tipe_proses:TipeProsesEnum | None = Field(default=None, nullable=True)
