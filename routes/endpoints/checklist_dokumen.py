@@ -12,17 +12,17 @@ import crud
 
 router = APIRouter()
 
-@router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenBulkCreateSch], status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: ChecklistDokumenBulkCreateSch):
     
     """Create a new object"""
     
     for dokumen in sch.dokumens:
-        exists = await crud.checklistdokumen.get_single(dokumen_id=dokumen, 
+        new_obj = await crud.checklistdokumen.get_single(dokumen_id=dokumen, 
                                                  jenis_alashak=sch.jenis_alashak, 
                                                  jenis_bayar=sch.jenis_bayar, 
                                                  kategori_penjual=sch.kategori_penjual)
-        if exists:
+        if new_obj:
             continue
 
         obj_new = ChecklistDokumen(jenis_alashak=sch.jenis_alashak,

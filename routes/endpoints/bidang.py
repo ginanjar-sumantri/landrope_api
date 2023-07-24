@@ -2,17 +2,19 @@ import json
 import crud
 import time
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, File, Response, HTTPException, Request
+from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request
 from fastapi_pagination import Params
 from models.bidang_model import Bidang
 from models.project_model import Project
 from models.desa_model import Desa
 from models.planing_model import Planing
 from models.worker_model import Worker
+from models.pemilik_model import Pemilik
+from models.master_model import JenisSurat
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangExtSch)
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch,
                                   ImportResponseBaseSch, create_response)
@@ -28,9 +30,6 @@ from shapely import wkt, wkb
 from decimal import Decimal
 from datetime import datetime
 from itertools import islice
-from math import ceil
-
-
 
 
 router = APIRouter()
@@ -53,20 +52,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch = BidangSch(id_bidang=sch.id_bidang,
-                        nama_pemilik=sch.nama_pemilik,
-                        luas_surat=RoundTwo(sch.luas_surat),
-                        alas_hak=sch.alas_hak,
-                        no_peta=sch.no_peta,
-                        category=sch.category,
-                        jenis_dokumen=sch.jenis_dokumen,
-                        status=sch.status,
-                        jenis_lahan_id=sch.jenis_lahan_id,
-                        planing_id=sch.planing_id,
-                        skpt_id=sch.skpt_id,
-                        tipe_proses=sch.tipe_proses,
-                        tipe_bidang=sch.tipe_bidang,
-                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = BidangSch(**BidangCreateSch.dict())
+        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     else:
         raise ImportFailedException()
 
@@ -114,20 +101,8 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch = BidangSch(id_bidang=sch.id_bidang,
-                        nama_pemilik=sch.nama_pemilik,
-                        luas_surat=RoundTwo(sch.luas_surat),
-                        alas_hak=sch.alas_hak,
-                        no_peta=sch.no_peta,
-                        category=sch.category,
-                        jenis_dokumen=sch.jenis_dokumen,
-                        status=sch.status,
-                        jenis_lahan_id=sch.jenis_lahan_id,
-                        planing_id=sch.planing_id,
-                        skpt_id=sch.skpt_id,
-                        tipe_proses=sch.tipe_proses,
-                        tipe_bidang=sch.tipe_bidang,
-                        geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = BidangSch(**BidangUpdateSch.dict())
+        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
     return create_response(data=obj_updated)
@@ -207,6 +182,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     luassurat=geo_data['luassurat'],
                                     kat=geo_data['kat'],
                                     kat_bidang=geo_data['kat_bidang'],
+                                    kat_proyek=geo_data['kat_proyek'],
                                     ptsk=geo_data['ptsk'],
                                     penampung=geo_data['penampung'],
                                     no_sk=geo_data['no_sk'],
@@ -224,6 +200,54 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             )
 
             luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+
+            pemilik = await crud.pemilik.get_by_name(name=shp_data.pemilik)
+            if pemilik is None:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Pemilik {shp_data.pemilik} not exists in table master. "
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=error_m,
+                                                import_log_id=log.id)
+
+                log_error = await crud.import_log_error.create(obj_in=log_error)
+
+                return NameNotFoundException(Pemilik, name=shp_data.pemilik)
+            
+            jenis_surat = await crud.jenissurat.get_by_jenis_alashak_and_name(jenis_alashak=shp_data.dokumen, name=shp_data.sub_surat)
+            if jenis_surat is None:
+                jenissurat = None
+            else:
+                jenissurat = jenis_surat.id
+
+            kategori = None
+            kat = await crud.kategori.get_by_name(name=shp_data.kat)
+            if kat:
+                kategori = kat.id
+            
+            kategori_sub = None
+            kat_sub = await crud.kategori_sub.get_by_name(name=shp_data.kat_bidang)
+            if kat_sub:
+                kategori_sub = kat_sub.id
+            
+            kategori_proyek = None
+            kat_proyek = await crud.kategori_proyek.get_by_name(name=shp_data.kat_proyek)
+            if kat_proyek:
+                kategori_proyek = kat_proyek.id
+            
+            pt = None
+            ptsk = await crud.ptsk.get_by_name(name=shp_data.ptsk)
+            if ptsk:
+                pt = ptsk.id
+            
+            skpt, status = None
+            no_sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
+            if no_sk:
+                skpt = no_sk.id
+                status = no_sk.status
+
+            manager = None
+            mng = await crud.manager.get_by_name(name=shp_data.manager)
+            if mng:
+                manager = mng.id
 
             project = await crud.project.get_by_name(name=shp_data.project)
             if project is None:
@@ -265,21 +289,23 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 else:
                     shp_data.n_idbidang = bidang_lama.id_bidang
 
-            sch = BidangSch(id_bidang=shp_data.n_idbidang,
-                            id_bidang_lama=shp_data.o_idbidang,
-                            nama_pemilik=shp_data.pemilik,
-                            luas_surat=luas_surat,
-                            alas_hak=shp_data.alashak,
-                            no_peta=shp_data.no_peta,
-                            category=shp_data.kat,
-                            jenis_dokumen=None,
-                            status=FindStatusBidang(shp_data.status),
-                            jenis_lahan_id=None,
-                            planing_id=plan.id,
-                            skpt_id=None,
-                            tipe_proses=FindTipeProses(shp_data.proses),
-                            tipe_bidang=FindTipeBidang(shp_data.proses),
-                            geom=shp_data.geom)
+            # sch = BidangSch(id_bidang=shp_data.n_idbidang,
+            #                 id_bidang_lama=shp_data.o_idbidang,
+            #                 nama_pemilik=shp_data.pemilik,
+            #                 luas_surat=luas_surat,
+            #                 alas_hak=shp_data.alashak,
+            #                 no_peta=shp_data.no_peta,
+            #                 category=shp_data.kat,
+            #                 jenis_dokumen=None,
+            #                 status=FindStatusBidang(shp_data.status),
+            #                 jenis_lahan_id=None,
+            #                 planing_id=plan.id,
+            #                 skpt_id=None,
+            #                 tipe_proses=FindTipeProses(shp_data.proses),
+            #                 tipe_bidang=FindTipeBidang(shp_data.proses),
+            #                 geom=shp_data.geom)
+
+            sch = BidangSch()
 
             obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
             # obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
@@ -333,31 +359,33 @@ async def export(filter_query:str = None):
     results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
     schemas = []
     for data in results:
-        sch = BidangShpSch(n_idbidang=data.id_bidang,
-                           o_idbidang=data.id_bidang_lama,
-                           pemilik=data.nama_pemilik,
-                           code_desa=data.desa_code,
-                           dokumen="",
-                           sub_surat="",
-                           alashak=data.alas_hak,
-                           luassurat=data.luas_surat,
-                           kat=data.category,
-                           kat_bidang="",
-                           ptsk=data.ptsk_name,
-                           penampung=data.ptsk_name,
-                           no_sk=data.nomor_sk,
-                           status_sk="",
-                           manager="",
-                           sales="",
-                           mediator="",
-                           proses=data.tipe_proses,
-                           status=data.status,
-                           group="",
-                           no_peta=data.no_peta,
-                           desa=data.desa_name,
-                           project=data.project_name,
-                           geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
-                           )
+        # sch = BidangShpSch(n_idbidang=data.id_bidang,
+        #                    o_idbidang=data.id_bidang_lama,
+        #                    pemilik=data.nama_pemilik,
+        #                    code_desa=data.desa_code,
+        #                    dokumen="",
+        #                    sub_surat="",
+        #                    alashak=data.alas_hak,
+        #                    luassurat=data.luas_surat,
+        #                    kat=data.category,
+        #                    kat_bidang="",
+        #                    ptsk=data.ptsk_name,
+        #                    penampung=data.ptsk_name,
+        #                    no_sk=data.nomor_sk,
+        #                    status_sk="",
+        #                    manager="",
+        #                    sales="",
+        #                    mediator="",
+        #                    proses=data.tipe_proses,
+        #                    status=data.status,
+        #                    group="",
+        #                    no_peta=data.no_peta,
+        #                    desa=data.desa_name,
+        #                    project=data.project_name,
+        #                    geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
+        #                    )
+
+        sch = BidangShpSch()
 
         schemas.append(sch)
 

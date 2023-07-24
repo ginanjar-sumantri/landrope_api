@@ -20,4 +20,4 @@ class BaseUUIDModel(SQLModel):
 
 
 class BaseGeoModel(_SQLModel):
-    geom:str = Field(sa_column=Column(Geometry))
+    geom:str | None = Field(sa_column=Column(Geometry))

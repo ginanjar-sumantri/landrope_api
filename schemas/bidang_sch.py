@@ -1,4 +1,4 @@
-from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase, BidangExtBase
+from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
 from models.base_model import BaseGeoModel
 from common.partial import optional
 from common.as_form import as_form
@@ -7,32 +7,34 @@ from pydantic import BaseModel
 from decimal import Decimal
 
 @as_form
-class BidangCreateSch(BidangExtBase):
+class BidangCreateSch(BidangBase):
     pass
 
 class BidangRawSch(BidangRawBase):
-    planing_name:str|None = Field(alias='planing_name')
+    pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')
     desa_name:str|None = Field(alias='desa_name')
-    section_name:str|None = Field(alias='section_name')
-    ptsk_name:str|None = Field(alias='ptsk_name')
-    nomor_sk:str|None = Field(alias='nomor_sk')
-    id_rincik:str|None = Field(alias='id_rincik')
-    jenis_lahan_name:str | None = Field(alias='jenis_lahan_name')
-    
-class BidangExtSch(BidangFullBase):
-    planing:str|None 
-    project:str|None
-    desa:str|None 
-    section:str|None 
-    pt:str|None 
-    nomor_sk:str|None 
-    jenis_lahan:str | None
-    tipeproses:str | None
-    tipebidang:str | None
-    jnsdokumen:str | None
 
-class BidangSch(BidangFullBase):pass
+class BidangByIdSch(BidangRawBase):
+    pemilik_name:str|None = Field(alias='pemilik_name')
+    project_name:str|None = Field(alias='project_name')
+    desa_name:str|None = Field(alias='desa_name')
+    planing_name:str|None = Field(alias='planing_name')
+    jenis_surat_name:str|None = Field(alias='jenis_surat_name')
+    kategori_name:str|None = Field(alias='kategori_name')
+    kategori_sub_name:str|None = Field(alias='kategori_sub_name')
+    kategori_proyek_name:str|None = Field(alias='kategori_proyek_name')
+    ptsk_name:str | None = Field(alias='ptsk_name')
+    no_sk:str|None = Field(alias='no_sk')
+    status_sk:str|None = Field(alias='status_sk')
+    penampung_name:str|None = Field(alias='penampung_name')
+    manager_name:str | None = Field(alias='manager_name')
+    sales_name:str|None = Field(alias='sales_name')
+    notaris_name:str | None = Field(alias='notaris_name')
+    
+
+class BidangSch(BidangFullBase):
+    pass
 
 class BidangShpSch(BaseGeoModel):
     n_idbidang:str | None
@@ -45,6 +47,7 @@ class BidangShpSch(BaseGeoModel):
     luassurat:Decimal | None
     kat:str | None
     kat_bidang:str | None
+    kat_proyek:str | None
     ptsk:str | None
     penampung:str | None
     no_sk:str | None
@@ -61,5 +64,5 @@ class BidangShpSch(BaseGeoModel):
 
 @as_form
 @optional
-class BidangUpdateSch(BidangExtBase):
+class BidangUpdateSch(BidangBase):
     pass

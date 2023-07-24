@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.bidang_model import Bidang, TipeBidangEnum
-from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangSch, BidangExtSch
+from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch
 from typing import List
 from sqlalchemy.orm import load_only
 
