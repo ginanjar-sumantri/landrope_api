@@ -21,7 +21,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusBidangEnum, TipeProsesEnum, TipeBidangEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorage
@@ -243,11 +243,21 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             if no_sk:
                 skpt = no_sk.id
                 status = no_sk.status
+            
+            penampung = None
+            pt_penampung = await crud.ptsk.get_by_name(name=shp_data.penampung)
+            if pt_penampung:
+                penampung = pt_penampung.id
 
             manager = None
             mng = await crud.manager.get_by_name(name=shp_data.manager)
             if mng:
                 manager = mng.id
+            
+            sales = None
+            sls = await crud.sales.get_by_name(name=shp_data.sales)
+            if sls:
+                sales = sls.id
 
             project = await crud.project.get_by_name(name=shp_data.project)
             if project is None:
@@ -289,23 +299,26 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 else:
                     shp_data.n_idbidang = bidang_lama.id_bidang
 
-            # sch = BidangSch(id_bidang=shp_data.n_idbidang,
-            #                 id_bidang_lama=shp_data.o_idbidang,
-            #                 nama_pemilik=shp_data.pemilik,
-            #                 luas_surat=luas_surat,
-            #                 alas_hak=shp_data.alashak,
-            #                 no_peta=shp_data.no_peta,
-            #                 category=shp_data.kat,
-            #                 jenis_dokumen=None,
-            #                 status=FindStatusBidang(shp_data.status),
-            #                 jenis_lahan_id=None,
-            #                 planing_id=plan.id,
-            #                 skpt_id=None,
-            #                 tipe_proses=FindTipeProses(shp_data.proses),
-            #                 tipe_bidang=FindTipeBidang(shp_data.proses),
-            #                 geom=shp_data.geom)
-
-            sch = BidangSch()
+            sch = BidangSch(id_bidang=shp_data.n_idbidang,
+                            id_bidang_lama=shp_data.o_idbidang,
+                            no_peta=shp_data.no_peta,
+                            pemilik_id=pemilik,
+                            jenis_bidang=FindJenisBidang(shp_data.proses),
+                            status=FindStatusBidang(shp_data.status),
+                            planing_id=plan.id,
+                            group=shp_data.group,
+                            jenis_alashak=FindJenisAlashak(shp_data.dokumen),
+                            jenis_surat_id=jenissurat,
+                            alashak=shp_data.alashak,
+                            kategori_id=kategori,
+                            kategori_sub_id=kategori_sub,
+                            kategori_proyek_id=kategori_proyek,
+                            skpt_id=skpt,
+                            penampung_id=penampung,
+                            manager_id=manager,
+                            sales_id=sales,
+                            mediator=shp_data.mediator,
+                            luas_surat=luas_surat)
 
             obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
             # obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
@@ -359,33 +372,31 @@ async def export(filter_query:str = None):
     results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
     schemas = []
     for data in results:
-        # sch = BidangShpSch(n_idbidang=data.id_bidang,
-        #                    o_idbidang=data.id_bidang_lama,
-        #                    pemilik=data.nama_pemilik,
-        #                    code_desa=data.desa_code,
-        #                    dokumen="",
-        #                    sub_surat="",
-        #                    alashak=data.alas_hak,
-        #                    luassurat=data.luas_surat,
-        #                    kat=data.category,
-        #                    kat_bidang="",
-        #                    ptsk=data.ptsk_name,
-        #                    penampung=data.ptsk_name,
-        #                    no_sk=data.nomor_sk,
-        #                    status_sk="",
-        #                    manager="",
-        #                    sales="",
-        #                    mediator="",
-        #                    proses=data.tipe_proses,
-        #                    status=data.status,
-        #                    group="",
-        #                    no_peta=data.no_peta,
-        #                    desa=data.desa_name,
-        #                    project=data.project_name,
-        #                    geom = wkt.dumps(wkb.loads(data.geom.data, hex=True))
-        #                    )
-
-        sch = BidangShpSch()
+        sch = BidangShpSch(n_idbidang=data.id_bidang,
+                           o_idbidang=data.id_bidang_lama,
+                           pemilik=data.pemilik_name,
+                           code_desa=data.desa_code,
+                           dokumen=data.jenis_alashak,
+                           sub_surat=data.jenis_surat_name,
+                           alashak=data.alashak,
+                           luassurat=data.luas_surat,
+                           kat=data.kategori_name,
+                           kat_bidang=data.kategori_sub_name,
+                           kat_proyek=data.kategori_proyek_name,
+                           ptsk=data.ptsk_name,
+                           penampung=data.penampung_name,
+                           no_sk=data.no_sk,
+                           status_sk=data.status_sk,
+                           manager=data.manager_name,
+                           sales=data.sales_name,
+                           mediator=data.mediator,
+                           proses=data.jenis_bidang,
+                           status=data.status,
+                           group=data.group,
+                           no_peta=data.no_peta,
+                           desa=data.desa_name,
+                           project=data.project_name,
+                           geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)))
 
         schemas.append(sch)
 
@@ -415,24 +426,27 @@ def FindStatusBidang(status:str|None = None):
     else:
         return StatusBidangEnum.Batal
 
-def FindTipeProses(type:str|None = None):
+def FindJenisBidang(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == TipeProsesEnum.Bintang.lower():
-            return TipeProsesEnum.Bintang
-        elif type.replace(" ", "").lower() == TipeProsesEnum.Standard.lower():
-            return TipeProsesEnum.Standard
-        elif type.replace(" ", "").lower() == TipeProsesEnum.Overlap.lower():
-            return TipeProsesEnum.Overlap
+        if type.replace(" ", "").lower() == JenisBidangEnum.Bintang.lower():
+            return JenisBidangEnum.Bintang
+        elif type.replace(" ", "").lower() == JenisBidangEnum.Standard.lower():
+            return JenisBidangEnum.Standard
+        elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
+            return JenisBidangEnum.Overlap
         else:
-            return TipeProsesEnum.Standard
+            return None
     else:
-        return TipeProsesEnum.Standard
+        return None
 
-def FindTipeBidang(type:str|None = None):
+def FindJenisAlashak(type:str|None = None):
     if type:
-        if type.replace(" ", "").lower() == "Standard".lower() or type.replace(" ", "").lower() == "Bintang".lower():
-            return TipeBidangEnum.Bidang
-        elif type.replace(" ", "").lower() == "Overlap".lower():
-            return TipeBidangEnum.Overlap
+        if type.replace(" ", "").lower() == JenisAlashakEnum.Girik.lower():
+            return JenisAlashakEnum.Girik
+        elif type.replace(" ", "").lower() == JenisAlashakEnum.Sertifikat.lower():
+            return JenisAlashakEnum.Sertifikat
+        else:
+            return None
     else:
-        return TipeBidangEnum.Bidang
+        return None
+

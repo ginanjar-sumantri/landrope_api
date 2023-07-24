@@ -27,7 +27,7 @@ class BidangBase(SQLModel):
     status:StatusBidangEnum = Field(nullable=False)
     planing_id:Optional[UUID] = Field(nullable=True, foreign_key="planing.id")
     group:Optional[str] = Field(nullable=True)
-    jenis_alashak:Optional[JenisAlashakEnum]
+    jenis_alashak:Optional[JenisAlashakEnum] = Field(nullable=True)
     jenis_surat_id:Optional[UUID] = Field(nullable=True, foreign_key="jenis_surat.id")
     alashak:Optional[str] = Field(nullable=True)
     kategori_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori.id")
@@ -37,7 +37,7 @@ class BidangBase(SQLModel):
     penampung_id:Optional[UUID] = Field(nullable=True, foreign_key="ptsk.id") #PT Penampung
     manager_id:Optional[UUID] = Field(nullable=True, foreign_key="manager.id")
     sales_id:Optional[UUID] = Field(nullable=True, foreign_key="sales.id")
-    madiator:Optional[str] = Field(nullable=True)
+    mediator:Optional[str] = Field(nullable=True)
     telepon_mediator:Optional[str] = Field(nullable=True)
     notaris_id:Optional[UUID] = Field(nullable=True, foreign_key="notaris.id")
     tahap:Optional[str] = Field(nullable=True)
@@ -111,6 +111,10 @@ class Bidang(BidangFullBase, table=True):
             return ""
         
         return self.planing.desa.name
+    
+    @property
+    def desa_code(self) -> str | None:
+        return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'code', None)
     
     @property
     def planing_name(self) -> str:

@@ -60,6 +60,7 @@ class BundleDtBase(SQLModel):
     bundle_hd_id:UUID | None = Field(default=None, foreign_key="bundle_hd.id", nullable=False)
     dokumen_id:UUID | None = Field(default=None, foreign_key="dokumen.id", nullable=False)
     file_path:str | None = Field(nullable=True)
+    file_type:str | None = Field(nullable=True)
 
 class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass
@@ -71,6 +72,7 @@ class BundleDt(BundleDtFullBase, table=True):
     @property
     def dokumen_name(self) -> str | None:
         return self.dokumen.name
+
     
     @property
     def get_bundling_detail_code(self) -> str|None:

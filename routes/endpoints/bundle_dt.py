@@ -1,12 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, UploadFile, Response
+from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from models.bundle_model import BundleDt
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.generator import generate_code
-from models.code_counter_model import CodeCounterEnum
+from common.exceptions import (IdNotFoundException)
+from services.gcloud_storage_service import GCStorage
 from datetime import datetime
 import crud
 import json
@@ -33,7 +33,9 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(BundleDt, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[BundleDtSch])
-async def update(id:UUID, sch:BundleDtUpdateSch):
+async def update(id:UUID, 
+                 sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
+                 file:UploadFile = None):
     
     """Update a obj by its id"""
 
@@ -64,11 +66,6 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
         obj_json = json.loads(metadata)
         current_bundle_hd = await crud.bundlehd.get(id=sch.bundle_hd_id)
 
-        # values = []
-        # for data in obj_json['history']:
-        #     value = data['meta_data'][f'{dokumen.key_field}']
-        #     values.append(value)
-
         metadata_keyword = obj_json[f'{dokumen.key_field}']
 
         if metadata_keyword not in current_bundle_hd.keyword:
@@ -79,9 +76,34 @@ async def update(id:UUID, sch:BundleDtUpdateSch):
             else:
                 edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
                 await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
+    
+    if file:
+        file_type = file.content_type
+        file_path = await GCStorage().upload_file_dokumen(file=file, obj_current=obj_current)
+        sch.file_path = file_path
+        sch.file_type = file_type
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
+
     return create_response(data=obj_updated)
+
+
+@router.get("/download-file")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
+
+    obj_current = await crud.bundledt.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(BundleDt, id)
+    file_bytes = await GCStorage().download_dokumen(file_path=obj_current.file_path)
+
+    ext = obj_current.file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.id}.{ext}"
+    return response
+    
 
 # @router.get("/get/json")
 # async def extract_json():
