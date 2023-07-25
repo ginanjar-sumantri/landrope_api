@@ -86,7 +86,7 @@ async def update(id:UUID,
     return create_response(data=obj_updated)
 
 
-@router.get("/download-file")
+@router.get("/download-file/{id}")
 async def download_file(id:UUID):
     """Download File Dokumen"""
 
