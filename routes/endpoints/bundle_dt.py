@@ -78,10 +78,8 @@ async def update(id:UUID,
                 await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
     
     if file:
-        file_type = file.content_type
         file_path = await GCStorage().upload_file_dokumen(file=file, obj_current=obj_current)
         sch.file_path = file_path
-        sch.file_type = file_type
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
 
