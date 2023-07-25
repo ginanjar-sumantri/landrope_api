@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <title>Perintah Pengukuran Tanah</title>
+    <style>
+      /* CSS untuk header */
+      .header {
+        text-align: center;
+      }
+
+      /* CSS untuk sub header */
+      .sub-header {
+        font-size: 11px;
+        text-align: left;
+      }
+
+      /* CSS untuk content */
+      .content {
+        margin: 0 auto;
+      }
+
+      .content th {
+        border: 1px solid;
+        font-size: 11px;
+        background-color: #b0b0b0;
+      }
+
+      .content td {
+        border: 1px solid;
+        font-size: 10px;
+      }
+
+      /* CSS untuk footer */
+      .footer {
+        padding-top: 50px;
+        font-size: 11px;
+        margin: 0 auto;
+      }
+      .spasi-banyak {
+        margin: 20px; /* Atur jarak margin sebesar 20px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h4>PERINTAH PENGUKURAN TANAH</h4>
+      <div class="sub-header">
+        <table>
+          <tr>
+            <td>No.</td>
+            <td>:</td>
+            <td>{{ nomor }}</td>
+          </tr>
+          <tr>
+            <td>Tanggal</td>
+            <td>:</td>
+            <td>{{ tanggal }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="content">
+      <table width="100%" style="border-collapse: collapse; border: 1px solid">
+        <tr>
+          <th width="2%">No.</th>
+          <th>Mediator</th>
+          <th>Group</th>
+          <th>Nama Pemilik Tanah</th>
+          <th>No. Telp Pemilik Tanah</th>
+          <th>Alashak/Jenis Surat</th>
+          <th>Luas(m2)</th>
+          <th>Desa</th>
+          <th>Project</th>
+          <th>Keterangan</th>
+        </tr>
+        {% for item in data %}
+        <tr>
+          <td>{{ item.no }}</td>
+          <td>{{ item.mediator }}</td>
+          <td>{{ item.group }}</td>
+          <td>{{ item.pemilik }}</td>
+          <td>{{ item.no_pemilik }}</td>
+          <td>{{ item.alashak }}</td>
+          <td>{{ item.luas }}</td>
+          <td>{{ item.desa }}</td>
+          <td>{{ item.project }}</td>
+          <td>{{ item.remark }}</td>
+          <!-- Tambahkan kolom sesuai dengan properti objek -->
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="footer">
+      <table align="center">
+        <tr>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>Dibuat oleh,</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak"><p>_________________</p></div>
+                </td>
+              </tr>
+              <tr>
+                <td>Land Adm Acquisition Officer</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>Diperiksa oleh,</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak"><p>_________________</p></div>
+                </td>
+              </tr>
+              <tr>
+                <td>Land Adm & Verification Section Head</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>Diterima oleh,</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak"><p>_________________</p></div>
+                </td>
+              </tr>
+              <tr>
+                <td>Land Measurement Analyst</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,18 +1,23 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, Response
+from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, 
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
                                              RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
-                                             RequestPetaLokasiHdbyCodeSch)
+                                             RequestPetaLokasiHdbyCodeSch, RequestPetaLokasiPdfSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from datetime import datetime
+from services.pdf_service import PdfService
+from datetime import datetime, date
+from jinja2 import Environment, FileSystemLoader
+import pdfkit
 import crud
 import string
 import random
+import os
 
 
 router = APIRouter()
@@ -156,6 +161,48 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
             obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated)
 
     return create_response(data=obj)
+
+@router.get("/perintah-pengukuran/{code}")
+async def perintah_pengukuran(code:str = None):
+    """Print out Perintah Pengukuran Tanah"""
+
+    objs = await crud.request_peta_lokasi.get_all_by_code(code=code)
+
+    data_list = []
+    no = 1
+    nomor = ""
+    for obj in objs:
+        data = RequestPetaLokasiPdfSch(no=no,
+                                       mediator=obj.mediator,
+                                       group=obj.group,
+                                       pemilik=obj.nama_pemilik_tanah,
+                                       no_pemilik=obj.nomor_pemilik_tanah,
+                                       alashak=obj.alashak,
+                                       luas=str(obj.luas),
+                                       desa=obj.desa_name,
+                                       project=obj.project_name,
+                                       remark=obj.remark)
+        no = no + 1
+        nomor = obj.code
+        data_list.append(data)
+
+    
+    # template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template("request_peta_lokasi.html")
+
+    render_template = template.render(data=data_list, nomor=nomor, tanggal=str(date.today()))
+
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={nomor}.pdf"
+    return response
+
+
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[RequestPetaLokasiSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID):

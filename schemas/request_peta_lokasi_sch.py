@@ -45,6 +45,18 @@ class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     project_name:str | None = Field(alias="project_name")
     alashak:str | None = Field(alias="alashak")
 
+class RequestPetaLokasiPdfSch(BaseModel):
+    no:str | None
+    mediator:str | None
+    group:str | None
+    pemilik:str | None
+    no_pemilik:str | None
+    alashak:str | None
+    luas:str | None
+    desa:str|None
+    project:str|None
+    remark:str|None
+
 @optional
 class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
     kjb_dt_ids: List[UUID]

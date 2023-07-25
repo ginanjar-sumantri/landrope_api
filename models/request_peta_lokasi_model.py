@@ -62,9 +62,9 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     
     @property
     def desa_name(self) -> str | None:
-        if self.kjb_dt.desa is None:
+        if self.kjb_dt.desa_by_ttn is None:
             return ""
-        return self.kjb_dt.desa.name
+        return self.kjb_dt.desa_by_ttn.name
     
     @property
     def desa_hd_name(self) -> str | None:
@@ -74,5 +74,7 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     
     @property
     def project_name(self) -> str:
-        return self.kjb_dt.project.name
+        if self.kjb_dt.project_by_ttn is None:
+            return ""
+        return self.kjb_dt.project_by_ttn.name
     

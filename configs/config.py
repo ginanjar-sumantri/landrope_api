@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     GS_PROJECT_ID: str
     QUEUE_LOCATION: str
     PROJECT_NAME:str
+    PDF_URL:str
 
     class Config:
         env_file = ".env"
