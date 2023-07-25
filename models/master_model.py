@@ -37,7 +37,7 @@ class JenisSurat(BaseUUIDModel, JenisSuratBase, table=True):
 
 class HargaStandardBase(SQLModel):
     planing_id:UUID = Field(nullable=False, foreign_key="planing.id")
-    harga:Decimal
+    harga:Decimal | None
 
 class HargaStandard(BaseUUIDModel, HargaStandardBase, table=True):
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})

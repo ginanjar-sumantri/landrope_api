@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 import crud
 from models.master_model import HargaStandard
@@ -50,8 +50,7 @@ async def get_by_desa_id(desa_id:UUID):
     obj = await crud.harga_standard.get_by_desa_id(desa_id=desa_id)
     if obj:
         return create_response(data=obj)
-    else:
-        raise None
+    return {}
     
 @router.put("/{id}", response_model=PutResponseBaseSch[HargaStandardSch])
 async def update(id:UUID, sch:HargaStandardUpdateSch):

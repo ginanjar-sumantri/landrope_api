@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Response
+from fastapi import APIRouter, status, Depends, UploadFile, Response, HTTPException
 from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from models.bundle_model import BundleDt
@@ -93,8 +93,13 @@ async def download_file(id:UUID):
     obj_current = await crud.bundledt.get(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
-    file_bytes = await GCStorage().download_dokumen(file_path=obj_current.file_path)
-
+    if obj_current.file_path is None:
+        raise FileNotFoundError()
+    try:
+        file_bytes = await GCStorage().download_dokumen(file_path=obj_current.file_path)
+    except Exception as e:
+        raise FileNotFoundError()
+    
     ext = obj_current.file_path.split('.')[-1]
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
