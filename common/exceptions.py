@@ -35,6 +35,19 @@ class ImportFailedException(HTTPException):
                 headers=headers
             )
 
+class DocumentFileNotFoundException(HTTPException):
+    def __init__(
+        self,
+        dokumenname: Type[ModelType],
+        headers: Dict[str, Any] | None = None,
+    ) -> None:
+        
+        super().__init__(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                detail=f"{dokumenname} file, failed to download", 
+                headers=headers
+            )
+
 
 class IdNotFoundException(HTTPException, Generic[ModelType]):
     def __init__(

@@ -5,7 +5,7 @@ from fastapi_pagination import Params
 from models.bundle_model import BundleDt
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException)
+from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
 from services.gcloud_storage_service import GCStorage
 from datetime import datetime
 import crud
@@ -94,11 +94,11 @@ async def download_file(id:UUID):
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     if obj_current.file_path is None:
-        raise FileNotFoundError()
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
     try:
         file_bytes = await GCStorage().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
-        raise FileNotFoundError()
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
     
     ext = obj_current.file_path.split('.')[-1]
 
