@@ -52,7 +52,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch = BidangSch(**BidangCreateSch.dict())
+        sch = BidangSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     else:
         raise ImportFailedException()
@@ -101,7 +101,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
-        sch = BidangSch(**BidangUpdateSch.dict())
+        sch = BidangSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
