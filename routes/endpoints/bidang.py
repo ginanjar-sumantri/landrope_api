@@ -135,7 +135,7 @@ async def create_bulking_task(
     url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
-    return create_response(data=sch)
+    return create_response(data=new_obj)
 
 @router.post("/cloud-task-bulk")
 async def bulk_create(payload:ImportLogCloudTaskSch,
@@ -201,16 +201,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
             luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
-            pemilik = await crud.pemilik.get_by_name(name=shp_data.pemilik)
-            if pemilik is None:
-                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Pemilik {shp_data.pemilik} not exists in table master. "
-                log_error = ImportLogErrorSch(row=i+1,
-                                                error_message=error_m,
-                                                import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
-
-                return NameNotFoundException(Pemilik, name=shp_data.pemilik)
+            pemilik = None
+            pmlk = await crud.pemilik.get_by_name(name=shp_data.pemilik)
+            if pmlk:
+                pemilik = pmlk.id
             
             jenis_surat = await crud.jenissurat.get_by_jenis_alashak_and_name(jenis_alashak=shp_data.dokumen, name=shp_data.sub_surat)
             if jenis_surat is None:
@@ -238,11 +232,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             if ptsk:
                 pt = ptsk.id
             
-            skpt, status = None
+            skpt = None
             no_sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
             if no_sk:
                 skpt = no_sk.id
-                status = no_sk.status
             
             penampung = None
             pt_penampung = await crud.ptsk.get_by_name(name=shp_data.penampung)

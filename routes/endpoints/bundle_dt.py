@@ -44,38 +44,38 @@ async def update(id:UUID,
         raise IdNotFoundException(BundleDt, id)
     
     ## Memeriksa apakah ada key "Nomor" dalam metadata
-    o_json = eval(sch.meta_data)
+    o_json = json.loads(sch.meta_data.replace("'", '"'))
     Nomor = ""
     if "Nomor" in o_json:
         Nomor = o_json['Nomor']
 
     if obj_current.history_data is None:
-        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
+        history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': json.loads(sch.meta_data.replace("'", '"'))}]}
     else:
-        history_data = eval(obj_current.history_data)
-        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': eval(sch.meta_data)}
+        history_data = eval(obj_current.history_data.replace('null', 'None'))
+        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': json.loads(sch.meta_data.replace("'", '"'))}
         history_data['history'].append(new_metadata)
 
-    sch.history_data = str(history_data)
+    sch.history_data = str(history_data).replace('None', 'null')
     
     dokumen = await crud.dokumen.is_dokumen_for_keyword(id=sch.dokumen_id)
     
     #updated bundle header keyword when dokumen metadata is_keyword true
     if dokumen:
-        metadata = sch.meta_data.replace("'",'"')
+        metadata = sch.meta_data.replace("'", '"')
         obj_json = json.loads(metadata)
         current_bundle_hd = await crud.bundlehd.get(id=sch.bundle_hd_id)
 
         metadata_keyword = obj_json[f'{dokumen.key_field}']
-
-        if metadata_keyword not in current_bundle_hd.keyword:
-            
-            edit_keyword_hd = current_bundle_hd
-            if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
-                edit_keyword_hd.keyword = metadata_keyword
-            else:
-                edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
-                await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
+        if metadata_keyword:
+            # periksa apakah keyword belum eksis di bundle hd
+            if metadata_keyword not in current_bundle_hd.keyword:
+                edit_keyword_hd = current_bundle_hd
+                if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
+                    edit_keyword_hd.keyword = metadata_keyword
+                else:
+                    edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
+                    await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
     
     if file:
         file_path = await GCStorage().upload_file_dokumen(file=file, obj_current=obj_current)
