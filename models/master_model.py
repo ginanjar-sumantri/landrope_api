@@ -39,7 +39,10 @@ class HargaStandardBase(SQLModel):
     planing_id:UUID = Field(nullable=False, foreign_key="planing.id")
     harga:Decimal | None
 
-class HargaStandard(BaseUUIDModel, HargaStandardBase, table=True):
+class HargaStandardFullBase(HargaStandardBase, BaseUUIDModel):
+    pass
+
+class HargaStandard(HargaStandardFullBase, table=True):
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property

@@ -1,11 +1,11 @@
-from models.master_model import HargaStandard, HargaStandardBase
+from models.master_model import HargaStandard, HargaStandardBase, HargaStandardFullBase
 from common.partial import optional
 from sqlmodel import Field
 
 class HargaStandardCreateSch(HargaStandardBase):
     pass
 
-class HargaStandardSch(HargaStandard):
+class HargaStandardSch(HargaStandardFullBase):
     planing_name:str|None = Field(alias="planing_name")
 
 @optional
