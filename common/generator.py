@@ -1,6 +1,7 @@
 import crud
 from geoalchemy2.shape import to_shape
 from models.code_counter_model import CodeCounter, CodeCounterEnum
+from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 import string
 import random
@@ -52,7 +53,9 @@ async def generate_code_bundle(planing_id:UUID | None) -> str:
     return code
 
    
-async def generate_code(entity:CodeCounterEnum):
+async def generate_code(entity:CodeCounterEnum,
+                        db_session : AsyncSession | None = None,
+                        with_commit: bool | None = True):
 
     obj_current = await crud.codecounter.get_by_entity(entity=entity)
 
@@ -61,7 +64,7 @@ async def generate_code(entity:CodeCounterEnum):
 
     if obj_current is None:
         obj_in = CodeCounter(entity=entity, code_counter=code_counter, digit=max_digit)
-        await crud.codecounter.create(obj_in=obj_in)
+        await crud.codecounter.create(obj_in=obj_in, db_session=db_session, with_commit=with_commit)
 
         code = str(code_counter).zfill(max_digit)
         return code
@@ -75,7 +78,7 @@ async def generate_code(entity:CodeCounterEnum):
             max_digit += 1
 
         obj_new = CodeCounter(entity=obj_current.entity, last=code_counter, digit=max_digit)
-        await crud.codecounter.update(obj_current=obj_current, obj_new=obj_new)
+        await crud.codecounter.update(obj_current=obj_current, obj_new=obj_new, db_session=db_session, with_commit=with_commit)
 
         code = str(code_counter).zfill(max_digit)
         return code

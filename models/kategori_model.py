@@ -23,6 +23,10 @@ class KategoriSubFullBase(BaseUUIDModel, KategoriSubBase):
 class KategoriSub(KategoriSubFullBase, table=True):
     kategori:"Kategori" = Relationship(back_populates="kategori_subs", sa_relationship_kwargs={'lazy' : 'selectin'})
 
+    @property
+    def kategori_name(self) -> str:
+        return self.kategori.name
+
 
 
 class KategoriProyekBase(SQLModel):

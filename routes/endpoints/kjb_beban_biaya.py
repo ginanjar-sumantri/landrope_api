@@ -12,18 +12,11 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbBebanBiayaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbBebanBiayaCreateExSch):
+async def create(sch: KjbBebanBiayaCreateSch):
     
     """Create a new object"""
 
-    beban_biaya = await crud.bebanbiaya.get_by_name(name=sch.beban_biaya_name)
-    if beban_biaya is None:
-        sch_bebanbiaya = BebanBiayaCreateSch(name=sch.beban_biaya_name, is_active=True)
-        beban_biaya = await crud.bebanbiaya.create(obj_in=sch_bebanbiaya)
-
-    sch_in = KjbBebanBiayaCreateSch(beban_biaya_id=beban_biaya.id, beban_pembeli=sch.beban_pembeli, kjb_hd_id=UUID(sch.kjb_hd_id))
-
-    new_obj = await crud.kjb_bebanbiaya.create(obj_in=sch_in)
+    new_obj = await crud.kjb_bebanbiaya.create(obj_in=sch)
     
     return create_response(data=new_obj)
 

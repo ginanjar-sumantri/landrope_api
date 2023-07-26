@@ -1,13 +1,10 @@
 from crud.base_crud import CRUDBase
 from models.code_counter_model import CodeCounter, CodeCounterEnum
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import exc
-from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
 
-class CRUDCodeCounter(CRUDBase[CodeCounter, CodeCounter, CodeCounter]):
+class CRUDCodeCounter(CRUDBase[CodeCounter, CodeCounter, CodeCounter]):    
     async def get_by_entity(self, *, entity: CodeCounterEnum | str, db_session: AsyncSession | None = None) -> CodeCounter | None:
         db_session = db_session or db.session
         query = select(self.model).where(self.model.entity == entity)

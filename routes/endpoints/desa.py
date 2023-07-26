@@ -31,8 +31,6 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
-    
-    sch.code = await generate_code(CodeCounterEnum.Desa)
 
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -40,13 +38,9 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
-
-        sch = DesaSch(name=sch.name, 
-                      code=sch.code,
-                      kecamatan=sch.kecamatan,
-                      kota=sch.kota,
-                      luas=RoundTwo(Decimal(sch.luas)),
-                      geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        
+        sch = DesaSch(**sch.dict())
+        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
     new_obj = await crud.desa.create(obj_in=sch)
 

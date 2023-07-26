@@ -311,7 +311,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                             manager_id=manager,
                             sales_id=sales,
                             mediator=shp_data.mediator,
-                            luas_surat=luas_surat)
+                            luas_surat=luas_surat,
+                            geom=shp_data.geom)
 
             obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
             # obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
