@@ -167,7 +167,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         max_duration = 7 * 60
 
         for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
-
             luassurat = str(geo_data['luassurat'])
             if luassurat in null_values:
                 geo_data['luassurat'] = RoundTwo(Decimal(0))
@@ -263,7 +262,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 return NameNotFoundException(Project, name=shp_data.project)
 
-            desa = await crud.desa.get_by_code(name=shp_data.code_desa)
+            desa = await crud.desa.get_by_name(name=shp_data.code_desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} code {shp_data.code_desa} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
