@@ -262,7 +262,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 return NameNotFoundException(Project, name=shp_data.project)
 
-            desa = await crud.desa.get_by_name(name=shp_data.code_desa)
+            desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} code {shp_data.code_desa} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
