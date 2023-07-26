@@ -42,11 +42,14 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
         return self.kjb_dt.kjb_hd.nama_group
     
     @property
-    def nama_pemilik_tanah(self) -> str:
-        return self.kjb_dt.pemilik.name
+    def nama_pemilik_tanah(self) -> str | None:
+        return getattr(getattr(getattr(self, 'kjb_dt', None), 'pemilik', None), 'name', None)
     
     @property
     def nomor_pemilik_tanah(self) -> str:
+        if self.kjb_dt.pemilik is None:
+            return ""
+        
         nomors = [i.nomor_telepon for i in self.kjb_dt.pemilik.kontaks]
 
         if len(nomors) == 0:
