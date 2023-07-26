@@ -260,7 +260,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                return NameNotFoundException(Project, name=shp_data.project)
+                raise NameNotFoundException(Project, name=shp_data.project)
 
             desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
@@ -271,7 +271,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                return NameNotFoundException(Desa, name=shp_data.desa)
+                raise NameNotFoundException(Desa, name=shp_data.desa)
 
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
@@ -282,7 +282,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 log_error = await crud.import_log_error.create(obj_in=log_error)
 
-                return NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
+                raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
                 
             if shp_data.n_idbidang in null_values:
                 bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
