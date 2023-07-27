@@ -62,6 +62,32 @@ class BidangShpSch(BaseGeoModel):
     desa:str | None
     project:str | None
 
+class BidangShpExSch(BaseGeoModel):
+    n_idbidang:str | None
+    o_idbidang:str | None
+    pemilik:str | None
+    code_desa:str | None
+    dokumen:str | None
+    sub_surat:str | None
+    alashak:str | None
+    luassurat:str | None
+    kat:str | None
+    kat_bidang:str | None
+    kat_proyek:str | None
+    ptsk:str | None
+    penampung:str | None
+    no_sk:str | None
+    status_sk:str | None
+    manager:str | None
+    sales:str | None
+    mediator:str | None
+    proses:str | None
+    status:str | None
+    group:str | None
+    no_peta:str | None
+    desa:str | None
+    project:str | None
+
 @as_form
 @optional
 class BidangUpdateSch(BidangBase):

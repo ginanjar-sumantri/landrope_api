@@ -14,17 +14,17 @@ from models.master_model import JenisSurat
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch)
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangByIdSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch,
                                   ImportResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException)
+from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
 from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
-from services.gcloud_storage_service import GCStorage
+from services.gcloud_storage_service import GCStorageService
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
@@ -69,7 +69,7 @@ async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=N
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[BidangRawSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -122,7 +122,7 @@ async def create_bulking_task(
 
     rows = GeomService.total_row_geodataframe(file=file.file)
     file.file.seek(0)
-    file_path, file_name = await GCStorage().upload_zip(file=file)
+    file_path, file_name = await GCStorageService().upload_zip(file=file)
 
     sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
                             name=f"Upload Bidang Bulking {rows} datas",
@@ -147,7 +147,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
         log = await crud.import_log.get(id=payload.import_log_id)
         if log is None:
-            return IdNotFoundException(ImportLog, payload.import_log_id)
+            raise IdNotFoundException(ImportLog, payload.import_log_id)
 
         start:int = log.done_count
         count:int = log.done_count
@@ -157,9 +157,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
         null_values = ["", "None", "nan", None]
 
-        file = await GCStorage().download_file(payload.file_path)
+        file = await GCStorageService().download_file(payload.file_path)
         if not file:
-            return FileNotFoundError()
+            raise FileNotFoundException()
 
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
@@ -401,6 +401,17 @@ async def export(filter_query:str = None):
         return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+
+# @router.post("/test-dict")
+# async def test_dict(file:UploadFile):
+#     geo_dataframe = GeomService.file_to_geodataframe(file.file)
+
+#     for i, geo_data in geo_dataframe.iterrows():
+
+#         geo_data_dict = geo_data.to_dict()
+#         print(geo_data_dict)
+
+
 
 def FindStatusBidang(status:str|None = None):
     if status:

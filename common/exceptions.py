@@ -43,11 +43,22 @@ class DocumentFileNotFoundException(HTTPException):
     ) -> None:
         
         super().__init__(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                status_code=status.HTTP_404_NOT_FOUND, 
                 detail=f"{dokumenname} file, failed to download", 
                 headers=headers
             )
 
+class FileNotFoundException(HTTPException):
+    def __init__(
+        self,
+        headers: Dict[str, Any] | None = None,
+    ) -> None:
+        
+        super().__init__(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail=f"file not found", 
+                headers=headers
+            )
 
 class IdNotFoundException(HTTPException, Generic[ModelType]):
     def __init__(

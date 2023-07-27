@@ -6,7 +6,7 @@ from models.bundle_model import BundleDt
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
-from services.gcloud_storage_service import GCStorage
+from services.gcloud_storage_service import GCStorageService
 from datetime import datetime
 import crud
 import json
@@ -78,7 +78,7 @@ async def update(id:UUID,
                     await crud.bundlehd.update(obj_current=current_bundle_hd, obj_new=edit_keyword_hd)
     
     if file:
-        file_path = await GCStorage().upload_file_dokumen(file=file, obj_current=obj_current)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=obj_current)
         sch.file_path = file_path
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch)
@@ -96,7 +96,7 @@ async def download_file(id:UUID):
     if obj_current.file_path is None:
         raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
     try:
-        file_bytes = await GCStorage().download_dokumen(file_path=obj_current.file_path)
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
         raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
     

@@ -1,15 +1,19 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, UploadFile, Request
 from fastapi_pagination import Params
 from models.pemilik_model import Pemilik, Kontak, Rekening
+from models.worker_model import Worker
 from schemas.pemilik_sch import (PemilikSch, PemilikCreateSch, PemilikUpdateSch, PemilikByIdSch)
 from schemas.kontak_sch import KontakSch, KontakCreateSch, KontakUpdateSch
 from schemas.rekening_sch import RekeningSch, RekeningCreateSch, RekeningUpdateSch
+from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.generator import generate_code
-from models.code_counter_model import CodeCounterEnum
+from services.gcloud_storage_service import GCStorageService
+from services.gcloud_task_service import GCloudTaskService
+from common.enum import TaskStatusEnum
 import crud
+import pandas
 
 #region Pemilik
 router_pemilik = APIRouter()
@@ -105,8 +109,37 @@ async def update_rekening(pemilik_id:UUID, sch:PemilikUpdateSch):
                               pemilik_id=pemilik_id)
         await crud.rekening.create(obj_in=a_rekening)
 
+@router_pemilik.post(
+        "/bulk",
+        response_model=PostResponseBaseSch[ImportLogSch],
+        status_code=status.HTTP_201_CREATED
+)
+async def create_bulking_task(
+    file:UploadFile,
+    request: Request,
+    current_worker: Worker = Depends(crud.worker.get_current_user)
+    ):
 
-            
+    """Create a new task for import"""
+
+    df = pandas.read_excel(file.file)
+    rows = df.shape[0]
+    
+    file.file.seek(0)
+    file_path, file_name = await GCStorageService().upload_excel(file=file)
+
+    sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
+                            name=f"Upload Pemilik Bulking {rows} datas",
+                            file_name=file_name,
+                            file_path=file_path,
+                            total_row=rows,
+                            done_count=0)
+
+    new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id)
+    url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
+    GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
+
+    return create_response(data=new_obj)
 
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)

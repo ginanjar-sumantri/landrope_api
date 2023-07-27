@@ -4,7 +4,7 @@ from fastapi_async_sqlalchemy import db
 from crud.base_crud import CRUDBase
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogUpdateSch
-from services.gcloud_storage_service import GCStorage
+from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from datetime import datetime
 
@@ -18,7 +18,7 @@ class CRUDImportLog(CRUDBase[ImportLog, ImportLogCreateSch, ImportLogUpdateSch])
             obj_current: ImportLog,
             worker_id: UUID,
             db_session: AsyncSession | None = None):
-        file_path, file_name = await GCStorage().upload_zip(file=file)
+        file_path, file_name = await GCStorageService().upload_zip(file=file)
 
         db_session = db_session or db.session
         obj_current.file_path = file_path

@@ -16,7 +16,7 @@ from configs.config import settings
 ModelType = TypeVar("ModelType", bound=SQLModel)
 
 
-class GCStorage:
+class GCStorageService:
     def __init__(self) -> None:
         self.storage_client = storage.Client()
         self.bucket_name = settings.GS_BUCKET_NAME
@@ -86,6 +86,15 @@ class GCStorage:
                               content_type=file.content_type)
 
         return file_path
+    
+    async def upload_excel(self, file: UploadFile) -> Tuple[str | None, str | None]:
+        bucket = self.storage_client.get_bucket(self.bucket_name)
+        file_path, file_name = await self.path_and_rename_zip(upload_file=file)
+        blob = bucket.blob(file_path)
+        blob.upload_from_file(file_obj=file.file,
+                              content_type=file.content_type)
+
+        return file_path, file_name
     
     async def upload_zip(self, file: UploadFile) -> Tuple[str | None, str | None]:
         bucket = self.storage_client.get_bucket(self.bucket_name)

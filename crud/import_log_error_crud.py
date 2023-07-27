@@ -2,7 +2,7 @@ from fastapi_async_sqlalchemy import db
 from crud.base_crud import CRUDBase
 from models.import_log_model import ImportLogError
 from schemas.import_log_error_sch import ImportLogErrorCreateSch, ImportLogErrorUpdateSch
-from services.gcloud_storage_service import GCStorage
+from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from datetime import datetime
 

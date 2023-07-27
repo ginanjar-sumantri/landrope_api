@@ -7,7 +7,9 @@ if TYPE_CHECKING:
     from models.kjb_model import KjbHd
 
 class PemilikBase(SQLModel):
+    code:str
     name:str
+    nik:str
 
 class PemilikFullBase(BaseUUIDModel, PemilikBase):
     pass
