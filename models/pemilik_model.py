@@ -7,9 +7,9 @@ if TYPE_CHECKING:
     from models.kjb_model import KjbHd
 
 class PemilikBase(SQLModel):
-    code:str
-    name:str
-    nik:str
+    code:str | None = Field(nullable=True)
+    name:str | None = Field(nullable=True)
+    nik:str | None = Field(nullable=True)
 
 class PemilikFullBase(BaseUUIDModel, PemilikBase):
     pass
