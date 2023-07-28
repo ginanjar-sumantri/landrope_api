@@ -1,14 +1,18 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Request
+from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params
 from models.pemilik_model import Pemilik, Kontak, Rekening
 from models.worker_model import Worker
+from models.import_log_model import ImportLog, ImportLogError
 from schemas.pemilik_sch import (PemilikSch, PemilikCreateSch, PemilikUpdateSch, PemilikByIdSch)
 from schemas.kontak_sch import KontakSch, KontakCreateSch, KontakUpdateSch
 from schemas.rekening_sch import RekeningSch, RekeningCreateSch, RekeningUpdateSch
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
-from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, ImportFailedException)
+from schemas.import_log_error_sch import ImportLogErrorSch
+from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
+                                  DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
+from common.exceptions import (IdNotFoundException, FileNotFoundException)
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
 from common.enum import TaskStatusEnum
@@ -140,6 +144,50 @@ async def create_bulking_task(
     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
     return create_response(data=new_obj)
+
+@router_pemilik.post("/cloud-task-bulk")
+async def bulk_create(payload:ImportLogCloudTaskSch,
+                      request:Request):
+    
+    """Runing cloud task"""
+    log = await crud.import_log.get(id=payload.import_log_id)
+    if log is None:
+        raise IdNotFoundException(ImportLog, payload.import_log_id)
+    
+    file = await GCStorageService().download_dokumen(payload.file_path)
+    if not file:
+        error_m = f"File {payload.file_path} not found"
+        log_error = ImportLogErrorSch(error_message=error_m,
+                                        import_log_id=log.id)
+
+        log_error = await crud.import_log_error.create(obj_in=log_error)
+        raise FileNotFoundException()
+    
+    df = pandas.read_excel(file)
+    data = df.to_dict()
+    
+    start:int = log.done_count
+    count:int = log.done_count
+    null_values = ["", "None", "nan", None]
+
+    if log.done_count > 0:
+        start = log.done_count
+
+@router_pemilik.post("/test-upload-excel")
+async def extract_excel(file:UploadFile):
+    file_content = await file.read()
+    df = pandas.read_excel(file_content)
+    data = df.to_dict()
+
+    for i, data in df.iterrows():
+        print(data.to_dict())
+
+    return data
+
+    
+
+
+    
 
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)

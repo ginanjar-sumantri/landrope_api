@@ -50,14 +50,6 @@ class CRUDPemilik(CRUDBase[Pemilik, PemilikCreateSch, PemilikUpdateSch]):
         
         await db_session.refresh(db_obj)
         return db_obj
-    
-    # async def lets_bulk_data(self,
-    #                          *,
-    #                          import_log_id:UUID,
-    #                          file_path:str,
-    #                          db_session: AsyncSession | None = None) -> bool :
-        
-    #     db_session = db_session or db.session
 
 
 pemilik = CRUDPemilik(Pemilik)
