@@ -11,7 +11,10 @@ from datetime import datetime
 
 class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
     async def get_by_project_id_desa_id(
-        self, *, project_id: str, desa_id:str, db_session: AsyncSession | None = None
+        self, *,
+        project_id: UUID | str | None, 
+        desa_id:UUID | str | None, 
+        db_session: AsyncSession | None = None
     ) -> Planing:
         db_session = db_session or db.session
         obj = await db_session.execute(select(Planing).where(and_(Planing.project_id == project_id, Planing.desa_id == desa_id)))
