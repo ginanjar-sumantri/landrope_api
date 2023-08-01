@@ -11,8 +11,10 @@ class BundleHdSch(BundleHdFullBase):
     planing:str|None = Field(alias="planing_name")
     project:str|None = Field(alias="project_name")
     desa:str|None = Field(alias="desa_name")
+    alashak:str|None = Field(alias="alashak")
 
 class BundleHdByIdSch(BundleHdSch):
+    alashak:str|None = Field(alias="alashak")
     bundledts:list[BundleDt]
 
 @optional

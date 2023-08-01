@@ -10,7 +10,7 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbDt
+from models.kjb_model import KjbHd, KjbDt
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch
 from typing import List
@@ -30,17 +30,20 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         if no_order is None:
             no_order = ""
 
-        query = select(self.model).select_from(
-            self.model).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id).where(
-            and_(
-                self.model.kjb_hd_id == kjb_hd_id,
-                self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
-                or_(
-                    RequestPetaLokasi.code == no_order,
-                    self.model.request_peta_lokasi == None
-                )
-            )
-        )
+        query = select(self.model
+                       ).select_from(self.model
+                                     ).outerjoin(KjbHd, self.model.bundle_hd_id == KjbHd.id
+                                     ).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id
+                                     ).where(and_(
+                                                    KjbHd.is_draft != True,
+                                                    self.model.kjb_hd_id == kjb_hd_id,
+                                                    self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
+                                                    or_(
+                                                        RequestPetaLokasi.code == no_order,
+                                                        self.model.request_peta_lokasi == None
+                                                    )
+                                                )
+                                            )
         
         return await paginate(db_session, query, params)
 

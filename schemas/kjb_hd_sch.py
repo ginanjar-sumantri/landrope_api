@@ -8,6 +8,7 @@ from schemas.kjb_penjual_sch import KjbPenjualCreateExtSch, KjbPenjualSch
 from common.partial import optional
 from sqlmodel import Field
 from typing import List
+from decimal import Decimal
 
 class KjbHdCreateSch(KjbHdBase):
     rekenings:List[KjbRekeningCreateExtSch]
@@ -19,7 +20,9 @@ class KjbHdSch(KjbHdFullBase):
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")
     sales_name:str = Field(alias="sales_name")
+    total_luas_surat:Decimal = Field(alias="total_luas_surat")
     penjuals:List[KjbPenjualSch] | None
+    
 
 class KjbHdByIdSch(KjbHdFullBase):
     kjb_dts:List[KjbDtSch] | None
@@ -27,10 +30,11 @@ class KjbHdByIdSch(KjbHdFullBase):
     hargas:List[KjbHargaExtSch] | None
     bebanbiayas:List[KjbBebanBiayaSch] | None
     penjuals:List[KjbPenjualSch] | None
-
+    
     desa_name:str = Field(alias="desa_name")
     manager_name:str = Field(alias="manager_name")
     sales_name:str = Field(alias="sales_name")
+    total_luas_surat:Decimal = Field(alias="total_luas_surat")
 
 
 @optional

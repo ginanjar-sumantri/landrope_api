@@ -8,6 +8,7 @@ class BundleDtCreateSch(BundleDtBase):
 
 class BundleDtSch(BundleDtFullBase):
     dokumen_name:str | None = Field(alias="dokumen_name")
+    file_exists:bool | None = Field(alias="file_exists")
 
 @as_form
 @optional

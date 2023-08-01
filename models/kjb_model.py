@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, 
                          PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, 
                          JenisBayarEnum, StatusPetaLokasiEnum)
+from common.rounder import RoundTwo
 from decimal import Decimal
 from datetime import datetime
 
@@ -36,6 +37,7 @@ class KjbHdBase(SQLModel):
     utj_amount:Decimal
     satuan_bayar:SatuanBayarEnum
     satuan_harga:SatuanHargaEnum
+    is_draft:Optional[bool] = Field(nullable=True)
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
@@ -70,6 +72,15 @@ class KjbHd(KjbHdFullBase, table=True):
         if self.sales is None:
             return ""
         return self.sales.name
+    
+    @property
+    def total_luas_surat(self) -> Decimal:
+        if len(self.kjb_dts) > 0:
+            total_luas = sum(item.luas_surat for item in self.kjb_dts)
+            return RoundTwo(total_luas)
+        else:
+            return RoundTwo(0)        
+
 
 ##########################################################################
 

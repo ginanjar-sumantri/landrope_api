@@ -15,7 +15,7 @@ from .checklist_dokumen_model import ChecklistDokumen
 from .kjb_model import KjbHd, KjbDt, KjbBebanBiaya, KjbRekening, KjbTermin, KjbHarga, KjbPenjual
 from .marketing_model import Manager, Sales
 from .pemilik_model import Pemilik, Kontak, Rekening
-from .dokumen_model import Dokumen
+from .dokumen_model import Dokumen, KategoriDokumen
 from .bundle_model import BundleHd, BundleDt
 from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisDt
 from .notaris_model import Notaris

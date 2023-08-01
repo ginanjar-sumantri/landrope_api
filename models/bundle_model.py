@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -52,14 +52,19 @@ class BundleHd(BundleHdFullBase, table=True):
         if self.planing is None:
             return ""
         return self.planing.desa.name or ""
+    
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, 'kjb_dt', None), 'alashak', None)
 
 class BundleDtBase(SQLModel):
-    code:str | None = Field(nullable=False)
-    meta_data:str | None
-    history_data:str | None
-    bundle_hd_id:UUID | None = Field(default=None, foreign_key="bundle_hd.id", nullable=False)
-    dokumen_id:UUID | None = Field(default=None, foreign_key="dokumen.id", nullable=False)
-    file_path:str | None = Field(nullable=True)
+    code:Optional[str] = Field(nullable=False)
+    meta_data:Optional[str]
+    history_data:Optional[str]
+    riwayat_data:Optional[str] = Field(nullable=True)
+    bundle_hd_id:Optional[UUID] = Field(default=None, foreign_key="bundle_hd.id", nullable=False)
+    dokumen_id:Optional[UUID] = Field(default=None, foreign_key="dokumen.id", nullable=False)
+    file_path:Optional[str] = Field(nullable=True)
 
 class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass
@@ -80,3 +85,10 @@ class BundleDt(BundleDtFullBase, table=True):
         bundling_dt_code = f"{bundling_code}{self.dokumen.code}"
 
         return bundling_dt_code
+    
+    @property
+    def file_exists(self) -> bool:
+        if self.file_path:
+            return True
+        
+        return False
