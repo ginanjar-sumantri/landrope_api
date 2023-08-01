@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 from models.kjb_model import KjbDt
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
@@ -29,8 +30,10 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
         if kjb_dt.status_peta_lokasi != sch.status_peta_lokasi:
             raise ContentNoChangeException(detail=f"""status peta lokasi tidak dapat berubah dari 
                                            {str(kjb_dt.status_peta_lokasi)} ke {str(sch.status_peta_lokasi)}""")
-        
-    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch)
+
+    db_session = db.session
+
+    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=False)
 
     if sch.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
         return create_response(data=new_obj)
@@ -57,13 +60,13 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
         
         kjb_dt_update.bundle_hd_id = bundle.id
     
-    kjb_dt_update.luas_surat_by_ttn = new_obj.luas_surat
-    kjb_dt_update.desa_by_ttn_id = new_obj.desa_id
-    kjb_dt_update.project_by_ttn_id = new_obj.project_id
+    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat
+    kjb_dt_update.desa_by_ttn_id = sch.desa_id
+    kjb_dt_update.project_by_ttn_id = sch.project_id
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
-    kjb_dt_update.pemilik_id = new_obj.pemilik_id
+    kjb_dt_update.pemilik_id = sch.pemilik_id
 
-    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
+    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
     
     return create_response(data=new_obj)
 
