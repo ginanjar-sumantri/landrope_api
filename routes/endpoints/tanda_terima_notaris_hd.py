@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, UploadFile
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
@@ -8,16 +8,16 @@ from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaT
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, ImportFailedException)
-from common.generator import generate_code
-from models.code_counter_model import CodeCounterEnum
 from common.enum import StatusPetaLokasiEnum
+from services.gcloud_storage_service import GCStorageService
+from services.helper_service import HelperService
 import crud
 
 
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[TandaTerimaNotarisHdSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: TandaTerimaNotarisHdCreateSch):
+async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHdCreateSch.as_form), file:UploadFile = None):
     
     """Create a new object"""
 
@@ -32,6 +32,10 @@ async def create(sch: TandaTerimaNotarisHdCreateSch):
                                            {str(kjb_dt.status_peta_lokasi)} ke {str(sch.status_peta_lokasi)}""")
 
     db_session = db.session
+
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        sch.file_path = file_path
 
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=False)
 
@@ -90,7 +94,9 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[TandaTerimaNotarisHdSch])
-async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
+async def update(id:UUID, 
+                 sch:TandaTerimaNotarisHdUpdateSch = Depends(TandaTerimaNotarisHdUpdateSch.as_form),
+                 file:UploadFile = None):
     
     """Update a obj by its id"""
 
@@ -104,7 +110,12 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
     
-    obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch)
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        sch.file_path = file_path
+    
+    db_session = db.session
+    obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=False)
     
     kjb_dt_update = kjb_dt
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
@@ -126,13 +137,13 @@ async def update(id:UUID, sch:TandaTerimaNotarisHdUpdateSch):
 
         kjb_dt_update.bundle_hd_id = bundle.id
     
-    kjb_dt_update.luas_surat_by_ttn = obj_updated.luas_surat
-    kjb_dt_update.desa_by_ttn_id = obj_updated.desa_id
-    kjb_dt_update.project_by_ttn_id = obj_updated.project_id
+    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat
+    kjb_dt_update.desa_by_ttn_id = sch.desa_id
+    kjb_dt_update.project_by_ttn_id = sch.project_id
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
-    kjb_dt_update.pemilik_id = obj_updated.pemilik_id
+    kjb_dt_update.pemilik_id = sch.pemilik_id
 
-    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update)
+    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 
     return create_response(data=obj_updated)
 

@@ -1,9 +1,11 @@
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisHdBase, TandaTerimaNotarisHdFullBase
 from common.partial import optional
+from common.as_form import as_form
 from common.enum import StatusPetaLokasiEnum
 from sqlmodel import Field
 from typing import List
 
+@as_form
 class TandaTerimaNotarisHdCreateSch(TandaTerimaNotarisHdBase):
     pass
 
@@ -17,6 +19,7 @@ class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
     pemilik_name:str | None = Field(alias="pemilik_name")
     nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
 
+@as_form
 @optional
 class TandaTerimaNotarisHdUpdateSch(TandaTerimaNotarisHdBase):
     pass

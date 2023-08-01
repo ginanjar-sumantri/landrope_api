@@ -10,7 +10,7 @@ from models.worker_model import Worker
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
 from schemas.dokumen_sch import RiwayatSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
+from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException, ContentNoChangeException)
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
 from datetime import datetime
@@ -46,7 +46,7 @@ async def get_by_id(id:UUID):
 async def update(id:UUID, 
                  sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
                  file:UploadFile = None,
-                 ):
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -60,7 +60,7 @@ async def update(id:UUID,
     file_path = None
     
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=obj_current)
+        file_path = await GCStorageService().upload_file_dokumen(file=file)
         sch.file_path = file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
@@ -75,35 +75,67 @@ async def update(id:UUID,
         
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :
-            await update_keyword(meta_data=sch.meta_data, bundle_hd_id=sch.bundle_hd_id, worker_id=None, key_field=dokumen.key_field, db_session=db_session)
+            await update_keyword(meta_data=sch.meta_data, 
+                                 bundle_hd_id=sch.bundle_hd_id, 
+                                 worker_id=current_worker.id, 
+                                 key_field=dokumen.key_field, 
+                                 db_session=db_session)
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, 
                                              obj_new=sch, 
                                              db_session=db_session, 
-                                             with_commit=True, 
-                                             )
+                                             updated_by_id=current_worker.id,
+                                             with_commit=True)
 
     return create_response(data=obj_updated)
 
 @router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
-async def add_riwayat(id:UUID, sch:RiwayatSch, file:UploadFile | None):
+async def add_riwayat(id:UUID, 
+                      meta_data:str, 
+                      file:UploadFile | None,
+                      ):
     """Update a riwayat obj"""
 
     obj_current = await crud.bundledt.get(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
-    current_riwayat_data =  obj_current.riwayat_data
+    dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
+    
+    metadata_dict = json.loads(meta_data.replace("'", '"'))
+    key_value = metadata_dict[f'{dokumen.key_riwayat}']
+
+    if key_value is None or key_value == "":
+        raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} harus diisi!")
+    
+    file_path = None
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file)
+
+    riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
+    new_riwayat_obj = {
+                        'tanggal':str(datetime.now()), 
+                        'key_value':key_value, 
+                        'file_path':file_path, 
+                        'is_default':False, 
+                        'meta_data': metadata_dict }
+    
+    riwayat_data['riwayat'].append(new_riwayat_obj)
+
+    obj_updated = obj_current
+    obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null')
+
+    obj = await crud.bundledt.update(obj_current=obj_current, 
+                                             obj_new=obj_updated,
+                                             updated_by_id=None)
+
+    return create_response(data=obj)
+   
 
     
-    if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=obj_current)
-        sch.file_path = file_path
 
     
     return create_response(data=obj_current)
-    
-
 
 async def update_keyword(meta_data:str|None,
                         bundle_hd_id:UUID|None,

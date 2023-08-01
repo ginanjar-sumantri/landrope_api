@@ -26,6 +26,7 @@ class TandaTerimaNotarisHdBase(SQLModel):
     luas_surat:Decimal
     pemilik_id:UUID | None = Field(foreign_key="pemilik.id", nullable=True)
     status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
+    file_path:str | None = Field(nullable=True)
 
 
 class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
