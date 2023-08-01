@@ -8,9 +8,11 @@ from models.bundle_model import BundleDt
 from models.dokumen_model import Dokumen
 from models.worker_model import Worker
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
+from schemas.dokumen_sch import RiwayatSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
 from services.gcloud_storage_service import GCStorageService
+from services.helper_service import HelperService
 from datetime import datetime
 import crud
 import json
@@ -44,7 +46,7 @@ async def get_by_id(id:UUID):
 async def update(id:UUID, 
                  sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
                  file:UploadFile = None,
-                 current_worker: Worker = Depends(crud.worker.get_current_user)):
+                 ):
     
     """Update a obj by its id"""
 
@@ -63,78 +65,44 @@ async def update(id:UUID,
 
     if sch.meta_data is not None or sch.meta_data != "":
         #history
-        history_new = extract_metadata_for_history(sch.meta_data, obj_current.history_data)
+        history_new = HelperService().extract_metadata_for_history(sch.meta_data, obj_current.history_data)
         sch.history_data = history_new
 
         #riwayat
         if dokumen.is_riwayat == True:
-            riwayat_new = extract_metadata_for_riwayat(sch.meta_data, dokumen=dokumen, file_path=file_path, is_default=True)
+            riwayat_new = HelperService().extract_metadata_for_riwayat(meta_data=sch.meta_data, key_riwayat=dokumen.key_riwayat, current_riwayat=obj_current.riwayat_data, file_path=file_path, is_default=True)
             sch.riwayat_data = riwayat_new
         
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :
-            await update_keyword(sch.meta_data, sch.bundle_hd_id, dokumen.key_field, current_worker.id, db_session)
+            await update_keyword(meta_data=sch.meta_data, bundle_hd_id=sch.bundle_hd_id, worker_id=None, key_field=dokumen.key_field, db_session=db_session)
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, 
                                              obj_new=sch, 
                                              db_session=db_session, 
                                              with_commit=True, 
-                                             updated_by_id=current_worker.id)
+                                             )
 
     return create_response(data=obj_updated)
 
-def extract_metadata_for_history(meta_data:str | None = None,
-                                current_history:str | None = None) -> str:
+@router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
+async def add_riwayat(id:UUID, sch:RiwayatSch, file:UploadFile | None):
+    """Update a riwayat obj"""
+
+    obj_current = await crud.bundledt.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(BundleDt, id)
     
-    ## Memeriksa apakah ada key "Nomor" dalam metadata
-    o_json = json.loads(meta_data.replace("'", '"'))
-    Nomor = ""
-    if "Nomor" in o_json:
-        Nomor = o_json['Nomor']
+    current_riwayat_data =  obj_current.riwayat_data
 
-    if current_history is None:
-        history_data = {'history':
-                        [{'tanggal': str(datetime.now()),
-                          'nomor': Nomor,
-                          'meta_data': json.loads(meta_data.replace("'", '"'))}]
-                        }
-    else:
-        history_data = eval(current_history.replace('null', 'None'))
-        new_metadata = {'tanggal': str(datetime.now()), 'nomor': Nomor, 'meta_data': json.loads(meta_data.replace("'", '"'))}
-        history_data['history'].append(new_metadata)
-
-    result = str(history_data).replace('None', 'null')
-    return result
-
-async def extract_metadata_for_riwayat(meta_data:str | None = None,
-                                       current_riwayat:str | None = None,
-                                       dokumen:Dokumen | None = None,
-                                       file_path:str|None = None,
-                                       is_default:bool|None = False) -> str:
     
-    riwayat_data:str = ""
-    metadata_dict = json.loads(meta_data.replace("'", '"'))
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=obj_current)
+        sch.file_path = file_path
 
-    if current_riwayat is None:
-        key_riwayat = dokumen.key_riwayat
-        key_value = metadata_dict[f'{key_riwayat}']
-
-        new_riwayat_data = {'riwayat':
-                            [
-                                {
-                                 'tanggal':str(datetime.now()), 
-                                 'key_value':key_value, 
-                                 'file_path':file_path, 
-                                 'is_default':is_default, 
-                                 'meta_data': metadata_dict
-                                }
-                            ]}
-        riwayat_data = str(new_riwayat_data).replace('None', 'null')
-
-    return riwayat_data
     
-
-
+    return create_response(data=obj_current)
+    
 
 
 async def update_keyword(meta_data:str|None,
@@ -143,7 +111,7 @@ async def update_keyword(meta_data:str|None,
                         worker_id:UUID|None,
                         db_session : AsyncSession | None = None):
     
-    obj_json = json.loads(meta_data)
+    obj_json = json.loads(meta_data.replace("'", '"'))
     current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
 
     metadata_keyword = obj_json[f'{key_field}']
