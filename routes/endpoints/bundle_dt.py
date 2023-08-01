@@ -53,15 +53,23 @@ async def update(id:UUID,
         raise IdNotFoundException(BundleDt, id)
     
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
+
     db_session = db.session
+    file_path = None
     
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=obj_current)
         sch.file_path = file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
+        #history
         history_new = extract_metadata_for_history(sch.meta_data, obj_current.history_data)
         sch.history_data = history_new
+
+        #riwayat
+        if dokumen.is_riwayat == True:
+            riwayat_new = extract_metadata_for_riwayat(sch.meta_data, dokumen=dokumen, file_path=file_path, is_default=True)
+            sch.riwayat_data = riwayat_new
         
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :

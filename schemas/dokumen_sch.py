@@ -1,6 +1,6 @@
 from models.dokumen_model import Dokumen, DokumenBase, DokumenFullBase
 from common.partial import optional
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 
 class DokumenCreateSch(DokumenBase):
     pass
@@ -13,7 +13,7 @@ class RiwayatSch(SQLModel):
     key_value:str
     file_path:str
     is_default:bool
-    metadata:str
+    meta_data:str = Field(alias="metadata")
 
 @optional
 class DokumenUpdateSch(DokumenBase):
