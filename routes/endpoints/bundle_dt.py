@@ -91,8 +91,8 @@ async def update(id:UUID,
 
 @router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def add_riwayat(id:UUID, 
-                      meta_data:str, 
-                      file:UploadFile | None,
+                      sch:RiwayatSch = Depends(RiwayatSch.as_form), 
+                      file:UploadFile = None,
                       ):
     """Update a riwayat obj"""
 
@@ -100,9 +100,12 @@ async def add_riwayat(id:UUID,
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
+    if sch.meta_data is None or sch.meta_data == "":
+        raise ContentNoChangeException(detail="No meta data is null")
+    
     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     
-    metadata_dict = json.loads(meta_data.replace("'", '"'))
+    metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
     key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
     if key_value is None or key_value == "":
@@ -130,6 +133,25 @@ async def add_riwayat(id:UUID,
                                              updated_by_id=None)
 
     return create_response(data=obj)
+
+@router.put("update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
+async def update_riwayat(id:UUID, 
+                      sch:RiwayatSch = Depends(RiwayatSch.as_form), 
+                      file:UploadFile = None,
+                      ):
+    
+    obj_current = await crud.bundledt.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(BundleDt, id)
+    
+    riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
+
+    obj_riwayat_dict = next((x for x in riwayat_data["riwayat"] if x["key_value"] == sch.key_value), None)
+    obj_riwayat = RiwayatSch(**obj_riwayat_dict)
+
+    return obj_riwayat
+    
+
    
 
     

@@ -52,7 +52,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
         history_data = {'history':[{'tanggal': str(datetime.now()),'nomor': Nomor,'meta_data': eval(sch.meta_data)}]}
 
         if file:
-            file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=bundledt_obj_current)
+            file_path = await GCStorageService().upload_file_dokumen(file=file)
             sch.file_path = file_path
 
         new_dokumen = BundleDt(code=code, 
@@ -75,7 +75,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
             history_data['history'].append(new_metadata)
         
         if file:
-            file_path = await GCStorageService().upload_file_dokumen(file=file, obj_current=bundledt_obj_current)
+            file_path = await GCStorageService().upload_file_dokumen(file=file)
             sch.file_path = file_path
 
         bundledt_obj_updated = bundledt_obj_current

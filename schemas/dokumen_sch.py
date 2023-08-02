@@ -1,6 +1,8 @@
 from models.dokumen_model import Dokumen, DokumenBase, DokumenFullBase
 from common.partial import optional
+from common.as_form import as_form
 from sqlmodel import SQLModel, Field
+from datetime import date, datetime
 
 class DokumenCreateSch(DokumenBase):
     pass
@@ -8,12 +10,13 @@ class DokumenCreateSch(DokumenBase):
 class DokumenSch(DokumenFullBase):
     pass
 
+@as_form
 class RiwayatSch(SQLModel):
-    tanggal:str
-    key_value:str
-    file_path:str
-    is_default:bool
-    meta_data:str = Field(alias="metadata")
+    tanggal:datetime | None
+    key_value:str | None
+    file_path:str | None
+    is_default:bool | None
+    meta_data:dict | None = Field(alias="meta_data")
 
 @optional
 class DokumenUpdateSch(DokumenBase):
