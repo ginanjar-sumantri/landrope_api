@@ -92,3 +92,7 @@ class BundleDt(BundleDtFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def have_riwayat(self) -> bool:
+        return getattr(getattr(self, 'dokumen', False), 'is_riwayat', False)

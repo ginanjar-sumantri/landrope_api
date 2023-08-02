@@ -35,10 +35,9 @@ class HelperService:
             
         riwayat_data:str = ""
         metadata_dict = json.loads(meta_data.replace("'", '"'))
+        key_value = metadata_dict[f'{key_riwayat}']
 
         if current_riwayat is None:
-            key_value = metadata_dict[f'{key_riwayat}']
-
             new_riwayat_data = {'riwayat':
                                 [
                                     {
@@ -50,5 +49,16 @@ class HelperService:
                                     }
                                 ]}
             riwayat_data = str(new_riwayat_data).replace('None', 'null')
+        else:
+            current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
+            new_riwayat_obj = {
+                                'tanggal':str(datetime.now()), 
+                                'key_value':key_value, 
+                                'file_path':file_path, 
+                                'is_default':False, 
+                                'meta_data': metadata_dict }
+            
+            current_riwayat_obj['riwayat'].append(new_riwayat_obj)
+            riwayat_data = str(current_riwayat_obj).replace('null', 'None')
 
         return riwayat_data

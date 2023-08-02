@@ -12,7 +12,7 @@ class DokumenSch(DokumenFullBase):
 
 @as_form
 class RiwayatSch(SQLModel):
-    tanggal:datetime | None
+    # tanggal:datetime | None
     key_value:str | None
     file_path:str | None
     is_default:bool | None
