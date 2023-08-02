@@ -269,7 +269,7 @@ async def download_file(id:UUID):
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.id}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.dokumen_name}.{ext}"
     return response
 
 @router.get("/download-file/riwayat/{id}")
@@ -300,7 +300,7 @@ async def download_file(id:UUID,
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.id}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.dokumen_name}-{key_value}.{ext}"
     return response
 
 
