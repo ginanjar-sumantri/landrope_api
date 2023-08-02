@@ -16,7 +16,7 @@ class RiwayatSch(SQLModel):
     key_value:str | None
     file_path:str | None
     is_default:bool | None
-    meta_data:dict | None = Field(alias="meta_data")
+    meta_data:str | dict | None = Field(alias="meta_data")
 
 @optional
 class DokumenUpdateSch(DokumenBase):

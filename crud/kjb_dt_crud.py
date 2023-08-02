@@ -32,10 +32,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
         query = select(self.model
                        ).select_from(self.model
-                                     ).outerjoin(KjbHd, self.model.bundle_hd_id == KjbHd.id
                                      ).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id
                                      ).where(and_(
-                                                    KjbHd.is_draft != True,
                                                     self.model.kjb_hd_id == kjb_hd_id,
                                                     self.model.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
                                                     or_(
@@ -44,6 +42,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                                     )
                                                 )
                                             )
+        
+        print(query)
         
         return await paginate(db_session, query, params)
 
