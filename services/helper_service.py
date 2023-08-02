@@ -1,5 +1,6 @@
 from models.dokumen_model import Dokumen
 from datetime import date,datetime
+from common.exceptions import ContentNoChangeException
 import json
 
 class HelperService:
@@ -37,6 +38,9 @@ class HelperService:
         metadata_dict = json.loads(meta_data.replace("'", '"'))
         key_value = metadata_dict[f'{key_riwayat}']
 
+        if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{key_riwayat} wajib terisi!")
+
         if current_riwayat is None:
             new_riwayat_data = {'riwayat':
                                 [
@@ -49,20 +53,30 @@ class HelperService:
                                     }
                                 ]}
             
-            riwayat_data = json.dumps(riwayat_data)
+            new_riwayat_data = json.dumps(new_riwayat_data)
             riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
-        # else:
-        #     current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
-        #     new_riwayat_obj = {
-        #                         'tanggal':str(datetime.now()), 
-        #                         'key_value':key_value, 
-        #                         'file_path':file_path, 
-        #                         'is_default':False, 
-        #                         'meta_data': metadata_dict }
-            
-        #     current_riwayat_obj['riwayat'].append(new_riwayat_obj)
+        else:
+            # current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
+            current_riwayat = current_riwayat.replace("'", "\"")
+            current_riwayat_obj = json.loads(current_riwayat)
 
-        #     current_riwayat_obj = json.dumps(current_riwayat_obj)
-        #     riwayat_data = str(current_riwayat_obj).replace('None', 'null').replace('"', "'")
+            for i, item in enumerate(riwayat_data["riwayat"]):
+                if item.get("key_value") == key_value:
+                    raise ContentNoChangeException(detail=f"{key_value} sudah ada dalam riwayat!")
+
+            for i, item in enumerate(current_riwayat_obj["riwayat"]):
+                item["is_default"] = False
+
+            new_riwayat_obj = {
+                                'tanggal':str(datetime.now()), 
+                                'key_value':key_value, 
+                                'file_path':file_path, 
+                                'is_default':is_default, 
+                                'meta_data': metadata_dict }
+            
+            current_riwayat_obj['riwayat'].append(new_riwayat_obj)
+
+            current_riwayat_obj = json.dumps(current_riwayat_obj)
+            riwayat_data = str(current_riwayat_obj).replace('None', 'null').replace('"', "'")
 
         return riwayat_data

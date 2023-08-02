@@ -39,13 +39,16 @@ class GCStorageService:
         return upload_to+filename
     
     @staticmethod
-    async def path_and_rename_dokumen(upload_file: UploadFile) -> str:
+    async def path_and_rename_dokumen(upload_file: UploadFile, file_name:str = None) -> str:
         
         upload_to = 'upload_dokumen/'
         ext = upload_file.filename.split('.')[-1]
         
-        # set filename as random string
-        filename = f'{uuid.uuid4().hex}.{ext}'
+        if file_name:
+            filename = f'{filename}.{ext}'
+        else:
+            # set filename as random string
+            filename = f'{uuid.uuid4().hex}.{ext}'
         # return the whole path to the file
         return upload_to+filename
     
@@ -75,7 +78,7 @@ class GCStorageService:
 
         return file_path
 
-    async def upload_file_dokumen(self, file: UploadFile) -> str:
+    async def upload_file_dokumen(self, file: UploadFile, file_name:str = None) -> str:
         bucket = self.storage_client.get_bucket(self.bucket_name)
         file_path = await self.path_and_rename_dokumen(upload_file=file)
         blob = bucket.blob(file_path)

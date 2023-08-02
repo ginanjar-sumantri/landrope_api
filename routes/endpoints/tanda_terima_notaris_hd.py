@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile
+from fastapi import APIRouter, status, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
@@ -7,7 +7,8 @@ from models.kjb_model import KjbDt
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, ContentNoChangeException, ImportFailedException)
+from common.exceptions import (IdNotFoundException, ContentNoChangeException, 
+                               ImportFailedException, DocumentFileNotFoundException)
 from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
@@ -34,7 +35,7 @@ async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHd
     db_session = db.session
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{sch.nomor_tanda_terima}-{sch.tanggal_tanda_terima}')
         sch.file_path = file_path
 
     
@@ -144,5 +145,25 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
+@router.get("/download-file/{id}")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
+
+    obj_current = await crud.tandaterimanotaris_hd.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(TandaTerimaNotarisHd, id)
+    if obj_current.file_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+    
+    ext = obj_current.file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}.{ext}"
+    return response
 
    

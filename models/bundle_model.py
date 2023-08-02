@@ -55,7 +55,7 @@ class BundleHd(BundleHdFullBase, table=True):
     
     @property
     def alashak(self) -> str | None:
-        return getattr(getattr(self, 'kjb_dt', None), 'alashak', None)
+        return getattr(getattr(self, 'kjb_dt', ''), 'alashak', '')
 
 class BundleDtBase(SQLModel):
     code:str | None = Field(nullable=False)

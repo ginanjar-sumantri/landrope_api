@@ -60,7 +60,7 @@ async def update(id:UUID,
     file_path = None
     
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}')
         sch.file_path = file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
@@ -93,51 +93,77 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
-@router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
-async def add_riwayat(id:UUID, 
-                      sch:RiwayatSch = Depends(RiwayatSch.as_form), 
-                      file:UploadFile = None,
-                      ):
-    """Update a riwayat obj"""
-
-    obj_current = await crud.bundledt.get(id=id)
-    if not obj_current:
-        raise IdNotFoundException(BundleDt, id)
+async def update_keyword(meta_data:str|None,
+                        bundle_hd_id:UUID|None,
+                        key_field:str|None,
+                        worker_id:UUID|None,
+                        db_session : AsyncSession | None = None):
     
-    if sch.meta_data is None or sch.meta_data == "":
-        raise ContentNoChangeException(detail="No meta data is null")
+    obj_json = json.loads(meta_data.replace("'", '"'))
+    current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
+
+    metadata_keyword = obj_json[f'{key_field}']
+    if metadata_keyword:
+        # periksa apakah keyword belum eksis di bundle hd
+        if metadata_keyword not in current_bundle_hd.keyword:
+            edit_keyword_hd = current_bundle_hd
+            if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
+                edit_keyword_hd.keyword = metadata_keyword
+            else:
+                edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
+                
+                await crud.bundlehd.update(obj_current=current_bundle_hd, 
+                                            obj_new=edit_keyword_hd, 
+                                            db_session=db_session, 
+                                            with_commit=False,
+                                            updated_by_id=worker_id)
+
+
+# @router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
+# async def add_riwayat(id:UUID, 
+#                       sch:RiwayatSch = Depends(RiwayatSch.as_form), 
+#                       file:UploadFile = None,
+#                       ):
+#     """Update a riwayat obj"""
+
+#     obj_current = await crud.bundledt.get(id=id)
+#     if not obj_current:
+#         raise IdNotFoundException(BundleDt, id)
     
-    dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
+#     if sch.meta_data is None or sch.meta_data == "":
+#         raise ContentNoChangeException(detail="No meta data is null")
     
-    metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
-    key_value = metadata_dict[f'{dokumen.key_riwayat}']
-
-    if key_value is None or key_value == "":
-        raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} harus diisi!")
+#     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     
-    file_path = None
-    if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file)
+#     metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
+#     key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
-    riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
-    new_riwayat_obj = {
-                        'tanggal':str(datetime.now()), 
-                        'key_value':key_value, 
-                        'file_path':file_path, 
-                        'is_default':False, 
-                        'meta_data': metadata_dict }
+#     if key_value is None or key_value == "":
+#         raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} harus diisi!")
     
-    riwayat_data['riwayat'].append(new_riwayat_obj)
-    riwayat_data = json.dumps(riwayat_data)
+#     file_path = None
+#     if file:
+#         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}-{key_value}')
 
-    obj_updated = obj_current
-    obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
+#     riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
+#     new_riwayat_obj = {
+#                         'tanggal':str(datetime.now()), 
+#                         'key_value':key_value, 
+#                         'file_path':file_path, 
+#                         'is_default':False, 
+#                         'meta_data': metadata_dict }
+    
+#     riwayat_data['riwayat'].append(new_riwayat_obj)
+#     riwayat_data = json.dumps(riwayat_data)
 
-    obj = await crud.bundledt.update(obj_current=obj_current, 
-                                             obj_new=obj_updated,
-                                             updated_by_id=None)
+#     obj_updated = obj_current
+#     obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
 
-    return create_response(data=obj)
+#     obj = await crud.bundledt.update(obj_current=obj_current, 
+#                                              obj_new=obj_updated,
+#                                              updated_by_id=None)
+
+#     return create_response(data=obj)
 
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def update_riwayat(id:UUID, 
@@ -154,7 +180,10 @@ async def update_riwayat(id:UUID,
     metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
     key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", '"'))
+    if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+
+    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
 
     current_dict_riwayat = next((x for x in riwayat_data["riwayat"] if x["key_value"] == sch.key_value), None)
     if current_dict_riwayat is None:
@@ -162,7 +191,7 @@ async def update_riwayat(id:UUID,
     
     file_path = None
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}-{key_value}')
     else:
         file_path = sch.file_path
     
@@ -206,7 +235,7 @@ async def delete_riwayat(id:UUID,
 
     #riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
 
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", '"'))
+    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
 
     riwayat_data["riwayat"] = [item for item in riwayat_data["riwayat"] if item["key_value"] != sch.key_value]
 
@@ -226,31 +255,6 @@ async def delete_riwayat(id:UUID,
     obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated)
     return create_response(data=obj)
     
-async def update_keyword(meta_data:str|None,
-                        bundle_hd_id:UUID|None,
-                        key_field:str|None,
-                        worker_id:UUID|None,
-                        db_session : AsyncSession | None = None):
-    
-    obj_json = json.loads(meta_data.replace("'", '"'))
-    current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
-
-    metadata_keyword = obj_json[f'{key_field}']
-    if metadata_keyword:
-        # periksa apakah keyword belum eksis di bundle hd
-        if metadata_keyword not in current_bundle_hd.keyword:
-            edit_keyword_hd = current_bundle_hd
-            if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
-                edit_keyword_hd.keyword = metadata_keyword
-            else:
-                edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
-                
-                await crud.bundlehd.update(obj_current=current_bundle_hd, 
-                                            obj_new=edit_keyword_hd, 
-                                            db_session=db_session, 
-                                            with_commit=False,
-                                            updated_by_id=worker_id)
-
 @router.get("/download-file/{id}")
 async def download_file(id:UUID):
     """Download File Dokumen"""
@@ -269,7 +273,7 @@ async def download_file(id:UUID):
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.dokumen_name}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}.{ext}"
     return response
 
 @router.get("/download-file/riwayat/{id}")
@@ -300,7 +304,7 @@ async def download_file(id:UUID,
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.dokumen_name}-{key_value}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}-{key_value}.{ext}"
     return response
 
 
