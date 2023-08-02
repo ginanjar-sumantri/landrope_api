@@ -60,7 +60,7 @@ class HelperService:
             current_riwayat = current_riwayat.replace("'", "\"")
             current_riwayat_obj = json.loads(current_riwayat)
 
-            for i, item in enumerate(riwayat_data["riwayat"]):
+            for i, item in enumerate(current_riwayat_obj["riwayat"]):
                 if item.get("key_value") == key_value:
                     raise ContentNoChangeException(detail=f"{key_value} sudah ada dalam riwayat!")
 
