@@ -37,16 +37,12 @@ async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHd
         file_path = await GCStorageService().upload_file_dokumen(file=file)
         sch.file_path = file_path
 
-    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=False)
-
-    if sch.status_peta_lokasi is not StatusPetaLokasiEnum.Lanjut_Peta_Lokasi:
-        return create_response(data=new_obj)
     
     kjb_dt_update = kjb_dt
 
     
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
-    if kjb_dt.bundle_hd_id is None :
+    if kjb_dt.bundle_hd_id is None and sch.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi :
         ## Match bundle with kjb detail by alashak
         ## When bundle not exists create new bundle and match id bundle to kjb detail
         ## When bundle exists match match id bundle to kjb detail
@@ -70,7 +66,8 @@ async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHd
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
     kjb_dt_update.pemilik_id = sch.pemilik_id
 
-    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
+    await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
+    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True)
     
     return create_response(data=new_obj)
 
