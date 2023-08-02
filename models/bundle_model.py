@@ -70,21 +70,12 @@ class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass
 
 class BundleDt(BundleDtFullBase, table=True):
-    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'selectin'})
+    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'select'})
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
     def dokumen_name(self) -> str | None:
         return self.dokumen.name
-
-    
-    @property
-    def get_bundling_detail_code(self) -> str|None:
-        bundling_code = self.bundlehd.get_bundling_code
-
-        bundling_dt_code = f"{bundling_code}{self.dokumen.code}"
-
-        return bundling_dt_code
     
     @property
     def file_exists(self) -> bool:
@@ -95,4 +86,5 @@ class BundleDt(BundleDtFullBase, table=True):
     
     @property
     def have_riwayat(self) -> bool:
+
         return getattr(getattr(self, 'dokumen', False), 'is_riwayat', False)

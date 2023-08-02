@@ -48,17 +48,21 @@ class HelperService:
                                     'meta_data': metadata_dict
                                     }
                                 ]}
-            riwayat_data = str(new_riwayat_data).replace('None', 'null')
-        else:
-            current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
-            new_riwayat_obj = {
-                                'tanggal':str(datetime.now()), 
-                                'key_value':key_value, 
-                                'file_path':file_path, 
-                                'is_default':False, 
-                                'meta_data': metadata_dict }
             
-            current_riwayat_obj['riwayat'].append(new_riwayat_obj)
-            riwayat_data = str(current_riwayat_obj).replace('null', 'None')
+            riwayat_data = json.dumps(riwayat_data)
+            riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
+        # else:
+        #     current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
+        #     new_riwayat_obj = {
+        #                         'tanggal':str(datetime.now()), 
+        #                         'key_value':key_value, 
+        #                         'file_path':file_path, 
+        #                         'is_default':False, 
+        #                         'meta_data': metadata_dict }
+            
+        #     current_riwayat_obj['riwayat'].append(new_riwayat_obj)
+
+        #     current_riwayat_obj = json.dumps(current_riwayat_obj)
+        #     riwayat_data = str(current_riwayat_obj).replace('None', 'null').replace('"', "'")
 
         return riwayat_data
