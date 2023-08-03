@@ -79,11 +79,11 @@ async def update(id:UUID,
         
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :
-            await update_keyword(meta_data=sch.meta_data, 
-                                 bundle_hd_id=sch.bundle_hd_id, 
-                                 worker_id=current_worker.id, 
-                                 key_field=dokumen.key_field, 
-                                 db_session=db_session)
+            await HelperService().update_bundle_keyword(meta_data=sch.meta_data, 
+                                                        bundle_hd_id=sch.bundle_hd_id, 
+                                                        worker_id=current_worker.id, 
+                                                        key_field=dokumen.key_field, 
+                                                        db_session=db_session)
         
     obj_updated = await crud.bundledt.update(obj_current=obj_current, 
                                              obj_new=sch, 
@@ -93,82 +93,12 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
-async def update_keyword(meta_data:str|None,
-                        bundle_hd_id:UUID|None,
-                        key_field:str|None,
-                        worker_id:UUID|None,
-                        db_session : AsyncSession | None = None):
-    
-    obj_json = json.loads(meta_data.replace("'", '"'))
-    current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
-
-    metadata_keyword = obj_json[f'{key_field}']
-    if metadata_keyword:
-        # periksa apakah keyword belum eksis di bundle hd
-        if metadata_keyword not in current_bundle_hd.keyword:
-            edit_keyword_hd = current_bundle_hd
-            if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
-                edit_keyword_hd.keyword = metadata_keyword
-            else:
-                edit_keyword_hd.keyword = f"{current_bundle_hd.keyword},{metadata_keyword}"
-                
-                await crud.bundlehd.update(obj_current=current_bundle_hd, 
-                                            obj_new=edit_keyword_hd, 
-                                            db_session=db_session, 
-                                            with_commit=False,
-                                            updated_by_id=worker_id)
-
-
-# @router.put("add-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
-# async def add_riwayat(id:UUID, 
-#                       sch:RiwayatSch = Depends(RiwayatSch.as_form), 
-#                       file:UploadFile = None,
-#                       ):
-#     """Update a riwayat obj"""
-
-#     obj_current = await crud.bundledt.get(id=id)
-#     if not obj_current:
-#         raise IdNotFoundException(BundleDt, id)
-    
-#     if sch.meta_data is None or sch.meta_data == "":
-#         raise ContentNoChangeException(detail="No meta data is null")
-    
-#     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
-    
-#     metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
-#     key_value = metadata_dict[f'{dokumen.key_riwayat}']
-
-#     if key_value is None or key_value == "":
-#         raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} harus diisi!")
-    
-#     file_path = None
-#     if file:
-#         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}-{key_value}')
-
-#     riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
-#     new_riwayat_obj = {
-#                         'tanggal':str(datetime.now()), 
-#                         'key_value':key_value, 
-#                         'file_path':file_path, 
-#                         'is_default':False, 
-#                         'meta_data': metadata_dict }
-    
-#     riwayat_data['riwayat'].append(new_riwayat_obj)
-#     riwayat_data = json.dumps(riwayat_data)
-
-#     obj_updated = obj_current
-#     obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
-
-#     obj = await crud.bundledt.update(obj_current=obj_current, 
-#                                              obj_new=obj_updated,
-#                                              updated_by_id=None)
-
-#     return create_response(data=obj)
 
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def update_riwayat(id:UUID, 
                         sch:RiwayatSch = Depends(RiwayatSch.as_form), 
                         file:UploadFile = None,
+                        current_worker:Worker = Depends(crud.worker.get_current_user)
                         ):
     
     obj_current = await crud.bundledt.get(id=id)
@@ -177,63 +107,38 @@ async def update_riwayat(id:UUID,
     
     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     
-    metadata_dict = json.loads(sch.meta_data.replace("'", '"'))
-    key_value = metadata_dict[f'{dokumen.key_riwayat}']
-
-    if key_value is None or key_value == "":
-            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
-
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
-
-    current_dict_riwayat = next((x for x in riwayat_data["riwayat"] if x["key_value"] == sch.key_value), None)
-    if current_dict_riwayat is None:
-        raise ContentNoChangeException(detail=f"Riwayat {sch.key_value} tidak ditemukan")
-    
-    file_path = None
-    if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}-{key_value}')
-    else:
-        file_path = sch.file_path
-    
+    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
+                                                                   dokumen=dokumen, 
+                                                                   sch=sch, 
+                                                                   file=file)
+    db_session = db.session
     obj_updated = obj_current
     
     if sch.is_default == True:
         obj_updated.file_path = file_path
         obj_updated.meta_data = sch.meta_data
 
-        for i, item in enumerate(riwayat_data["riwayat"]):
-            item["is_default"] = False
-    
-    new_riwayat_obj = {
-                        'tanggal':str(datetime.now()), 
-                        'key_value':key_value, 
-                        'file_path':file_path, 
-                        'is_default':sch.is_default, 
-                        'meta_data': metadata_dict
-                      }
-    
-    for i, item in enumerate(riwayat_data["riwayat"]):
-        if item.get("key_value") == sch.key_value:
-            riwayat_data["riwayat"][i] = new_riwayat_obj
-            break
-    
-    riwayat_data = json.dumps(riwayat_data)
-    obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
+    obj_updated.riwayat_data = riwayat_data
 
-    obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated)
+    if dokumen.is_keyword == True :
+            await HelperService().update_bundle_keyword(meta_data=sch.meta_data, 
+                                                        bundle_hd_id=obj_current.bundle_hd_id, 
+                                                        worker_id=current_worker.id, 
+                                                        key_field=dokumen.key_field, 
+                                                        db_session=db_session)
 
+    obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, db_session=db_session, with_commit=True, updated_by_id=current_worker.id)
     
     return create_response(data=obj)
 
 @router.put("/delete-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def delete_riwayat(id:UUID, 
-                        sch:RiwayatSch):
+                        sch:RiwayatSch,
+                        current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     obj_current = await crud.bundledt.get(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
-
-    #riwayat_data = eval(obj_current.riwayat_data.replace('null', 'None'))
 
     riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
 
@@ -241,18 +146,21 @@ async def delete_riwayat(id:UUID,
 
     obj_updated = obj_current
 
-    if sch.is_default == True:
-        obj_riwayat = riwayat_data["riwayat"][0]
-        obj_riwayat["is_default"] = True
+    if len(riwayat_data["riwayat"]) > 0:
+        if sch.is_default == True:
+            obj_riwayat = riwayat_data["riwayat"][0]
+            obj_riwayat["is_default"] = True
+            obj_updated.file_path = obj_riwayat["file_path"]
+            obj_updated.meta_data = str(obj_riwayat["meta_data"])
 
-        
-        obj_updated.file_path = obj_riwayat["file_path"]
-        obj_updated.meta_data = str(obj_riwayat["meta_data"])
+        riwayat_data = json.dumps(riwayat_data)
+        obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
+    else:
+        obj_updated.file_path = None
+        obj_updated.meta_data = None
+        obj_updated.riwayat_data = None
 
-    riwayat_data = json.dumps(riwayat_data)
-    obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
-
-    obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated)
+    obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
     return create_response(data=obj)
     
 @router.get("/download-file/{id}")
@@ -277,7 +185,7 @@ async def download_file(id:UUID):
     return response
 
 @router.get("/download-file/riwayat/{id}")
-async def download_file(id:UUID,
+async def download_file_riwayat(id:UUID,
                         key_value:str):
     
     """Download File Dokumen Riwayat"""
