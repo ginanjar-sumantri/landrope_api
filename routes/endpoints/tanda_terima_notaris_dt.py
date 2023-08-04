@@ -406,7 +406,7 @@ async def download_file_riwayat(id:UUID,
     except Exception as e:
         raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
     
-    ext = obj_current.file_path.split('.')[-1]
+    ext = riwayat_obj["file_path"].split('.')[-1]
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
