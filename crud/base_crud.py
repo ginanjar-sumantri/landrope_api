@@ -6,13 +6,14 @@ from fastapi.encoders import jsonable_encoder
 from sqlmodel import SQLModel, select, func, or_, and_
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import exc
+from sqlalchemy import exc, text
 from pydantic import BaseModel
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from datetime import datetime
 from uuid import UUID
 from common.ordered import OrderEnumSch
 import json
+import models
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -128,17 +129,26 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         # if order_by not in columns or order_by is None:
         #     order_by = self.model.id
 
-        find = False
-        if '.' in order_by:
-            find = True
-        else:
-            for c in columns:
-                if c.name == order_by:
-                    find = True
-                    break
+        # find = False
+        # if '.' in order_by:
+        #     find = True
+        # else:
+        #     for c in columns:
+        #         if c.name == order_by:
+        #             find = True
+        #             break
         
-        if order_by is None or find == False:
-            order_by = "id"
+        # if order_by is None or find == False:
+        #     order_by = "id"
+        cls_meta = getattr(getattr(models, self.model.__name__, None), 'Meta', None)
+
+        if order_by is not None and not any(c.name == order_by for c in columns):
+            if cls_meta and order_by in cls_meta().order_fields:
+                order_by = cls_meta().order_fields[order_by]
+            else:
+                order_by = 'id'    
+        elif order_by is None:
+            order_by = 'id'
         
         if query is None:
             query = select(self.model)
@@ -163,7 +173,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     filter_clause = or_(filter_clause, condition)
                 
         #Filter Column yang berelasi dengan object (untuk case tertentu)
-        if join and keyword:
+        if join:
             relationships = self.model.__mapper__.relationships
 
             for r in relationships:
@@ -175,36 +185,29 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     continue
 
                 query = query.join(class_relation)
-                relation_columns = class_relation.__table__.columns
-                        
-                for c in relation_columns:
-                    if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
-                        continue
-                    if "updated" in c.name or "created" in c.name:
-                        continue
-                    cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
-                    if filter_clause is None:
-                        filter_clause = cond
-                    else:
-                        filter_clause = or_(filter_clause, cond)
+
+                if keyword:
+                    relation_columns = class_relation.__table__.columns
+                            
+                    for c in relation_columns:
+                        if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                            continue
+                        if "updated" in c.name or "created" in c.name:
+                            continue
+                        cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
+                        if filter_clause is None:
+                            filter_clause = cond
+                        else:
+                            filter_clause = or_(filter_clause, cond)
 
         if filter_clause is not None:        
             query = query.filter(filter_clause)
 
         if order == OrderEnumSch.ascendent:
-            # query = query.order_by(columns[order_by].asc())
-            if '.' in order_by:
-                xx = order_by.split('.')
-                query = query.order_by(getattr(xx[0], xx[1]).asc())
-            else:
-                query = query.order_by(getattr(self.model.__name__, order_by).asc())
+            order_by += ' asc'    
         else:
-            # query = query.order_by(columns[order_by].desc())
-            if '.' in order_by:
-                xx = order_by.split('.')
-                query = query.order_by(getattr(xx[0], xx[1]).desc())
-            else:
-                query = query.order_by(getattr(self.model.__name__, order_by).desc())
+            order_by += ' desc'
+        query = query.order_by(text(order_by))
             
         return await paginate(db_session, query, params)
 

@@ -67,6 +67,8 @@ class BundleHd(BundleHdFullBase, table=True):
     def alashak(self) -> str | None:
         return getattr(getattr(self, 'kjb_dt', ''), 'alashak', '')
 
+# -----------------------------------------------------------------------------------------------
+
 class BundleDtBase(SQLModel):
     code:str | None = Field(nullable=False)
     meta_data:str | None
@@ -88,6 +90,14 @@ class BundleDt(BundleDtFullBase, table=True):
             "primaryjoin": "BundleDt.updated_by_id==Worker.id",
         }
     )
+
+    class Meta:
+        order_fields = {
+            # 'all' : True,
+            # 'all_join': False,
+            'dokumen_name' : 'dokumen.name'
+        }
+
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)

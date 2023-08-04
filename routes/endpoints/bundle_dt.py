@@ -25,8 +25,8 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     
     """Gets a paginated list objects"""
 
-    if order_by == "dokumen_name":
-        order_by = "Dokumen.name"
+    # if order_by == "dokumen_name":
+    #     order_by = "dokumen.name"
     objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
                                                                             order_by=order_by, 
                                                                             keyword=keyword, 
