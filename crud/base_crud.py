@@ -168,11 +168,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     continue
 
                 class_relation = r.mapper.class_
+                if class_relation.__name__.lower() == "worker":
+                    continue
+
                 query = query.join(class_relation)
                 relation_columns = class_relation.__table__.columns
                         
                 for c in relation_columns:
                     if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                        continue
+                    if "updated" in c.name or "created" in c.name:
                         continue
                     cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
                     if filter_clause is None:
