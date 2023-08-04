@@ -84,7 +84,7 @@ async def merging_to_bundle(bundle_hd_obj : BundleHd,
     if bundledt_obj_current is None:
         code = bundle_hd_obj.code + dokumen.code
 
-        history_data = HelperService().extract_metadata_for_history(str(meta_data), current_history=None)
+        history_data = HelperService().extract_metadata_for_history(meta_data, current_history=None)
 
         riwayat_data = None
         if dokumen.is_riwayat == True:
@@ -97,9 +97,9 @@ async def merging_to_bundle(bundle_hd_obj : BundleHd,
 
         new_dokumen = BundleDt(code=code, 
                                dokumen_id=dokumen.id, 
-                               meta_data=str(meta_data), 
-                               history_data=str(history_data),
-                               riwayat_data=str(riwayat_data),
+                               meta_data=meta_data, 
+                               history_data=history_data,
+                               riwayat_data=riwayat_data,
                                bundle_hd_id=bundle_hd_obj.id, 
                                file_path=file_path)
 
@@ -122,8 +122,8 @@ async def merging_to_bundle(bundle_hd_obj : BundleHd,
 
         bundledt_obj_updated = bundledt_obj_current
         bundledt_obj_updated.meta_data = meta_data
-        bundledt_obj_updated.history_data = str(history_data)
-        bundledt_obj_updated.riwayat_data = str(riwayat_data)
+        bundledt_obj_updated.history_data = history_data
+        bundledt_obj_updated.riwayat_data = riwayat_data
         bundledt_obj_updated.file_path = file_path
 
         bundledt_obj_current = await crud.bundledt.update(obj_current=bundledt_obj_current, 
