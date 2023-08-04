@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from models.bundle_model import BundleDt
 from models.dokumen_model import Dokumen
 from models.worker_model import Worker
-from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch)
+from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaDynSch)
 from schemas.dokumen_sch import RiwayatSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException, ContentNoChangeException)
@@ -215,6 +215,17 @@ async def download_file_riwayat(id:UUID,
     response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}-{key_value}.{ext}"
     return response
 
+@router.get("/meta_dyn/{kjb_id}", response_model=GetResponseBaseSch[BundleDtMetaDynSch])
+async def get_meta_data_and_dyn_form(kjb_id:UUID,
+                                dokumen_id):
+
+    """Get an object by id"""
+
+    obj = await crud.bundledt.get_meta_data_and_dyn_form(id=kjb_id, dokumen_id=dokumen_id)
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(BundleDt, kjb_id)
 
 
 # @router.get("/get/json")

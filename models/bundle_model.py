@@ -88,3 +88,7 @@ class BundleDt(BundleDtFullBase, table=True):
     def have_riwayat(self) -> bool:
 
         return getattr(getattr(self, 'dokumen', False), 'is_riwayat', False)
+    
+    @property
+    def dyn_form(self) -> str | None:
+        return getattr(getattr(self, 'dokumen', None), 'dyn_form', None)
