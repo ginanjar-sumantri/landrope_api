@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from models.skpt_model import Skpt
+    from models.worker_model import Worker
 
 class StatusGpsEnum(str, Enum):
     Masuk_SK_Clear = "Masuk_SK_Clear"
@@ -33,6 +34,15 @@ class GpsFullBase(BaseGeoModel, GpsRawBase):
 
 class Gps(GpsFullBase, table=True):
     skpt:"Skpt"=Relationship(back_populates="gpsts", sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Gps.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def ptsk_name(self)-> str:

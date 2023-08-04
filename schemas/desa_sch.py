@@ -4,16 +4,17 @@ from common.as_form import as_form
 from models.base_model import BaseGeoModel
 from uuid import UUID
 from decimal import Decimal
+from sqlmodel import Field
 
 @as_form
 class DesaCreateSch(DesaBase):
     pass
 
 class DesaRawSch(DesaRawBase):
-    pass
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 class DesaSch(DesaFullBase):
-    pass
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 class DesaExportSch(BaseGeoModel):
     name:str | None

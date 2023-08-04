@@ -35,7 +35,8 @@ from itertools import islice
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:UploadFile = None):
+async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:UploadFile = None,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     """Create a new object"""
 
@@ -57,7 +58,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     else:
         raise ImportFailedException()
 
-    new_obj = await crud.bidang.create(obj_in=sch)
+    new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id)
 
     return create_response(data=new_obj)
 
@@ -81,7 +82,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Bidang, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
-async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None):
+async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     """Update a obj by its id"""
 
@@ -104,7 +106,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
         sch = BidangSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
-    obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.post(
@@ -319,9 +321,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             if obj_current:
                 if obj_current.geom :
                     obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-                obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch)
+                obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=log.created_by_id)
             else:
-                obj = await crud.bidang.create(obj_in=sch)
+                obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
             
             obj_updated = log
             count = count + 1

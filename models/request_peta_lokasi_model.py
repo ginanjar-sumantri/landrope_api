@@ -7,6 +7,7 @@ from uuid import UUID
 
 if TYPE_CHECKING:
     from kjb_model import KjbDt
+    from worker_model import Worker
 
 class RequestPetaLokasiBase(SQLModel):
     code:str = Field(nullable=True)
@@ -24,6 +25,15 @@ class RequestPetaLokasiFullBase(BaseUUIDModel, RequestPetaLokasiBase):
 
 class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "RequestPetaLokasi.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def alashak(self) -> str | None:

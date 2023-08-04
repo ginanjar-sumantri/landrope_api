@@ -8,7 +8,7 @@ class DokumenCreateSch(DokumenBase):
     pass
 
 class DokumenSch(DokumenFullBase):
-    pass
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 @as_form
 class RiwayatSch(SQLModel):

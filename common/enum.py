@@ -8,8 +8,8 @@ class StatusBidangEnum(str, Enum):
     Pending = "Pending"
 
 class StatusSKEnum(str, Enum):
-    Sudah_Il = "SUDAH IL"
-    Belum_IL = "BELUM IL"
+    Sudah_Il = "SUDAH_IL"
+    Belum_IL = "BELUM_IL"
 
 class KategoriSKEnum(str, Enum):
     SK_Orang = "SK_Orang"

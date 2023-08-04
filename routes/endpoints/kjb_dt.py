@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbDt
+from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -11,11 +12,12 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbDtSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbDtCreateSch):
+async def create(sch: KjbDtCreateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
         
-    new_obj = await crud.kjb_dt.create(obj_in=sch)
+    new_obj = await crud.kjb_dt.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -47,7 +49,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbDt, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbDtSch])
-async def update(id:UUID, sch:KjbDtUpdateSch):
+async def update(id:UUID, sch:KjbDtUpdateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -56,7 +59,7 @@ async def update(id:UUID, sch:KjbDtUpdateSch):
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)
     
-    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 

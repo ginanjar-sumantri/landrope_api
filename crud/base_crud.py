@@ -187,8 +187,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             query = query.order_by(columns[order_by].asc())
         else:
             query = query.order_by(columns[order_by].desc())
-
-        print(query)
             
         return await paginate(db_session, query, params)
 

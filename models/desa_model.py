@@ -7,6 +7,7 @@ from decimal import Decimal
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.kjb_model import KjbHd
+    from models.worker_model import Worker
     
 class DesaBase(SQLModel):
     name:str = Field(nullable=False, max_length=100)
@@ -26,4 +27,15 @@ class DesaFullBase(DesaRawBase, BaseGeoModel):
 class Desa(DesaFullBase, table=True):
     desa_planings:list["Planing"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'selectin'})
     # kjb_hds: list["KjbHd"] = Relationship(back_populates="desa", sa_relationship_kwargs={'lazy':'select'})
+
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Desa.updated_by_id==Worker.id",
+        }
+    )
+
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 

@@ -34,7 +34,7 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
                 code = db_obj.code + i.code
-                bundle_dt = BundleDt(code=code, dokumen_id=i.id)
+                bundle_dt = BundleDt(code=code, dokumen_id=i.id, created_by_id=created_by_id, updated_by_id=created_by_id)
                 db_obj.bundledts.append(bundle_dt)
 
             db_session.add(db_obj)

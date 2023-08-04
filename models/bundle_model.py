@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.dokumen_model import Dokumen
     from models.kjb_model import KjbDt
+    from models.worker_model import Worker
 
 class BundleHdBase(SQLModel):
     code:str | None = Field(nullable=False)
@@ -21,6 +22,15 @@ class BundleHd(BundleHdFullBase, table=True):
     planing:"Planing" = Relationship(back_populates="bundlehds", sa_relationship_kwargs={'lazy':'selectin'})
     bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
     kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "BundleHd.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
     
 
     @property
@@ -72,6 +82,15 @@ class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
 class BundleDt(BundleDtFullBase, table=True):
     bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'select'})
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "BundleDt.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def dokumen_name(self) -> str | None:

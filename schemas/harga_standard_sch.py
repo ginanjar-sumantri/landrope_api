@@ -7,6 +7,7 @@ class HargaStandardCreateSch(HargaStandardBase):
 
 class HargaStandardSch(HargaStandardFullBase):
     planing_name:str|None = Field(alias="planing_name")
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 @optional
 class HargaStandardUpdateSch(HargaStandardBase):

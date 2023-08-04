@@ -18,6 +18,7 @@ class ChecklistDokumenBulkCreateSch(BaseModel):
 
 class ChecklistDokumenSch(ChecklistDokumenFullBase):
     dokumen_name:str = Field(alias='dokumen_name')
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 @optional
 class ChecklistDokumenUpdateSch(ChecklistDokumenBase):

@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.dokumen_model import Dokumen
+from models.worker_model import Worker
 from schemas.dokumen_sch import (DokumenSch, DokumenCreateSch, DokumenUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -13,13 +14,14 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DokumenSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DokumenCreateSch):
+async def create(sch: DokumenCreateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
 
     sch.code = await generate_code(entity=CodeCounterEnum.Dokumen)
         
-    new_obj = await crud.dokumen.create(obj_in=sch)
+    new_obj = await crud.dokumen.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -43,7 +45,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Dokumen, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[DokumenSch])
-async def update(id:UUID, sch:DokumenUpdateSch):
+async def update(id:UUID, sch:DokumenUpdateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -52,7 +55,7 @@ async def update(id:UUID, sch:DokumenUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Dokumen, id)
     
-    obj_updated = await crud.dokumen.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.dokumen.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DokumenSch], status_code=status.HTTP_200_OK)

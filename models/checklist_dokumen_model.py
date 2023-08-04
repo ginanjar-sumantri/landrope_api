@@ -6,6 +6,7 @@ from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
 
 if TYPE_CHECKING:
     from models.dokumen_model import Dokumen
+    from models.worker_model import Worker
 
 class ChecklistDokumenBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
@@ -19,6 +20,15 @@ class ChecklistDokumenFullBase(BaseUUIDModel, ChecklistDokumenBase):
 class ChecklistDokumen(ChecklistDokumenFullBase, table=True):
 
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "ChecklistDokumen.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def dokumen_name(self) -> str:

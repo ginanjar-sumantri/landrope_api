@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from models.project_model import Project
     from models.dokumen_model import Dokumen
     from models.pemilik_model import Pemilik
+    from models.worker_model import Worker
 
 class TandaTerimaNotarisHdBase(SQLModel):
     # kjb_hd_id:UUID = Field(nullable=False, foreign_key="kjb_hd.id")
@@ -40,6 +41,15 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     project:"Project" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "TandaTerimaNotarisHd.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def alashak(self) -> str:
@@ -108,6 +118,15 @@ class TandaTerimaNotarisDtFullBase(BaseUUIDModel, TandaTerimaNotarisDtBase):
 class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "TandaTerimaNotarisDt.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def dokumen_name(self) -> str:

@@ -24,7 +24,8 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DesaRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:UploadFile = File()):
+async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:UploadFile = File(),
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
     
@@ -42,7 +43,7 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
         sch = DesaSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
-    new_obj = await crud.desa.create(obj_in=sch)
+    new_obj = await crud.desa.create(obj_in=sch, created_by_id=current_worker.id)
 
     return create_response(data=new_obj)
 
@@ -66,7 +67,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Desa, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[DesaRawSch])
-async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), file:UploadFile = None):
+async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), file:UploadFile = None,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -93,7 +95,7 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
                       luas=RoundTwo(sch.luas), 
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
-    obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 # @router.post(
@@ -119,7 +121,8 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
 #     return create_response(data=new_obj)
 
 @router.post("/bulk")
-async def bulk(file:UploadFile=File()):
+async def bulk(file:UploadFile=File(),
+               current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     """Create bulk or import data"""
     try:
@@ -146,7 +149,7 @@ async def bulk(file:UploadFile=File()):
                       luas=luas, 
                       geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
                 
-                await crud.desa.update(obj_current=obj_current, obj_new=sch_update)
+                await crud.desa.update(obj_current=obj_current, obj_new=sch_update, updated_by_id=current_worker.id)
                 continue
             
             # if code is None or code == "":
@@ -165,6 +168,8 @@ async def bulk(file:UploadFile=File()):
                           geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
                           created_at=current_datetime,
                           updated_at=current_datetime,
+                          created_by_id=current_worker.id,
+                          updated_by_id=current_worker.id
                           )
             
             datas.append(sch)

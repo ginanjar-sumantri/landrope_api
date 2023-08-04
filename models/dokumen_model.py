@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from models.checklist_dokumen_model import ChecklistDokumen
     from models.bundle_model import BundleDt
     from models.tanda_terima_notaris_model import TandaTerimaNotarisDt
+    from models.worker_model import Worker
 
 
 class DokumenBase(SQLModel):
@@ -31,6 +32,16 @@ class Dokumen(DokumenFullBase, table=True):
         back_populates="dokumens",
         sa_relationship_kwargs={'lazy':'selectin'})
     
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Dokumen.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
+    
     @property
     def category_dokumen_name(self) -> str | None:
         return getattr(getattr(self, 'category_dokumen', None), 'name', None)
@@ -48,4 +59,14 @@ class KategoriDokumen(KategoriDokumenFullBase, table=True):
     dokumens:list["Dokumen"] = Relationship(
         back_populates="kategori_dokumen", 
         sa_relationship_kwargs={'lazy':'selectin'})
+    
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "KategoriDokumen.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
     

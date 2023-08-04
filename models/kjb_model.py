@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
     from models.bundle_model import BundleHd
     from models.request_peta_lokasi_model import RequestPetaLokasi
+    from models.worker_model import Worker
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
@@ -54,6 +55,16 @@ class KjbHd(KjbHdFullBase, table=True):
     penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "KjbHd.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def desa_name(self) -> str | None:
@@ -118,6 +129,16 @@ class KjbDt(KjbDtFullBase, table=True):
     bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
+
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "KjbDt.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def desa_name(self) -> str | None :

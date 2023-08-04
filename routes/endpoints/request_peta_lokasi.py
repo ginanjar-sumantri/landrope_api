@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
+from models.worker_model import Worker
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, 
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
                                              RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
@@ -41,7 +42,8 @@ async def create(sch: RequestPetaLokasiCreateSch):
     return create_response(data=new_obj)
 
 @router.post("/creates")
-async def creates(sch: RequestPetaLokasiCreatesSch):
+async def creates(sch: RequestPetaLokasiCreatesSch,
+                  current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     datas = []
     code = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
@@ -65,7 +67,9 @@ async def creates(sch: RequestPetaLokasiCreatesSch):
                                  dibuat_oleh="Land Adm Acquisition Officer",
                                  diperiksa_oleh="Land Adm & Verification Section Head",
                                  diterima_oleh="Land Measurement Analyst",
-                                 is_disabled=False)
+                                 is_disabled=False,
+                                 created_by_id=current_worker.id,
+                                 updated_by_id=current_worker.id)
         datas.append(data)
 
     
@@ -128,7 +132,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(RequestPetaLokasi, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
-async def update(sch:RequestPetaLokasiUpdateExtSch):
+async def update(sch:RequestPetaLokasiUpdateExtSch,
+                 current_worker:Worker=Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -150,7 +155,7 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
                                  diperiksa_oleh="Land Adm & Verification Section Head",
                                  diterima_oleh="Land Measurement Analyst",
                                  is_disabled=False)
-            obj = await crud.request_peta_lokasi.create(obj_in=new_obj)
+            obj = await crud.request_peta_lokasi.create(obj_in=new_obj, created_by_id=current_worker.id)
         else:
             obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
             obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
@@ -158,7 +163,7 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
                                                      remark=sch.remark,
                                                      kjb_dt_id=j)
             
-            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated)
+            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
 
     return create_response(data=obj)
 

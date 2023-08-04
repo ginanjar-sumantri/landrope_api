@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from models.kategori_model import Kategori, KategoriSub, KategoriProyek
     from models.marketing_model import Manager, Sales
     from models.notaris_model import Notaris
+    from models.worker_model import Worker
     
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150)
@@ -90,6 +91,16 @@ class Bidang(BidangFullBase, table=True):
     
     notaris:"Notaris" = Relationship(
         sa_relationship_kwargs={'lazy':'selectin'})
+    
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Bidang.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
     
     @property
     def pemilik_name(self) -> str:

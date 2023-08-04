@@ -27,7 +27,7 @@ class ImportLog(ImportLogFullBase, table=True):
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
-            "primaryjoin": "ImportLog.created_by_id==Worker.id",
+            "primaryjoin": "ImportLog.updated_by_id==Worker.id",
         }
     )
 

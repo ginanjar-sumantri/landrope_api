@@ -18,6 +18,7 @@ class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
     done_request_petlok:bool | None = Field(alias="done_request_petlok")
     pemilik_name:str | None = Field(alias="pemilik_name")
     nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 @as_form
 @optional

@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.checklist_dokumen_model import ChecklistDokumen
+from models.worker_model import Worker
 from schemas.checklist_dokumen_sch import (ChecklistDokumenSch, ChecklistDokumenCreateSch, ChecklistDokumenBulkCreateSch, ChecklistDokumenUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -13,7 +14,8 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ChecklistDokumenBulkCreateSch):
+async def create(sch: ChecklistDokumenBulkCreateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
     
@@ -30,7 +32,7 @@ async def create(sch: ChecklistDokumenBulkCreateSch):
                                    jenis_bayar=sch.jenis_bayar,
                                    dokumen_id=dokumen)
         
-        new_obj = await crud.checklistdokumen.create(obj_in=obj_new)
+        new_obj = await crud.checklistdokumen.create(obj_in=obj_new, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -54,7 +56,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(ChecklistDokumen, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[ChecklistDokumenSch])
-async def update(id:UUID, sch:ChecklistDokumenUpdateSch):
+async def update(id:UUID, sch:ChecklistDokumenUpdateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -63,7 +66,7 @@ async def update(id:UUID, sch:ChecklistDokumenUpdateSch):
     if not obj_current:
         raise IdNotFoundException(ChecklistDokumen, id)
     
-    obj_updated = await crud.checklistdokumen.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.checklistdokumen.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_200_OK)

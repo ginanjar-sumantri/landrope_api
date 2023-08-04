@@ -3,6 +3,7 @@ from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 import crud
 from models.gps_model import Gps, StatusGpsEnum
+from models.worker_model import Worker
 from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -18,7 +19,8 @@ from shapely import wkt, wkb
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile = File()):
+async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile = File(),
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
     if file is None:
@@ -43,7 +45,7 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
                 geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         )
         
-    new_obj = await crud.gps.create(obj_in=sch)
+    new_obj = await crud.gps.create(obj_in=sch, created_by_id=current_worker.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
@@ -66,7 +68,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Gps, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
-async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:UploadFile = None):
+async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:UploadFile = None,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -97,5 +100,5 @@ async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:U
                 geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         )
     
-    obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)

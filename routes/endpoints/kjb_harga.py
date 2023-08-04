@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbHarga
+from models.worker_model import Worker
 from schemas.kjb_harga_sch import (KjbHargaSch, KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -11,7 +12,8 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHargaSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbHargaCreateSch):
+async def create(sch: KjbHargaCreateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
         
@@ -39,7 +41,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbHarga, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbHargaSch])
-async def update(id:UUID, sch:KjbHargaUpdateSch):
+async def update(id:UUID, sch:KjbHargaUpdateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -48,7 +51,7 @@ async def update(id:UUID, sch:KjbHargaUpdateSch):
     if not obj_current:
         raise IdNotFoundException(KjbHarga, id)
     
-    obj_updated = await crud.kjb_harga.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kjb_harga.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[KjbHargaSch], status_code=status.HTTP_200_OK)

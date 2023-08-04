@@ -10,9 +10,10 @@ class GpsCreateSch(GpsBase):
 class GpsRawSch(GpsRawBase):
     ptsk_name:str|None = Field(alias='ptsk_name')
     nomor_sk:str|None = Field(alias='nomor_sk')
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 class GpsSch(GpsFullBase):
-    pass
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 @as_form
 @optional

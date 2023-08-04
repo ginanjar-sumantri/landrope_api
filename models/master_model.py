@@ -7,10 +7,21 @@ from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
+    from models.worker_model import Worker
 
 class BebanBiaya(BaseUUIDModel, table=True):
     name:str
     is_active:bool
+
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "BebanBiaya.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
 #####################################################
 
@@ -44,6 +55,15 @@ class HargaStandardFullBase(HargaStandardBase, BaseUUIDModel):
 
 class HargaStandard(HargaStandardFullBase, table=True):
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "HargaStandard.updated_by_id==Worker.id",
+        }
+    )
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
     def planing_name(self) -> str :

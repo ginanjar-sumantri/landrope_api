@@ -44,6 +44,7 @@ class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     desa_name:str | None = Field(alias="desa_name")
     project_name:str | None = Field(alias="project_name")
     alashak:str | None = Field(alias="alashak")
+    updated_by_name:str|None = Field(alias="updated_by_name")
 
 class RequestPetaLokasiPdfSch(BaseModel):
     no:str | None

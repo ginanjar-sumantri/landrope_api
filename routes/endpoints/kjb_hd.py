@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbHd
+from models.worker_model import Worker
 from models.code_counter_model import CodeCounterEnum
 from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -13,11 +14,12 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHdSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbHdCreateSch):
+async def create(sch: KjbHdCreateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
     sch.code = await generate_code(CodeCounterEnum.Kjb)   
-    new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch)
+    new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -49,7 +51,8 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbHd, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbHdSch])
-async def update(id:UUID, sch:KjbHdUpdateSch):
+async def update(id:UUID, sch:KjbHdUpdateSch,
+                 current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
 
@@ -58,7 +61,7 @@ async def update(id:UUID, sch:KjbHdUpdateSch):
     if not obj_current:
         raise IdNotFoundException(KjbHd, id)
     
-    obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 
