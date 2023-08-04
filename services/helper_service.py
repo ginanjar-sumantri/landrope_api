@@ -73,7 +73,7 @@ class HelperService:
                     raise ContentNoChangeException(detail=f"{key_value} sudah ada dalam riwayat!")
                 #kalau dari tanda terima notaris, buang dulu yg current karena akan direplace dari tanda terima notaris
                 elif item.get("key_value") == key_value and from_notaris == True:
-                    current_riwayat_obj["riwayat"] = [item for item in riwayat_data["riwayat"] if item["key_value"] != key_value]
+                    current_riwayat_obj["riwayat"] = [item for item in current_riwayat_obj["riwayat"] if item["key_value"] != key_value]
 
             for i, item in enumerate(current_riwayat_obj["riwayat"]):
                 item["is_default"] = False
