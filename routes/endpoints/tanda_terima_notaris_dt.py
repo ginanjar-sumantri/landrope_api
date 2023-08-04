@@ -66,7 +66,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
                                                                     current_riwayat=None, 
                                                                     file_path=file_path, 
                                                                     is_default=True)
-         
+    sch.tanggal_tanda_terima = tanda_terima_hd.tanggal_tanda_terima
     new_obj = await crud.tandaterimanotaris_dt.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)

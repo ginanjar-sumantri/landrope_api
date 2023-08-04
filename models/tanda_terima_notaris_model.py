@@ -93,7 +93,7 @@ class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
 
 
 class TandaTerimaNotarisDtBase(SQLModel):
-    tanggal_tanda_terima:datetime | None = Field(default=datetime.now())
+    tanggal_tanda_terima:date | None = Field(default=date.today())
     dokumen_id:UUID = Field(foreign_key="dokumen.id")
     meta_data:str | None
     history_data:str | None
