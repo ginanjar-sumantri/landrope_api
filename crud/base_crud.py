@@ -129,10 +129,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         #     order_by = self.model.id
 
         find = False
-        for c in columns:
-            if c.name == order_by:
-                find = True
-                break
+        if '.' in order_by:
+            find = True
+        else:
+            for c in columns:
+                if c.name == order_by:
+                    find = True
+                    break
         
         if order_by is None or find == False:
             order_by = "id"
@@ -189,9 +192,19 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             query = query.filter(filter_clause)
 
         if order == OrderEnumSch.ascendent:
-            query = query.order_by(columns[order_by].asc())
+            # query = query.order_by(columns[order_by].asc())
+            if '.' in order_by:
+                xx = order_by.split('.')
+                query = query.order_by(getattr(xx[0], xx[1]).asc())
+            else:
+                query = query.order_by(getattr(self.model.__name__, order_by).asc())
         else:
-            query = query.order_by(columns[order_by].desc())
+            # query = query.order_by(columns[order_by].desc())
+            if '.' in order_by:
+                xx = order_by.split('.')
+                query = query.order_by(getattr(xx[0], xx[1]).desc())
+            else:
+                query = query.order_by(getattr(self.model.__name__, order_by).desc())
             
         return await paginate(db_session, query, params)
 
