@@ -17,6 +17,7 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy import exc
 import crud
+import json
 
 class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
     async def create_kjb_hd(self, *, obj_in: KjbHdCreateSch | KjbHd, created_by_id : UUID | str | None = None, 
@@ -83,6 +84,86 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         await db_session.refresh(db_obj)
         return db_obj
+    
+    async def get_multi_kjb_not_draft(
+        self,
+        *,
+        keyword:str | None = None,
+        filter_query: str | None = None,
+        params: Params | None = Params(),
+        order_by: str | None = None,
+        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        query: KjbHd | Select[KjbHd] | None = None,
+        db_session: AsyncSession | None = None,
+        join:bool | None = False
+    ) -> Page[KjbHd]:
+        db_session = db_session or db.session
+
+        columns = self.model.__table__.columns
+
+        find = False
+        for c in columns:
+            if c.name == order_by:
+                find = True
+                break
+        
+        if order_by is None or find == False:
+            order_by = "id"
+        
+        if query is None:
+            query = select(self.model)
+
+        if filter_query is not None and filter_query:
+            filter_query = json.loads(filter_query)
+            
+            for key, value in filter_query.items():
+                query = query.where(getattr(self.model, key) == value)
+        
+        filter_clause = None
+
+        if keyword:
+            for attr in columns:
+                if not "CHAR" in str(attr.type) or attr.name.endswith("_id") or attr.name == "id":
+                    continue
+
+                condition = getattr(self.model, attr.name).ilike(f'%{keyword}%')
+                if filter_clause is None:
+                    filter_clause = condition
+                else:
+                    filter_clause = or_(filter_clause, condition)
+                
+        #Filter Column yang berelasi dengan object (untuk case tertentu)
+        if join and keyword:
+            relationships = self.model.__mapper__.relationships
+
+            for r in relationships:
+                if r.uselist: #filter object list dilewati
+                    continue
+
+                class_relation = r.mapper.class_
+                query = query.join(class_relation)
+                relation_columns = class_relation.__table__.columns
+                        
+                for c in relation_columns:
+                    if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                        continue
+                    cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
+                    if filter_clause is None:
+                        filter_clause = cond
+                    else:
+                        filter_clause = or_(filter_clause, cond)
+
+        if filter_clause is not None:        
+            query = query.filter(filter_clause)
+
+        if order == OrderEnumSch.ascendent:
+            query = query.order_by(columns[order_by].asc())
+        else:
+            query = query.order_by(columns[order_by].desc())
+
+        query.where(self.model.is_draft != True)
+            
+        return await paginate(db_session, query, params)
 
 kjb_hd = CRUDKjbHd(KjbHd)
 

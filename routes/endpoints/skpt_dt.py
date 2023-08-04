@@ -211,7 +211,7 @@ async def export_shp(filter_query:str = None):
                       kategori=str(data.skpt.kategori).replace("_", " "),
                       luas=data.luas,
                       no_sk=data.nomor_sk,
-                      status=str(data.skpt.status).replace("_", ""),
+                      status=str(data.skpt.status).replace("_", " "),
                       tgl_sk=data.skpt.tanggal_tahun_SK,
                       jatuhtempo=data.skpt.tanggal_jatuh_tempo,
                       section=data.section_name,
@@ -230,19 +230,11 @@ async def export_shp(filter_query:str = None):
 def StatusSK(status:str|None = None):
     if status:
         if status.replace(" ", "").replace("_", "").lower() == "belumil":
-            return StatusSKEnum.Belum_Pengajuan_SK
+            return StatusSKEnum.Belum_IL
         elif status.replace(" ", "").replace("_", "").lower() == "sudahil":
-            return StatusSKEnum.Final_SK
-        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Belum_Pengajuan_SK.replace(" ", "").replace("_", "").lower():
-            return StatusSKEnum.Belum_Pengajuan_SK
-        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Final_SK.replace(" ", "").replace("_", "").lower():
-            return StatusSKEnum.Final_SK
-        elif status.replace(" ", "").replace("_", "").lower() == StatusSKEnum.Pengajuan_Awal_SK.replace(" ", "").replace("_", "").lower():
-            return StatusSKEnum.Pengajuan_Awal_SK
-        else:
-            return StatusSKEnum.Belum_Pengajuan_SK
+            return StatusSKEnum.Sudah_Il
     else:
-        return StatusSKEnum.Belum_Pengajuan_SK
+        return StatusSKEnum.Belum_IL
 
 def KategoriSk(kategori:str|None = None):
     if kategori:

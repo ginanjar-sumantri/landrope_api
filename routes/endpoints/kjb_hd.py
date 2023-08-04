@@ -29,6 +29,14 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
     objs = await crud.kjb_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
+@router.get("/not-draft", response_model=GetResponsePaginatedSch[KjbHdSch])
+async def get_list_not_draft(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+    
+    """Gets a paginated list objects"""
+
+    objs = await crud.kjb_hd.get_multi_kjb_not_draft(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    return create_response(data=objs)
+
 @router.get("/{id}", response_model=GetResponseBaseSch[KjbHdByIdSch])
 async def get_by_id(id:UUID):
 

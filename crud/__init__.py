@@ -16,6 +16,7 @@ from .role_crud import role
 from .checklist_dokumen_crud import checklistdokumen
 
 from .dokumen_crud import dokumen
+from .kategori_dokumen_crud import kategori_dokumen
 from .bundle_hd_crud import bundlehd
 from .bundle_dt_crud import bundledt
 from .beban_biaya_crud import bebanbiaya
