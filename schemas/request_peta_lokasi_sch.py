@@ -66,6 +66,5 @@ class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
 class RequestPetaLokasiUpdateExtSch(BaseModel):
     code:str = Field(nullable=True)
     tanggal:date = Field(default=date.today(), nullable=False)
-    remark:str
     kjb_dt_ids: List[UUID]
     remark:str | None

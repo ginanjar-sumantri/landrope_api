@@ -136,7 +136,7 @@ async def update(sch:RequestPetaLokasiUpdateExtSch):
 
     for i in obj_currents:
         if i.kjb_dt_id not in sch.kjb_dt_ids:
-            await crud.request_peta_lokasi.remove(id=i.kjb_dt_id)
+            await crud.request_peta_lokasi.remove_kjb_dt(id=i.kjb_dt_id)
 
     ids = [x.kjb_dt_id for x in obj_currents]  
 

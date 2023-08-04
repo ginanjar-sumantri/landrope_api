@@ -69,6 +69,16 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def remove_kjb_dt(self, *, id:UUID | str, db_session : AsyncSession | None = None) -> RequestPetaLokasi:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.kjb_dt_id == id)
+        response = await db_session.execute(query)
+
+        obj = response.scalar_one()
+        await db_session.delete(obj)
+        await db_session.commit()
+        return obj
 
     
 request_peta_lokasi = CRUDRequestPetaLokasi(RequestPetaLokasi)
