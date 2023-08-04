@@ -11,6 +11,7 @@ from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaD
 from schemas.dokumen_sch import RiwayatSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException, ContentNoChangeException)
+from common.ordered import OrderEnumSch
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
 from datetime import datetime
@@ -20,7 +21,7 @@ import json
 router = APIRouter()
 
 @router.get("", response_model=GetResponsePaginatedSch[BundleDtSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None, order:OrderEnumSch = None):
     
     """Gets a paginated list objects"""
 
@@ -28,6 +29,7 @@ async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = 
                                                                             order_by=order_by, 
                                                                             keyword=keyword, 
                                                                             filter_query=filter_query,
+                                                                            order=order,
                                                                             join=True)
     return create_response(data=objs)
 
