@@ -8,7 +8,8 @@ class ImportLogCreateSch(ImportLogBase):
     pass
 
 class ImportLogSch(ImportLogFullBase):
-    created_by_name:str|None = Field(alias="created_by_name")
+    created_by_name:str | None = Field(alias="created_by_name")
+    total_error_log:int | None = Field(alias="total_error_log")
 
 class ImportLogCloudTaskSch(SQLModel):
     import_log_id: UUID = Field(nullable=False)

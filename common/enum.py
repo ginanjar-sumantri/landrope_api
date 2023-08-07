@@ -88,4 +88,5 @@ class StatusPetaLokasiEnum(str, Enum):
 class TaskStatusEnum(str, Enum):
     OnProgress = "OnProgress"
     Done = "Done"
+    Done_With_Error = "Done_With_Error"
     Failed = "Failed"

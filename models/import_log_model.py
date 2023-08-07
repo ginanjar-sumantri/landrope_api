@@ -43,7 +43,7 @@ class ImportLog(ImportLogFullBase, table=True):
         return self.worker.name
     
     @property
-    def total_error_log(self):
+    def total_error_log(self) -> int:
         return len(self.import_log_errors)
     
 

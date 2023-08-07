@@ -34,3 +34,7 @@ class ChecklistDokumen(ChecklistDokumenFullBase, table=True):
     def dokumen_name(self) -> str:
         return self.dokumen.name or ""
     
+    @property
+    def kategori_dokumen_name(self) -> str | None:
+        return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)
+    
