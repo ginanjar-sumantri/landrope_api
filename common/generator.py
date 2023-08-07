@@ -8,7 +8,7 @@ import random
 
 
 async def generate_id_bidang(planing_id:UUID | str,
-                             db_session : AsyncSession | None,
+                             db_session : AsyncSession | None = None,
                              with_commit : bool | None = True) -> str:
 
     planing = await crud.planing.get(id=planing_id)
