@@ -9,6 +9,7 @@ class DokumenCreateSch(DokumenBase):
 
 class DokumenSch(DokumenFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
+    kategori_dokumen_name:str|None = Field(alias="kategori_dokumen_name")
 
 @as_form
 class RiwayatSch(SQLModel):

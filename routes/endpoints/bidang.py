@@ -266,9 +266,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         project = await crud.project.get_by_name(name=shp_data.project)
         if project is None:
             error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
-            await add_error_log(log_id=log.id, error_msg=error_m, i=i)
-            
-            log = await update_done_count_import_log(log=log)
+            log_error = ImportLogErrorSch(row=i+1,
+                                            error_message=error_m,
+                                            import_log_id=log.id)
+
+            log_error = await crud.import_log_error.create(obj_in=log_error)
 
             obj_updated = log
             count = count + 1
@@ -286,6 +288,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 obj_updated.completed_at = datetime.now()
 
                 await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                break
 
             continue
 
@@ -305,6 +308,18 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             obj_updated.done_count = count
 
             log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+
+            if log.total_row == log.done_count:
+                obj_updated = log
+                if log.total_error_log > 0:
+                    obj_updated.status = TaskStatusEnum.Done_With_Error
+                else:
+                    obj_updated.status = TaskStatusEnum.Done
+
+                obj_updated.completed_at = datetime.now()
+
+                await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                break
             
             continue
 
@@ -313,11 +328,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
         if plan is None:
             error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
-            await add_error_log(log_id=log.id, error_msg=error_m, i=i)
-
-            log_error = ImportLogErrorSch(row=i+1,
-                                            error_message=error_m,
-                                            import_log_id=log.id)
+            log_error = ImportLogErrorSch(row=i+1, error_message=error_m, import_log_id=log.id)
 
             log_error = await crud.import_log_error.create(obj_in=log_error)
 
@@ -326,6 +337,18 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             obj_updated.done_count = count
 
             log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+
+            if log.total_row == log.done_count:
+                obj_updated = log
+                if log.total_error_log > 0:
+                    obj_updated.status = TaskStatusEnum.Done_With_Error
+                else:
+                    obj_updated.status = TaskStatusEnum.Done
+
+                obj_updated.completed_at = datetime.now()
+
+                await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                break
             
             continue
 
@@ -370,10 +393,23 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         else:
             obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
         
-        
-        log = await update_done_count_import_log(log=log)
+        obj_updated = log
+        count = count + 1
+        obj_updated.done_count = count
 
-        await update_done_status_import_log(log=log)
+        log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+
+        if log.total_row == log.done_count:
+            obj_updated = log
+            if log.total_error_log > 0:
+                obj_updated.status = TaskStatusEnum.Done_With_Error
+            else:
+                obj_updated.status = TaskStatusEnum.Done
+
+            obj_updated.completed_at = datetime.now()
+
+            await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+            break
 
         # Waktu sekarang
         current_time = time.time()
@@ -388,36 +424,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         time.sleep(0.2)
 
     return {'message' : 'successfully import'}
-
-async def update_done_count_import_log(log:ImportLog) -> ImportLog:
-
-    obj_updated = log
-    count = count + 1
-    obj_updated.done_count = count
-
-    log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-    return log
-
-async def update_done_status_import_log(log:ImportLog):
-
-    if log.total_row == log.done_count:
-            obj_updated = log
-            if log.total_error_log > 0:
-                obj_updated.status = TaskStatusEnum.Done_With_Error
-            else:
-                obj_updated.status = TaskStatusEnum.Done
-
-            obj_updated.completed_at = datetime.now()
-
-            await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-async def add_error_log(log_id:UUID, error_msg:str, i:int):
-
-    log_error = ImportLogErrorSch(row=i+1,
-                                            error_message=error_msg,
-                                            import_log_id=log_id)
-
-    log_error = await crud.import_log_error.create(obj_in=log_error)
 
 @router.get("/export/shp", response_class=Response)
 async def export(

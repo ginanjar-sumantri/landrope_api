@@ -43,8 +43,8 @@ class Dokumen(DokumenFullBase, table=True):
         return getattr(getattr(self, 'worker', None), 'name', None)
     
     @property
-    def category_dokumen_name(self) -> str | None:
-        return getattr(getattr(self, 'category_dokumen', None), 'name', None)
+    def kategori_dokumen_name(self) -> str | None:
+        return getattr(getattr(self, 'kategori_dokumen', None), 'name', None)
     
 
 class KategoriDokumenBase(SQLModel):
