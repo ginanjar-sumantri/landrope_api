@@ -110,8 +110,7 @@ class BundleDt(BundleDtFullBase, table=True):
             # 'all' : True,
             # 'all_join': False,
             'dokumen_name' : 'dokumen.name',
-            'updated_by_name' : 'worker.name',
-            'kategori_dokumen_name' : 'kategori_dokumen.name'
+            'updated_by_name' : 'worker_1.name'
         }
 
     @property
