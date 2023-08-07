@@ -16,7 +16,7 @@ class ImportLogCloudTaskSch(SQLModel):
     file_path: str
 
 class ImportLogByIdSch(ImportLogSch):
-    import_log_error: list[ImportLogErrorSch] | None = None
+    import_log_errors: list[ImportLogErrorSch] | None = None
 
 @optional
 class ImportLogUpdateSch(ImportLogBase):
