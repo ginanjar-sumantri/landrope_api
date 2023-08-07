@@ -43,8 +43,21 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                                 )
                                             )
         
-        print(query)
         
+        return await paginate(db_session, query, params)
+    
+    async def get_multi_for_tanda_terima_notaris(
+                        self, *, 
+                        params: Params | None = Params(),
+                        db_session: AsyncSession | None = None) -> Page[KjbDt]:
+        
+        db_session = db_session or db.session
+
+        query = select(self.model
+                       ).select_from(self.model
+                                     ).outerjoin(RequestPetaLokasi, self.model.id == RequestPetaLokasi.kjb_dt_id
+                                                 ).where(self.model.request_peta_lokasi == None)
+
         return await paginate(db_session, query, params)
 
 kjb_dt = CRUDKjbDt(KjbDt)

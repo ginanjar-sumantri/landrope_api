@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from models.kategori_model import Kategori, KategoriSub, KategoriProyek
     from models.marketing_model import Manager, Sales
     from models.notaris_model import Notaris
+    from models.bundle_model import BundleHd
     from models.worker_model import Worker
     
 class BidangBase(SQLModel):
@@ -51,6 +52,8 @@ class BidangBase(SQLModel):
     luas_clear:Optional[Decimal] = Field(nullable=True)
     luas_pbt_perorangan:Optional[Decimal] = Field(nullable=True)
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
+
+    bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
@@ -90,6 +93,10 @@ class Bidang(BidangFullBase, table=True):
         sa_relationship_kwargs={'lazy':'selectin'})
     
     notaris:"Notaris" = Relationship(
+        sa_relationship_kwargs={'lazy':'selectin'})
+    
+    bundlehd:"BundleHd" = Relationship(
+        back_populates="bidang",
         sa_relationship_kwargs={'lazy':'selectin'})
     
     worker: "Worker" = Relationship(  

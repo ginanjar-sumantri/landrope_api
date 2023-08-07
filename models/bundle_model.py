@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.dokumen_model import Dokumen
     from models.kjb_model import KjbDt
+    from models.bidang_model import Bidang
     from models.worker_model import Worker
 
 class BundleHdBase(SQLModel):
@@ -21,9 +22,8 @@ class BundleHdFullBase(BaseUUIDModel, BundleHdBase):
 class BundleHd(BundleHdFullBase, table=True):
     planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'joined',
-                                                                                                    'uselist':'False',
-                                                                                     'primaryjoin':'BundleHd.id==KjbDt.bundle_hd_id'})
+    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+    bidang:"Bidang" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -73,6 +73,13 @@ class BundleHd(BundleHdFullBase, table=True):
         print(self.kjb_dt.id)
         
         return self.kjb_dt.alashak
+    
+    @property
+    def idbidang(self) -> str | None:
+        if self.bidang is None:
+            return None
+        
+        return self.bidang.id_bidang
 
 # -----------------------------------------------------------------------------------------------
 

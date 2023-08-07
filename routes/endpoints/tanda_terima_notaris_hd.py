@@ -3,6 +3,7 @@ from fastapi import APIRouter, status, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
+from models.worker_model import Worker
 from models.kjb_model import KjbDt
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
@@ -18,7 +19,10 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[TandaTerimaNotarisHdSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHdCreateSch.as_form), file:UploadFile = None):
+async def create(
+            sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHdCreateSch.as_form), 
+            file:UploadFile = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
 
@@ -37,11 +41,9 @@ async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHd
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{sch.nomor_tanda_terima}-{sch.tanggal_tanda_terima}')
         sch.file_path = file_path
-
     
     kjb_dt_update = kjb_dt
 
-    
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
     if kjb_dt.bundle_hd_id is None and sch.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi :
         ## Match bundle with kjb detail by alashak
@@ -68,7 +70,7 @@ async def create(sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHd
     kjb_dt_update.pemilik_id = sch.pemilik_id
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
-    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True)
+    new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -94,7 +96,8 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[TandaTerimaNotarisHdSch])
 async def update(id:UUID, 
                  sch:TandaTerimaNotarisHdUpdateSch = Depends(TandaTerimaNotarisHdUpdateSch.as_form),
-                 file:UploadFile = None):
+                 file:UploadFile = None,
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -113,7 +116,7 @@ async def update(id:UUID,
         sch.file_path = file_path
     
     db_session = db.session
-    obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=False)
+    obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
     kjb_dt_update = kjb_dt
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
