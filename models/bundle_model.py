@@ -109,7 +109,9 @@ class BundleDt(BundleDtFullBase, table=True):
         order_fields = {
             # 'all' : True,
             # 'all_join': False,
-            'dokumen_name' : 'dokumen.name'
+            'dokumen_name' : 'dokumen.name',
+            'updated_by_name' : 'worker.name',
+            'kategori_dokumen_name' : 'kategori_dokumen.name'
         }
 
     @property

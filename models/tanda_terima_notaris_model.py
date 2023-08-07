@@ -124,6 +124,17 @@ class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
             "primaryjoin": "TandaTerimaNotarisDt.updated_by_id==Worker.id",
         }
     )
+
+    class Meta:
+        order_fields = {
+            # 'all' : True,
+            # 'all_join': False,
+            'dokumen_name' : 'dokumen.name',
+            'updated_by_name' : 'worker.name',
+            'kategori_dokumen_name' : 'kategori_dokumen.name'
+        }
+
+
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
