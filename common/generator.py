@@ -7,8 +7,12 @@ import string
 import random
 
 
-async def generate_id_bidang(planing_id:UUID | str) -> str:
+async def generate_id_bidang(planing_id:UUID | str,
+                             db_session : AsyncSession | None,
+                             with_commit : bool | None = True) -> str:
+
     planing = await crud.planing.get(id=planing_id)
+
     desa = await crud.desa.get(id=planing.desa_id)
     if desa.geom:
         desa.geom = to_shape(desa.geom).__str__()
@@ -31,7 +35,7 @@ async def generate_id_bidang(planing_id:UUID | str) -> str:
         sch.digit = max_digit
     
     sch.last = code_counter
-    await crud.desa.update(obj_current=desa, obj_new=sch)
+    await crud.desa.update(obj_current=desa, obj_new=sch, db_session=db_session, with_commit=with_commit)
 
     number = str(code_counter).zfill(max_digit)
 

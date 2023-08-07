@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.kjb_model import KjbHd
 from models.worker_model import Worker
 from models.code_counter_model import CodeCounterEnum
@@ -15,16 +16,24 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHdSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: KjbHdCreateSch,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-    sch.code = await generate_code(CodeCounterEnum.Kjb)   
-    new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch, created_by_id=current_worker.id)
+
+    db_session = db.session
+    sch.code = await generate_code(CodeCounterEnum.Kjb, db_session=db_session, with_commit=False)
+
+    new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+        params: Params=Depends(), 
+        order_by: str = None, 
+        keyword: str = None, 
+        filter_query: str= None,
+        current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -52,7 +61,7 @@ async def get_by_id(id:UUID):
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbHdSch])
 async def update(id:UUID, sch:KjbHdUpdateSch,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 

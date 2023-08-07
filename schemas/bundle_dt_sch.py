@@ -11,6 +11,7 @@ class BundleDtSch(BundleDtFullBase):
     file_exists:bool | None = Field(alias="file_exists")
     have_riwayat:bool | None = Field(alias="have_riwayat")
     updated_by_name:str | None = Field(alias="updated_by_name")
+    kategori_dokumen_name:str | None = Field(alias="kategori_dokumen_name")
 
 class BundleDtMetaDynSch(SQLModel):
     meta_data:str|None

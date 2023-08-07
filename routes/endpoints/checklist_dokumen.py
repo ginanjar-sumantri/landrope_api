@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: ChecklistDokumenBulkCreateSch,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
     
@@ -37,7 +37,12 @@ async def create(sch: ChecklistDokumenBulkCreateSch,
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[ChecklistDokumenSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+        params: Params=Depends(), 
+        order_by:str = None, 
+        keyword:str = None, 
+        filter_query:str = None,
+        current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -57,7 +62,7 @@ async def get_by_id(id:UUID):
 
 @router.put("/{id}", response_model=PutResponseBaseSch[ChecklistDokumenSch])
 async def update(id:UUID, sch:ChecklistDokumenUpdateSch,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -70,7 +75,9 @@ async def update(id:UUID, sch:ChecklistDokumenUpdateSch,
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(
+            id:UUID, 
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

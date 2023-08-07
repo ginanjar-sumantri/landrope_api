@@ -11,6 +11,7 @@ class TandaTerimaNotarisDtSch(TandaTerimaNotarisDtFullBase):
     dokumen_name:str | None = Field(alias="dokumen_name")
     nomor_tanda_terima:str | None = Field(alias="nomor_tanda_terima")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    kategori_dokumen_name:str | None = Field(alias="kategori_dokumen_name")
 
 @as_form
 @optional

@@ -21,7 +21,13 @@ import json
 router = APIRouter()
 
 @router.get("", response_model=GetResponsePaginatedSch[BundleDtSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None, order:OrderEnumSch = None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None, 
+            order:OrderEnumSch = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -50,7 +56,7 @@ async def get_by_id(id:UUID):
 async def update(id:UUID, 
                  sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
                  file:UploadFile = None,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 

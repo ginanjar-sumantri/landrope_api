@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[BundleHdSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: BundleHdCreateSch,
-                current_worker: Worker = Depends(crud.worker.get_current_user)):
+                current_worker: Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
@@ -26,7 +26,12 @@ async def create(sch: BundleHdCreateSch,
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[BundleHdSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -47,7 +52,7 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[BundleHdSch])
 async def update(id:UUID, 
                  sch:BundleHdUpdateSch,
-                 current_worker: Worker = Depends(crud.worker.get_current_user)):
+                 current_worker: Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -61,7 +66,7 @@ async def update(id:UUID,
 
 @router.put("regenerate/{id}", response_model=PutResponseBaseSch[BundleHdSch])
 async def regenerate(id:UUID,
-                     current_worker: Worker = Depends(crud.worker.get_current_user)):
+                     current_worker: Worker = Depends(crud.worker.get_active_worker)):
 
     """Get an object by id"""
 

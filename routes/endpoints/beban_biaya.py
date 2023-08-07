@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[BebanBiayaSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: BebanBiayaCreateSch,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
 
@@ -24,7 +24,8 @@ async def create(sch: BebanBiayaCreateSch,
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[BebanBiayaSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(params: Params=Depends(), 
+                   order_by:str = None, keyword:str = None, filter_query:str=None):
     
     """Gets a paginated list objects"""
 

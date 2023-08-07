@@ -13,8 +13,10 @@ from shapely.geometry import shape
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:UploadFile = File(),
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+async def create(
+                sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
+                file:UploadFile = File(),
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
 
@@ -26,7 +28,9 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
         
-        sch = DraftSch(rincik_id=sch.rincik_id, skpt_id=sch.skpt_id, planing_id=sch.planing_id, geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
+        sch = DraftSch(**sch.dict())
+        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        
     else:
         raise ImportFailedException()
         
@@ -35,7 +39,7 @@ async def create(sch: DraftCreateSch = Depends(DraftCreateSch.as_form), file:Upl
     return create_response(data=new_obj)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

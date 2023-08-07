@@ -24,9 +24,11 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DesaRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:UploadFile = File(),
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
-    
+async def create(
+            sch: DesaCreateSch = Depends(DesaCreateSch.as_form), 
+            file:UploadFile = File(),
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
     """Create a new object"""
     
     obj_current = await crud.desa.get_by_name(name=sch.name)
@@ -48,7 +50,12 @@ async def create(sch: DesaCreateSch = Depends(DesaCreateSch.as_form), file:Uploa
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[DesaRawSch])
-async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None, filter_query:str=None):
+async def get_list(
+            params:Params = Depends(), 
+            order_by:str=None, 
+            keyword:str=None, 
+            filter_query:str=None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -98,31 +105,9 @@ async def update(id:UUID, sch:DesaUpdateSch = Depends(DesaUpdateSch.as_form), fi
     obj_updated = await crud.desa.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-# @router.post(
-#         "/bulk", 
-#         response_model=PostResponseBaseSch[ImportLogSch], 
-#         status_code=status.HTTP_201_CREATED
-# )
-# async def create_bulking_task(
-#     file:UploadFile,
-#     request: Request,
-#     current_worker: Worker = Depends(crud.worker.get_current_user)):
-    
-#     """Create a new object"""
-
-#     sch = ImportLogCreateSch(status=TaskStatusEnum.OnProgress,
-#                              name="Upload Desa Bulking")
-#     new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id, file=file)
-    
-#     url = f'{request.base_url}landrope/desa/cloud-task-bulk'
-
-#     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
-
-#     return create_response(data=new_obj)
-
 @router.post("/bulk")
 async def bulk(file:UploadFile=File(),
-               current_worker:Worker = Depends(crud.worker.get_current_user)):
+               current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Create bulk or import data"""
     try:
@@ -151,11 +136,6 @@ async def bulk(file:UploadFile=File(),
                 
                 await crud.desa.update(obj_current=obj_current, obj_new=sch_update, updated_by_id=current_worker.id)
                 continue
-            
-            # if code is None or code == "":
-            #     code = await generate_code(entity=CodeCounterEnum.Desa)
-            # else:
-            #     code = str(code).zfill(3)
 
             code = await generate_code(entity=CodeCounterEnum.Desa)
 
@@ -183,7 +163,9 @@ async def bulk(file:UploadFile=File(),
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp(filter_query:str = None):
+async def export_shp(
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     schemas = []
     

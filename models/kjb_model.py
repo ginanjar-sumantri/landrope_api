@@ -112,7 +112,7 @@ class KjbDtBase(SQLModel):
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
     pemilik_id:UUID | None = Field(foreign_key="pemilik.id", nullable=True)
     jenis_surat_id:UUID | None = Field(foreign_key="jenis_surat.id", nullable=False)
-    bundle_hd_id:Optional[UUID] = Field(foreign_key="bundle_hd.id", nullable=True)
+    bundle_hd_id:UUID | None = Field(foreign_key="bundle_hd.id", nullable=True)
 
 
 class KjbDtFullBase(BaseUUIDModel, KjbDtBase):

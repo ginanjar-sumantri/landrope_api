@@ -133,25 +133,32 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     filter_clause = or_(filter_clause, condition)
                 
         #Filter Column yang berelasi dengan object (untuk case tertentu)
-        if join and keyword:
+        if join:
             relationships = self.model.__mapper__.relationships
 
             for r in relationships:
                 if r.uselist: #filter object list dilewati
                     continue
+                if class_relation.__name__.lower() == "worker":
+                    continue
 
                 class_relation = r.mapper.class_
                 query = query.join(class_relation)
-                relation_columns = class_relation.__table__.columns
+
+                if keyword:
+                    relation_columns = class_relation.__table__.columns
+                            
+                    for c in relation_columns:
+                        if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
+                            continue
+                        if "updated" in c.name or "created" in c.name:
+                            continue
                         
-                for c in relation_columns:
-                    if not "CHAR" in str(c.type) or c.name.endswith("_id") or c.name == "id":
-                        continue
-                    cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
-                    if filter_clause is None:
-                        filter_clause = cond
-                    else:
-                        filter_clause = or_(filter_clause, cond)
+                        cond = getattr(class_relation, c.name).ilike(f'%{keyword}%')
+                        if filter_clause is None:
+                            filter_clause = cond
+                        else:
+                            filter_clause = or_(filter_clause, cond)
 
         if filter_clause is not None:        
             query = query.filter(filter_clause)

@@ -19,8 +19,10 @@ from shapely import wkt, wkb
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile = File(),
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+async def create(
+            sch:GpsCreateSch=Depends(GpsCreateSch.as_form), 
+            file:UploadFile = File(),
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
     if file is None:
@@ -49,7 +51,12 @@ async def create(sch:GpsCreateSch=Depends(GpsCreateSch.as_form), file:UploadFile
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_user:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -69,7 +76,7 @@ async def get_by_id(id:UUID):
     
 @router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
 async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:UploadFile = None,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 

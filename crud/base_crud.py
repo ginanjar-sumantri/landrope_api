@@ -96,8 +96,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 filter_query = json.loads(filter_query)
                 for key, value in filter_query.items():
                     query = query.where(getattr(self.model, key) == value)
-        
-        print(query)
 
         response =  await db_session.execute(query)
         return response.scalars().all()

@@ -19,9 +19,11 @@ class BundleHdFullBase(BaseUUIDModel, BundleHdBase):
     pass
 
 class BundleHd(BundleHdFullBase, table=True):
-    planing:"Planing" = Relationship(back_populates="bundlehds", sa_relationship_kwargs={'lazy':'selectin'})
+    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'joined',
+                                                                                                    'uselist':'False',
+                                                                                     'primaryjoin':'BundleHd.id==KjbDt.bundle_hd_id'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -65,7 +67,12 @@ class BundleHd(BundleHdFullBase, table=True):
     
     @property
     def alashak(self) -> str | None:
-        return getattr(getattr(self, 'kjb_dt', ''), 'alashak', '')
+        if self.kjb_dt is None:
+            return None
+        
+        print(self.kjb_dt.id)
+        
+        return self.kjb_dt.alashak
 
 # -----------------------------------------------------------------------------------------------
 
@@ -121,3 +128,7 @@ class BundleDt(BundleDtFullBase, table=True):
     @property
     def dyn_form(self) -> str | None:
         return getattr(getattr(self, 'dokumen', None), 'dyn_form', None)
+    
+    @property
+    def kategori_dokumen_name(self) -> str | None:
+        return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)

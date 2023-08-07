@@ -135,5 +135,9 @@ class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
     @property
     def nomor_tanda_terima(self) -> str:
         return self.tanda_terima_notaris_hd.nomor_tanda_terima
+    
+    @property
+    def kategori_dokumen_name(self) -> str | None:
+        return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)
 
 

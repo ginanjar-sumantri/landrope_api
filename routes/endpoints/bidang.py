@@ -4,6 +4,7 @@ import time
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.bidang_model import Bidang
 from models.project_model import Project
 from models.desa_model import Desa
@@ -18,7 +19,7 @@ from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, Bid
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch,
                                   ImportResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException, FileNotFoundException)
+from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException, FileNotFoundException, DocumentFileNotFoundException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
 from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
@@ -36,15 +37,18 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[BidangRawSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:UploadFile = None,
-                 current_worker:Worker = Depends(crud.worker.get_current_user)):
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Create a new object"""
 
     obj_current = await crud.bidang.get_by_id_bidang(idbidang=sch.id_bidang)
+
     if obj_current:
         raise NameExistException(Bidang, name=sch.id_bidang)
+    
+    db_session = db.session
 
-    sch.id_bidang = await generate_id_bidang(sch.planing_id)
+    sch.id_bidang = await generate_id_bidang(sch.planing_id, db_session=db_session, with_commit=False)
 
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -58,12 +62,17 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     else:
         raise ImportFailedException()
 
-    new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
 
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
-async def get_list(params:Params = Depends(), order_by:str = None, keyword:str=None, filter_query:str=None):
+async def get_list(
+        params:Params = Depends(), 
+        order_by:str = None, 
+        keyword:str = None, 
+        filter_query:str = None,
+        current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Gets a paginated list objects"""
 
@@ -117,7 +126,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 async def create_bulking_task(
     file:UploadFile,
     request: Request,
-    current_worker: Worker = Depends(crud.worker.get_current_user)
+    current_worker: Worker = Depends(crud.worker.get_active_worker)
     ):
 
     """Create a new object"""
@@ -134,6 +143,7 @@ async def create_bulking_task(
                             done_count=0)
 
     new_obj = await crud.import_log.create(obj_in=sch, worker_id=current_worker.id)
+
     url = f'{request.base_url}landrope/bidang/cloud-task-bulk'
     GCloudTaskService().create_task_import_data(import_instance=new_obj, base_url=url)
 
@@ -161,7 +171,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
         file = await GCStorageService().download_file(payload.file_path)
         if not file:
-            raise FileNotFoundException()
+            raise DocumentFileNotFoundException(dokumenname=payload.file_path)
 
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
@@ -362,7 +372,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
     return {'message' : 'successfully import'}
 
 @router.get("/export/shp", response_class=Response)
-async def export(filter_query:str = None):
+async def export(
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
     schemas = []
