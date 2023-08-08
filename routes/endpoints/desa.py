@@ -49,7 +49,7 @@ async def create(
         sch = DesaSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
-    new_obj = await crud.desa.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.desa.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
 
     return create_response(data=new_obj)
 
