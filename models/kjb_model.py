@@ -8,6 +8,9 @@ from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum,
 from common.rounder import RoundTwo
 from decimal import Decimal
 from datetime import datetime
+from pydantic import validator
+from dateutil import tz
+import pytz
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -39,6 +42,14 @@ class KjbHdBase(SQLModel):
     satuan_bayar:SatuanBayarEnum
     satuan_harga:SatuanHargaEnum
     is_draft:Optional[bool] = Field(nullable=True)
+
+    @validator("tanggal_kjb")
+    def validate_datetime(cls, value):
+        if value is not None and value.tzname() is None:
+            value = value.replace(tzinfo=pytz.UTC)
+            to_zone = tz.tzlocal()
+            return value.astimezone(to_zone)
+        return value
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass

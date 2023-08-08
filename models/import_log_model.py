@@ -4,6 +4,9 @@ from models.base_model import BaseUUIDModel
 from common.enum import TaskStatusEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
+from pydantic import validator
+from dateutil import tz
+import pytz
 
 if TYPE_CHECKING:
     from models.worker_model import Worker
@@ -17,6 +20,14 @@ class ImportLogBase(SQLModel):
     completed_at: datetime | None = Field(nullable=True)
     total_row:int | None = Field(nullable=True)
     done_count:int | None = Field(nullable=True)
+
+    @validator("completed_at")
+    def validate_datetime(cls, value):
+        if value is not None and value.tzname() is None:
+            value = value.replace(tzinfo=pytz.UTC)
+            to_zone = tz.tzlocal()
+            return value.astimezone(to_zone)
+        return value
 
 
 class ImportLogFullBase(BaseUUIDModel, ImportLogBase):

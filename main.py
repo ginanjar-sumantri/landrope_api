@@ -9,8 +9,11 @@ from starlette.middleware.cors import CORSMiddleware
 
 from configs.config import settings 
 from routes import api
+import pytz
 
 def init_app():
+
+    pytz.timezone("Asia/Jakarta")
 
     description = """
         This is a service for Land Aqusition
