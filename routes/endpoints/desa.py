@@ -140,22 +140,18 @@ async def bulk(file:UploadFile=File(),
             code = await generate_code(entity=CodeCounterEnum.Desa)
 
             sch = Desa(
-                          name=name,
-                          code=code,
-                          kecamatan=kecamatan,
-                          kota=kota, 
-                          luas=luas,
-                          geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                          created_at=current_datetime,
-                          updated_at=current_datetime,
-                          created_by_id=current_worker.id,
-                          updated_by_id=current_worker.id
-                          )
+                        name=name,
+                        code=code,
+                        kecamatan=kecamatan,
+                        kota=kota, 
+                        luas=luas,
+                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            await crud.desa.create(obj_in=sch, created_by_id=current_worker.id)
             
-            datas.append(sch)
+            # datas.append(sch)
 
-        if len(datas) > 0:    
-            await crud.desa.create_all(obj_ins=datas)
+        # if len(datas) > 0:    
+        #     await crud.desa.create_all(obj_ins=datas)
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")

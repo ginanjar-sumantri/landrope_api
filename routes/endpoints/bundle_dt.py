@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import select, and_
 from models.bundle_model import BundleDt
 from models.dokumen_model import Dokumen
 from models.worker_model import Worker
@@ -33,6 +34,18 @@ async def get_list(
 
     # if order_by == "dokumen_name":
     #     order_by = "dokumen.name"
+
+    # query = select(BundleDt).select_from(BundleDt
+    #                                         ).outerjoin(BundleHd, BundleDt.bundle_hd_id == BundleHd.id
+    #                                         ).outerjoin(KjbDt, BundleHd.id == KjbDt.bundle_hd_id
+    #                                         ).outerjoin(Dokumen, BundleDt.dokumen_id == Dokumen.id
+    #                                         ).where(and_(
+    #                                                         KjbDt.id == id,
+    #                                                         Dokumen.id == dokumen_id
+    #                                                     ))
+
+
+
     objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
                                                                             order_by=order_by, 
                                                                             keyword=keyword, 
