@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response, Request
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.desa_model import Desa
 from models.import_log_model import ImportLog
 from models.worker_model import Worker
@@ -137,7 +138,8 @@ async def bulk(file:UploadFile=File(),
                 await crud.desa.update(obj_current=obj_current, obj_new=sch_update, updated_by_id=current_worker.id)
                 continue
 
-            code = await generate_code(entity=CodeCounterEnum.Desa)
+            db_session = db.session
+            code = await generate_code(entity=CodeCounterEnum.Desa, db_session=db_session, with_commit=False)
 
             sch = Desa(
                         name=name,
@@ -146,7 +148,8 @@ async def bulk(file:UploadFile=File(),
                         kota=kota, 
                         luas=luas,
                         geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-            await crud.desa.create(obj_in=sch, created_by_id=current_worker.id)
+            
+            await crud.desa.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
             
             # datas.append(sch)
 

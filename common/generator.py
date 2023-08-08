@@ -74,6 +74,8 @@ async def generate_code(entity:CodeCounterEnum,
         return code
     
     else:
+        
+
         code_counter = (obj_current.last + 1)
         max_digit = obj_current.digit or max_digit
         max_value = 10 ** max_digit - 1 
@@ -83,7 +85,7 @@ async def generate_code(entity:CodeCounterEnum,
 
         obj_new = CodeCounter(entity=obj_current.entity, last=code_counter, digit=max_digit)
         await crud.codecounter.update(obj_current=obj_current, obj_new=obj_new, db_session=db_session, with_commit=with_commit)
-
+        
         code = str(code_counter).zfill(max_digit)
         return code
     

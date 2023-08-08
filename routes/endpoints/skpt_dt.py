@@ -188,14 +188,16 @@ async def bulk_skpt(file:UploadFile=File()):
                             created_at=current_datetime,
                             geom=shp_data.geom)
         
-        datas.append(data)
+        await crud.skptdt.create(obj_in=data)
+        
+        # datas.append(data)
 
-    objs = await crud.skptdt.create_all(obj_ins=datas)
+    # objs = await crud.skptdt.create_all(obj_ins=datas)
 
     # except:
     #     raise ImportFailedException(filename=file.filename)
     
-    return create_response(data=objs)
+    return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
 async def export_shp(filter_query:str = None):

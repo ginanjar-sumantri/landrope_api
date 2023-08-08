@@ -158,10 +158,12 @@ async def bulk(file:UploadFile=File()):
                             created_at=current_datetime,
                             updated_at=current_datetime)
             
-            datas.append(sch)
+            await crud.planing.create(obj_in=sch)
+            
+        #     datas.append(sch)
         
-        if len(datas) > 0:
-            await crud.planing.create_all(obj_ins=datas)  
+        # if len(datas) > 0:
+        #     await crud.planing.create_all(obj_ins=datas)  
 
     except:
         raise HTTPException(status_code=422, detail="Failed import data")
