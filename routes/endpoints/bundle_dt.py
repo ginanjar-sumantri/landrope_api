@@ -6,7 +6,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, and_
 from models.bundle_model import BundleDt
-from models.dokumen_model import Dokumen
+from models.dokumen_model import Dokumen, KategoriDokumen
 from models.worker_model import Worker
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaDynSch)
 from schemas.dokumen_sch import RiwayatSch
@@ -32,18 +32,28 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    # if order_by == "dokumen_name":
-    #     order_by = "dokumen.name"
-
     # query = select(BundleDt).select_from(BundleDt
-    #                                         ).outerjoin(BundleHd, BundleDt.bundle_hd_id == BundleHd.id
-    #                                         ).outerjoin(KjbDt, BundleHd.id == KjbDt.bundle_hd_id
+    #                                         ).outerjoin(Worker, BundleDt.updated_by_id == Worker.id
     #                                         ).outerjoin(Dokumen, BundleDt.dokumen_id == Dokumen.id
-    #                                         ).where(and_(
-    #                                                         KjbDt.id == id,
-    #                                                         Dokumen.id == dokumen_id
-    #                                                     ))
-
+    #                                         ).outerjoin(KategoriDokumen, Dokumen.kategori_dokumen_id == KategoriDokumen.id)
+    
+    # if filter_query:
+    #     filter_query = json.loads(filter_query)
+    #     for key, value in filter_query.items():
+    #         query = query.where(getattr(BundleDt, key) == value)
+    
+    # if order_by :
+    #     columns = BundleDt.__table__.columns
+    #     if order_by in columns:
+    #         query.order_by(order_by)
+    #     elif order_by == "dokumen_name":
+    #         query.order_by(Dokumen.name.asc())
+    #     elif order_by == "kategori_dokumen_name":
+    #         query.order_by(KategoriDokumen.name)
+    #     else:
+    #         query.order_by('id')
+    
+    # objs = await crud.bundledt.get_multi_paginated(params=params, query=query)
 
 
     objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 

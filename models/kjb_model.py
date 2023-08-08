@@ -7,7 +7,7 @@ from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum,
                          JenisBayarEnum, StatusPetaLokasiEnum)
 from common.rounder import RoundTwo
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import validator
 from dateutil import tz
 import pytz
@@ -31,7 +31,7 @@ class KjbHdBase(SQLModel):
     kategori_penjual:KategoriPenjualEnum
     desa_id:UUID = Field(foreign_key="desa.id", nullable=False)
     luas_kjb:Decimal
-    tanggal_kjb:datetime| None = Field(default=datetime.now())
+    tanggal_kjb:date| None = Field(default=date.today())
     remark:str
     manager_id:UUID = Field(foreign_key="manager.id")
     sales_id:UUID = Field(foreign_key="sales.id")
@@ -42,14 +42,6 @@ class KjbHdBase(SQLModel):
     satuan_bayar:SatuanBayarEnum
     satuan_harga:SatuanHargaEnum
     is_draft:Optional[bool] = Field(nullable=True)
-
-    @validator("tanggal_kjb")
-    def validate_datetime(cls, value):
-        if value is not None and value.tzname() is None:
-            value = value.replace(tzinfo=pytz.UTC)
-            to_zone = tz.tzlocal()
-            return value.astimezone(to_zone)
-        return value
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
