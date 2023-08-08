@@ -58,23 +58,21 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
         if exists:
             raise HTTPException(status_code=409, detail="Resource already exists")
         
-        data = RequestPetaLokasi(code=str(code),
+        data = RequestPetaLokasiCreateSch(code=str(code),
                                  kjb_dt_id=kjb_dt.id,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
-                                 created_at=current_datetime,
-                                 updated_at=current_datetime,
                                  dibuat_oleh="Land Adm Acquisition Officer",
                                  diperiksa_oleh="Land Adm & Verification Section Head",
                                  diterima_oleh="Land Measurement Analyst",
-                                 is_disabled=False,
-                                 created_by_id=current_worker.id,
-                                 updated_by_id=current_worker.id)
-        datas.append(data)
+                                 is_disabled=False
+                                 )
+        await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id)
+    #     datas.append(data)
 
     
-    if len(datas) > 0:
-        objs = await crud.request_peta_lokasi.create_all(obj_ins=datas)
+    # if len(datas) > 0:
+    #     objs = await crud.request_peta_lokasi.create_all(obj_ins=datas)
 
     return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
 
