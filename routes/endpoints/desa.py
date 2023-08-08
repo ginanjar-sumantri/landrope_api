@@ -35,6 +35,9 @@ async def create(
     obj_current = await crud.desa.get_by_name(name=sch.name)
     if obj_current:
         raise NameExistException(Desa, name=sch.name)
+    db_session = db.session
+
+    sch.code = await generate_code(entity=CodeCounterEnum.Desa, db_session=db_session, with_commit=False)
 
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
