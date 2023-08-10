@@ -141,7 +141,12 @@ async def merging_to_bundle(bundle_hd_obj : BundleHd,
                                                     db_session=db_session)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisDtSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+                params: Params = Depends(), 
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -363,7 +368,9 @@ async def delete_riwayat(id:UUID,
     return create_response(data=obj)
 
 @router.get("/download-file/{id}")
-async def download_file(id:UUID):
+async def download_file(
+                    id:UUID,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
     """Download File Dokumen"""
 
     obj_current = await crud.tandaterimanotaris_dt.get(id=id)

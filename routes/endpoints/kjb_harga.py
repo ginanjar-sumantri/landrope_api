@@ -17,12 +17,17 @@ async def create(sch: KjbHargaCreateSch,
     
     """Create a new object"""
         
-    new_obj = await crud.kjb_harga.create(obj_in=sch)
+    new_obj = await crud.kjb_harga.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHargaSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -55,7 +60,7 @@ async def update(id:UUID, sch:KjbHargaUpdateSch,
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[KjbHargaSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

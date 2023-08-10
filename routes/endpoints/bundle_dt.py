@@ -1,10 +1,10 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Response, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select, and_
+from sqlmodel import select, or_
+from sqlalchemy import text
 from models.bundle_model import BundleDt
 from models.dokumen_model import Dokumen, KategoriDokumen
 from models.worker_model import Worker
@@ -32,36 +32,55 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    # query = select(BundleDt).select_from(BundleDt
-    #                                         ).outerjoin(Worker, BundleDt.updated_by_id == Worker.id
-    #                                         ).outerjoin(Dokumen, BundleDt.dokumen_id == Dokumen.id
-    #                                         ).outerjoin(KategoriDokumen, Dokumen.kategori_dokumen_id == KategoriDokumen.id)
+    query = select(BundleDt).select_from(BundleDt
+                                            ).outerjoin(Worker, BundleDt.updated_by_id == Worker.id
+                                            ).outerjoin(Dokumen, BundleDt.dokumen_id == Dokumen.id
+                                            ).outerjoin(KategoriDokumen, Dokumen.kategori_dokumen_id == KategoriDokumen.id)
     
-    # if filter_query:
-    #     filter_query = json.loads(filter_query)
-    #     for key, value in filter_query.items():
-    #         query = query.where(getattr(BundleDt, key) == value)
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(BundleDt, key) == value)
     
-    # if order_by :
-    #     columns = BundleDt.__table__.columns
-    #     if order_by in columns:
-    #         query.order_by(order_by)
-    #     elif order_by == "dokumen_name":
-    #         query.order_by(Dokumen.name.asc())
-    #     elif order_by == "kategori_dokumen_name":
-    #         query.order_by(KategoriDokumen.name)
-    #     else:
-    #         query.order_by('id')
+    if keyword:
+        query = query.filter(
+            or_(
+                BundleDt.meta_data.ilike(f'%{keyword}%'),
+                BundleDt.code.ilike(f'%{keyword}%'),
+                Dokumen.name.ilike(f'%{keyword}%'),
+                KategoriDokumen.name.ilike(f'%{keyword}%'),
+                Worker.name.ilike(f'%{keyword}%')
+            )
+        )
     
-    # objs = await crud.bundledt.get_multi_paginated(params=params, query=query)
+    columns = BundleDt.__table__.columns
+    cls_meta = getattr(BundleDt, 'Meta', None)
+
+    if order_by is not None and order_by not in columns:
+        if cls_meta and order_by in cls_meta().order_fields:
+            order_by = cls_meta().order_fields[order_by]
+        else:
+            order_by = 'id'    
+    elif order_by is None:
+        order_by = 'id'
+
+    if order == OrderEnumSch.ascendent:
+        order_by += ' asc'    
+    else:
+        order_by += ' desc'
+
+    query = query.order_by(text(order_by))
+    
+    objs = await crud.bundledt.get_multi_paginated(params=params, query=query)
 
 
-    objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
-                                                                            order_by=order_by, 
-                                                                            keyword=keyword, 
-                                                                            filter_query=filter_query,
-                                                                            order=order,
-                                                                            join=True)
+    # objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
+    #                                                                         order_by=order_by, 
+    #                                                                         keyword=keyword, 
+    #                                                                         filter_query=filter_query,
+    #                                                                         order=order,
+    #                                                                         join=True)
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BundleDtSch])

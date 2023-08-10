@@ -56,7 +56,7 @@ async def update(id:UUID, sch:KjbBebanBiayaUpdateSch,
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[KjbBebanBiayaSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

@@ -96,4 +96,11 @@ async def regenerate(id:UUID,
     
     return create_response(data=obj_updated)
 
+@router.get("/test/query/first")
+async def test_query(keyword:str):
+    bundle = await crud.bundlehd.get_by_keyword(keyword=keyword)
+    # bundle = await crud.bundlehd.get(id=keyword)
+
+    return bundle.dict()
+
    

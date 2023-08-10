@@ -23,16 +23,23 @@ import pandas
 router_pemilik = APIRouter()
 
 @router_pemilik.post("/create", response_model=PostResponseBaseSch[PemilikSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PemilikCreateSch):
+async def create(
+            sch: PemilikCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.pemilik.create_pemilik(obj_in=sch)
+    new_obj = await crud.pemilik.create_pemilik(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @router_pemilik.get("", response_model=GetResponsePaginatedSch[PemilikSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -51,7 +58,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Pemilik, id)
 
 @router_pemilik.put("/{id}", response_model=PutResponseBaseSch[PemilikSch])
-async def update(id:UUID, sch:PemilikUpdateSch):
+async def update(
+            id:UUID, 
+            sch:PemilikUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -60,7 +70,7 @@ async def update(id:UUID, sch:PemilikUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Pemilik, id)
     
-    obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
 
     await update_kontak(pemilik_id=id, sch=sch)
     await update_rekening(pemilik_id=id, sch=sch)
@@ -184,14 +194,9 @@ async def extract_excel(file:UploadFile):
 
     return data
 
-    
-
-
-    
-
 
 @router_pemilik.delete("/delete", response_model=DeleteResponseBaseSch[PemilikSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

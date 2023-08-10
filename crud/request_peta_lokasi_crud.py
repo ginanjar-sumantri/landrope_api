@@ -37,16 +37,17 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         filter_clause = None
 
         if keyword:
-            for attr in columns:
-                if not "CHAR" in str(attr.type) or attr.name.endswith("_id") or attr.name == "id":
-                    continue
-
-                condition = getattr(self.model, attr.name).ilike(f'%{keyword}%')
-                if filter_clause is None:
-                    filter_clause = condition
-                else:
-                    filter_clause = or_(filter_clause, condition)
-
+            query = query.filter(
+                or_(
+                    RequestPetaLokasi.code.ilike(f'%{keyword}%'),
+                    KjbDt.alashak.ilike(f'%{keyword}%'),
+                    KjbHd.code.ilike(f'%{keyword}%'),
+                    KjbHd.mediator.ilike(f'%{keyword}%'),
+                    KjbHd.nama_group.ilike(f'%{keyword}%'),
+                    Desa.name.ilike(f'%{keyword}%'),
+                )
+            )
+            
         if filter_clause is not None:        
             query = query.filter(filter_clause)
         
@@ -54,6 +55,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             query = query.order_by(columns["code"].asc())
         else:
             query = query.order_by(columns["code"].desc())
+        
+        print(query)
         
         return await paginate(db_session, query, params)
     

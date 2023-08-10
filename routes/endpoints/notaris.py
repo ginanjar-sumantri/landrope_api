@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.notaris_model import Notaris
+from models.worker_model import Worker
 from schemas.notaris_sch import (NotarisSch, NotarisCreateSch, NotarisUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
@@ -13,16 +14,23 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[NotarisSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: NotarisCreateSch):
+async def create(
+            sch: NotarisCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.notaris.create(obj_in=sch)
+    new_obj = await crud.notaris.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[NotarisSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -41,7 +49,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Notaris, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[NotarisSch])
-async def update(id:UUID, sch:NotarisUpdateSch):
+async def update(
+            id:UUID, 
+            sch:NotarisUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -50,11 +61,11 @@ async def update(id:UUID, sch:NotarisUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Notaris, id)
     
-    obj_updated = await crud.notaris.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.notaris.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[NotarisSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

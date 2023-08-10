@@ -1,6 +1,6 @@
 from models.request_peta_lokasi_model import RequestPetaLokasiBase, RequestPetaLokasiFullBase
 from common.partial import optional
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 from typing import List
 from decimal import Decimal
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ class RequestPetaLokasiCreatesSch(BaseModel):
     kjb_dt_ids: List[UUID]
     remark:str | None
 
-class RequestPetaLokasiHdSch(BaseModel):
+class RequestPetaLokasiHdSch(SQLModel):
     code:str | None
     desa_name:str | None = Field(alias="desa_name")
     mediator:str | None = Field(alias="mediator")

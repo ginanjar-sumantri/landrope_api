@@ -62,7 +62,7 @@ async def create(
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
             kjb_dt_update.bundle_hd_id = bundle.id
         else:
-            kjb_dt_update.bundle_hd_id = bundle[0].id
+            kjb_dt_update.bundle_hd_id = bundle.id
     
     kjb_dt_update.luas_surat_by_ttn = sch.luas_surat
     kjb_dt_update.desa_by_ttn_id = sch.desa_id
@@ -76,7 +76,12 @@ async def create(
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+                params: Params = Depends(), 
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -150,7 +155,9 @@ async def update(id:UUID,
     return create_response(data=obj_updated)
 
 @router.get("/download-file/{id}")
-async def download_file(id:UUID):
+async def download_file(
+                    id:UUID,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
     """Download File Dokumen"""
 
     obj_current = await crud.tandaterimanotaris_hd.get(id=id)

@@ -6,6 +6,7 @@ from models.planing_model import Planing
 from models.project_model import Project
 from models.desa_model import Desa
 from models.skpt_model import Skpt, SkptDt
+from models.worker_model import Worker
 from schemas.skpt_sch import SkptSch, SkptShpSch
 from schemas.skpt_dt_sch import SkptDtCreateSch, SkptDtUpdateSch, SkptDtSch, SkptDtRawSch
 from schemas.ptsk_sch import (PtskSch)
@@ -24,7 +25,10 @@ import json
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[SkptDtRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: SkptDtCreateSch = Depends(SkptDtCreateSch.as_form), file:UploadFile = None):
+async def create(
+            sch: SkptDtCreateSch = Depends(SkptDtCreateSch.as_form), 
+            file:UploadFile = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
     
@@ -48,11 +52,16 @@ async def create(sch: SkptDtCreateSch = Depends(SkptDtCreateSch.as_form), file:U
                         luas=RoundTwo(sch.luas),
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
-    new_obj = await crud.skptdt.create(obj_in=sch)
+    new_obj = await crud.skptdt.create(obj_in=sch, created_by_id=current_worker.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[SkptDtRawSch])
-async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None, filter_query:str=None):
+async def get_list(
+            params:Params = Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -76,7 +85,11 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Skpt, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[SkptDtRawSch])
-async def update(id:UUID, sch:SkptDtUpdateSch = Depends(SkptDtUpdateSch.as_form), file:UploadFile=None):
+async def update(
+            id:UUID, 
+            sch:SkptDtUpdateSch = Depends(SkptDtUpdateSch.as_form), 
+            file:UploadFile = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -100,7 +113,7 @@ async def update(id:UUID, sch:SkptDtUpdateSch = Depends(SkptDtUpdateSch.as_form)
                         luas=RoundTwo(sch.luas),
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
-    obj_updated = await crud.skpt.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.skpt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.post("/bulk", response_model=ImportResponseBaseSch[SkptDtRawSch], status_code=status.HTTP_201_CREATED)
@@ -200,7 +213,9 @@ async def bulk_skpt(file:UploadFile=File()):
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp(filter_query:str = None):
+async def export_shp(
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     schemas = []
     

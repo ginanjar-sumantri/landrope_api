@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.marketing_model import Manager, Sales
+from models.worker_model import Worker
 from schemas.marketing_sch import (ManagerSch, ManagerCreateSch, ManagerUpdateSch, SalesSch, SalesCreateSch, SalesUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
@@ -11,16 +12,23 @@ import crud
 manager = APIRouter()
 
 @manager.post("/create", response_model=PostResponseBaseSch[ManagerSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ManagerCreateSch):
+async def create(
+            sch: ManagerCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.manager.create(obj_in=sch)
+    new_obj = await crud.manager.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @manager.get("", response_model=GetResponsePaginatedSch[ManagerSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -39,7 +47,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Manager, id)
 
 @manager.put("/{id}", response_model=PutResponseBaseSch[ManagerSch])
-async def update(id:UUID, sch:ManagerUpdateSch):
+async def update(
+            id:UUID, 
+            sch:ManagerUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -48,11 +59,11 @@ async def update(id:UUID, sch:ManagerUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Manager, id)
     
-    obj_updated = await crud.manager.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.manager.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker)
     return create_response(data=obj_updated)
 
 @manager.delete("/delete", response_model=DeleteResponseBaseSch[ManagerSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 
@@ -70,16 +81,23 @@ async def delete(id:UUID):
 sales = APIRouter()
 
 @sales.post("/create", response_model=PostResponseBaseSch[SalesSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: SalesCreateSch):
+async def create(
+            sch: SalesCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.sales.create(obj_in=sch)
+    new_obj = await crud.sales.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @sales.get("", response_model=GetResponsePaginatedSch[SalesSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -98,7 +116,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Sales, id)
 
 @sales.put("/{id}", response_model=PutResponseBaseSch[SalesSch])
-async def update(id:UUID, sch:SalesUpdateSch):
+async def update(
+            id:UUID, 
+            sch:SalesUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -107,11 +128,11 @@ async def update(id:UUID, sch:SalesUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Sales, id)
     
-    obj_updated = await crud.sales.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.sales.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @sales.delete("/delete", response_model=DeleteResponseBaseSch[SalesSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

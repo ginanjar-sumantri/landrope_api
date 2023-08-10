@@ -22,7 +22,12 @@ async def create(sch: KjbPenjualCreateSch,
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbPenjualSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 

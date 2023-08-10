@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, Response
 from fastapi_pagination import Params
 import crud
 from models.ptsk_model import Ptsk
+from models.worker_model import Worker
 from schemas.skpt_sch import SkptShpSch
 from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch, PtskRawSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -14,7 +15,9 @@ from shapely import wkt, wkb
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[PtskRawSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: PtskCreateSch):
+async def create(
+            sch: PtskCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
     
@@ -22,11 +25,16 @@ async def create(sch: PtskCreateSch):
     if obj_current:
         raise NameExistException(Ptsk, name=sch.name)
     
-    new_obj = await crud.ptsk.create(obj_in=sch)
+    new_obj = await crud.ptsk.create(obj_in=sch, created_by_id=current_worker.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[PtskRawSch])
-async def get_list(params:Params = Depends(), order_by:str=None, keyword:str=None, filter_query:str=None):
+async def get_list(
+                params:Params = Depends(),
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -45,7 +53,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Ptsk, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PtskRawSch])
-async def update(id:UUID, sch:PtskUpdateSch):
+async def update(
+            id:UUID, 
+            sch:PtskUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -54,11 +65,13 @@ async def update(id:UUID, sch:PtskUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Ptsk, id)
     
-    obj_updated = await crud.ptsk.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.ptsk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.get("/export/shp", response_class=Response)
-async def export_shp(ptsk_id:UUID = None):
+async def export_shp(
+                ptsk_id:UUID = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     schemas = []
     

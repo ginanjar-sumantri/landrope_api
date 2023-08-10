@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kjb_model import KjbRekening
+from models.worker_model import Worker
 from schemas.kjb_rekening_sch import (KjbRekeningSch, KjbRekeningCreateSch, KjbRekeningUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
@@ -11,16 +12,23 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbRekeningSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KjbRekeningCreateSch):
+async def create(
+            sch: KjbRekeningCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.kjb_rekening.create(obj_in=sch)
+    new_obj = await crud.kjb_rekening.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbRekeningSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -39,7 +47,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbRekening, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbRekeningSch])
-async def update(id:UUID, sch:KjbRekeningUpdateSch):
+async def update(
+            id:UUID, 
+            sch:KjbRekeningUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -48,11 +59,11 @@ async def update(id:UUID, sch:KjbRekeningUpdateSch):
     if not obj_current:
         raise IdNotFoundException(KjbRekening, id)
 
-    obj_updated = await crud.kjb_rekening.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kjb_rekening.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[KjbRekeningSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

@@ -77,7 +77,10 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
     return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
 
 @router.get("/header", response_model=GetResponsePaginatedSch[RequestPetaLokasiHdSch])
-async def get_list_header(params: Params=Depends(), keyword:str = None):
+async def get_list_header(
+                    params: Params=Depends(), 
+                    keyword:str = None,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -85,7 +88,12 @@ async def get_list_header(params: Params=Depends(), keyword:str = None):
     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params = Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -166,7 +174,9 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
     return create_response(data=obj)
 
 @router.get("/perintah-pengukuran/{code}")
-async def perintah_pengukuran(code:str = None):
+async def perintah_pengukuran(
+                        code:str = None,
+                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
     """Print out Perintah Pengukuran Tanah"""
 
     objs = await crud.request_peta_lokasi.get_all_by_code(code=code)
@@ -205,10 +215,10 @@ async def perintah_pengukuran(code:str = None):
     response.headers["Content-Disposition"] = f"attachment; filename={nomor}.pdf"
     return response
 
-
-
 @router.delete("/delete", response_model=DeleteResponseBaseSch[RequestPetaLokasiSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(
+            id:UUID,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 

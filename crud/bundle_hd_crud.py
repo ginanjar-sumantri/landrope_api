@@ -53,6 +53,6 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
         query = select(self.model).where(self.model.keyword.ilike(f'%{keyword}%'))
         response = await db_session.execute(query)
 
-        return response.first()
+        return response.scalars().first()
 
 bundlehd = CRUDBundleHd(BundleHd)

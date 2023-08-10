@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.kategori_model import Kategori
+from models.worker_model import Worker
 from schemas.kategori_sch import (KategoriSch, KategoriCreateSch, KategoriUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
@@ -11,16 +12,23 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KategoriSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KategoriCreateSch):
+async def create(
+            sch: KategoriCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
         
-    new_obj = await crud.kategori.create(obj_in=sch)
+    new_obj = await crud.kategori.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KategoriSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+            params: Params=Depends(), 
+            order_by:str = None, 
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -39,7 +47,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Kategori, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KategoriSch])
-async def update(id:UUID, sch:KategoriUpdateSch):
+async def update(
+            id:UUID, 
+            sch:KategoriUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -48,7 +59,7 @@ async def update(id:UUID, sch:KategoriUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Kategori, id)
     
-    obj_updated = await crud.kategori.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kategori.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
    

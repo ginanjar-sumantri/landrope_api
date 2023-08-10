@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 import crud
 from models.project_model import Project
+from models.worker_model import Worker
 from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -12,7 +13,9 @@ from services.geom_service import GeomService
 router = APIRouter()
 
 @router.post("", response_model=PostResponseBaseSch[ProjectSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: ProjectCreateSch):
+async def create(
+            sch: ProjectCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
     
@@ -20,12 +23,17 @@ async def create(sch: ProjectCreateSch):
     if obj_current:
         raise NameExistException(Project, name=sch.name)
     
-    new_obj = await crud.project.create(obj_in=sch)
+    new_obj = await crud.project.create(obj_in=sch, created_by_id=current_worker.id)
 
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[ProjectSch])
-async def get_list(params:Params = Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+                params:Params = Depends(), 
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -45,7 +53,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Project, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[ProjectSch])
-async def update(id:UUID, sch:ProjectUpdateSch):
+async def update(
+            id:UUID, 
+            sch:ProjectUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -53,7 +64,7 @@ async def update(id:UUID, sch:ProjectUpdateSch):
     if not obj_current:
         raise IdNotFoundException(Project, id)
     
-    obj_updated = await crud.project.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.project.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.post("/bulk")

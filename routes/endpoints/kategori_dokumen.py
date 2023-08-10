@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from models.dokumen_model import KategoriDokumen
+from models.worker_model import Worker
 from schemas.kategori_dokumen_sch import (KategoriDokumenSch, KategoriDokumenCreateSch, KategoriDokumenUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -11,7 +12,9 @@ import crud
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KategoriDokumenSch], status_code=status.HTTP_201_CREATED)
-async def create(sch: KategoriDokumenCreateSch):
+async def create(
+            sch: KategoriDokumenCreateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
 
@@ -20,7 +23,12 @@ async def create(sch: KategoriDokumenCreateSch):
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KategoriDokumenSch])
-async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):
+async def get_list(
+                params: Params=Depends(), 
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
@@ -39,7 +47,10 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KategoriDokumen, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KategoriDokumenSch])
-async def update(id:UUID, sch:KategoriDokumenUpdateSch):
+async def update(
+            id:UUID, 
+            sch:KategoriDokumenUpdateSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
@@ -48,11 +59,11 @@ async def update(id:UUID, sch:KategoriDokumenUpdateSch):
     if not obj_current:
         raise IdNotFoundException(KategoriDokumen, id)
     
-    obj_updated = await crud.kategori_dokumen.update(obj_current=obj_current, obj_new=sch)
+    obj_updated = await crud.kategori_dokumen.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[KategoriDokumenSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID):
+async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 
