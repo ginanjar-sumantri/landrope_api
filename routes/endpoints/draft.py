@@ -98,6 +98,9 @@ async def create(
             else:
                 continue
         
+        # gs_intersect = gpd.GeoSeries(intersected_geometry.geometry)
+        # print(gs_intersect.area[0])
+        
         draft_detail = DraftDetailSch(
             bidang_id=intersect_bidang.id,
             geom=GeomService.single_geometry_to_wkt(intersected_geometry.geometry)

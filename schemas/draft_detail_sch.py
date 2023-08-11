@@ -8,7 +8,7 @@ class DraftDetailCreateSch(DraftDetailBase):
     pass
 
 class DraftDetailRawSch(DraftDetailRawBase):
-    updated_by_name:str|None = Field(alias="updated_by_name")
+    image_png:str | None = Field(alias="image_png")
 
 class DraftDetailSch(DraftDetailFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
