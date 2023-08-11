@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
-                              draft, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
+                              draft, draft_detail, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, marketing, pemilik, beban_biaya, kategori, kategori_sub, kategori_proyek,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
-                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, import_log)
+                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, import_log)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -12,6 +12,7 @@ api_router.include_router(desa.router, prefix="/desa", tags=["desa"])
 api_router.include_router(planing.router, prefix="/planing", tags=["planing"])
 api_router.include_router(project.router, prefix="/project", tags=["project"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
+api_router.include_router(draft_detail.router, prefix="/draft_detail", tags=["draft_detail"])
 api_router.include_router(gps.router, prefix="/gps", tags=["gps"])
 api_router.include_router(ptsk.router, prefix="/ptsk", tags=["ptsk"])
 api_router.include_router(skpt.router, prefix="/skpt", tags=["skpt"])
@@ -36,6 +37,7 @@ api_router.include_router(kjb_penjual.router, prefix="/kjbpenjual", tags=["kjbpe
 api_router.include_router(tanda_terima_notaris_hd.router, prefix="/tandaterimanotaris_hd", tags=["tandaterimanotaris_hd"])
 api_router.include_router(tanda_terima_notaris_dt.router, prefix="/tandaterimanotaris_dt", tags=["tandaterimanotaris_dt"])
 api_router.include_router(request_peta_lokasi.router, prefix="/requestpetalokasi", tags=["requestpetalokasi"])
+api_router.include_router(hasil_peta_lokasi.router, prefix="/hasilpetalokasi", tags=["hasilpetalokasi"])
 
 api_router.include_router(notaris.router, prefix="/notaris", tags=["notaris"])
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])

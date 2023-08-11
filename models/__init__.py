@@ -6,7 +6,7 @@ from .ptsk_model import Ptsk
 from .master_model import JenisLahan, BebanBiaya, JenisSurat
 from .bidang_model import Bidang 
 from .mapping_model import (MappingBidangOverlap)
-from .draft_model import Draft
+from .draft_model import Draft, DraftDetail
 from .gps_model import Gps
 from .skpt_model import Skpt
 from .code_counter_model import CodeCounter
@@ -20,5 +20,6 @@ from .bundle_model import BundleHd, BundleDt
 from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisDt
 from .notaris_model import Notaris
 from .request_peta_lokasi_model import RequestPetaLokasi
+from .hasil_peta_lokasi_model import HasilPetaLokasi
 from .import_log_model import ImportLog, ImportLogError
 from .kategori_model import Kategori, KategoriSub, KategoriProyek

@@ -97,7 +97,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(
+        params=params, 
+        order_by=order_by, 
+        keyword=keyword, 
+        filter_query=filter_query)
+    
     return create_response(data=objs)
 
 @router.get("/{code}", response_model=GetResponseBaseSch[RequestPetaLokasiHdbyCodeSch])

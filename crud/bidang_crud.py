@@ -9,9 +9,9 @@ from services.gcloud_storage_service import GCStorageService
 from services.geom_service import GeomService
 from io import BytesIO
 from uuid import UUID
-from itertools import islice
-import crud
-import time
+from geoalchemy2 import functions
+from shapely.geometry import shape
+from geoalchemy2.shape import from_shape
 
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
@@ -35,6 +35,25 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         db_session = db_session or db.session
         obj = await db_session.execute(select(Bidang).where(and_(Bidang.id_bidang == idbidang, Bidang.id_bidang_lama == idbidang_lama)))
         return obj.scalar_one_or_none()
+    
+    async def get_intersect_bidang(
+            self, 
+            *, 
+            id:UUID | str,
+            db_session : AsyncSession | None = None, 
+            geom) -> list[Bidang] | None:
+        
+        # g = shape(geom)
+        # wkb = from_shape(g)
+
+        db_session = db_session or db.session
+        query = select(self.model
+                       ).where(self.model.id != id
+                               ).filter(functions.ST_Intersects(self.model.geom, geom))
+        
+        response =  await db_session.execute(query)
+        
+        return response.scalars().all()
     
     # async def lets_bulk_bidang(
     #     self,

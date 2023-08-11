@@ -7,6 +7,7 @@ from .bidang_crud import bidang
 # from .bidangoverlap_crud import bidangoverlap
 
 from .draft_crud import draft
+from .draft_detail_crud import draft_detail
 from .gps_crud import gps
 from .skpt_crud import skpt
 from .skpt_dt_crud import skptdt
@@ -33,6 +34,7 @@ from .tanda_terima_notaris_hd_crud import tandaterimanotaris_hd
 from .tanda_terima_notaris_dt_crud import tandaterimanotaris_dt
 
 from .request_peta_lokasi_crud import request_peta_lokasi
+from .hasil_peta_lokasi_crud import hasil_peta_lokasi
 
 from .pemilik_crud import pemilik, kontak, rekening
 from .harga_standard_crud import harga_standard
