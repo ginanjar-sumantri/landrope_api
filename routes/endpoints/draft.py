@@ -15,6 +15,7 @@ import pandas as pd
 from shapely.geometry import polygon
 from shapely  import wkt, wkb
 from pyproj import CRS
+from geoalchemy2.shape import from_shape
 
 router = APIRouter()
 
@@ -60,14 +61,19 @@ async def create(
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
-    
+
+        g = shape(geo_dataframe.geometry[0])
+        wkb = from_shape(g)
+        geom_wkb = wkb
         rincik_geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        
 
     else:
         rincik = await crud.bidang.get(id=sch.rincik_id)
+        geom_wkb = rincik.geom
         rincik_geom = wkt.dumps(wkb.loads(rincik.geom.data, hex=True))
 
-    rincik_dict = { "id" : rincik.id, "geometry" : rincik_geom}
+    rincik_dict = { "id" : sch.rincik_id, "geometry" : rincik_geom}
     data_rincik = [rincik_dict]
 
     df_rincik = pd.DataFrame(data_rincik)
@@ -76,7 +82,7 @@ async def create(
 
     draft_details = []
 
-    intersects_bidangs = await crud.bidang.get_intersect_bidang(geom=rincik.geom, id=sch.rincik_id)
+    intersects_bidangs = await crud.bidang.get_intersect_bidang(geom=geom_wkb, id=sch.rincik_id)
 
     for intersect_bidang in intersects_bidangs:
         bidang_geom = wkt.dumps(wkb.loads(intersect_bidang.geom.data, hex=True))
