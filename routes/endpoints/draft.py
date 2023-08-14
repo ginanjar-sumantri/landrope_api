@@ -63,8 +63,8 @@ async def create(
             geo_dataframe['geometry'] = polygon.geometry
 
         g = shape(geo_dataframe.geometry[0])
-        wkb = from_shape(g)
-        geom_wkb = wkb
+        wkb_geom = from_shape(g)
+        geom_wkb = wkb_geom
         rincik_geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         
 
