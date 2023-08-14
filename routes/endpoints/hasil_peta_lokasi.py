@@ -1,23 +1,28 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, UploadFile
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 import crud
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.worker_model import Worker
-from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, HasilPetaLokasiByIdSch, HasilPetaLokasiUpdateSch)
+from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
+                                           HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, HasilPetaLokasiUpdateSch)
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
+from services.gcloud_storage_service import GCStorageService
 
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[HasilPetaLokasiSch], status_code=status.HTTP_201_CREATED)
 async def create(
-            sch: HasilPetaLokasiCreateSch,
+            sch: HasilPetaLokasiCreateExtSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
 
+    db_session = db.session
     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
@@ -26,7 +31,25 @@ async def create(
     if obj_current:
         raise ContentNoChangeException(detail="Bidang Sudah input hasil peta lokasi")
     
-    new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id)
+    sch.file_path = ""
+
+    new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    for dt in sch.hasilpetalokasidetails:
+        detail_sch = HasilPetaLokasiDetailCreateSch(
+            tipe_overlap=dt.tipe_overlap,
+            bidang_id=dt.bidang_id,
+            hasil_peta_lokasi_id=new_obj.id,
+            luas_overlap=dt.luas_overlap,
+            keterangan=dt.keterangan
+        )
+
+        await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    
+    await db_session.commit()
+    await db_session.refresh(new_obj)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
@@ -56,7 +79,7 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def update(
             id:UUID, 
-            sch:HasilPetaLokasiUpdateSch,
+            sch:HasilPetaLokasiUpdateSch = Depends(HasilPetaLokasiUpdateSch.as_form),
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""

@@ -90,3 +90,11 @@ class TaskStatusEnum(str, Enum):
     Done = "Done"
     Done_With_Error = "Done_With_Error"
     Failed = "Failed"
+
+class TipeOverlapEnum(str, Enum):
+    BintangLanjut = "Bintang_Lanjut"
+    BintangBatal = "Bintang_Batal"
+    BintangStandard_SudahBebas = "Bintang_Standard_Sudah_Bebas"
+    BintangStandard_BelumBebas = "Bintang_Standard_Belum_Bebas"
+    SertifikatOrangLain = "Sertifikat_Orang_Lain"
+    NIBOrangLain = "NIB_Orang_Lain"

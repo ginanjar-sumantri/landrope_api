@@ -10,6 +10,7 @@ import base64
 
 if TYPE_CHECKING:
     from worker_model import Worker
+    from bidang_model import Bidang
 
 class DraftBase(SQLModel):
     rincik_id:UUID | None = Field(nullable=True)
@@ -43,9 +44,8 @@ class Draft(DraftFullBase, table=True):
     
 
 class DraftDetailBase(SQLModel):
-    bidang_id:UUID | None
+    bidang_id:UUID | None = Field(foreign_key="bidang.id")
     draft_id:UUID | None = Field(foreign_key="draft.id")
-    image:bytes | None
 
 class DraftDetailRawBase(BaseUUIDModel, DraftDetailBase):
     pass
@@ -61,6 +61,24 @@ class DraftDetail(DraftDetailFullBase, table=True):
                             {
                                 "lazy" : "selectin"
                             })
+    
+    bidang:"Bidang" = Relationship(
+                            sa_relationship_kwargs=
+                            {
+                                "lazy" : "selectin"
+                            })
+    
+    @property
+    def id_bidang(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "id_bidang", None)
+    
+    @property
+    def pemilik_name(self) -> str | None :
+        return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
+
+    @property
+    def alashak(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "alashak", None)
     
     @property
     def image_png(self) -> str | None :

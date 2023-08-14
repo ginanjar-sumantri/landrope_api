@@ -80,7 +80,7 @@ class GCStorageService:
 
     async def upload_file_dokumen(self, file: UploadFile, file_name:str = None) -> str:
         bucket = self.storage_client.get_bucket(self.bucket_name)
-        file_path = await self.path_and_rename_dokumen(upload_file=file)
+        file_path = await self.path_and_rename_dokumen(upload_file=file, file_name=file_name)
         blob = bucket.blob(file_path)
         blob.upload_from_file(file_obj=file.file,
                               content_type=file.content_type)

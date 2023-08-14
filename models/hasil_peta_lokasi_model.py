@@ -4,6 +4,7 @@ from common.enum import JenisAlashakEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
+from common.enum import TipeOverlapEnum
 
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
@@ -34,6 +35,14 @@ class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass
 
 class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
+    details: "HasilPetaLokasiDetail" = Relationship(
+                        back_populates="hasil_peta_lokasi",
+                        sa_relationship_kwargs=
+                        {
+                            "lazy" : "selectin"
+                        }
+    )
+
     bidang: "Bidang" = Relationship(
                         sa_relationship_kwargs=
                                             {
@@ -120,3 +129,47 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     @property
     def pemilik_name(self) -> str | None:
         return getattr(getattr(self, 'pemilik', None), 'name', None)
+    
+    ##########################################################
+
+class HasilPetaLokasiDetailBase(SQLModel):
+    tipe_overlap:TipeOverlapEnum
+    bidang_id:UUID | None = Field(nullable=True, foreign_key="bidang.id")
+    hasil_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="hasil_peta_lokasi.id")
+    luas_overlap:Decimal = Field(nullable=True)
+    keterangan:str | None = Field(nullable=True)
+
+class HasilPetaLokasiDetailFullBase(BaseUUIDModel, HasilPetaLokasiDetailBase):
+    pass
+
+class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
+    hasil_peta_lokasi : "HasilPetaLokasi" = Relationship(
+                            back_populates="details",
+                            sa_relationship_kwargs=
+                            {
+                                "lazy" : "selectin"
+                            }
+    )
+
+    bidang : "Bidang" = Relationship(
+                            sa_relationship_kwargs=
+                            {
+                                "lazy" : "selectin"
+                            }
+    )
+
+    @property
+    def id_bidang(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "id_bidang", None)
+    
+    @property
+    def luas_surat(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "luas_surat", None)
+    
+    @property
+    def alashak(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "alashak", None)
+    
+    @property
+    def pemilik_name(self) -> str | None:
+        return getattr(getattr(getattr(self, 'bidang', None), 'pemilik', None), 'name', None)

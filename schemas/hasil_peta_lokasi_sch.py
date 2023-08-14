@@ -1,11 +1,17 @@
 from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiFullBase
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 
+@as_form
 class HasilPetaLokasiCreateSch(HasilPetaLokasiBase):
     pass
+
+@as_form
+class HasilPetaLokasiCreateExtSch(HasilPetaLokasiBase):
+    hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]
 
 class HasilPetaLokasiSch(HasilPetaLokasiFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
@@ -28,6 +34,7 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     pemilik_name:str|None = Field(alias="pemilik_name")
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+@as_form
 @optional
 class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
     pass

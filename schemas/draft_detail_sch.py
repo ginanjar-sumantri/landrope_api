@@ -8,6 +8,9 @@ class DraftDetailCreateSch(DraftDetailBase):
     pass
 
 class DraftDetailRawSch(DraftDetailRawBase):
+    id_bidang:str | None = Field(alias="id_bidang")
+    pemilik_name:str | None = Field(alias="pemilik_name")
+    alashak:str | None = Field(alias="alashak")
     image_png:str | None = Field(alias="image_png")
 
 class DraftDetailSch(DraftDetailFullBase):

@@ -1,19 +1,21 @@
+from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy import exc
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.hasil_peta_lokasi_model import HasilPetaLokasi
-from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch
+from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, HasilPetaLokasiCreateExtSch
 from typing import List
 from uuid import UUID
+from datetime import datetime
 
 class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch]):
+    
     async def get_by_bidang_id(
                     self, 
                     *, 
