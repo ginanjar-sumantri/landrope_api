@@ -20,6 +20,6 @@ from .bundle_model import BundleHd, BundleDt
 from .tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaNotarisDt
 from .notaris_model import Notaris
 from .request_peta_lokasi_model import RequestPetaLokasi
-from .hasil_peta_lokasi_model import HasilPetaLokasi
+from .hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from .import_log_model import ImportLog, ImportLogError
 from .kategori_model import Kategori, KategoriSub, KategoriProyek
