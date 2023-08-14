@@ -3,6 +3,7 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 from shapely import wkt, wkb
+from decimal import Decimal
 import geopandas as gpd
 import pandas as pd
 import io
@@ -46,6 +47,7 @@ class Draft(DraftFullBase, table=True):
 class DraftDetailBase(SQLModel):
     bidang_id:UUID | None = Field(foreign_key="bidang.id")
     draft_id:UUID | None = Field(foreign_key="draft.id")
+    luas: Decimal | None = Field(nullable=True)
 
 class DraftDetailRawBase(BaseUUIDModel, DraftDetailBase):
     pass
@@ -99,3 +101,4 @@ class DraftDetail(DraftDetailFullBase, table=True):
         base64_string = base64.b64encode(image_binary).decode('utf-8')
 
         return base64_string
+    

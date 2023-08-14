@@ -9,6 +9,7 @@ from schemas.draft_sch import (DraftSch, DraftCreateSch, DraftRawSch, DraftForAn
 from schemas.draft_detail_sch import DraftDetailSch
 from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch,  create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.rounder import RoundTwo
 from shapely.geometry import shape
 import geopandas as gpd
 import pandas as pd
@@ -46,7 +47,7 @@ async def create(
     return create_response(data=new_obj)
 
 @router.post("/analisa", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
-async def create(
+async def analisa(
                 sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
                 file:UploadFile | None = None,
                 ):
@@ -104,11 +105,12 @@ async def create(
             else:
                 continue
         
-        # gs_intersect = gpd.GeoSeries(intersected_geometry.geometry)
-        # print(gs_intersect.area[0])
+        gs_intersect = gpd.GeoSeries(intersected_geometry.geometry)
+        area_intersect = gs_intersect.area[0]
         
         draft_detail = DraftDetailSch(
             bidang_id=intersect_bidang.id,
+            luas=RoundTwo(angka = area_intersect),
             geom=GeomService.single_geometry_to_wkt(intersected_geometry.geometry)
             )
         
