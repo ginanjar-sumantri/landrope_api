@@ -9,12 +9,15 @@ from models.bidang_overlap_model import BidangOverlap
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, HasilPetaLokasiUpdateSch)
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch
-from schemas.bidang_overlap_sch import BidangOverlapCreateSch
+from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
+from schemas.bidang_sch import BidangSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.generator import generate_code, CodeCounterEnum
+from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum
 from services.gcloud_storage_service import GCStorageService
+from shapely import wkb, wkt
 
 router = APIRouter()
 
@@ -26,6 +29,7 @@ async def create(
     """Create a new object"""
 
     db_session = db.session
+
     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
@@ -33,6 +37,14 @@ async def create(
     obj_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=sch.bidang_id)
     if obj_current:
         raise ContentNoChangeException(detail="Bidang Sudah input hasil peta lokasi")
+    
+    bidang_current = await crud.bidang.get(id=sch.bidang_id)
+    if bidang_current.geom :
+        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+    kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -49,12 +61,13 @@ async def create(
             
             draft_header_id = draft_detail.draft_id
             
-            code = await generate_code(entity=CodeCounterEnum.BidangOverlap)
-            bidang_overlap_sch = BidangOverlapCreateSch(
+            code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
+            bidang_overlap_sch = BidangOverlapSch(
                                     code=code,
                                     parent_bidang_id=sch.bidang_id,
                                     parent_bidang_intersect_id=dt.bidang_id,
-                                    luas=dt.luas_overlap)
+                                    luas=dt.luas_overlap,
+                                    geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, with_commit=False)
             bidang_overlap_id = new_obj_bidang_overlap.id
@@ -72,8 +85,47 @@ async def create(
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    #remove draft
+    #update bidang from hasil peta lokasi
     draft = await crud.draft.get(id=draft_header_id)
+
+    tipe_proses = TipeProsesEnum.Standard
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Belum_Bebas
+
+    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if len(sch.hasilpetalokasidetails) > 0:
+        tipe_proses = TipeProsesEnum.Overlap
+        jenis_bidang = JenisBidangEnum.Overlap
+
+    bidang_updated = BidangSch(
+        tipe_proses=tipe_proses,
+        jenis_bidang=jenis_bidang,
+        status=status_bidang,
+        pemilik_id=sch.pemilik_id,
+        luas_surat=sch.luas_surat,
+        planing_id=sch.planing_id,
+        skpt_id=sch.skpt_id,
+        group=kjb_hd_current.nama_group,
+        jenis_alashak=kjb_dt_current.jenis_alashak,
+        jenis_surat_id=kjb_dt_current.jenis_surat_id,
+        alashak=kjb_dt_current.alashak,
+        manager_id=kjb_hd_current.manager_id,
+        sales_id=kjb_hd_current.sales_id,
+        mediator=kjb_hd_current.mediator,
+        telepon_mediator=kjb_hd_current.telepon_mediator,
+        notaris_id=tanda_terima_notaris_current.notaris_id,
+        luas_ukur=sch.luas_ukur,
+        luas_gu_pt=sch.luas_gu_pt,
+        luas_gu_perorangan=sch.luas_gu_perorangan,
+        geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
+        bundle_hd_id=kjb_dt_current.bundle_hd_id)
+    
+    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)
+    
+    #remove draft
+    
     if draft:
         await crud.draft.remove(id=draft.id, db_session=db_session)
     else:
@@ -119,4 +171,25 @@ async def update(
         raise IdNotFoundException(HasilPetaLokasi, id)
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    return create_response(data=obj_updated)
+
+@router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
+async def upload_dokumen(
+            id:UUID, 
+            file: UploadFile = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Update a obj by its id"""
+
+    obj_current = await crud.hasil_peta_lokasi.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(HasilPetaLokasi, id)
+    
+    object_updated = HasilPetaLokasiSch(**obj_current.dict())
+
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}')
+        object_updated.file_path = file_path
+    
+    obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)

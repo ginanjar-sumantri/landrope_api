@@ -14,6 +14,11 @@ from typing import List
 from uuid import UUID
 
 class CRUDTandaTerimaNotarisHd(CRUDBase[TandaTerimaNotarisHd, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch]):
-    pass
+    async def get_one_by_kjb_dt_id(self, *, kjb_dt_id: UUID | str, db_session: AsyncSession | None = None) -> TandaTerimaNotarisHd | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.kjb_dt_id == kjb_dt_id).order_by(self.model.created_at.desc())
+        response = await db_session.execute(query)
+
+        return response.scalars().first()
 
 tandaterimanotaris_hd = CRUDTandaTerimaNotarisHd(TandaTerimaNotarisHd)

@@ -3,7 +3,7 @@ from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import Field
 
-
+@as_form
 class BidangOverlapCreateSch(BidangOverlapBase):
     pass
 

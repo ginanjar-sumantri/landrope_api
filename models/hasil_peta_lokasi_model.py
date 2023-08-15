@@ -4,11 +4,12 @@ from common.enum import JenisAlashakEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
-from common.enum import TipeOverlapEnum
+from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum
 
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
     from models.kjb_model import KjbDt
+    from models.request_peta_lokasi_model import RequestPetaLokasi
     from models.planing_model import Planing
     from models.ptsk_model import Ptsk
     from models.skpt_model import Skpt
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 class HasilPetaLokasiBase(SQLModel):
     bidang_id:UUID | None = Field(nullable=True, foreign_key="bidang.id")
     kjb_dt_id:UUID = Field(nullable=False, foreign_key="kjb_dt.id")
+    request_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="request_peta_lokasi.id")
     planing_id:UUID = Field(nullable=False, foreign_key="planing.id")
     ptsk_id:UUID = Field(nullable=False, foreign_key="ptsk.id")
     skpt_id:UUID = Field(nullable=False, foreign_key="skpt.id")
@@ -31,6 +33,7 @@ class HasilPetaLokasiBase(SQLModel):
     luas_gu_perorangan:Decimal | None = Field(nullable=True)
     luas_gu_pt:Decimal | None = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
+    status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum = Field(nullable=False)
 
 class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass
@@ -51,6 +54,13 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                                             })
     
     kjb_dt: "KjbDt" = Relationship(
+                        sa_relationship_kwargs=
+                                            {
+                                                "lazy" : "selectin"
+                                            })
+    
+    request_peta_lokasi: "RequestPetaLokasi" = Relationship(
+                        back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
                                                 "lazy" : "selectin"

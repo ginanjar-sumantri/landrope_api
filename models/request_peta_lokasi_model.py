@@ -4,10 +4,12 @@ from datetime import datetime, date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from uuid import UUID
+from common.enum import JenisAlashakEnum
 
 if TYPE_CHECKING:
     from kjb_model import KjbDt
     from worker_model import Worker
+    from hasil_peta_lokasi_model import HasilPetaLokasi
 
 class RequestPetaLokasiBase(SQLModel):
     code:str = Field(nullable=True)
@@ -25,6 +27,14 @@ class RequestPetaLokasiFullBase(BaseUUIDModel, RequestPetaLokasiBase):
 
 class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'selectin'})
+    hasil_peta_lokasi: "HasilPetaLokasi" = Relationship(
+        back_populates="request_peta_lokasi",
+        sa_relationship_kwargs={
+            "lazy" : "selectin",
+            "uselist" : False
+        }
+    )
+
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -90,4 +100,16 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
         if self.kjb_dt.project_by_ttn is None:
             return ""
         return self.kjb_dt.project_by_ttn.name
+    
+    @property
+    def jenis_alashak_kjb_dt(self) -> str | None:
+        return getattr(getattr(self, "kjb_dt", None), "jenis_alashak", None)
+    
+    @property
+    def id_bidang_hasil_peta_lokasi(self) -> str | None:
+        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "bidang", None), "id_bidang", None)
+    
+    @property
+    def hasil_peta_lokasi_id(self) -> UUID | None:
+        return getattr(getattr(self, "hasil_peta_lokasi", None), "id", None)
     

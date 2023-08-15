@@ -98,3 +98,7 @@ class TipeOverlapEnum(str, Enum):
     BintangStandard_BelumBebas = "Bintang_Standard_Belum_Bebas"
     SertifikatOrangLain = "Sertifikat_Orang_Lain"
     NIBOrangLain = "NIB_Orang_Lain"
+
+class StatusHasilPetaLokasiEnum(str, Enum):
+    Lanjut = "Lanjut"
+    Batal = "Batal"
