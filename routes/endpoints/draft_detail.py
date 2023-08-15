@@ -47,7 +47,7 @@ async def get_list(
     
     return create_response(data=objs)
 
-@router.get("/all", response_model=GetResponsePaginatedSch[DraftDetailRawSch])
+@router.get("/all", response_model=GetResponseBaseSch[DraftDetailRawSch])
 async def get_all(
                 keyword:str = None, 
                 filter_query:str=None,

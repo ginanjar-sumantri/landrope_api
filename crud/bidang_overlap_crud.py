@@ -7,10 +7,10 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 
 from crud.base_crud import CRUDBase
-from models.bidang_model import Bidangoverlap
+from models.bidang_overlap_model import BidangOverlap
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapUpdateSch
 
-class CRUDBidangOverlap(CRUDBase[Bidangoverlap, BidangOverlapCreateSch, BidangOverlapUpdateSch]):
+class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOverlapUpdateSch]):
     pass
 
-bidangoverlap = CRUDBidangOverlap(Bidangoverlap)
+bidangoverlap = CRUDBidangOverlap(BidangOverlap)

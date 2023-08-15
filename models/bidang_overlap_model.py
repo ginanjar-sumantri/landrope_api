@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 class BidangOverlapBase(SQLModel):
     code:str | None
-    parent_bidang_id:UUID
-    parent_bidang_intersect_id:UUID
+    parent_bidang_id:UUID = Field(foreign_key="bidang.id")
+    parent_bidang_intersect_id:UUID = Field(foreign_key="bidang.id")
     luas:Decimal
 
 class BidangOverlapRawBase(BaseUUIDModel, BidangOverlapBase):

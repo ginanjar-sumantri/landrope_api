@@ -26,7 +26,7 @@ class CRUDDraft(CRUDBase[Draft, DraftCreateSch, DraftUpdateSch]):
         try:
 
             for i in obj_in.details:
-                detail = DraftDetail(bidang_id=i.bidang_id, geom=i.geom)
+                detail = DraftDetail(bidang_id=i.bidang_id, luas=i.luas, geom=i.geom)
 
                 db_obj.details.append(detail)
 
