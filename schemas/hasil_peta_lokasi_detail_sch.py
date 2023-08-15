@@ -9,7 +9,6 @@ from decimal import Decimal
 class HasilPetaLokasiDetailCreateSch(HasilPetaLokasiDetailBase):
     pass
 
-@as_form
 class HasilPetaLokasiDetailCreateExtSch(SQLModel):
     tipe_overlap:TipeOverlapEnum
     bidang_id:UUID | None

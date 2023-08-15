@@ -4,7 +4,7 @@ from .planing_crud import planing
 from .ptsk_crud import ptsk
 from .desa_crud import desa
 from .bidang_crud import bidang
-# from .bidangoverlap_crud import bidangoverlap
+from .bidang_overlap_crud import bidangoverlap
 
 from .draft_crud import draft
 from .draft_detail_crud import draft_detail

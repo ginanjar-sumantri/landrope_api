@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from models.skpt_model import Skpt
     from models.pemilik_model import Pemilik
     from models.worker_model import Worker
+    from models.bidang_overlap_model import BidangOverlap
 
 class HasilPetaLokasiBase(SQLModel):
     bidang_id:UUID | None = Field(nullable=True, foreign_key="bidang.id")
@@ -29,7 +30,7 @@ class HasilPetaLokasiBase(SQLModel):
     luas_ukur:Decimal = Field(nullable=False)
     luas_gu_perorangan:Decimal | None = Field(nullable=True)
     luas_gu_pt:Decimal | None = Field(nullable=True)
-    file_path:str | None = Field(nullable=False)
+    file_path:str | None = Field(nullable=True)
 
 class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass
@@ -138,6 +139,7 @@ class HasilPetaLokasiDetailBase(SQLModel):
     hasil_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="hasil_peta_lokasi.id")
     luas_overlap:Decimal = Field(nullable=True)
     keterangan:str | None = Field(nullable=True)
+    bidang_overlap_id:UUID | None = Field(nullable=True, foreign_key="bidang_overlap.id")
 
 class HasilPetaLokasiDetailFullBase(BaseUUIDModel, HasilPetaLokasiDetailBase):
     pass
@@ -152,6 +154,13 @@ class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
     )
 
     bidang : "Bidang" = Relationship(
+                            sa_relationship_kwargs=
+                            {
+                                "lazy" : "selectin"
+                            }
+    )
+
+    bidang_overlap : "BidangOverlap" = Relationship(
                             sa_relationship_kwargs=
                             {
                                 "lazy" : "selectin"

@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select, or_
 from models.draft_model import DraftDetail
 from models.worker_model import Worker
 from schemas.draft_detail_sch import (DraftDetailSch, DraftDetailRawSch, DraftDetailCreateSch, DraftDetailUpdateSch)
@@ -12,6 +13,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException)
 from shapely.geometry import shape
 from shapely import wkt, wkb
 import crud
+import json
 
 
 router = APIRouter()
@@ -42,6 +44,25 @@ async def get_list(
         order_by=order_by, 
         keyword=keyword, 
         filter_query=filter_query)
+    
+    return create_response(data=objs)
+
+@router.get("/all", response_model=GetResponsePaginatedSch[DraftDetailRawSch])
+async def get_all(
+                keyword:str = None, 
+                filter_query:str=None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(DraftDetail)
+
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(DraftDetail, key) == value)
+
+    objs = await crud.draft_detail.get_multi_no_page(query=query)
     
     return create_response(data=objs)
 

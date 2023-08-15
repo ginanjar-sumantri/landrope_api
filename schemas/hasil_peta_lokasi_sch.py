@@ -9,7 +9,7 @@ from datetime import date, datetime
 class HasilPetaLokasiCreateSch(HasilPetaLokasiBase):
     pass
 
-@as_form
+
 class HasilPetaLokasiCreateExtSch(HasilPetaLokasiBase):
     hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]
 
