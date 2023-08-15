@@ -107,6 +107,7 @@ async def analisa(
         
         gs_intersect = gpd.GeoSeries(intersected_geometry.geometry)
         area_intersect = gs_intersect.area[0]
+        print(area_intersect)
         
         draft_detail = DraftDetailSch(
             bidang_id=intersect_bidang.id,

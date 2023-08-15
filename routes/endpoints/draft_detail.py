@@ -47,7 +47,7 @@ async def get_list(
     
     return create_response(data=objs)
 
-@router.get("/all", response_model=GetResponseBaseSch[DraftDetailRawSch])
+@router.get("/all", response_model=list[DraftDetailRawSch])
 async def get_all(
                 keyword:str = None, 
                 filter_query:str=None,
@@ -64,7 +64,7 @@ async def get_all(
 
     objs = await crud.draft_detail.get_multi_no_page(query=query)
     
-    return create_response(data=objs)
+    return objs
 
 @router.get("/{id}", response_model=GetResponseBaseSch[DraftDetailRawSch])
 async def get_by_id(id:UUID):
