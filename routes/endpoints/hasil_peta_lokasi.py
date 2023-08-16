@@ -69,7 +69,8 @@ async def create(
                                     luas=dt.luas_overlap,
                                     geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
             
-            new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, with_commit=False)
+            new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
+                                                                     with_commit=False, created_by_id=current_worker.id)
             bidang_overlap_id = new_obj_bidang_overlap.id
         
         #input detail hasil peta lokasi
@@ -117,12 +118,15 @@ async def create(
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
         luas_ukur=sch.luas_ukur,
+        luas_nett=sch.luas_nett,
+        luas_clear=sch.luas_clear,
         luas_gu_pt=sch.luas_gu_pt,
         luas_gu_perorangan=sch.luas_gu_perorangan,
         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
         bundle_hd_id=kjb_dt_current.bundle_hd_id)
     
-    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)
+    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
+                             db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
     #remove draft
     
@@ -188,7 +192,7 @@ async def upload_dokumen(
     object_updated = HasilPetaLokasiSch(**obj_current.dict())
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'Hasil Peta Lokasi-{id}-{obj_current.id_bidang}')
         object_updated.file_path = file_path
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
