@@ -73,12 +73,6 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                                                 "lazy" : "selectin"
                                             })
     
-    ptsk: "Ptsk" = Relationship(
-                        sa_relationship_kwargs=
-                                            {
-                                                "lazy" : "selectin"
-                                            })
-    
     skpt: "Skpt" = Relationship(
                         sa_relationship_kwargs=
                                             {
