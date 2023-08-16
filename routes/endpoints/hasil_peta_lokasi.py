@@ -34,9 +34,9 @@ async def create(
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
     
-    obj_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=sch.bidang_id)
-    if obj_current:
-        raise ContentNoChangeException(detail="Bidang Sudah input hasil peta lokasi")
+    # obj_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=sch.bidang_id)
+    # if obj_current:
+    #     raise ContentNoChangeException(detail="Bidang Sudah input hasil peta lokasi")
     
     bidang_current = await crud.bidang.get(id=sch.bidang_id)
     if bidang_current.geom :

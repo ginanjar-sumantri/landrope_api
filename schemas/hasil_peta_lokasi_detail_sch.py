@@ -24,10 +24,11 @@ class HasilPetaLokasiDetailUpdateSch(HasilPetaLokasiDetailBase):
     pass
 
 @optional
-class HasilPetaLokasiDetailUpdateSch(SQLModel):
+class HasilPetaLokasiDetailUpdateExtSch(SQLModel):
     id:UUID | None
     tipe_overlap:TipeOverlapEnum
     bidang_id:UUID | None
     luas_overlap:Decimal | None 
     keterangan:str | None 
     draft_detail_id:UUID | None
+    bidang_overlap_id:UUID | None

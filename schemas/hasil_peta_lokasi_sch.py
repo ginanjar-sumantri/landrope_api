@@ -1,5 +1,5 @@
 from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiFullBase
-from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailUpdateExtSch
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import SQLModel, Field
@@ -40,4 +40,4 @@ class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
 
 @optional
 class HasilPetaLokasiUpdateExtSch(HasilPetaLokasiBase):
-    pass
+    hasilpetalokasidetails:list[HasilPetaLokasiDetailUpdateExtSch]
