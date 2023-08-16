@@ -2,15 +2,20 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select
 import crud
-from models.hasil_peta_lokasi_model import HasilPetaLokasi
+from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from models.worker_model import Worker
 from models.bidang_overlap_model import BidangOverlap
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
-                                           HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, HasilPetaLokasiUpdateSch)
-from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch
+                                           HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
+                                           HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch)
+from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
+                                                  HasilPetaLokasiDetailUpdateSch)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
 from schemas.bidang_sch import BidangSch
+from schemas.draft_sch import DraftSch, DraftForAnalisaSch
+from schemas.draft_detail_sch import DraftDetailSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -18,6 +23,7 @@ from common.generator import generate_code, CodeCounterEnum
 from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum
 from services.gcloud_storage_service import GCStorageService
 from shapely import wkb, wkt
+from geoalchemy2 import functions
 
 router = APIRouter()
 
@@ -41,7 +47,7 @@ async def create(
     bidang_current = await crud.bidang.get(id=sch.bidang_id)
     if bidang_current.geom :
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-
+    
     kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
     kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
@@ -165,18 +171,128 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def update(
             id:UUID, 
-            sch:HasilPetaLokasiUpdateSch,
+            sch:HasilPetaLokasiUpdateExtSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
+    db_session = db.session
     obj_current = await crud.hasil_peta_lokasi.get(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     
+    #remove existing data detail dan overlap
+    list_overlap = [ov.bidang_overlap for ov in obj_current.details if ov.bidang_overlap != None]
 
+    await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
+    await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session)
     
-    obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    #update hasil peta lokasi
+    sch_updated = HasilPetaLokasiUpdateSch(**sch.dict())
+    obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
+                                                       updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    
+
+    bidang_current = await crud.bidang.get(id=sch.bidang_id)
+    if bidang_current.geom :
+        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+    
+
+    kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+
+    new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    draft_header_id = None  
+    for dt in sch.hasilpetalokasidetails:
+
+        bidang_overlap_id = None
+        if dt.draft_detail_id is not None:
+            #input bidang overlap dari hasil analisa
+
+            draft_detail = await crud.draft_detail.get(id=dt.draft_detail_id)
+            if draft_detail is None:
+                raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
+            
+            draft_header_id = draft_detail.draft_id
+            
+            code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
+            bidang_overlap_sch = BidangOverlapSch(
+                                    code=code,
+                                    parent_bidang_id=sch.bidang_id,
+                                    parent_bidang_intersect_id=dt.bidang_id,
+                                    luas=dt.luas_overlap,
+                                    geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
+            
+            new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
+                                                                     with_commit=False, created_by_id=current_worker.id)
+            bidang_overlap_id = new_obj_bidang_overlap.id
+        
+        #input detail hasil peta lokasi
+
+        detail_sch = HasilPetaLokasiDetailCreateSch(
+            tipe_overlap=dt.tipe_overlap,
+            bidang_id=dt.bidang_id,
+            hasil_peta_lokasi_id=new_obj.id,
+            luas_overlap=dt.luas_overlap,
+            keterangan=dt.keterangan,
+            bidang_overlap_id=bidang_overlap_id
+        )
+
+        await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    #update bidang from hasil peta lokasi
+    draft = await crud.draft.get(id=draft_header_id)
+
+    tipe_proses = TipeProsesEnum.Standard
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Belum_Bebas
+
+    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if len(sch.hasilpetalokasidetails) > 0:
+        tipe_proses = TipeProsesEnum.Overlap
+        jenis_bidang = JenisBidangEnum.Overlap
+
+    bidang_updated = BidangSch(
+        tipe_proses=tipe_proses,
+        jenis_bidang=jenis_bidang,
+        status=status_bidang,
+        pemilik_id=sch.pemilik_id,
+        luas_surat=sch.luas_surat,
+        planing_id=sch.planing_id,
+        skpt_id=sch.skpt_id,
+        group=kjb_hd_current.nama_group,
+        jenis_alashak=kjb_dt_current.jenis_alashak,
+        jenis_surat_id=kjb_dt_current.jenis_surat_id,
+        alashak=kjb_dt_current.alashak,
+        manager_id=kjb_hd_current.manager_id,
+        sales_id=kjb_hd_current.sales_id,
+        mediator=kjb_hd_current.mediator,
+        telepon_mediator=kjb_hd_current.telepon_mediator,
+        notaris_id=tanda_terima_notaris_current.notaris_id,
+        luas_ukur=sch.luas_ukur,
+        luas_nett=sch.luas_nett,
+        luas_clear=sch.luas_clear,
+        luas_gu_pt=sch.luas_gu_pt,
+        luas_gu_perorangan=sch.luas_gu_perorangan,
+        geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
+        bundle_hd_id=kjb_dt_current.bundle_hd_id)
+    
+    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
+                             db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
+    
+    #remove draft
+    
+    if draft:
+        await crud.draft.remove(id=draft.id, db_session=db_session)
+    else:
+        await db_session.commit()
+
+    await db_session.refresh(obj_updated)
+
     return create_response(data=obj_updated)
 
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])

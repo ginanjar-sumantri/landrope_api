@@ -11,6 +11,10 @@ from models.bidang_overlap_model import BidangOverlap
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapUpdateSch
 
 class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOverlapUpdateSch]):
-    pass
+     async def remove_multiple_data(self, *, list_obj: list[BidangOverlap],
+                                   db_session: AsyncSession | None = None) -> None:
+        db_session = db.session or db_session
+        for i in list_obj:
+            await db_session.delete(i)
 
 bidangoverlap = CRUDBidangOverlap(BidangOverlap)

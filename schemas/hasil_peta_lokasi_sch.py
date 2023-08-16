@@ -1,5 +1,5 @@
 from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiFullBase
-from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailUpdateExtSch
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailSch
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import SQLModel, Field
@@ -8,7 +8,6 @@ from datetime import date, datetime
 @as_form
 class HasilPetaLokasiCreateSch(HasilPetaLokasiBase):
     pass
-
 
 class HasilPetaLokasiCreateExtSch(HasilPetaLokasiBase):
     hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]
@@ -34,10 +33,12 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     pemilik_name:str|None = Field(alias="pemilik_name")
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+    details:list[HasilPetaLokasiDetailSch]
+
 @optional
 class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
     pass
 
 @optional
 class HasilPetaLokasiUpdateExtSch(HasilPetaLokasiBase):
-    hasilpetalokasidetails:list[HasilPetaLokasiDetailUpdateExtSch]
+    hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]

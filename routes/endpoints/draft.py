@@ -7,16 +7,18 @@ from models.draft_model import Draft, DraftDetail
 from models.worker_model import Worker
 from schemas.draft_sch import (DraftSch, DraftCreateSch, DraftRawSch, DraftForAnalisaSch)
 from schemas.draft_detail_sch import DraftDetailSch
-from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch,  create_response)
-from common.exceptions import (IdNotFoundException, ImportFailedException)
+from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch, create_response)
+from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.rounder import RoundTwo
 from shapely.geometry import shape
+from shapely.validation import explain_validity
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import polygon
 from shapely  import wkt, wkb
 from pyproj import CRS
 from geoalchemy2.shape import from_shape
+from geoalchemy2 import functions
 
 router = APIRouter()
 
@@ -68,12 +70,19 @@ async def analisa(
         geom_wkb = wkb_geom
         rincik_geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         
-
     else:
         rincik = await crud.bidang.get(id=sch.rincik_id)
         geom_wkb = rincik.geom
         rincik_geom = wkt.dumps(wkb.loads(rincik.geom.data, hex=True))
+    
+    geom_ = wkt.loads(rincik_geom)
+    geom_shape = shape(geom_)
+    is_valid = geom_shape.is_valid
 
+    if is_valid is False:
+        validity_reason = explain_validity(geom_shape)
+        raise ContentNoChangeException(detail=f'Geometry rincik tidak valid! Validity Reason : {validity_reason}')
+    
     rincik_dict = { "id" : sch.rincik_id, "geometry" : rincik_geom}
     data_rincik = [rincik_dict]
 
