@@ -106,6 +106,9 @@ async def analisa(
                 continue
         
         gs_intersect = gpd.GeoSeries(intersected_geometry.geometry)
+        if RoundTwo(angka=gs_intersect.area[0]) < 1:
+            continue
+        
         area_intersect = gs_intersect.area[0]
         print(area_intersect)
         
