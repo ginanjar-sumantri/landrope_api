@@ -34,7 +34,10 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     pemilik_name:str|None = Field(alias="pemilik_name")
     updated_by_name:str|None = Field(alias="updated_by_name")
 
-@as_form
 @optional
 class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
+    pass
+
+@optional
+class HasilPetaLokasiUpdateExtSch(HasilPetaLokasiBase):
     pass

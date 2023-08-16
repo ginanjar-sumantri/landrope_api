@@ -94,8 +94,8 @@ class TaskStatusEnum(str, Enum):
 class TipeOverlapEnum(str, Enum):
     BintangLanjut = "Bintang_Lanjut"
     BintangBatal = "Bintang_Batal"
-    BintangStandard_SudahBebas = "Bintang_Standard_Sudah_Bebas"
-    BintangStandard_BelumBebas = "Bintang_Standard_Belum_Bebas"
+    BidangStandard_SudahBebas = "Bidang_Standard_Sudah_Bebas"
+    BidangStandard_BelumBebas = "Bidang_Standard_Belum_Bebas"
     SertifikatOrangLain = "Sertifikat_Orang_Lain"
     NIBOrangLain = "NIB_Orang_Lain"
 

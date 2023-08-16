@@ -165,7 +165,7 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def update(
             id:UUID, 
-            sch:HasilPetaLokasiUpdateSch = Depends(HasilPetaLokasiUpdateSch.as_form),
+            sch:HasilPetaLokasiUpdateSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -173,6 +173,8 @@ async def update(
     obj_current = await crud.hasil_peta_lokasi.get(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
+    
+
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
