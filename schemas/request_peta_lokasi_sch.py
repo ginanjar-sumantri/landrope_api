@@ -16,12 +16,19 @@ class RequestPetaLokasiCreatesSch(BaseModel):
     kjb_dt_ids: List[UUID]
     remark:str | None
 
+# class RequestPetaLokasiHdSch(SQLModel):
+#     code:str | None
+#     desa_name:str | None = Field(alias="desa_name")
+#     mediator:str | None = Field(alias="mediator")
+#     group:str | None = Field(alias="group")
+#     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
+
 class RequestPetaLokasiHdSch(SQLModel):
     code:str | None
-    desa_name:str | None = Field(alias="desa_name")
-    mediator:str | None = Field(alias="mediator")
-    group:str | None = Field(alias="group")
-    kjb_hd_code:str | None = Field(alias="kjb_hd_code")
+    desa_name:str | None
+    mediator:str | None
+    group:str | None 
+    kjb_hd_code:str | None 
 
 class RequestPetaLokasiHdbyCodeSch(BaseModel):
     code:str | None
