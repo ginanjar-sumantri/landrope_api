@@ -9,41 +9,71 @@ if TYPE_CHECKING:
     from models.worker_model import Worker
     from models.bidang_model import Bidang
 
-class ChecklistKelengkapanDokumenBase(SQLModel):
+class ChecklistKelengkapanDokumenHdBase(SQLModel):
     bidang_id:UUID = Field(nullable=False, foreign_key="bidang.id")
-    jenis_bayar:JenisBayarEnum
-    dokumen_id:UUID = Field(default=None, foreign_key="dokumen.id")
-
-class ChecklistKelengkapanDokumenFullBase(BaseUUIDModel, ChecklistKelengkapanDokumenBase):
+    
+class ChecklistKelengkapanDokumenHdFullBase(BaseUUIDModel, ChecklistKelengkapanDokumenHdBase):
     pass
 
-class ChecklistKelengkapanDokumen(ChecklistKelengkapanDokumenFullBase, table=True):
+class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table=True):
+    details:"ChecklistKelengkapanDokumenDt" = Relationship(
+        back_populates="checklist_kelengkapan_dokumen_hd",
+        sa_relationship_kwargs=
+        {
+            'lazy' : 'selectin'
+        }
+    )
+
     bidang:"Bidang" = Relationship(
         sa_relationship_kwargs=
         {
             'lazy' : 'select'
         })
     
-    dokumen:"Dokumen" = Relationship(
-        sa_relationship_kwargs=
-        {
-            'lazy':'selectin'
-        })
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs=
         {
             "lazy": "joined",
-            "primaryjoin": "ChecklistKelengkapanDokumen.updated_by_id==Worker.id",
+            "primaryjoin": "ChecklistKelengkapanDokumenHd.updated_by_id==Worker.id",
         })
     
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
-
-    @property
-    def dokumen_name(self) -> str:
-        return self.dokumen.name or ""
     
+########################################################################
+
+class ChecklistKelengkapanDokumenDtBase(SQLModel):
+    checklist_kelengkapan_dokumen_hd_id:UUID = Field(nullable=False, foreign_key="checklist_kelengkapan_dokumen_hd.id")
+    jenis_bayar:JenisBayarEnum
+    dokumen_id:UUID = Field(default=None, foreign_key="dokumen.id")
+
+class ChecklistKelengkapanDokumenDtFullBase(BaseUUIDModel, ChecklistKelengkapanDokumenDtBase):
+    pass
+
+class ChecklistKelengkapanDokumenDt(ChecklistKelengkapanDokumenDtFullBase, table=True):
+    checklist_kelengkapan_dokumen_hd:"ChecklistKelengkapanDokumenHd" = Relationship(
+        back_populates = "details",
+        sa_relationship_kwargs = 
+        {
+            'lazy' : 'selectin'
+        }
+    )
+
+    dokumen:"Dokumen" = Relationship(
+        sa_relationship_kwargs =
+        {
+            'lazy':'select'
+        })
+    
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "ChecklistKelengkapanDokumenDt.updated_by_id==Worker.id",
+        }
+    )
     @property
-    def kategori_dokumen_name(self) -> str | None:
-        return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
+
+    

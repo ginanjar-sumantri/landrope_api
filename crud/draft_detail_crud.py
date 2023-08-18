@@ -12,6 +12,10 @@ from models.draft_model import DraftDetail
 from schemas.draft_detail_sch import DraftDetailCreateSch, DraftDetailUpdateSch
 
 class CRUDDraftDetail(CRUDBase[DraftDetail, DraftDetailCreateSch, DraftDetailUpdateSch]):
-    pass
+    async def remove_multiple_data(self, *, list_obj: list[DraftDetail],
+                                   db_session: AsyncSession | None = None) -> None:
+        db_session = db.session or db_session
+        for i in list_obj:
+            await db_session.delete(i)
 
 draft_detail = CRUDDraftDetail(DraftDetail)

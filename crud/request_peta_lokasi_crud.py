@@ -71,6 +71,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
 
         columns = RequestPetaLokasi.__table__.columns
 
+        # subquery = select(Address.user_id).subquery()
+        # query = select(User).add_columns(User.id, User.name, subquery.exists().label("has_address"))
+        
         query = select(
             RequestPetaLokasi.id,
             RequestPetaLokasi.code,
@@ -82,7 +85,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             Bidang.id_bidang,
             Bidang.id.label("bidang_id"),
             HasilPetaLokasi.file_path,
-            HasilPetaLokasi.id.label("hasil_peta_lokasi_id")
+            HasilPetaLokasi.id.label("hasil_peta_lokasi_id"),
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id

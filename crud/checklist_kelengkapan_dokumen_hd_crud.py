@@ -8,13 +8,13 @@ from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumen
-from schemas.checklist_kelengkapan_dokumen_sch import ChecklistKelengkapanDokumenCreateSch, ChecklistKelengkapanDokumenUpdateSch
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd
+from schemas.checklist_kelengkapan_dokumen_hd_sch import ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdUpdateSch
 from typing import List
 from uuid import UUID
 from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
 
-class CRUDChecklistKelengkapanDokumen(CRUDBase[ChecklistKelengkapanDokumen, ChecklistKelengkapanDokumenCreateSch, ChecklistKelengkapanDokumenUpdateSch]):
+class CRUDChecklistKelengkapanDokumenHd(CRUDBase[ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdUpdateSch]):
     pass
 
-checklistkelengkapandokumen = CRUDChecklistKelengkapanDokumen(ChecklistKelengkapanDokumen)
+checklist_kelengkapan_dokumen_hd = CRUDChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHd)

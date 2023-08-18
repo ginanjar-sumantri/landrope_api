@@ -13,6 +13,7 @@ from .skpt_model import Skpt
 from .code_counter_model import CodeCounter
 from .worker_model import Worker, Role
 from .checklist_dokumen_model import ChecklistDokumen
+from .checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from .kjb_model import KjbHd, KjbDt, KjbBebanBiaya, KjbRekening, KjbTermin, KjbHarga, KjbPenjual
 from .marketing_model import Manager, Sales
 from .pemilik_model import Pemilik, Kontak, Rekening

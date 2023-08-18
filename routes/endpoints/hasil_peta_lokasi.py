@@ -50,7 +50,7 @@ async def create(
     
     kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
     kjb_hd_current = kjb_dt_current.kjb_hd
-    tanda_terima_notaris_current = kjb_dt_current.tanda_terima_notaris_hd
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
     tipe_proses = TipeProsesEnum.Standard
     jenis_bidang = JenisBidangEnum.Standard
@@ -184,8 +184,10 @@ async def update(
         raise IdNotFoundException(HasilPetaLokasi, id)
     
     #remove link bundle jika pada update yg dipilih bidang berbeda
-    if obj_current.id_bidang != sch.bidang_id:
+    if obj_current.bidang_id != sch.bidang_id:
         bidang_old = obj_current.bidang
+        if bidang_old.geom :
+            bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
         bidang_old_updated = BidangUpdateSch(bundle_hd_id=None)
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
     
@@ -207,7 +209,7 @@ async def update(
     
     kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
     kjb_hd_current = kjb_dt_current.kjb_hd
-    tanda_terima_notaris_current = kjb_dt_current.tanda_terima_notaris_hd
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -294,6 +296,7 @@ async def update(
     #remove draft
     
     if draft:
+        await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
         await crud.draft.remove(id=draft.id, db_session=db_session)
     else:
         await db_session.commit()

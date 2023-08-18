@@ -46,7 +46,6 @@ class RequestPetaLokasiForInputHasilSch(SQLModel):
     file_path:str | None
     kjb_dt_id:UUID | None
     hasil_peta_lokasi_id:UUID | None
-    checklist_kelengkapan_dokumen_id:UUID | None
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     alashak:str | None

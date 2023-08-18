@@ -29,5 +29,22 @@ class CRUDChecklistDokumen(CRUDBase[ChecklistDokumen, ChecklistDokumenCreateSch,
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_multi_by_jenis_alashak_and_kategori_penjual(
+            self, 
+            *,
+            jenis_alashak:JenisAlashakEnum,
+            kategori_penjual:KategoriPenjualEnum,
+            db_session : AsyncSession | None = None) -> List[ChecklistDokumen] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(self.model).where(
+                                        and_(
+                                            self.model.jenis_alashak == jenis_alashak,
+                                            self.model.kategori_penjual == kategori_penjual))
+        
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 
 checklistdokumen = CRUDChecklistDokumen(ChecklistDokumen)
