@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from models.worker_model import Worker
 from schemas.checklist_kelengkapan_dokumen_hd_sch import (ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdSch, 
                                                           ChecklistKelengkapanDokumenHdUpdateSch)
@@ -38,9 +38,12 @@ async def create(sch: ChecklistKelengkapanDokumenHdCreateSch,
         jenis_alashak=bidang_current.jenis_alashak,
         kategori_penjual=kjb_hd_current.kategori_penjual)
     
-    # details = []
-    # for master in master_checklist_dokumens:
-    #     detail
+    details = []
+    for master in master_checklist_dokumens:
+        detail = ChecklistKelengkapanDokumenDt(
+            jenis_bayar=master.jenis_bayar,
+            dokumen_id=master.dokumen_id
+        )
         
     new_obj = await crud.checklist_kelengkapan_dokumen_hd.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     

@@ -199,6 +199,7 @@ async def update(
     
     #update hasil peta lokasi
     sch_updated = HasilPetaLokasiUpdateSch(**sch.dict())
+    sch_updated.file_path = obj_current.file_path
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
