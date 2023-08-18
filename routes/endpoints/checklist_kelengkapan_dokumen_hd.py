@@ -21,8 +21,6 @@ async def create(sch: ChecklistKelengkapanDokumenHdCreateSch,
     
     """Create a new object"""
 
-    db_session = db.session
-
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=sch.bidang_id)
     if not hasil_peta_lokasi_current:
         raise ContentNoChangeException(detail="Bidang belum mempunyai hasil peta lokasi!")
@@ -42,10 +40,15 @@ async def create(sch: ChecklistKelengkapanDokumenHdCreateSch,
     for master in master_checklist_dokumens:
         detail = ChecklistKelengkapanDokumenDt(
             jenis_bayar=master.jenis_bayar,
-            dokumen_id=master.dokumen_id
-        )
+            dokumen_id=master.dokumen_id,
+            created_by_id=current_worker.id,
+            updated_by_id=current_worker.id)
         
-    new_obj = await crud.checklist_kelengkapan_dokumen_hd.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        details.append(detail)
+    
+    obj_in = ChecklistKelengkapanDokumenHd(bidang_id=sch.bidang_id, details=details)
+        
+    new_obj = await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=obj_in, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 

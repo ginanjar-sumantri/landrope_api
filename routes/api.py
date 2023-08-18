@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, draft_detail, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
-                              checklist_dokumen, marketing, pemilik, beban_biaya, kategori, kategori_sub, kategori_proyek,
+                              checklist_dokumen, checklist_kelengkapan_dokumen_hd, marketing, pemilik, beban_biaya, kategori, kategori_sub, kategori_proyek,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
-                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, hasil_peta_lokasi_detail,
-                              import_log)
+                              tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
+                              hasil_peta_lokasi_detail, import_log)
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
@@ -25,6 +25,7 @@ api_router.include_router(role.router, prefix="/role", tags=["role"])
 api_router.include_router(dokumen.router, prefix="/dokumen", tags=["dokumen"])
 api_router.include_router(kategori_dokumen.router, prefix="/kategori_dokumen", tags=["kategori_dokumen"])
 api_router.include_router(checklist_dokumen.router, prefix="/cheklistdokumen", tags=["checklistdokumen"])
+api_router.include_router(checklist_kelengkapan_dokumen_hd.router, prefix="/checklist_kelengkapan_dokumen_hd", tags=["checklist_kelengkapan_dokumen_hd"])
 api_router.include_router(bundle_hd.router, prefix="/bundlehd", tags=["bundlehd"])
 api_router.include_router(bundle_dt.router, prefix="/bundledt", tags=["bundledt"])
 

@@ -16,7 +16,7 @@ class ChecklistKelengkapanDokumenHdFullBase(BaseUUIDModel, ChecklistKelengkapanD
     pass
 
 class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table=True):
-    details:"ChecklistKelengkapanDokumenDt" = Relationship(
+    details:list["ChecklistKelengkapanDokumenDt"] = Relationship(
         back_populates="checklist_kelengkapan_dokumen_hd",
         sa_relationship_kwargs=
         {
