@@ -15,6 +15,7 @@ from .code_counter_crud import codecounter
 from .worker_crud import worker
 from .role_crud import role
 from .checklist_dokumen_crud import checklistdokumen
+from .cheklist_kelengkapan_dokumen_crud import checklistkelengkapandokumen
 
 from .dokumen_crud import dokumen
 from .kategori_dokumen_crud import kategori_dokumen

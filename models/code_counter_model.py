@@ -10,6 +10,7 @@ class CodeCounterEnum(str, Enum):
     Bundle = "Bundle"
     Kjb = "Kjb"
     BidangOverlap = "BidangOverlap"
+    RequestPetaLokasi = "RequestPetaLokasi"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

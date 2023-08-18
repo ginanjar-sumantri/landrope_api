@@ -4,7 +4,7 @@ from common.enum import JenisAlashakEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
-from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum
+from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum
 
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
@@ -35,6 +35,7 @@ class HasilPetaLokasiBase(SQLModel):
     luas_gu_pt:Decimal | None = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
     status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum = Field(nullable=False)
+    hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(nullable=True)
 
 class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass

@@ -102,3 +102,7 @@ class TipeOverlapEnum(str, Enum):
 class StatusHasilPetaLokasiEnum(str, Enum):
     Lanjut = "Lanjut"
     Batal = "Batal"
+
+class HasilAnalisaPetaLokasiEnum(str, Enum):
+    Clear = "Clear"
+    Overlap = "Overlap"

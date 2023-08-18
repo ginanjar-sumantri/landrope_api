@@ -16,19 +16,12 @@ class RequestPetaLokasiCreatesSch(BaseModel):
     kjb_dt_ids: List[UUID]
     remark:str | None
 
-# class RequestPetaLokasiHdSch(SQLModel):
-#     code:str | None
-#     desa_name:str | None = Field(alias="desa_name")
-#     mediator:str | None = Field(alias="mediator")
-#     group:str | None = Field(alias="group")
-#     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
-
 class RequestPetaLokasiHdSch(SQLModel):
     code:str | None
     desa_name:str | None
     mediator:str | None
     group:str | None 
-    kjb_hd_code:str | None 
+    kjb_hd_code:str | None
 
 class RequestPetaLokasiHdbyCodeSch(BaseModel):
     code:str | None
@@ -41,20 +34,25 @@ class RequestPetaLokasiHdbyCodeSch(BaseModel):
     kjb_hd_id:UUID | None
     kjb_dt_ids: List[UUID]
 
+class RequestPetaLokasiForInputHasilSch(SQLModel):
+    id:UUID
+    alashak:str | None
+    pemilik_name:str | None
+    kjb_hd_code:str | None
+    mediator:str | None
+    id_bidang:str | None
+    bidang_id:UUID | None
+    file_path:str | None
+
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
-    kjb_hd_code:str | None = Field(alias="kjb_hd_code")
-    mediator:str | None = Field(alias="mediator")
-    group:str | None = Field(alias="group")
-    nama_pemilik_tanah:str  | None= Field(alias="nama_pemilik_tanah")
-    nomor_pemilik_tanah:str | None = Field(alias="nomor_pemilik_tanah")
-    luas:Decimal | None = Field(alias="luas")
-    desa_name:str | None = Field(alias="desa_name")
-    project_name:str | None = Field(alias="project_name")
-    alashak:str | None = Field(alias="alashak")
-    id_bidang_hasil_peta_lokasi:str | None = Field(alias="id_bidang_hasil_peta_lokasi")
-    hasil_peta_lokasi_id:UUID | None = Field(alias="hasil_peta_lokasi_id")
-    jenis_alashak_kjb_dt:str | None = Field(alias="jenis_alashak_kjb_dt")
-    updated_by_name:str|None = Field(alias="updated_by_name")
+    alashak:str | None
+    pemilik_name:str | None
+    kjb_hd_code:str | None
+    mediator:str | None
+    id_bidang:str | None
+    bidang_id:UUID | None
+    file_path:str | None
+
 
 class RequestPetaLokasiPdfSch(BaseModel):
     no:str | None

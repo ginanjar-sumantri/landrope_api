@@ -8,14 +8,18 @@ from crud.base_crud import CRUDBase
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
 from models.desa_model import Desa
-from schemas.request_peta_lokasi_sch import RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch
+from models.pemilik_model import Pemilik
+from models.bidang_model import Bidang
+from models.hasil_peta_lokasi_model import HasilPetaLokasi
+from schemas.request_peta_lokasi_sch import (RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, 
+                                            RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch)
 from typing import List
 from common.ordered import OrderEnumSch
 from uuid import UUID
 from datetime import datetime
 
 class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateSch, RequestPetaLokasiUpdateSch]):
-    async def get_multi_paginated(self, *, params: Params | None = Params(),
+    async def get_multi_header_paginated(self, *, params: Params | None = Params(),
                                   order: OrderEnumSch | None = OrderEnumSch.descendent,
                                   keyword:str | None,
                                   db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiHdSch]:
@@ -56,7 +60,57 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         else:
             query = query.order_by(columns["code"].desc())
         
-        print(query)
+        
+        return await paginate(db_session, query, params)
+    
+    async def get_multi_detail_paginated(self, *, params: Params | None = Params(),
+                                  order: OrderEnumSch | None = OrderEnumSch.descendent,
+                                  keyword:str | None,
+                                  db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiForInputHasilSch]:
+        db_session = db_session or db.session
+
+        columns = RequestPetaLokasi.__table__.columns
+
+        query = select(
+            RequestPetaLokasi.id,
+            RequestPetaLokasi.code,
+            KjbDt.alashak,
+            Pemilik.name.label("pemilik_name"),
+            KjbHd.code.label("kjb_hd_code"),
+            KjbHd.mediator,
+            Bidang.id_bidang,
+            Bidang.id.label("bidang_id"),
+            HasilPetaLokasi.file_path
+        ).select_from(RequestPetaLokasi
+                    ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+                    ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                    ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
+                    ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
+                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
+                    ).outerjoin(Desa, Desa.id == KjbHd.desa_id)
+
+        filter_clause = None
+
+        if keyword:
+            query = query.filter(
+                or_(
+                    RequestPetaLokasi.code.ilike(f'%{keyword}%'),
+                    KjbDt.alashak.ilike(f'%{keyword}%'),
+                    KjbHd.code.ilike(f'%{keyword}%'),
+                    KjbHd.mediator.ilike(f'%{keyword}%'),
+                    Pemilik.name.ilike(f'%{keyword}%'),
+                    Bidang.id_bidang.ilike(f'%{keyword}%')
+                )
+            )
+            
+        if filter_clause is not None:        
+            query = query.filter(filter_clause)
+        
+        if order == OrderEnumSch.ascendent:
+            query = query.order_by(columns["code"].asc())
+        else:
+            query = query.order_by(columns["code"].desc())
+        
         
         return await paginate(db_session, query, params)
     

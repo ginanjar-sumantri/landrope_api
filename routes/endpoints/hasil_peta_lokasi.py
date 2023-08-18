@@ -13,14 +13,14 @@ from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCr
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
-from schemas.bidang_sch import BidangSch
+from schemas.bidang_sch import BidangSch, BidangUpdateSch
 from schemas.draft_sch import DraftSch, DraftForAnalisaSch
 from schemas.draft_detail_sch import DraftDetailSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.generator import generate_code, CodeCounterEnum
-from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum
+from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum, HasilAnalisaPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from shapely import wkb, wkt
 from geoalchemy2 import functions
@@ -49,8 +49,21 @@ async def create(
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
     
     kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
-    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+    kjb_hd_current = kjb_dt_current.kjb_hd
+    tanda_terima_notaris_current = kjb_dt_current.tanda_terima_notaris_hd
+
+    tipe_proses = TipeProsesEnum.Standard
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Belum_Bebas
+    sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
+
+    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if len(sch.hasilpetalokasidetails) > 0:
+        tipe_proses = TipeProsesEnum.Overlap
+        jenis_bidang = JenisBidangEnum.Overlap
+        sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -94,17 +107,6 @@ async def create(
 
     #update bidang from hasil peta lokasi
     draft = await crud.draft.get(id=draft_header_id)
-
-    tipe_proses = TipeProsesEnum.Standard
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Belum_Bebas
-
-    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
-    if len(sch.hasilpetalokasidetails) > 0:
-        tipe_proses = TipeProsesEnum.Overlap
-        jenis_bidang = JenisBidangEnum.Overlap
 
     bidang_updated = BidangSch(
         tipe_proses=tipe_proses,
@@ -181,6 +183,12 @@ async def update(
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     
+    #remove link bundle jika pada update yg dipilih bidang berbeda
+    if obj_current.id_bidang != sch.bidang_id:
+        bidang_old = obj_current.bidang
+        bidang_old_updated = BidangUpdateSch(bundle_hd_id=None)
+        await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
+    
     #remove existing data detail dan overlap
     list_overlap = [ov.bidang_overlap for ov in obj_current.details if ov.bidang_overlap != None]
 
@@ -197,10 +205,9 @@ async def update(
     if bidang_current.geom :
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
     
-
     kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
-    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+    kjb_hd_current = kjb_dt_current.kjb_hd
+    tanda_terima_notaris_current = kjb_dt_current.tanda_terima_notaris_hd
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 

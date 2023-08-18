@@ -2,15 +2,18 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt
 from models.worker_model import Worker
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLokasiHdSch, 
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
                                              RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
-                                             RequestPetaLokasiHdbyCodeSch, RequestPetaLokasiPdfSch)
+                                             RequestPetaLokasiHdbyCodeSch, RequestPetaLokasiPdfSch,
+                                             RequestPetaLokasiForInputHasilSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.generator import generate_code, CodeCounterEnum
 from services.pdf_service import PdfService
 from datetime import datetime, date
 from jinja2 import Environment, FileSystemLoader
@@ -46,7 +49,9 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
                   current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     datas = []
-    code = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    db_session = db.session
+    counter = await generate_code(CodeCounterEnum.RequestPetaLokasi, db_session=db_session, with_commit=False)
+    code = f"SO/{counter}/REQ-PETLOK/{str(date.month)}/{str(date.year)}"
     current_datetime = datetime.now()
     for id in sch.kjb_dt_ids:
         kjb_dt = await crud.kjb_dt.get(id=id)
@@ -62,12 +67,9 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
                                  kjb_dt_id=kjb_dt.id,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
-                                 dibuat_oleh="Land Adm Acquisition Officer",
-                                 diperiksa_oleh="Land Adm & Verification Section Head",
-                                 diterima_oleh="Land Measurement Analyst",
                                  is_disabled=False
                                  )
-        await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id)
+        await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id, db_session=db_session)
     #     datas.append(data)
 
     
@@ -83,12 +85,13 @@ async def get_list_header(
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+    
 
-    objs = await crud.request_peta_lokasi.get_multi_paginated(params=params, keyword=keyword)
+    objs = await crud.request_peta_lokasi.get_multi_header_paginated(params=params, keyword=keyword)
     return create_response(data=objs)
 
-@router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiSch])
-async def get_list(
+@router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiForInputHasilSch])
+async def get_list_for_input_hasil_petlok(
             params: Params = Depends(), 
             order_by:str = None, 
             keyword:str = None, 
@@ -97,11 +100,9 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_paginate_ordered_with_keyword_dict(
+    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(
         params=params, 
-        order_by=order_by, 
-        keyword=keyword, 
-        filter_query=filter_query)
+        keyword=keyword)
     
     return create_response(data=objs)
 
