@@ -211,8 +211,6 @@ async def update(
     kjb_hd_current = kjb_dt_current.kjb_hd
     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
-    new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
     draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
 
@@ -243,7 +241,7 @@ async def update(
         detail_sch = HasilPetaLokasiDetailCreateSch(
             tipe_overlap=dt.tipe_overlap,
             bidang_id=dt.bidang_id,
-            hasil_peta_lokasi_id=new_obj.id,
+            hasil_peta_lokasi_id=obj_updated.id,
             luas_overlap=dt.luas_overlap,
             keterangan=dt.keterangan,
             bidang_overlap_id=bidang_overlap_id
@@ -316,12 +314,10 @@ async def upload_dokumen(
     obj_current = await crud.hasil_peta_lokasi.get(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
-    
-    object_updated = HasilPetaLokasiSch(**obj_current.dict())
 
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'Hasil Peta Lokasi-{id}-{obj_current.id_bidang}')
-        object_updated.file_path = file_path
+        object_updated = HasilPetaLokasiUpdateSch(file_path=file_path)
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
@@ -338,11 +334,11 @@ async def download_file(id:UUID):
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+        raise DocumentFileNotFoundException(dokumenname=obj_current.alashak_kjb_dt)
     
     ext = obj_current.file_path.split('.')[-1]
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.id_bidang}.{ext}"
     return response

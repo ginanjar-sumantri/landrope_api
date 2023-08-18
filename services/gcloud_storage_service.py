@@ -45,7 +45,7 @@ class GCStorageService:
         ext = upload_file.filename.split('.')[-1]
         
         if file_name:
-            filename = f'{filename}.{ext}'
+            filename = f'{file_name}.{ext}'
         else:
             # set filename as random string
             filename = f'{uuid.uuid4().hex}.{ext}'
