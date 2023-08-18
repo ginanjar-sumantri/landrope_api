@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile
+from fastapi import APIRouter, status, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select
@@ -18,7 +18,7 @@ from schemas.draft_sch import DraftSch, DraftForAnalisaSch
 from schemas.draft_detail_sch import DraftDetailSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
+from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.generator import generate_code, CodeCounterEnum
 from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum, HasilAnalisaPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
@@ -322,3 +322,24 @@ async def upload_dokumen(
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
+
+@router.get("/download-file/{id}")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
+
+    obj_current = await crud.hasil_peta_lokasi.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(HasilPetaLokasi, id)
+    if obj_current.file_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.alashak_kjb_dt)
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+    
+    ext = obj_current.file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}.{ext}"
+    return response

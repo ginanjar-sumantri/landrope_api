@@ -78,16 +78,17 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             Pemilik.name.label("pemilik_name"),
             KjbHd.code.label("kjb_hd_code"),
             KjbHd.mediator,
+            KjbDt.id.label("kjb_dt_id"),
             Bidang.id_bidang,
             Bidang.id.label("bidang_id"),
-            HasilPetaLokasi.file_path
+            HasilPetaLokasi.file_path,
+            HasilPetaLokasi.id.label("hasil_peta_lokasi_id")
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
                     ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
-                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
-                    ).outerjoin(Desa, Desa.id == KjbHd.desa_id)
+                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id)
 
         filter_clause = None
 

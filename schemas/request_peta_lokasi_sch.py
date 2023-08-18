@@ -36,6 +36,7 @@ class RequestPetaLokasiHdbyCodeSch(BaseModel):
 
 class RequestPetaLokasiForInputHasilSch(SQLModel):
     id:UUID
+    code:str | None
     alashak:str | None
     pemilik_name:str | None
     kjb_hd_code:str | None
@@ -43,6 +44,9 @@ class RequestPetaLokasiForInputHasilSch(SQLModel):
     id_bidang:str | None
     bidang_id:UUID | None
     file_path:str | None
+    kjb_dt_id:UUID | None
+    hasil_peta_lokasi_id:UUID | None
+    checklist_kelengkapan_dokumen_id:UUID | None
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     alashak:str | None
