@@ -44,5 +44,12 @@ class CRUDChecklistKelengkapanDokumenHd(CRUDBase[ChecklistKelengkapanDokumenHd, 
         if with_commit:
             await db_session.refresh(db_obj)
         return db_obj
+    
+    async def get_by_bidang_id(
+        self, *, bidang_id: UUID, db_session: AsyncSession | None = None
+    ) -> ChecklistKelengkapanDokumenHd:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(self.model).where(self.model.bidang_id == bidang_id))
+        return obj.scalars().first()
 
 checklist_kelengkapan_dokumen_hd = CRUDChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHd)

@@ -7,6 +7,7 @@ import crud
 from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from models.worker_model import Worker
 from models.bidang_overlap_model import BidangOverlap
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch)
@@ -16,6 +17,7 @@ from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
 from schemas.bidang_sch import BidangSch, BidangUpdateSch
 from schemas.draft_sch import DraftSch, DraftForAnalisaSch
 from schemas.draft_detail_sch import DraftDetailSch
+from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
@@ -136,8 +138,35 @@ async def create(
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
                              db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
-    #remove draft
+    #generate kelengkapan dokumen
+    master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+        jenis_alashak=bidang_current.jenis_alashak,
+        kategori_penjual=kjb_hd_current.kategori_penjual)
     
+    checklist_kelengkapan_dts = []
+    for master in master_checklist_dokumens:
+        bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+        if not bundle_dt_current:
+            code = bidang_current.bundlehd.code + master.dokumen.code
+            bundle_dt_current = BundleDtCreateSch(code=code, 
+                                          dokumen_id=master.dokumen_id,
+                                          bundle_hd_id=bidang_current.bundle_hd_id)
+            
+            bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
+
+        checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+            jenis_bayar=master.jenis_bayar,
+            dokumen_id=master.dokumen_id,
+            bundle_dt_id=bundle_dt_current.id,
+            created_by_id=current_worker.id,
+            updated_by_id=current_worker.id)
+        
+        checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+    
+    checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=sch.bidang_id, details=checklist_kelengkapan_dts)
+    await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    
+    #remove draft
     if draft:
         await crud.draft.remove(id=draft.id, db_session=db_session)
     else:
@@ -183,13 +212,24 @@ async def update(
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     
-    #remove link bundle jika pada update yg dipilih bidang berbeda
+    #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
     if obj_current.bidang_id != sch.bidang_id:
+        #bidang
         bidang_old = obj_current.bidang
         if bidang_old.geom :
             bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+
         bidang_old_updated = BidangUpdateSch(bundle_hd_id=None)
+
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
+
+        #kelengkapan dokumen
+        hds = []
+        checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
+        hds.append(checklist_kelengkapan_hd_old)
+
+        await crud.checklist_kelengkapan_dokumen_dt.remove_multiple_data(list_obj=checklist_kelengkapan_hd_old.details, db_session=db_session)
+        await crud.checklist_kelengkapan_dokumen_hd.remove_multiple_data(list_obj=hds, db_session=db_session)
     
     #remove existing data detail dan overlap
     list_overlap = [ov.bidang_overlap for ov in obj_current.details if ov.bidang_overlap != None]
@@ -291,6 +331,36 @@ async def update(
     
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
                              db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
+    
+
+    #generate kelengkapan dokumen
+    if obj_current.bidang_id != sch.bidang_id:
+        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+            jenis_alashak=bidang_current.jenis_alashak,
+            kategori_penjual=kjb_hd_current.kategori_penjual)
+        
+        checklist_kelengkapan_dts = []
+        for master in master_checklist_dokumens:
+            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+            if not bundle_dt_current:
+                code = bidang_current.bundlehd.code + master.dokumen.code
+                bundle_dt_current = BundleDtCreateSch(code=code, 
+                                            dokumen_id=master.dokumen_id,
+                                            bundle_hd_id=bidang_current.bundle_hd_id)
+                
+                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
+
+            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+                jenis_bayar=master.jenis_bayar,
+                dokumen_id=master.dokumen_id,
+                bundle_dt_id=bundle_dt_current.id,
+                created_by_id=current_worker.id,
+                updated_by_id=current_worker.id)
+            
+            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+        
+        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=sch.bidang_id, details=checklist_kelengkapan_dts)
+        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
     #remove draft
     

@@ -384,4 +384,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         await db_session.delete(obj)
         await db_session.commit()
         return obj
+    
+    async def remove_multiple_data(self, *, list_obj: list[ModelType],
+                                   db_session: AsyncSession | None = None) -> None:
+        db_session = db.session or db_session
+        for i in list_obj:
+            await db_session.delete(i)
 

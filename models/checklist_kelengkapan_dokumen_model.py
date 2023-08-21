@@ -3,6 +3,7 @@ from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
+import crud
 
 if TYPE_CHECKING:
     from models.dokumen_model import Dokumen
@@ -57,6 +58,7 @@ class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table
     @property
     def bundle_hd_code(self) -> str | None :
         return getattr(getattr(getattr(self, "bidang", None), "bundlehd", None), "code", None)
+
     
 
     

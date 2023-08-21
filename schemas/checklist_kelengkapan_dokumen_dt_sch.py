@@ -26,6 +26,15 @@ class ChecklistKelengkapanDokumenDtSch(ChecklistKelengkapanDokumenDtFullBase):
     dokumen_name:str|None = Field(alias="dokumen_name")
     has_meta_data:bool|None = Field(alias="has_meta_data")
 
+class ChecklistKelengkapanDokumenDtForHdSch(SQLModel):
+    id:UUID | None
+    checklist_kelengkapan_dokumen_hd_id:UUID | None
+    bundle_dt_id:UUID | None
+    jenis_bayar:JenisBayarEnum | None
+    dokumen_id:UUID | None
+    dokumen_name:str|None 
+    has_meta_data:bool|None 
+
 class ChecklistKelengkapanDokumenDtExtSch(ChecklistKelengkapanDokumenDtFullBase):
     has_meta_data:bool | None
 
