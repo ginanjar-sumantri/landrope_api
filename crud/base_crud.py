@@ -68,9 +68,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj = await db_session.execute(select(self.model).where(and_ (self.model.name == name, self.model.code == code)))
         return obj.scalar_one_or_none()
     
-    async def get_all(self, *, db_session : AsyncSession | None = None) -> List[ModelType] | None:
+    async def get_all(self, *, db_session : AsyncSession | None = None, query : T | Select[T]| None = None) -> List[ModelType] | None:
         db_session = db_session or db.session
-        query = select(self.model)
+        if query is None:
+            query = select(self.model)
         response =  await db_session.execute(query)
         return response.scalars().all()
     

@@ -5,13 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select, or_
 from models.bidang_model import Bidang
-from models.project_model import Project
-from models.desa_model import Desa
-from models.planing_model import Planing
 from models.worker_model import Worker
-from models.pemilik_model import Pemilik
-from models.master_model import JenisSurat
+from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
@@ -77,6 +74,26 @@ async def get_list(
     """Gets a paginated list objects"""
 
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    return create_response(data=objs)
+
+@router.get("/for_kelengkapan_dokumen", response_model=GetResponsePaginatedSch[BidangRawSch])
+async def get_list_for_kelengkapan_dokumen(
+        keyword:str = None, 
+        current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Gets a paginated list objects"""
+
+    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
+
+    if keyword:
+        query = query.filter(
+            or_(
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%')
+            )
+            )
+
+    objs = await crud.bidang.get_all(query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])

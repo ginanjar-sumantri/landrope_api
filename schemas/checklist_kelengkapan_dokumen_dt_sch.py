@@ -12,7 +12,11 @@ class ChecklistKelengkapanDokumenDtCreateSch(ChecklistKelengkapanDokumenDtBase):
     pass
 
 class ChecklistKelengkapanDokumenDtSch(ChecklistKelengkapanDokumenDtFullBase):
-    pass
+    dokumen_name:str|None = Field(alias="dokumen_name")
+    has_meta_data:bool|None = Field(alias="has_meta_data")
+
+class ChecklistKelengkapanDokumenDtExtSch(ChecklistKelengkapanDokumenDtFullBase):
+    has_meta_data:bool | None
 
 @optional
 class ChecklistKelengkapanDokumenDtUpdateSch(ChecklistKelengkapanDokumenDtBase):

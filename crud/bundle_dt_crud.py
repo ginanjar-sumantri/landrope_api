@@ -24,7 +24,7 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
         
         response = await db_session.execute(query)
 
-        return response.scalar_one_or_none()
+        return response.scalars().one_or_none()
     
     async def get_meta_data_and_dyn_form(self, 
                                          *, 
