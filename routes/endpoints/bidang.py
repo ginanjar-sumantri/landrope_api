@@ -82,8 +82,9 @@ async def get_list_for_kelengkapan_dokumen(
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Gets a paginated list objects"""
-
-    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
+    subquery = select(HasilPetaLokasi.bidang_id).subquery
+    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id
+                                                    ).where(subquery.exists() == True)
 
     if keyword:
         query = query.filter(
@@ -94,6 +95,8 @@ async def get_list_for_kelengkapan_dokumen(
             )
 
     objs = await crud.bidang.get_all(query=query)
+    print(objs)
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
