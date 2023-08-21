@@ -8,6 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
+from common.enum import JenisAlashakEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHarga, KjbTermin
 from schemas.kjb_harga_sch import KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch
@@ -41,5 +42,16 @@ class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
         
         await db_session.refresh(db_obj)
         return db_obj
+    
+    async def get_by_kjb_jd_id_and_jenis_alashak(self, *, 
+                  kjb_hd_id: UUID | str, 
+                  jenis_alashak:JenisAlashakEnum,
+                  db_session: AsyncSession | None = None) -> KjbHarga | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id, self.model.jenis_alashak == jenis_alashak))
+        response = await db_session.execute(query)
+
+        return response.scalars().one_or_none()
 
 kjb_harga = CRUDKjbHarga(KjbHarga)

@@ -12,14 +12,19 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangByIdSch)
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangRawSch, BidangShpSch, BidangByIdSch, BidangForKelengkapanDokumenByIdSch)
+from schemas.bundle_dt_sch import BundleDtCreateSch
+from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtDraftSch, ChecklistKelengkapanDokumenDtBayarSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch,
                                   ImportResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, NameNotFoundException, ImportFailedException, FileNotFoundException, DocumentFileNotFoundException)
+from common.exceptions import (IdNotFoundException, NameExistException, 
+                               NameNotFoundException, ImportFailedException, 
+                               FileNotFoundException, DocumentFileNotFoundException,
+                               ContentNoChangeException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, StatusHasilPetaLokasiEnum, JenisBayarEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
@@ -76,15 +81,14 @@ async def get_list(
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/for_kelengkapan_dokumen", response_model=GetResponsePaginatedSch[BidangRawSch])
+@router.get("/for_kelengkapan_dokumen", response_model=list[BidangRawSch])
 async def get_list_for_kelengkapan_dokumen(
         keyword:str = None, 
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Gets a paginated list objects"""
-    subquery = select(HasilPetaLokasi.bidang_id).subquery
-    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id
-                                                    ).where(subquery.exists() == True)
+    subquery = select(HasilPetaLokasi.bidang_id).subquery()
+    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
 
     if keyword:
         query = query.filter(
@@ -95,9 +99,8 @@ async def get_list_for_kelengkapan_dokumen(
             )
 
     objs = await crud.bidang.get_all(query=query)
-    print(objs)
 
-    return create_response(data=objs)
+    return objs
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
 async def get_by_id(id:UUID):
@@ -109,6 +112,82 @@ async def get_by_id(id:UUID):
         return create_response(data=obj)
     else:
         raise IdNotFoundException(Bidang, id)
+    
+@router.get("/for_kelengkapan_dokumen/{id}", response_model=GetResponseBaseSch[BidangForKelengkapanDokumenByIdSch])
+async def get_for_kelengkapan_dokumen_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    obj = await crud.bidang.get(id=id)
+    if obj is None:
+        raise IdNotFoundException(Bidang, id)
+    
+    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=id)
+    if not hasil_peta_lokasi_current:
+        raise ContentNoChangeException(detail="Bidang belum mempunyai hasil peta lokasi!")
+    
+    if hasil_peta_lokasi_current.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        raise ContentNoChangeException(detail="Hasil Peta Lokasi Bidang BATAL! tidak dapat dibuat checklist kelengkapan dokumen!")
+    
+    bidang_current = hasil_peta_lokasi_current.bidang
+    kjb_dt_current = hasil_peta_lokasi_current.kjb_dt
+    kjb_hd_current = kjb_dt_current.kjb_hd
+    kjb_harga = await crud.kjb_harga.get_by_kjb_jd_id_and_jenis_alashak(kjb_hd_id=kjb_hd_current.id, jenis_alashak=bidang_current.jenis_alashak)
+
+    master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+        jenis_alashak=bidang_current.jenis_alashak,
+        kategori_penjual=kjb_hd_current.kategori_penjual)
+    
+    draft_checklist_dokumens = []
+    for master in master_checklist_dokumens:
+        bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+        if not bundle_dt_current:
+            code = bidang_current.bundlehd.code + master.dokumen.code
+            bundle_dt_current = BundleDtCreateSch(code=code, 
+                                          dokumen_id=master.dokumen_id,
+                                          bundle_hd_id=bidang_current.bundle_hd_id)
+            
+            bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current)
+
+        draft_checklist_dokumen = ChecklistKelengkapanDokumenDtDraftSch(
+            jenis_bayar=master.jenis_bayar,
+            bundle_dt_id=bundle_dt_current.id,
+            dokumen_id=bundle_dt_current.dokumen_id,
+            dokumen_name=bundle_dt_current.dokumen_name,
+            has_meta_data=bundle_dt_current.file_exists
+        )
+        
+        draft_checklist_dokumens.append(draft_checklist_dokumen)
+
+    draft_bayars = []
+
+    jenis_bayars = [JenisBayarEnum.UTJ, JenisBayarEnum.DP, JenisBayarEnum.LUNAS]
+    for jenis_bayar in jenis_bayars:
+        fg_exists = False
+        if jenis_bayar == JenisBayarEnum.UTJ:
+            fg_exists = kjb_hd_current.ada_utj
+        else:
+            termin = next((item for item in kjb_harga.termins if item.jenis_bayar == jenis_bayar), None)
+            if termin:
+                fg_exists = True
+        
+        draft_bayar = ChecklistKelengkapanDokumenDtBayarSch(jenis_bayar=jenis_bayar, fg_exists=fg_exists)
+        draft_bayars.append(draft_bayar)
+    
+
+    obj_return = BidangForKelengkapanDokumenByIdSch(
+        id=obj.id,
+        id_bidang=obj.id_bidang,
+        jenis_alashak=obj.jenis_alashak,
+        alashak=obj.alashak,
+        bundle_hd_code=obj.bundlehd.code,
+        bundle_hd_id=obj.bundle_hd_id,
+        draft_checklist_dokumens=draft_checklist_dokumens,
+        draft_bayars=draft_bayars
+    )
+
+    return create_response(data=obj_return)
+
 
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
 async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None,

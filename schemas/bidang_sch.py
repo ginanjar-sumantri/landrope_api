@@ -1,10 +1,13 @@
 from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
 from models.base_model import BaseGeoModel
+from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtDraftSch, ChecklistKelengkapanDokumenDtBayarSch
 from common.partial import optional
 from common.as_form import as_form
-from sqlmodel import Field
+from common.enum import JenisAlashakEnum
+from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
 from decimal import Decimal
+from uuid import UUID
 
 @as_form
 class BidangCreateSch(BidangBase):
@@ -32,6 +35,22 @@ class BidangByIdSch(BidangRawBase):
     manager_name:str | None = Field(alias='manager_name')
     sales_name:str|None = Field(alias='sales_name')
     notaris_name:str | None = Field(alias='notaris_name')
+
+class BidangForKelengkapanDokumenByIdSch(SQLModel):
+    id:UUID | None
+    id_bidang:str | None
+    jenis_alashak:JenisAlashakEnum | None
+    alashak:str | None
+    bundle_hd_code:str | None
+    bundle_hd_id:UUID | None
+
+    draft_checklist_dokumens:list[ChecklistKelengkapanDokumenDtDraftSch]
+    draft_bayars:list[ChecklistKelengkapanDokumenDtBayarSch]
+
+class BidangDraftChecklistDokumenSch(SQLModel):
+    bundle_dt_id:UUID | None
+    jenis_bayar:str | None
+    dokumen_id:UUID | None
     
 
 class BidangSch(BidangFullBase):
