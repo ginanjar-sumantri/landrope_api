@@ -23,7 +23,8 @@ class ChecklistKelengkapanDokumenHdByIdSch(SQLModel):
     id:UUID | None 
     id_bidang:str | None 
     jenis_alashak:str | None 
-    alashak:str | None 
+    alashak:str | None
+    bundle_hd_id:UUID | None
     bundle_hd_code:str | None
     details:list[ChecklistKelengkapanDokumenDtForHdSch] | None
     detail_bayars:list[ChecklistKelengkapanDokumenDtBayarSch] | None

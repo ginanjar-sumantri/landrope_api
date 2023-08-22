@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from models.marketing_model import Manager, Sales
     from models.notaris_model import Notaris
     from models.bundle_model import BundleHd
+    from models.hasil_peta_lokasi_model import HasilPetaLokasi
     from models.worker_model import Worker
     
 class BidangBase(SQLModel):
@@ -97,6 +98,15 @@ class Bidang(BidangFullBase, table=True):
     bundlehd:"BundleHd" = Relationship(
         back_populates="bidang",
         sa_relationship_kwargs={'lazy':'selectin'})
+    
+    hasil_peta_lokasi:"HasilPetaLokasi" = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"selectin",
+            "uselist":False
+        }
+    )
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={

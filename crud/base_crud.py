@@ -61,6 +61,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_not_in_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[ModelType] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(~self.model.id.in_(list_ids))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
     async def get_by_name_and_code(
         self, *, name: str, code: str, db_session: AsyncSession | None = None
     ) -> ModelType:

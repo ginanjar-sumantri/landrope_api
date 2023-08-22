@@ -49,6 +49,10 @@ from .kategori_crud import kategori
 from .kategori_sub_crud import kategori_sub
 from .kategori_proyek_crud import kategori_proyek
 
+from .order_gambar_ukur_crud import order_gambar_ukur
+from .order_gambar_ukur_bidang_crud import order_gambar_ukur_bidang
+from .order_gambar_ukur_tembusan_crud import order_gambar_ukur_tembusan
+
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

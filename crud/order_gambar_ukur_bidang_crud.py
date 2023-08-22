@@ -1,0 +1,9 @@
+from crud.base_crud import CRUDBase
+from models.order_gambar_ukur_model import OrderGambarUkurBidang
+from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangCreateSch, OrderGambarUkurBidangUpdateSch
+
+
+class CRUDOrderGambarUkurBidang(CRUDBase[OrderGambarUkurBidang, OrderGambarUkurBidangCreateSch, OrderGambarUkurBidangUpdateSch]):
+    pass
+
+order_gambar_ukur_bidang = CRUDOrderGambarUkurBidang(OrderGambarUkurBidang)

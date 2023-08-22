@@ -127,6 +127,7 @@ async def get_by_id(id:UUID):
                                                       jenis_alashak=obj.jenis_alashak,
                                                       alashak=obj.alashak,
                                                       bundle_hd_code=obj.bundle_hd_code,
+                                                      bundle_hd_id=obj.bundle_hd_id,
                                                       detail_bayars=detail_bayars,
                                                       details=details)
     

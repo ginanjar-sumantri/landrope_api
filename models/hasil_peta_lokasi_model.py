@@ -50,6 +50,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     )
 
     bidang: "Bidang" = Relationship(
+                        back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
                                                 "lazy" : "selectin"
