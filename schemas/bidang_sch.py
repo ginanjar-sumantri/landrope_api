@@ -41,6 +41,7 @@ class BidangByIdSch(BidangRawBase):
 
 class BidangForOrderGUById(SQLModel):
     id:UUID | None
+    id_bidang:str | None
     jenis_alashak:JenisAlashakEnum | None
     alashak:str | None
     status_sk:StatusSKEnum | None

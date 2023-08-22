@@ -89,8 +89,6 @@ async def get_list_for_order_gu(params:Params = Depends(),
 
     objs = await crud.bidang.get_multi_paginated(query=query,params=params)
 
-    print(objs)
-
     return create_response(data=objs)
     
 
@@ -115,6 +113,7 @@ async def get_for_order_gu_by_id(id:UUID):
         raise IdNotFoundException(Bidang, id)
     
     obj_return = BidangForOrderGUById(id=obj.id,
+                                      id_bidang=obj.id_bidang,
                                       jenis_alashak=obj.jenis_alashak,
                                       alashak=obj.alashak,
                                       status_sk=obj.status_sk,
