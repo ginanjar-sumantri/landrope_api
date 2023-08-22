@@ -1,9 +1,11 @@
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel.sql.expression import Select
+from typing import List
 from crud.base_crud import CRUDBase
 from models.bidang_model import Bidang
-from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch
+from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch, BidangRawSch, BidangGetAllSch
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from services.gcloud_storage_service import GCStorageService
 from services.geom_service import GeomService
@@ -53,6 +55,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         response =  await db_session.execute(query)
         
+        return response.scalars().all()
+    
+    async def get_all_bidang_order_gu(self, *, db_session : AsyncSession | None = None, query : Bidang | Select[Bidang]| None = None) -> List[BidangGetAllSch] | None:
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model)
+        response =  await db_session.execute(query)
         return response.scalars().all()
         
 

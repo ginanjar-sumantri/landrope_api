@@ -76,8 +76,9 @@ async def get_list(
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/order_gu", response_model=list[BidangRawSch])
-async def get_list_for_order_gu(keyword:str = None):
+@router.get("/order_gu", response_model=GetResponsePaginatedSch[BidangRawSch])
+async def get_list_for_order_gu(params:Params = Depends(),
+                                keyword:str = None):
 
     """Gets a paginated list objects"""
 
@@ -86,8 +87,12 @@ async def get_list_for_order_gu(keyword:str = None):
     if keyword:
         query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
 
-    objs = await crud.bidang.get_all(query=query)
-    return objs
+    objs = await crud.bidang.get_multi_paginated(query=query,params=params)
+
+    print(objs)
+
+    return create_response(data=objs)
+    
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
 async def get_by_id(id:UUID):

@@ -18,6 +18,10 @@ class BidangRawSch(BidangRawBase):
     desa_name:str|None = Field(alias='desa_name')
     updated_by_name:str|None = Field(alias='updated_by_name')
 
+class BidangGetAllSch(SQLModel):
+    id:UUID|None
+    id_bidang:str|None
+
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')

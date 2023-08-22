@@ -55,7 +55,7 @@ class BidangBase(SQLModel):
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
-    
+
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
 
