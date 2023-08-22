@@ -11,6 +11,10 @@ class OrderGambarUkurBidangCreateSch(OrderGambarUkurBidangBase):
 class OrderGambarUkurBidangSch(OrderGambarUkurBidangFullBase):
     pass
 
+class OrderGambarUkurBidangRawSch(SQLModel):
+    id:UUID | None
+    bidang_id:UUID | None
+
 @optional
 class OrderGambarUkurBidangUpdateSch(OrderGambarUkurBidangBase):
     pass
