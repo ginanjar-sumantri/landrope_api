@@ -5,6 +5,7 @@ from common.enum import JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNO
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from uuid import UUID
+from decimal import Decimal
 
 class OrderGambarUkurBidangCreateSch(OrderGambarUkurBidangBase):
     pass
@@ -16,6 +17,16 @@ class OrderGambarUkurBidangSch(OrderGambarUkurBidangFullBase):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum  | None = Field(alias="hasil_analisa_peta_lokasi")
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None = Field(alias="proses_bpn_order_gu")
 
+class OrderGambarUkurBidangPdfSch(SQLModel):
+    no:int | None
+    id_bidang:UUID | None 
+    pemilik_name:str | None 
+    group:str | None 
+    ptsk_name:str | None 
+    jenis_surat_name:str | None 
+    alashak:str | None 
+    luas_surat:Decimal | None 
+    
 class OrderGambarUkurBidangRawSch(SQLModel):
     id:UUID | None
     bidang_id:UUID | None

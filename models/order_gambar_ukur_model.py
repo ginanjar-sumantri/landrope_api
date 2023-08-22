@@ -3,6 +3,7 @@ from models.base_model import BaseUUIDModel
 from common.enum import TipeSuratGambarUkurEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum
 from uuid import UUID
 from typing import TYPE_CHECKING
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.worker_model import Worker
@@ -113,6 +114,26 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
     @property
     def proses_bpn_order_gu(self) -> ProsesBPNOrderGambarUkurEnum | None:
         return getattr(getattr(self, "bidang", None), "proses_bpn_order_gu", None)
+    
+    @property
+    def pemilik_name(self) -> str | None:
+        return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
+    
+    @property
+    def group(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "group", None)
+    
+    @property
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, "bidang", None), "skpt", None), "ptsk", None), "name", None)
+    
+    @property
+    def jenis_surat_name(self) -> str | None:
+        return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
+    
+    @property
+    def luas_surat(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_surat", None)
 
     
 

@@ -1,15 +1,19 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from models.worker_model import Worker
 from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch)
+from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
 import crud
 import string
 import secrets
+from services.pdf_service import PdfService
+from datetime import datetime, date
+from jinja2 import Environment, FileSystemLoader
 
 router = APIRouter()
 
@@ -87,5 +91,54 @@ async def update(
     
     obj_updated = await crud.order_gambar_ukur.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
+
+@router.get("/surat/{id}")
+async def print_out(id:UUID | str,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    """Print out Order Gambar Ukur"""
+
+    obj = await crud.order_gambar_ukur.get(id=id)
+
+    tipesurat = obj.tipe_surat
+    code = obj.code
+    tujuansurat = obj.tujuan_surat
+
+    tembusans = [tembusan.cc_name for tembusan in obj.tembusans]
+
+    data_list = []
+    no = 1
+    nomor = ""
+    for bidang in obj.bidangs:
+        data = OrderGambarUkurBidangPdfSch(no=no,
+                                           id_bidang=bidang.id_bidang,
+                                           pemilik_name=bidang.pemilik_name,
+                                           group=bidang.group,
+                                           ptsk_name=bidang.ptsk_name,
+                                           jenis_surat_name=bidang.jenis_surat_name,
+                                           alashak=bidang.alashak,
+                                           )
+        no = no + 1
+        data_list.append(data)
+
+    
+    # template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template("order_gambar_ukur.html")
+
+    render_template = template.render(tipesurat=tipesurat, 
+                                      code=code,
+                                      perihal="",
+                                      tujuansurat=tujuansurat,
+                                      tembusans=tembusans,
+                                      data=data_list, nomor=nomor, tanggal=str(date.today()))
+
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={nomor}.pdf"
+    return response
 
    
