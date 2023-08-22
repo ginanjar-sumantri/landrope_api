@@ -1,12 +1,12 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt, ChecklistKelengkapanDokumenHd
 from models.worker_model import Worker
 from schemas.checklist_kelengkapan_dokumen_dt_sch import (ChecklistKelengkapanDokumenDtCreateSch, ChecklistKelengkapanDokumenDtSch, 
                                                           ChecklistKelengkapanDokumenDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
@@ -19,7 +19,16 @@ async def create(sch: ChecklistKelengkapanDokumenDtCreateSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-        
+
+    checklist_kelengkapan_hd = await crud.checklist_kelengkapan_dokumen_hd.get(id=sch.checklist_kelengkapan_dokumen_hd_id)
+    if checklist_kelengkapan_hd is None:
+        raise IdNotFoundException(ChecklistKelengkapanDokumenHd, sch.checklist_kelengkapan_dokumen_hd_id)
+    
+    bundle_dt = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=checklist_kelengkapan_hd.bidang.bundle_hd_id, dokumen_id=sch.dokumen_id)
+    if bundle_dt is None:
+        raise ContentNoChangeException(detail="Bundle detail yang dimaksud tidak ditemukan")
+    
+    sch.bundle_dt_id = bundle_dt.id
     new_obj = await crud.checklist_kelengkapan_dokumen_dt.create(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)

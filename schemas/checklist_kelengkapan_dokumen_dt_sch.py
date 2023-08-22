@@ -6,7 +6,7 @@ from typing import List
 from uuid import UUID
 from pydantic import BaseModel
 from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
-
+from common.as_form import as_form
 
 class ChecklistKelengkapanDokumenDtCreateSch(ChecklistKelengkapanDokumenDtBase):
     pass
