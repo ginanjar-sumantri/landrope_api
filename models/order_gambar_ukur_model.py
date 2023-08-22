@@ -19,6 +19,13 @@ class OrderGambarUkurFullBase(BaseUUIDModel, OrderGambarUkurBase):
     pass
 
 class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
+    worker:"Worker" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "joined",
+            "primaryjoin" : "OrderGambarUkur.created_by_id == Worker.id"
+        }
+    )
     worker_tujuan:"Worker" = Relationship(
         sa_relationship_kwargs=
         {
@@ -58,6 +65,10 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
             return self.worker_tujuan.name
         
         return None
+    
+    @property
+    def created_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker', None), 'name', None)
     
 
 class OrderGambarUkurBidangBase(SQLModel):

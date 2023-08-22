@@ -11,7 +11,9 @@ class OrderGambarUkurCreateSch(OrderGambarUkurBase):
     tembusans:list[OrderGambarUkurTembusanCreateSch]
 
 class OrderGambarUkurSch(OrderGambarUkurFullBase):
-    pass
+    tujuan_surat:str | None = Field(alias="tujuan_surat")
+    perihal:str | None
+    updated_by_name:str | None = Field(alias="updated_by_name")
 
 class OrderGambarUkurByIdSch(OrderGambarUkurFullBase):
     tujuan_surat:str = Field(alias="tujuan_surat")
