@@ -113,13 +113,22 @@ async def get_by_id(id:UUID):
 
     details = []
     for dt in obj.details:
-        detail = ChecklistKelengkapanDokumenDtForHdSch(**dt.dict())
+        detail = ChecklistKelengkapanDokumenDtForHdSch(id=dt.id,
+                                                       checklist_kelengkapan_dokumen_hd_id=dt.checklist_kelengkapan_dokumen_hd_id,
+                                                       bundle_dt_id=dt.bundle_dt_id,
+                                                       jenis_bayar=dt.jenis_bayar,
+                                                       dokumen_id=dt.dokumen_id,
+                                                       dokumen_name=dt.dokumen_name,
+                                                       has_meta_data=dt.has_meta_data)
         details.append(detail)
     
-    obj_return = ChecklistKelengkapanDokumenHdByIdSch(**obj.dict())
-    
-    obj_return.detail_bayars = detail_bayars
-    obj_return.details = details
+    obj_return = ChecklistKelengkapanDokumenHdByIdSch(id=obj.id,
+                                                      id_bidang=obj.id_bidang,
+                                                      jenis_alashak=obj.jenis_alashak,
+                                                      alashak=obj.alashak,
+                                                      bundle_hd_code=obj.bundle_hd_code,
+                                                      detail_bayars=detail_bayars,
+                                                      details=details)
     
     return create_response(data=obj_return)
 

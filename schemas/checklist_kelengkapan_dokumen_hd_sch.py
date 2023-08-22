@@ -1,6 +1,7 @@
 from models.checklist_kelengkapan_dokumen_model import (ChecklistKelengkapanDokumenHd, 
                                                            ChecklistKelengkapanDokumenHdBase, ChecklistKelengkapanDokumenHdFullBase)
-from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch, ChecklistKelengkapanDokumenDtExtSch, ChecklistKelengkapanDokumenDtBayarSch
+from schemas.checklist_kelengkapan_dokumen_dt_sch import (ChecklistKelengkapanDokumenDtSch, ChecklistKelengkapanDokumenDtExtSch, 
+                                                          ChecklistKelengkapanDokumenDtBayarSch, ChecklistKelengkapanDokumenDtForHdSch)
 from common.partial import optional
 from sqlmodel import Field, SQLModel
 from typing import List
@@ -24,8 +25,8 @@ class ChecklistKelengkapanDokumenHdByIdSch(SQLModel):
     jenis_alashak:str | None 
     alashak:str | None 
     bundle_hd_code:str | None
-    details:list[ChecklistKelengkapanDokumenDtExtSch]
-    detail_bayars:list[ChecklistKelengkapanDokumenDtBayarSch]
+    details:list[ChecklistKelengkapanDokumenDtForHdSch] | None
+    detail_bayars:list[ChecklistKelengkapanDokumenDtBayarSch] | None
 
 @optional
 class ChecklistKelengkapanDokumenHdUpdateSch(ChecklistKelengkapanDokumenHdBase):
