@@ -5,7 +5,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from decimal import Decimal
-from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusBidangEnum)
+from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
+                         StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum)
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
@@ -226,3 +227,22 @@ class Bidang(BidangFullBase, table=True):
             return ""
         
         return self.notaris.name
+    
+    @property
+    def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
+        return getattr(getattr(self, "hasil_peta_lokasi", None), "hasil_analisa_peta_lokasi", None)
+    
+    @property
+    def proses_bpn_order_gu(self) -> ProsesBPNOrderGambarUkurEnum | None:
+        if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Belum_IL and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
+            return ProsesBPNOrderGambarUkurEnum.PBT_Perorangan
+        if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Belum_IL and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear:
+            return ProsesBPNOrderGambarUkurEnum.PBT_Perorangan
+        if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Sudah_Il and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
+            return ProsesBPNOrderGambarUkurEnum.PBT_Perorangan
+        if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Sudah_Il and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear:
+            return ProsesBPNOrderGambarUkurEnum.PBT_PT
+        
+        return None
+
+

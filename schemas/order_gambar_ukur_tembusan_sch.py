@@ -9,7 +9,7 @@ class OrderGambarUkurTembusanCreateSch(OrderGambarUkurTembusanBase):
     pass
 
 class OrderGambarUkurTembusanSch(OrderGambarUkurTembusanFullBase):
-    pass
+    cc_name:str | None = Field(alias="cc_name")
 
 class OrderGambarUkurTembusanRawSch(SQLModel):
     id: UUID | None

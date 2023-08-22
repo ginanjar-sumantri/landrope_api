@@ -107,6 +107,10 @@ class HasilAnalisaPetaLokasiEnum(str, Enum):
     Clear = "Clear"
     Overlap = "Overlap"
 
-class ProsesOrderGambarUkur(str, Enum):
+class ProsesBPNOrderGambarUkurEnum(str, Enum):
     PBT_Perorangan = "PBT_Perorangan"
     PBT_PT = "PBT_PT"
+
+class TipeSuratGambarUkurEnum(str, Enum):
+    Surat_Order = "Surat_Order"
+    Surat_Tugas = "Surat_Tugas"

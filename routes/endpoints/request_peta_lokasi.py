@@ -50,8 +50,9 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
 
     datas = []
     db_session = db.session
+    today_date = date.today()
     counter = await generate_code(CodeCounterEnum.RequestPetaLokasi, db_session=db_session, with_commit=False)
-    code = f"SO/{counter}/REQ-PETLOK/{str(date.month)}/{str(date.year)}"
+    code = f"SO/{counter}/REQ-PETLOK/{str(today_date.month)}/{str(today_date.year)}"
     current_datetime = datetime.now()
     for id in sch.kjb_dt_ids:
         kjb_dt = await crud.kjb_dt.get(id=id)

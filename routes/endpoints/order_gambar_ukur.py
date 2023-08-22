@@ -4,11 +4,12 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from models.worker_model import Worker
-from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch)
+from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
 import crud
-
+import string
+import secrets
 
 router = APIRouter()
 
@@ -18,8 +19,10 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
+    alphabet = string.ascii_letters + string.digits
+    sch.code = ''.join(secrets.choice(alphabet) for _ in range(10))
         
-    new_obj = await crud.order_gambar_ukur.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.order_gambar_ukur.create_order_gambar_ukur(obj_in=sch, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
 
@@ -36,7 +39,7 @@ async def get_list(
     objs = await crud.order_gambar_ukur.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[OrderGambarUkurSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[OrderGambarUkurByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""

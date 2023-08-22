@@ -2,8 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
-from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
-import crud
+from common.enum import JenisBayarEnum
 
 if TYPE_CHECKING:
     from models.dokumen_model import Dokumen

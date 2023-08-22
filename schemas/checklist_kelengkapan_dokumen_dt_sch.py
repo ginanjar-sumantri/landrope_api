@@ -1,12 +1,10 @@
-from models.checklist_kelengkapan_dokumen_model import (ChecklistKelengkapanDokumenDt, 
-                                                           ChecklistKelengkapanDokumenDtBase, ChecklistKelengkapanDokumenDtFullBase)
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDtBase, ChecklistKelengkapanDokumenDtFullBase
 from common.partial import optional
 from sqlmodel import Field, SQLModel
 from typing import List
 from uuid import UUID
 from pydantic import BaseModel
 from common.enum import JenisAlashakEnum, JenisBayarEnum, KategoriPenjualEnum
-from common.as_form import as_form
 
 class ChecklistKelengkapanDokumenDtCreateSch(ChecklistKelengkapanDokumenDtBase):
     pass

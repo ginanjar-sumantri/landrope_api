@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
-from common.enum import ProsesOrderGambarUkur
+from common.enum import TipeSuratGambarUkurEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum
 from uuid import UUID
 from typing import TYPE_CHECKING
 
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
 
 class OrderGambarUkurBase(SQLModel):
+    tipe_surat:TipeSuratGambarUkurEnum
     code:str
     tujuan_surat_worker_id:UUID | None = Field(nullable=True, foreign_key="worker.id")
     tujuan_surat_notaris_id:UUID | None = Field(nullable=True, foreign_key="notaris.id")
@@ -49,6 +50,15 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
         }
     )
 
+    @property
+    def tujuan_surat(self) -> str | None:
+        if self.notaris_tujuan:
+            return self.notaris_tujuan.name
+        if self.worker_tujuan:
+            return self.worker_tujuan.name
+        
+        return None
+    
 
 class OrderGambarUkurBidangBase(SQLModel):
     order_gambar_ukur_id:UUID | None = Field(nullable=False, foreign_key="order_gambar_ukur.id")
@@ -73,7 +83,29 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
         }
     )
 
+    @property
+    def id_bidang(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "id_bidang", None)
+    
+    @property
+    def jenis_alashak(self) -> JenisAlashakEnum | None:
+        return getattr(getattr(self, "bidang", None), "jenis_alashak", None)
+    
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "alashak", None)
+    
+    @property
+    def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
+        return getattr(getattr(self, "bidang", None), "hasil_analisa_peta_lokasi", None)
+    
+    @property
+    def proses_bpn_order_gu(self) -> ProsesBPNOrderGambarUkurEnum | None:
+        return getattr(getattr(self, "bidang", None), "proses_bpn_order_gu", None)
 
+    
+
+    
 class OrderGambarUkurTembusanBase(SQLModel):
     order_gambar_ukur_id:UUID | None = Field(nullable=False, foreign_key="order_gambar_ukur.id")
     tembusan_id:UUID = Field(nullable=False, foreign_key="worker.id")
@@ -97,3 +129,7 @@ class OrderGambarUkurTembusan(OrderGambarUkurTembusanFullBase, table=True):
             "primaryjoin" : "OrderGambarUkurTembusan.tembusan_id == Worker.id"
         }
     )
+
+    @property
+    def cc_name(self) -> str | None:
+        return getattr(getattr(self, "tembusan", None), "name", None)
