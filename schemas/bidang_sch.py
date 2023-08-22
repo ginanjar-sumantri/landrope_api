@@ -43,6 +43,7 @@ class BidangForOrderGUById(SQLModel):
     ptsk_name:str | None
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None
+    luas_surat:Decimal | None
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None

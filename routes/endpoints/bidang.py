@@ -76,6 +76,19 @@ async def get_list(
     objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
+@router.get("/order_gu", response_model=list[BidangRawSch])
+async def get_list_for_order_gu(keyword:str = None):
+
+    """Gets a paginated list objects"""
+
+    query = select(Bidang).where(Bidang.hasil_peta_lokasi != None)
+
+    if keyword:
+        query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
+
+    objs = await crud.bidang.get_all(query=query)
+    return objs
+
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
 async def get_by_id(id:UUID):
 
@@ -102,13 +115,11 @@ async def get_for_order_gu_by_id(id:UUID):
                                       status_sk=obj.status_sk,
                                       ptsk_name=obj.ptsk_name,
                                       hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
-                                      proses_bpn_order_gu=obj.proses_bpn_order_gu
-                                      )
+                                      proses_bpn_order_gu=obj.proses_bpn_order_gu,
+                                      luas_surat=obj.luas_surat)
     
     return create_response(data=obj_return)
     
-
-
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
 async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
