@@ -131,7 +131,8 @@ async def print_out(id:UUID | str,
                                       perihal=perihal,
                                       tujuansurat=tujuansurat,
                                       tembusans=tembusans,
-                                      data=data_list, nomor=nomor, tanggal=str(date.today()))
+                                      data=data_list, 
+                                      tanggal=str(date.today()))
 
     try:
         doc = await PdfService().get_pdf(render_template)
@@ -139,7 +140,7 @@ async def print_out(id:UUID | str,
         raise HTTPException(status_code=500, detail="Failed generate document")
     
     response = Response(doc, media_type='application/pdf')
-    response.headers["Content-Disposition"] = f"attachment; filename={nomor}.pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={code}.pdf"
     return response
 
    
