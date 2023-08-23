@@ -62,6 +62,7 @@ python-dotenv==1.0.0
 python-multipart==0.0.6
 pytz==2023.3
 requests==2.30.0
+roman==4.1
 rsa==4.9
 shapely==2.0.1
 six==1.16.0

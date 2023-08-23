@@ -4,17 +4,21 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from models.worker_model import Worker
+from models.code_counter_model import CodeCounterEnum
 from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch, OrderGambarUkurUpdateExtSch)
 from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch, OrderGambarUkurBidangCreateSch
 from schemas.order_gambar_ukur_tembusan_sch import OrderGambarUkurTembusanCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
-import crud
-import string
-import secrets
+from common.generator import generate_code_month
 from services.pdf_service import PdfService
 from datetime import datetime, date
 from jinja2 import Environment, FileSystemLoader
+import crud
+import string
+import secrets
+import roman
+
 
 router = APIRouter()
 
@@ -25,8 +29,13 @@ async def create(
     
     """Create a new object"""
     db_session = db.session
-    alphabet = string.ascii_letters + string.digits
-    sch.code = ''.join(secrets.choice(alphabet) for _ in range(10))
+    last_number = await generate_code_month(entity=CodeCounterEnum.OrderGambarUkur, with_commit=False, db_session=db_session)
+
+    today = date.today()
+    month = roman.toRoman(today.month)
+    year = today.year
+
+    sch.code = f"{last_number}/LA-PRA/GU/{month}/{year}"
         
     new_obj = await crud.order_gambar_ukur.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -153,7 +162,7 @@ async def print_out(id:UUID | str,
                                       tujuansurat=tujuansurat,
                                       tembusans=tembusans,
                                       data=data_list, 
-                                      tanggal=str(date.today()))
+                                      tanggal=str(obj.created_at.date))
 
     try:
         doc = await PdfService().get_pdf(render_template)

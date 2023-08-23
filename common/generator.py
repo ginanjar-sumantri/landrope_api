@@ -3,6 +3,7 @@ from geoalchemy2.shape import to_shape
 from models.code_counter_model import CodeCounter, CodeCounterEnum
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
+from datetime import datetime
 import string
 import random
 
@@ -74,9 +75,43 @@ async def generate_code(entity:CodeCounterEnum,
         return code
     
     else:
-        
-
         code_counter = (obj_current.last + 1)
+        max_digit = obj_current.digit or max_digit
+        max_value = 10 ** max_digit - 1 
+
+        if code_counter > max_value:
+            max_digit += 1
+
+        obj_new = CodeCounter(entity=obj_current.entity, last=code_counter, digit=max_digit)
+        await crud.codecounter.update(obj_current=obj_current, obj_new=obj_new, db_session=db_session, with_commit=with_commit)
+        
+        code = str(code_counter).zfill(max_digit)
+        return code
+    
+async def generate_code_month(entity:CodeCounterEnum,
+                        db_session : AsyncSession | None = None,
+                        with_commit: bool | None = True):
+
+    obj_current = await crud.codecounter.get_by_entity(entity=entity)
+    code_counter = 1
+    max_digit = 3
+    current_month = datetime.now().strftime("%m")
+    current_year = datetime.now().strftime("%Y")
+    current_date = datetime.now().date()
+
+    if obj_current is None:
+        obj_in = CodeCounter(entity=entity, code_counter=code_counter, digit=max_digit)
+        await crud.codecounter.create(obj_in=obj_in, db_session=db_session, with_commit=with_commit)
+
+        code = str(code_counter).zfill(max_digit)
+        return code
+    
+    else:
+        last_number = obj_current.last
+        if obj_current.last is None or obj_current.updated_at.month != current_date.month:
+            last_number = 0
+
+        code_counter = (last_number + 1)
         max_digit = obj_current.digit or max_digit
         max_value = 10 ** max_digit - 1 
 
