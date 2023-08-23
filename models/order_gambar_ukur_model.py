@@ -11,8 +11,9 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
 
 class OrderGambarUkurBase(SQLModel):
-    tipe_surat:TipeSuratGambarUkurEnum
     code:str
+    status_bidang:HasilAnalisaPetaLokasiEnum
+    tipe_surat:TipeSuratGambarUkurEnum
     tujuan_surat_worker_id:UUID | None = Field(nullable=True, foreign_key="worker.id")
     tujuan_surat_notaris_id:UUID | None = Field(nullable=True, foreign_key="notaris.id")
 
@@ -70,6 +71,29 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
     @property
     def created_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
+    
+    @property
+    def perihal(self) -> str | None:
+        if self.status_bidang == HasilAnalisaPetaLokasiEnum.Clear:
+            if len(self.bidangs) > 0:
+                bidang = self.bidangs[0]
+                pbt = bidang.bidang.proses_bpn_order_gu
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
+                    return "Proses Gambar Ukur Perorangan (Bidang Clear)"
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                    return "Proses Gambar Ukur PT (Bidang Clear)"
+            else:
+                return None
+        if self.status_bidang == HasilAnalisaPetaLokasiEnum.Overlap:
+            if len(self.bidangs) > 0:
+                bidang = self.bidangs[0]
+                pbt = bidang.bidang.proses_bpn_order_gu
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
+                    return "Proses Gambar Ukur Perorangan (Bidang Overlap)"
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                    return "Proses Gambar Ukur PT (Bidang Overlap)"
+            else:
+                return None
     
 
 class OrderGambarUkurBidangBase(SQLModel):

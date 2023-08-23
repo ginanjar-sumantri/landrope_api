@@ -14,7 +14,7 @@ class CRUDOrderGambarUkur(CRUDBase[OrderGambarUkur, OrderGambarUkurCreateSch, Or
     async def create_order_gambar_ukur(
             self, 
             *, 
-            obj_in: OrderGambarUkurCreateSch | OrderGambarUkur, 
+            obj_in: OrderGambarUkurCreateSch, 
             created_by_id : UUID | str | None = None, 
             db_session : AsyncSession | None = None) -> OrderGambarUkur :
         db_session = db_session or db.session
@@ -27,14 +27,14 @@ class CRUDOrderGambarUkur(CRUDBase[OrderGambarUkur, OrderGambarUkurCreateSch, Or
         try:
             
             for i in obj_in.bidangs:
-                bidang = OrderGambarUkurBidang(bidang_id=i.bidang_id,
+                bidang = OrderGambarUkurBidang(bidang_id=i,
                                                created_by_id=created_by_id,
                                                updated_by_id=created_by_id)
                 
                 db_obj.bidangs.append(bidang)
             
             for t in obj_in.tembusans:
-                tembusan = OrderGambarUkurTembusan(tembusan_id=t.tembusan_id,
+                tembusan = OrderGambarUkurTembusan(tembusan_id=t,
                                                   created_by_id=created_by_id,
                                                   updated_by_id=created_by_id)
                 db_obj.tembusans.append(tembusan)

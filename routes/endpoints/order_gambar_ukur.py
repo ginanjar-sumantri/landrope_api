@@ -89,10 +89,10 @@ async def update(
             new_order_gu_tembusan = OrderGambarUkurTembusan(tembusan_id=order_gu_tembusan.tembusan_id)
             await crud.order_gambar_ukur_tembusan.create(obj_in=new_order_gu_tembusan, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-    obj_updated = await crud.order_gambar_ukur.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.order_gambar_ukur.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
     return create_response(data=obj_updated)
 
-@router.get("/surat/{id}")
+@router.get("/print-out/{id}")
 async def print_out(id:UUID | str,
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
     """Print out Order Gambar Ukur"""
@@ -101,6 +101,7 @@ async def print_out(id:UUID | str,
 
     tipesurat = obj.tipe_surat
     code = obj.code
+    perihal = obj.perihal
     tujuansurat = obj.tujuan_surat
 
     tembusans = [tembusan.cc_name for tembusan in obj.tembusans]
@@ -127,7 +128,7 @@ async def print_out(id:UUID | str,
 
     render_template = template.render(tipesurat=tipesurat, 
                                       code=code,
-                                      perihal="",
+                                      perihal=perihal,
                                       tujuansurat=tujuansurat,
                                       tembusans=tembusans,
                                       data=data_list, nomor=nomor, tanggal=str(date.today()))
