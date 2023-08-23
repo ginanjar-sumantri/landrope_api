@@ -26,7 +26,7 @@ class OrderGambarUkurBidangPdfSch(SQLModel):
     ptsk_name:str | None 
     jenis_surat_name:str | None 
     alashak:str | None 
-    luas_surat:Decimal | None 
+    luas_surat:str | None 
     
 class OrderGambarUkurBidangRawSch(SQLModel):
     id:UUID | None
