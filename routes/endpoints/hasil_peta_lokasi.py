@@ -102,6 +102,7 @@ async def create(
             hasil_peta_lokasi_id=new_obj.id,
             luas_overlap=dt.luas_overlap,
             keterangan=dt.keterangan,
+            status_luas=dt.status_luas,
             bidang_overlap_id=bidang_overlap_id
         )
 
@@ -286,6 +287,7 @@ async def update(
             hasil_peta_lokasi_id=obj_updated.id,
             luas_overlap=dt.luas_overlap,
             keterangan=dt.keterangan,
+            status_luas=dt.status_luas,
             bidang_overlap_id=bidang_overlap_id
         )
 
