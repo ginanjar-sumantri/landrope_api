@@ -6,6 +6,7 @@ from common.as_form import as_form
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from uuid import UUID
+from decimal import Decimal
 
 class OrderGambarUkurCreateSch(OrderGambarUkurBase):
     bidangs:list[UUID]
@@ -18,7 +19,7 @@ class OrderGambarUkurSch(OrderGambarUkurFullBase):
     updated_by_name:str | None = Field(alias="updated_by_name")
 
 class OrderGambarUkurByIdSch(OrderGambarUkurFullBase):
-    tujuan_surat:str = Field(alias="tujuan_surat")
+    tujuan_surat:str | None = Field(alias="tujuan_surat")
     bidangs:list[OrderGambarUkurBidangSch]
     tembusans:list[OrderGambarUkurTembusanSch]
 

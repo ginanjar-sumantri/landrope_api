@@ -14,6 +14,7 @@ class OrderGambarUkurBidangSch(OrderGambarUkurBidangFullBase):
     id_bidang:str | None = Field(alias="id_bidang")
     jenis_alashak:JenisAlashakEnum | None = Field(alias="jenis_alashak")
     alashak:str | None = Field(alias="alashak")
+    luas_surat:Decimal | None = Field(alias="luas_surat")
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum  | None = Field(alias="hasil_analisa_peta_lokasi")
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None = Field(alias="proses_bpn_order_gu")
 
