@@ -11,7 +11,7 @@ class OrderGambarUkurBidangCreateSch(OrderGambarUkurBidangBase):
     pass
 
 class OrderGambarUkurBidangSch(OrderGambarUkurBidangFullBase):
-    id_bidang:UUID | None = Field(alias="id_bidang")
+    id_bidang:str | None = Field(alias="id_bidang")
     jenis_alashak:JenisAlashakEnum | None = Field(alias="jenis_alashak")
     alashak:str | None = Field(alias="alashak")
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum  | None = Field(alias="hasil_analisa_peta_lokasi")
@@ -19,7 +19,7 @@ class OrderGambarUkurBidangSch(OrderGambarUkurBidangFullBase):
 
 class OrderGambarUkurBidangPdfSch(SQLModel):
     no:int | None
-    id_bidang:UUID | None 
+    id_bidang:str | None 
     pemilik_name:str | None 
     group:str | None 
     ptsk_name:str | None 

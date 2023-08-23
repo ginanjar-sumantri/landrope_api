@@ -20,9 +20,13 @@ class OrderGambarUkurSch(OrderGambarUkurFullBase):
 class OrderGambarUkurByIdSch(OrderGambarUkurFullBase):
     tujuan_surat:str = Field(alias="tujuan_surat")
     bidangs:list[OrderGambarUkurBidangSch]
-    tembusan:list[OrderGambarUkurTembusanSch]
+    tembusans:list[OrderGambarUkurTembusanSch]
 
 @optional
 class OrderGambarUkurUpdateSch(OrderGambarUkurBase):
     bidangs:list[UUID]
     tembusans:list[UUID]
+
+@optional
+class OrderGambarUkurUpdateExtSch(OrderGambarUkurBase):
+    pass
