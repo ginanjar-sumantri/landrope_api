@@ -5,9 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_
+from sqlmodel import select, or_, and_
 from models.bidang_model import Bidang
 from models.worker_model import Worker
+from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
@@ -19,7 +20,7 @@ from common.exceptions import (IdNotFoundException, NameExistException,
                                ImportFailedException, DocumentFileNotFoundException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, StatusHasilPetaLokasiEnum, JenisBayarEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
@@ -78,11 +79,13 @@ async def get_list(
 
 @router.get("/order_gu", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list_for_order_gu(params:Params = Depends(),
+                                status_bidang:HasilAnalisaPetaLokasiEnum = None,
                                 keyword:str = None):
 
     """Gets a paginated list objects"""
 
-    query = select(Bidang).where(Bidang.hasil_peta_lokasi != None)
+    query = select(Bidang).select_from(Bidang).join(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
+                                                    ).where(HasilPetaLokasi.hasil_analisa_peta_lokasi == status_bidang)
 
     if keyword:
         query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))

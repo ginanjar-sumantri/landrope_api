@@ -114,3 +114,7 @@ class ProsesBPNOrderGambarUkurEnum(str, Enum):
 class TipeSuratGambarUkurEnum(str, Enum):
     Surat_Order = "Surat_Order"
     Surat_Tugas = "Surat_Tugas"
+
+class StatusLuasOverlapEnum(str, Enum):
+    Menambah_Luas = "Menambah_Luas"
+    Tidak_Menambah_Luas = "Tidak_Menambah_Luas"

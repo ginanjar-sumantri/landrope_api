@@ -75,7 +75,6 @@ async def create(
         bidang_overlap_id = None
         if dt.draft_detail_id is not None:
             #input bidang overlap dari hasil analisa
-
             draft_detail = await crud.draft_detail.get(id=dt.draft_detail_id)
             if draft_detail is None:
                 raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
@@ -88,6 +87,7 @@ async def create(
                                     parent_bidang_id=sch.bidang_id,
                                     parent_bidang_intersect_id=dt.bidang_id,
                                     luas=dt.luas_overlap,
+                                    status_luas=dt.status_luas,
                                     geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
@@ -271,6 +271,7 @@ async def update(
                                     parent_bidang_id=sch.bidang_id,
                                     parent_bidang_intersect_id=dt.bidang_id,
                                     luas=dt.luas_overlap,
+                                    status_luas=dt.status_luas,
                                     geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 

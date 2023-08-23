@@ -4,7 +4,7 @@ from common.enum import JenisAlashakEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
-from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum
 
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
@@ -146,6 +146,7 @@ class HasilPetaLokasiDetailBase(SQLModel):
     hasil_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="hasil_peta_lokasi.id")
     luas_overlap:Decimal = Field(nullable=True)
     keterangan:str | None = Field(nullable=True)
+    status_luas:StatusLuasOverlapEnum | None = Field(nullable=True)
     bidang_overlap_id:UUID | None = Field(nullable=True, foreign_key="bidang_overlap.id")
 
 class HasilPetaLokasiDetailFullBase(BaseUUIDModel, HasilPetaLokasiDetailBase):
