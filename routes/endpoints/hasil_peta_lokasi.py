@@ -238,6 +238,19 @@ async def update(
     await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
     await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session)
     
+    tipe_proses = TipeProsesEnum.Standard
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Belum_Bebas
+    sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
+
+    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if len(sch.hasilpetalokasidetails) > 0:
+        tipe_proses = TipeProsesEnum.Overlap
+        jenis_bidang = JenisBidangEnum.Overlap
+        sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
+
     #update hasil peta lokasi
     sch_updated = HasilPetaLokasiUpdateSch(**sch.dict())
     sch_updated.file_path = obj_current.file_path
@@ -295,17 +308,6 @@ async def update(
 
     #update bidang from hasil peta lokasi
     draft = await crud.draft.get(id=draft_header_id)
-
-    tipe_proses = TipeProsesEnum.Standard
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Belum_Bebas
-
-    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
-    if len(sch.hasilpetalokasidetails) > 0:
-        tipe_proses = TipeProsesEnum.Overlap
-        jenis_bidang = JenisBidangEnum.Overlap
 
     bidang_updated = BidangSch(
         tipe_proses=tipe_proses,
