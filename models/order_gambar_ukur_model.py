@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
 
 class OrderGambarUkurBase(SQLModel):
-    code:str | None
+    code:str | None = Field(nullable=True)
     status_bidang:HasilAnalisaPetaLokasiEnum
     tipe_surat:TipeSuratGambarUkurEnum
     tujuan_surat_worker_id:UUID | None = Field(nullable=True, foreign_key="worker.id")
