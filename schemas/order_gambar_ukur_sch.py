@@ -11,6 +11,7 @@ class OrderGambarUkurCreateSch(OrderGambarUkurBase):
     bidangs:list[UUID]
     tembusans:list[UUID]
 
+
 class OrderGambarUkurSch(OrderGambarUkurFullBase):
     tujuan_surat:str | None = Field(alias="tujuan_surat")
     perihal:str | None = Field(alias="perihal")

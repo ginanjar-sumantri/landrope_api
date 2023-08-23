@@ -74,27 +74,27 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
     
     @property
     def perihal(self) -> str | None:
-        # if self.status_bidang == HasilAnalisaPetaLokasiEnum.Clear:
-        #     if len(self.bidangs) > 0:
-        #         bidang = self.bidangs[0]
-        #         pbt = bidang.bidang.proses_bpn_order_gu
-        #         if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
-        #             return "Proses Gambar Ukur Perorangan (Bidang Clear)"
-        #         if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
-        #             return "Proses Gambar Ukur PT (Bidang Clear)"
-        #     else:
-        #         return None
-        # if self.status_bidang == HasilAnalisaPetaLokasiEnum.Overlap:
-        #     if len(self.bidangs) > 0:
-        #         bidang = self.bidangs[0]
-        #         pbt = bidang.bidang.proses_bpn_order_gu
-        #         if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
-        #             return "Proses Gambar Ukur Perorangan (Bidang Overlap)"
-        #         if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
-        #             return "Proses Gambar Ukur PT (Bidang Overlap)"
-        #     else:
-        #         return None
-        None
+        if self.status_bidang == HasilAnalisaPetaLokasiEnum.Clear:
+            if len(self.bidangs) > 0:
+                bidang = self.bidangs[0]
+                pbt = bidang.bidang.proses_bpn_order_gu
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
+                    return "Proses Gambar Ukur Perorangan (Bidang Clear)"
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                    return "Proses Gambar Ukur PT (Bidang Clear)"
+            else:
+                return None
+        if self.status_bidang == HasilAnalisaPetaLokasiEnum.Overlap:
+            if len(self.bidangs) > 0:
+                bidang = self.bidangs[0]
+                pbt = bidang.bidang.proses_bpn_order_gu
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
+                    return "Proses Gambar Ukur Perorangan (Bidang Overlap)"
+                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                    return "Proses Gambar Ukur PT (Bidang Overlap)"
+            else:
+                return None
+    
     
 
 class OrderGambarUkurBidangBase(SQLModel):

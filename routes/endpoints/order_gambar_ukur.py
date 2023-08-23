@@ -5,7 +5,8 @@ from fastapi_async_sqlalchemy import db
 from models.order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from models.worker_model import Worker
 from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch)
-from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch
+from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch, OrderGambarUkurBidangCreateSch
+from schemas.order_gambar_ukur_tembusan_sch import OrderGambarUkurTembusanCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException)
 import crud
@@ -23,10 +24,22 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
+    db_session = db.session
     alphabet = string.ascii_letters + string.digits
     sch.code = ''.join(secrets.choice(alphabet) for _ in range(10))
         
-    new_obj = await crud.order_gambar_ukur.create_order_gambar_ukur(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.order_gambar_ukur.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    for bidang in sch.bidangs:
+        sch_bidang = OrderGambarUkurBidangCreateSch(order_gambar_ukur_id=new_obj.id, bidang_id=bidang)
+        await crud.order_gambar_ukur_bidang.create(obj_in=sch_bidang, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    for tembusan in sch.tembusans:
+        sch_tembusan = OrderGambarUkurTembusanCreateSch(order_gambar_ukur_id=new_obj.id, tembusan_id=tembusan)
+        await crud.order_gambar_ukur_tembusan.create(obj_in=sch_tembusan, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
+    await db_session.refresh(new_obj)
     
     return create_response(data=new_obj)
 
