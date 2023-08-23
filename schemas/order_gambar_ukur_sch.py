@@ -23,5 +23,5 @@ class OrderGambarUkurByIdSch(OrderGambarUkurFullBase):
 
 @optional
 class OrderGambarUkurUpdateSch(OrderGambarUkurBase):
-    bidangs:list[OrderGambarUkurBidangRawSch]
-    tembusans:list[OrderGambarUkurTembusanRawSch]
+    bidangs:list[UUID]
+    tembusans:list[UUID]

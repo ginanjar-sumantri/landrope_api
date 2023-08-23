@@ -70,7 +70,7 @@ async def update(
         raise IdNotFoundException(OrderGambarUkur, id)
     
     bidang_ids = [bidang.bidang_id for bidang in sch.bidangs]
-    order_gu_bidang_will_removed = await crud.order_gambar_ukur_bidang.get_not_in_by_ids(list_ids=bidang_ids)
+    order_gu_bidang_will_removed = await crud.order_gambar_ukur_bidang.get_not_in_by_bidang_ids(list_ids=bidang_ids)
     if len(order_gu_bidang_will_removed) > 0 :
         await crud.order_gambar_ukur_bidang.remove_multiple_data(list_obj=order_gu_bidang_will_removed, db_session=db_session)
     
@@ -80,7 +80,7 @@ async def update(
             await crud.order_gambar_ukur_bidang.create(obj_in=new_order_gu_bidang, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
     tembusan_ids = [tembusan.id for tembusan in sch.tembusans]
-    order_gu_tembusan_will_removed = await crud.order_gambar_ukur_tembusan.get_not_in_by_ids(list_ids=tembusan_ids)
+    order_gu_tembusan_will_removed = await crud.order_gambar_ukur_tembusan.get_not_in_by_tembusan_ids(list_ids=tembusan_ids)
     if len(order_gu_tembusan_will_removed) > 0:
         await crud.order_gambar_ukur_tembusan.remove_multiple_data(list_obj=order_gu_tembusan_will_removed)
     
