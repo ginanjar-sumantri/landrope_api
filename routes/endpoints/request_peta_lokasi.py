@@ -107,7 +107,7 @@ async def get_list_for_input_hasil_petlok(
     
     return create_response(data=objs)
 
-@router.get("/{code}", response_model=GetResponseBaseSch[RequestPetaLokasiHdbyCodeSch])
+@router.get("/by-code", response_model=GetResponseBaseSch[RequestPetaLokasiHdbyCodeSch])
 async def get_by_code(code:str = None):
 
     """Get an object by id"""
@@ -180,7 +180,7 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
 
     return create_response(data=obj)
 
-@router.get("/perintah-pengukuran/{code}")
+@router.get("/perintah-pengukuran")
 async def perintah_pengukuran(
                         code:str = None,
                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
