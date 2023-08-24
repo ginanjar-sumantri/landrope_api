@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import exc
+from sqlalchemy import exc, select
 from crud.base_crud import CRUDBase
 from models.draft_model import Draft, DraftDetail
 from schemas.draft_sch import DraftCreateSch, DraftUpdateSch, DraftForAnalisaSch
@@ -40,5 +40,12 @@ class CRUDDraft(CRUDBase[Draft, DraftCreateSch, DraftUpdateSch]):
         if with_commit:
             await db_session.refresh(db_obj)
         return db_obj
+    
+    async def get_by_rincik_id(self, *, rincik_id: UUID | str, db_session: AsyncSession | None = None) -> Draft | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.rincik_id == rincik_id)
+        response = await db_session.execute(query)
+
+        return response.scalars().first()
 
 draft = CRUDDraft(Draft)

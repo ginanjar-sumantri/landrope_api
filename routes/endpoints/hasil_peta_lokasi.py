@@ -109,7 +109,11 @@ async def create(
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     #update bidang from hasil peta lokasi
-    draft = await crud.draft.get(id=draft_header_id)
+    draft = None
+    if draft_header_id:
+        draft = await crud.draft.get(id=draft_header_id)
+    else:
+        draft = await crud.draft.get_by_rincik_id(rincik_id=sch.bidang_id)
 
     bidang_updated = BidangSch(
         tipe_proses=tipe_proses,
@@ -169,6 +173,8 @@ async def create(
     
     #remove draft
     if draft:
+        if len(draft.details) > 0:
+            await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
         await crud.draft.remove(id=draft.id, db_session=db_session)
     else:
         await db_session.commit()
@@ -307,7 +313,11 @@ async def update(
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     #update bidang from hasil peta lokasi
-    draft = await crud.draft.get(id=draft_header_id)
+    draft = None
+    if draft_header_id:
+        draft = await crud.draft.get(id=draft_header_id)
+    else:
+        draft = await crud.draft.get_by_rincik_id(rincik_id=sch.bidang_id)
 
     bidang_updated = BidangSch(
         tipe_proses=tipe_proses,
@@ -370,7 +380,8 @@ async def update(
     #remove draft
     
     if draft:
-        await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
+        if len(draft.details) > 0:
+            await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
         await crud.draft.remove(id=draft.id, db_session=db_session)
     else:
         await db_session.commit()

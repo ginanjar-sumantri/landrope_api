@@ -1,6 +1,8 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, File
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
+
 import crud
 from services.geom_service import GeomService
 from models.draft_model import Draft, DraftDetail
@@ -55,6 +57,13 @@ async def analisa(
                 ):
     
     """Create a new analisa bidang"""
+    obj_current = await crud.draft.get_by_rincik_id(sch.rincik_id)
+    if obj_current:
+        db_session_remove = db.session
+        if len(obj_current.details) > 0:
+            await crud.draft_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session_remove)
+        await crud.draft.remove(id=obj_current.id, db_session=db_session_remove)
+
     geom = None
     crs = CRS("EPSG:32748")
     if file is not None:
