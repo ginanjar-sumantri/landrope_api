@@ -57,7 +57,7 @@ async def analisa(
                 ):
     
     """Create a new analisa bidang"""
-    obj_current = await crud.draft.get_by_rincik_id(sch.rincik_id)
+    obj_current = await crud.draft.get_by_rincik_id(rincik_id=sch.rincik_id)
     if obj_current:
         db_session_remove = db.session
         if len(obj_current.details) > 0:
