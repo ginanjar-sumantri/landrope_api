@@ -54,7 +54,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     db_session = db.session
 
     # Merging Data Dokumen dari Tanda Terima Notaris ke Bundle
-    await merging_to_bundle(bundle_hd_obj=bundlehd_obj_current, dokumen=dokumen, meta_data=sch.meta_data,
+    await HelperService().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current, dokumen=dokumen, meta_data=sch.meta_data,
                             db_session=db_session, file_path=file_path,
                             worker_id=current_worker.id)
     
@@ -70,75 +70,6 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     new_obj = await crud.tandaterimanotaris_dt.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
     
     return create_response(data=new_obj)
-
-async def merging_to_bundle(bundle_hd_obj : BundleHd,
-                            dokumen : Dokumen,
-                            meta_data : str,
-                            db_session : AsyncSession | None,
-                            file_path : str | None,
-                            worker_id : UUID):
-
-    # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
-    bundledt_obj_current = next((x for x in bundle_hd_obj.bundledts if x.dokumen_id == dokumen.id and x.bundle_hd_id == bundle_hd_obj.id), None)
-    
-    if bundledt_obj_current is None:
-        code = bundle_hd_obj.code + dokumen.code
-
-        history_data = HelperService().extract_metadata_for_history(meta_data, current_history=None)
-
-        riwayat_data = None
-        if dokumen.is_riwayat == True:
-            riwayat_data = HelperService().extract_metadata_for_riwayat(meta_data=meta_data, 
-                                                                       key_riwayat=dokumen.key_riwayat, 
-                                                                       current_riwayat=None, 
-                                                                       file_path=file_path, 
-                                                                       is_default=True,
-                                                                       from_notaris=True)
-
-        new_dokumen = BundleDt(code=code, 
-                               dokumen_id=dokumen.id, 
-                               meta_data=meta_data, 
-                               history_data=history_data,
-                               riwayat_data=riwayat_data,
-                               bundle_hd_id=bundle_hd_obj.id, 
-                               file_path=file_path)
-
-        bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen, db_session=db_session, with_commit=False, created_by_id=worker_id)
-    else:
-
-        history_data = HelperService().extract_metadata_for_history(str(meta_data), current_history=bundledt_obj_current.history_data)
-
-        riwayat_data = None
-        if dokumen.is_riwayat == True:
-            riwayat_data = HelperService().extract_metadata_for_riwayat(meta_data=meta_data, 
-                                                                       key_riwayat=dokumen.key_riwayat, 
-                                                                       current_riwayat=bundledt_obj_current.riwayat_data, 
-                                                                       file_path=file_path, 
-                                                                       is_default=True,
-                                                                       from_notaris=True)
-        
-        if file_path is None:
-            file_path = bundledt_obj_current.file_path
-
-        bundledt_obj_updated = bundledt_obj_current
-        bundledt_obj_updated.meta_data = meta_data
-        bundledt_obj_updated.history_data = history_data
-        bundledt_obj_updated.riwayat_data = riwayat_data
-        bundledt_obj_updated.file_path = file_path
-
-        bundledt_obj_current = await crud.bundledt.update(obj_current=bundledt_obj_current, 
-                                                          obj_new=bundledt_obj_updated, 
-                                                          db_session=db_session, 
-                                                          with_commit=False,
-                                                          updated_by_id=worker_id)
-    
-    #updated bundle header keyword when dokumen metadata is_keyword true
-    if dokumen.is_keyword == True:
-        await HelperService().update_bundle_keyword(meta_data=meta_data,
-                                                    bundle_hd_id=bundle_hd_obj.id, 
-                                                    worker_id=worker_id, 
-                                                    key_field=dokumen.key_field, 
-                                                    db_session=db_session)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisDtSch])
 async def get_list(
@@ -200,7 +131,7 @@ async def update(id:UUID,
     db_session = db.session
 
     # Merging Data Dokumen dari Tanda Terima Notaris ke Bundle
-    await merging_to_bundle(bundle_hd_obj=bundlehd_obj_current,
+    await HelperService().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current,
                             dokumen=dokumen,
                             meta_data=sch.meta_data,
                             db_session=db_session,

@@ -1,6 +1,7 @@
 from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
+from models.bundle_model import BundleDt, BundleHd
 from schemas.dokumen_sch import RiwayatSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
@@ -16,7 +17,7 @@ class HelperService:
                                 current_history:str | None = None) -> str:
 
     ## Memeriksa apakah ada key "Nomor" dalam metadata
-        o_json = json.loads(meta_data.replace("'", '"'))
+        o_json = json.loads(meta_data.replace("'", "\""))
         Nomor = ""
         if "Nomor" in o_json:
             Nomor = o_json['Nomor']
@@ -25,7 +26,7 @@ class HelperService:
             history_data = {'history':
                             [{'tanggal': str(datetime.now()),
                             'nomor': Nomor,
-                            'meta_data': json.loads(meta_data.replace("'", '"'))}]
+                            'meta_data': json.loads(meta_data.replace("'", "\""))}]
                             }
         else:
             history_data = eval(current_history.replace('null', 'None'))
@@ -170,3 +171,74 @@ class HelperService:
                                                 db_session=db_session, 
                                                 with_commit=False,
                                                 updated_by_id=worker_id)
+                    
+    async def merging_to_bundle(self,
+                            bundle_hd_obj : BundleHd,
+                            dokumen : Dokumen,
+                            meta_data : str,
+                            db_session : AsyncSession | None,
+                            file_path : str | None = None,
+                            worker_id : UUID | str = None):
+
+        # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
+        bundledt_obj_current = next((x for x in bundle_hd_obj.bundledts if x.dokumen_id == dokumen.id and x.bundle_hd_id == bundle_hd_obj.id), None)
+        
+        if bundledt_obj_current is None:
+            code = bundle_hd_obj.code + dokumen.code
+
+            history_data = self.extract_metadata_for_history(meta_data, current_history=None)
+
+            riwayat_data = None
+            if dokumen.is_riwayat == True:
+                riwayat_data = self.extract_metadata_for_riwayat(meta_data=meta_data, 
+                                                                        key_riwayat=dokumen.key_riwayat, 
+                                                                        current_riwayat=None, 
+                                                                        file_path=file_path, 
+                                                                        is_default=True,
+                                                                        from_notaris=True)
+
+            new_dokumen = BundleDt(code=code, 
+                                dokumen_id=dokumen.id, 
+                                meta_data=meta_data, 
+                                history_data=history_data,
+                                riwayat_data=riwayat_data,
+                                bundle_hd_id=bundle_hd_obj.id, 
+                                file_path=file_path)
+
+            bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen, db_session=db_session, with_commit=False, created_by_id=worker_id)
+        else:
+
+            history_data = self.extract_metadata_for_history(str(meta_data), current_history=bundledt_obj_current.history_data)
+
+            riwayat_data = None
+            if dokumen.is_riwayat == True:
+                riwayat_data = self.extract_metadata_for_riwayat(meta_data=meta_data, 
+                                                                        key_riwayat=dokumen.key_riwayat, 
+                                                                        current_riwayat=bundledt_obj_current.riwayat_data, 
+                                                                        file_path=file_path, 
+                                                                        is_default=True,
+                                                                        from_notaris=True)
+            
+            if file_path is None:
+                file_path = bundledt_obj_current.file_path
+
+            bundledt_obj_updated = bundledt_obj_current
+            bundledt_obj_updated.meta_data = meta_data
+            bundledt_obj_updated.history_data = history_data
+            bundledt_obj_updated.riwayat_data = riwayat_data
+            bundledt_obj_updated.file_path = file_path
+
+            bundledt_obj_current = await crud.bundledt.update(obj_current=bundledt_obj_current, 
+                                                            obj_new=bundledt_obj_updated, 
+                                                            db_session=db_session, 
+                                                            with_commit=False,
+                                                            updated_by_id=worker_id)
+        
+        #updated bundle header keyword when dokumen metadata is_keyword true
+        if dokumen.is_keyword == True:
+            await self.update_bundle_keyword(meta_data=meta_data,
+                                                        bundle_hd_id=bundle_hd_obj.id, 
+                                                        worker_id=worker_id, 
+                                                        key_field=dokumen.key_field, 
+                                                        db_session=db_session)
+    
