@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Relationship, Field
+from sqlalchemy.orm import column_property, declared_attr
 from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from typing import TYPE_CHECKING
@@ -35,7 +36,9 @@ class Draft(DraftFullBase, table=True):
     details: list["DraftDetail"] = Relationship(
                                             back_populates="draft",
                                             sa_relationship_kwargs={
-                                                "lazy" : "selectin"
+                                                "lazy" : "selectin",
+                                                "cascade" : "delete, all",
+                                                "foreign_keys" : "[DraftDetail.draft_id]"
                                             }
     )
 

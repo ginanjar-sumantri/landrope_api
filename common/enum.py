@@ -118,3 +118,8 @@ class TipeSuratGambarUkurEnum(str, Enum):
 class StatusLuasOverlapEnum(str, Enum):
     Menambah_Luas = "Menambah_Luas"
     Tidak_Menambah_Luas = "Tidak_Menambah_Luas"
+
+class TanggunganBiayaEnum(str, Enum):
+    Pembeli = "Pembeli"
+    Penjual = "Penjual"
+    Penjual_Dibayar_Pembeli = "Penjual_Dibayar_Pembeli"

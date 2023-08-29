@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File
 from fastapi_pagination import Params
 import crud
-from models.bidang_model import Bidangoverlap
+from models.bidang_overlap_model import BidangOverlap
 from schemas.bidang_overlap_sch import (BidangOverlapSch, BidangOverlapCreateSch, BidangOverlapRawSch, 
                                        BidangOverlapUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -20,7 +20,7 @@ async def create(sch: BidangOverlapCreateSch = Depends(BidangOverlapCreateSch.as
     
     obj_current = await crud.bidangoverlap.get_by_id_bidang(idbidang=sch.id_bidang)
     if obj_current:
-        raise NameExistException(Bidangoverlap, name=sch.id_bidang)
+        raise NameExistException(BidangOverlap, name=sch.id_bidang)
     
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -52,7 +52,7 @@ async def get_by_id(id:UUID):
     if obj:
         return create_response(data=obj)
     else:
-        raise IdNotFoundException(Bidangoverlap, id)
+        raise IdNotFoundException(BidangOverlap, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangOverlapRawSch])
 async def update(id:UUID, sch:BidangOverlapUpdateSch = Depends(BidangOverlapUpdateSch.as_form), file:UploadFile = None):
@@ -61,7 +61,7 @@ async def update(id:UUID, sch:BidangOverlapUpdateSch = Depends(BidangOverlapUpda
 
     obj_current = await crud.bidangoverlap.get(id=id)
     if not obj_current:
-        raise IdNotFoundException(Bidangoverlap, id)
+        raise IdNotFoundException(BidangOverlap, id)
     
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)

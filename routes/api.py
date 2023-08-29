@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
+from routes.endpoints import (bidang, bidang_overlap, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, draft_detail, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, marketing, pemilik, beban_biaya,
                               kategori, kategori_sub, kategori_proyek,
@@ -9,7 +9,7 @@ from routes.endpoints import (bidang, desa, kjb_termin, planing, project, ptsk, 
 
 api_router = APIRouter()
 api_router.include_router(bidang.router, prefix="/bidang", tags=["bidang"])
-# api_router.include_router(bidangoverlap.router, prefix="/bidangoverlap", tags=["bidangoverlap"])
+api_router.include_router(bidang_overlap.router, prefix="/bidang_overlap", tags=["bidang_overlap"])
 api_router.include_router(desa.router, prefix="/desa", tags=["desa"])
 api_router.include_router(planing.router, prefix="/planing", tags=["planing"])
 api_router.include_router(project.router, prefix="/project", tags=["project"])

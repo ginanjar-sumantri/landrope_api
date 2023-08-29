@@ -156,13 +156,18 @@ async def print_out(id:UUID | str,
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template("order_gambar_ukur.html")
 
+    create_date = str(obj.created_at.date())
+    create_at = datetime.strptime(create_date, "%Y-%m-%d")
+    month_name = create_at.strftime("%B")
+    formatted_date = create_at.strftime(f"%d {month_name} %Y")
+
     render_template = template.render(tipesurat=tipesurat, 
                                       code=code,
                                       perihal=perihal,
                                       tujuansurat=tujuansurat,
                                       tembusans=tembusans,
                                       data=data_list, 
-                                      tanggal=str(obj.created_at.date))
+                                      tanggal=formatted_date)
 
     try:
         doc = await PdfService().get_pdf(render_template)
