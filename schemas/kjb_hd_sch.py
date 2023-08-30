@@ -5,6 +5,7 @@ from schemas.kjb_rekening_sch import KjbRekeningCreateExtSch, KjbRekeningSch
 from schemas.kjb_harga_sch import KjbHargaCreateExtSch, KjbHargaExtSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateExtSch, KjbBebanBiayaSch
 from schemas.kjb_penjual_sch import KjbPenjualCreateExtSch, KjbPenjualSch
+from schemas.kjb_dt_sch import KjbDtCreateExtSch
 from common.partial import optional
 from sqlmodel import Field
 from typing import List
@@ -15,6 +16,8 @@ class KjbHdCreateSch(KjbHdBase):
     hargas:List[KjbHargaCreateExtSch]
     bebanbiayas:List[KjbBebanBiayaCreateExtSch]
     penjuals:List[KjbPenjualCreateExtSch]
+    details:List[KjbDtCreateExtSch]
+
 
 class KjbHdSch(KjbHdFullBase):
     desa_name:str = Field(alias="desa_name")

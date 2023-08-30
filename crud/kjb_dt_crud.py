@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from sqlmodel.sql.expression import Select
@@ -60,4 +60,11 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
         return await paginate(db_session, query, params)
 
+    async def get_by_alashak(self, *, alashak:str, db_session: AsyncSession | None = None) -> KjbDt | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', ''))
+        response = await db_session.execute(query)
+
+        return response.scalars().first()
+    
 kjb_dt = CRUDKjbDt(KjbDt)

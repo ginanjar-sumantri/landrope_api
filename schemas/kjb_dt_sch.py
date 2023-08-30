@@ -1,10 +1,25 @@
 from models.kjb_model import KjbDt, KjbDtBase, KjbDtFullBase
 from common.partial import optional
-from sqlmodel import Field
-from typing import List
+from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusPetaLokasiEnum
+from sqlmodel import Field, SQLModel
+from typing import List, Optional
+from uuid import UUID
+from decimal import Decimal
 
 class KjbDtCreateSch(KjbDtBase):
     pass
+
+class KjbDtCreateExtSch(SQLModel):
+    jenis_alashak:JenisAlashakEnum
+    alashak:str
+    posisi_bidang:PosisiBidangEnum
+    harga_akta:Decimal
+    harga_transaksi:Decimal
+    luas_surat:Decimal
+    desa_id:Optional[UUID] 
+    project_id:Optional[UUID] 
+    pemilik_id:UUID | None 
+    jenis_surat_id:UUID | None 
 
 class KjbDtSch(KjbDtFullBase):
     kjb_code:str | None = Field(alias="kjb_code")

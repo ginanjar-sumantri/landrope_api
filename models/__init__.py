@@ -26,5 +26,5 @@ from .hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from .import_log_model import ImportLog, ImportLogError
 from .kategori_model import Kategori, KategoriSub, KategoriProyek
 from .order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
-# from .giro_model import Giro
+from .giro_model import Giro
 
