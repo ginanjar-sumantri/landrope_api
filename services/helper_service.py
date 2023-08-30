@@ -242,3 +242,31 @@ class HelperService:
                                                         key_field=dokumen.key_field, 
                                                         db_session=db_session)
     
+
+    def ToMonthName(self, month:int = None) -> str | None:
+        if month == 1:
+            return "Januari"
+        elif month == 2:
+            return "Februari"
+        elif month == 3:
+            return "Maret"
+        elif month == 4:
+            return "April"
+        elif month == 5:
+            return "Mei"
+        elif month == 6:
+            return "Juni"
+        elif month == 7:
+            return "Juli"
+        elif month == 8:
+            return "Agustus"
+        elif month == 9:
+            return "September"
+        elif month == 10:
+            return "Oktober"
+        elif month == 11:
+            return "November"
+        elif month == 12:
+            return "Desember"
+        else:
+            return ""

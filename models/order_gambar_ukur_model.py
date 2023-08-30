@@ -154,7 +154,7 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
     
     @property
     def jenis_surat_name(self) -> str | None:
-        return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
+        return getattr(getattr(getattr(self, "bidang", None), "jenis_surat", None), "name", None)
     
     @property
     def luas_surat(self) -> Decimal | None:
