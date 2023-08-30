@@ -48,6 +48,7 @@ from .notaris_crud import notaris
 from .kategori_crud import kategori
 from .kategori_sub_crud import kategori_sub
 from .kategori_proyek_crud import kategori_proyek
+# from .giro_crud import giro
 
 from .order_gambar_ukur_crud import order_gambar_ukur
 from .order_gambar_ukur_bidang_crud import order_gambar_ukur_bidang

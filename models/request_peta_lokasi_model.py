@@ -4,7 +4,7 @@ from datetime import datetime, date
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from uuid import UUID
-from common.enum import JenisAlashakEnum
+from common.enum import JenisAlashakEnum, HasilAnalisaPetaLokasiEnum
 
 if TYPE_CHECKING:
     from kjb_model import KjbDt

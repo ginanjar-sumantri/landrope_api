@@ -86,6 +86,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             Bidang.id.label("bidang_id"),
             HasilPetaLokasi.file_path,
             HasilPetaLokasi.id.label("hasil_peta_lokasi_id"),
+            HasilPetaLokasi.hasil_analisa_peta_lokasi,
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
