@@ -125,14 +125,14 @@
 
         {% for item in data %}
         <tr>
-          <td>{{ item.no }}</td>
+          <td align="center">{{ item.no }}</td>
           <td>{{ item.id_bidang }}</td>
           <td>{{ item.pemilik_name }}</td>
           <td>{{ item.group }}</td>
           <td>{{ item.ptsk_name }}</td>
           <td>{{ item.jenis_surat_name }}</td>
           <td>{{ item.alashak }}</td>
-          <td>{{ item.luas_surat }}</td>
+          <td align="center">{{ item.luas_surat }}</td>
           <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
         {% endfor %}
