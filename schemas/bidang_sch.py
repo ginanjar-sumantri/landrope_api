@@ -1,8 +1,9 @@
 from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
 from models.base_model import BaseGeoModel
+from schemas.kjb_termin_sch import KjbTerminSch
 from common.partial import optional
 from common.as_form import as_form
-from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum
+from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
 from decimal import Decimal
@@ -17,6 +18,10 @@ class BidangRawSch(BidangRawBase):
     project_name:str|None = Field(alias='project_name')
     desa_name:str|None = Field(alias='desa_name')
     updated_by_name:str|None = Field(alias='updated_by_name')
+
+class BidangSrcSch(SQLModel):
+    id:UUID
+    id_bidang:str
 
 class BidangGetAllSch(SQLModel):
     id:UUID|None
@@ -49,6 +54,14 @@ class BidangForOrderGUById(SQLModel):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None
     luas_surat:Decimal | None
+
+class BidangForSPKById(SQLModel):
+    id:UUID | None
+    id_bidang:str | None
+    hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
+    kjb_no:str | None
+    satuan_bayar:SatuanBayarEnum | None
+    termins:list[KjbTerminSch]
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None

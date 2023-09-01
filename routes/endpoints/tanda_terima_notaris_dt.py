@@ -41,14 +41,30 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     
     bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)                                                                        
     
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
     if dokumen is None:
         raise IdNotFoundException(Dokumen, sch.dokumen_id)
+    
+    bundledt_obj_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundlehd_obj_current.id, dokumen_id=dokumen.id)
+    if not bundledt_obj_current:
+        raise ContentNoChangeException(detail=f"Bundle with dokumen {dokumen.name} not exists")
+    
+    file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
+
+    if dokumen.is_riwayat:
+        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+        key_value = metadata_dict[f'{dokumen.key_riwayat}']
+
+        if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+        
+        file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}-{key_value}'
+
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{tanda_terima_hd.alashak}-{dokumen.name}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
     
     db_session = db.session
@@ -124,8 +140,23 @@ async def update(id:UUID,
     if dokumen is None:
         raise IdNotFoundException(Dokumen, sch.dokumen_id)
 
+    bundledt_obj_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundlehd_obj_current.id, dokumen_id=dokumen.id)
+    if not bundledt_obj_current:
+        raise ContentNoChangeException(detail=f"Bundle with dokumen {dokumen.name} not exists")
+    
+    file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
+
+    if dokumen.is_riwayat:
+        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+        key_value = metadata_dict[f'{dokumen.key_riwayat}']
+
+        if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+        
+        file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}-{key_value}'
+
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{tanda_terima_hd.alashak}-{dokumen.name}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
 
     db_session = db.session
@@ -178,8 +209,10 @@ async def update_riwayat(id:UUID,
     
     db_session = db.session
     # Bundle
-    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
-                                                                   dokumen=dokumen, 
+    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=bundledt_obj_current.riwayat_data, 
+                                                                   dokumen=dokumen,
+                                                                   codedt=bundledt_obj_current.code,
+                                                                   codehd=bundlehd_obj_current.code,
                                                                    sch=sch, 
                                                                    file=file,
                                                                    from_notaris=True)
@@ -207,7 +240,8 @@ async def update_riwayat(id:UUID,
     
     # Tanda Terima Notaris
     riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
-                                                                   dokumen=dokumen, 
+                                                                   dokumen=dokumen,
+                                                                   code=bundledt_obj_current.code,
                                                                    sch=sch, 
                                                                    file=file)
     
@@ -307,6 +341,29 @@ async def download_file(
     obj_current = await crud.tandaterimanotaris_dt.get(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
+    
+    bundlehd_obj_current = obj_current.kjb_dt.bundlehd
+    if not bundlehd_obj_current:
+        raise IdNotFoundException(BundleHd, obj_current.kjb_dt.bundle_hd_id)                                                                        
+    
+    dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
+    if dokumen is None:
+        raise IdNotFoundException(Dokumen, obj_current.dokumen_id)
+    
+    bundledt_obj_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundlehd_obj_current.id, dokumen_id=dokumen.id)
+    if not bundledt_obj_current:
+        raise ContentNoChangeException(detail=f"Bundle with dokumen {dokumen.name} not exists")
+    
+    file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
+
+    if dokumen.is_riwayat:
+        metadata_dict = json.loads(obj_current.meta_data.replace("'", "\""))
+        key_value = metadata_dict[f'{dokumen.key_riwayat}']
+
+        if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+        
+        file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}-{key_value}'
 
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
@@ -317,7 +374,7 @@ async def download_file(
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.id}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={file_name}.{ext}"
     return response
 
 @router.get("/download-file/riwayat/{id}")
@@ -348,7 +405,7 @@ async def download_file_riwayat(id:UUID,
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}-{key_value}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.tanda_terima_notaris_hd.nomor_tanda_terima}-{key_value}-{obj_current.dokumen_name}.{ext}"
     return response
 
 @router.get("extract_dictionary")

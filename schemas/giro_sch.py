@@ -9,5 +9,5 @@ class GiroSch(GiroFullBase):
     pass
 
 @optional
-class GiroUpdateSch(GiroBase):
+class GiroUpdateSch(GiroFullBase):
     pass

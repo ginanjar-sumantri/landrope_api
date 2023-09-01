@@ -43,7 +43,7 @@ class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
         await db_session.refresh(db_obj)
         return db_obj
     
-    async def get_by_kjb_jd_id_and_jenis_alashak(self, *, 
+    async def get_by_kjb_hd_id_and_jenis_alashak(self, *, 
                   kjb_hd_id: UUID | str, 
                   jenis_alashak:JenisAlashakEnum,
                   db_session: AsyncSession | None = None) -> KjbHarga | None:

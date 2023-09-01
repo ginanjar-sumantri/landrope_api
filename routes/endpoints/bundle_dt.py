@@ -102,18 +102,32 @@ async def update(id:UUID,
     
     """Update a obj by its id"""
 
+    db_session = db.session
+    file_path = None
+
     obj_current = await crud.bundledt.get(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
-    
+
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
 
-    db_session = db.session
-    file_path = None
-    
+    file_name = f'{obj_current.bundlehd.code}-{obj_current.code}-{dokumen.name}'
+
+    if dokumen.is_riwayat:
+        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+        key_value = metadata_dict[f'{dokumen.key_riwayat}']
+
+        if key_value is None or key_value == "":
+            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+        
+        file_name = f'{obj_current.bundlehd.code}-{obj_current.code}-{dokumen.name}-{key_value}'
+
+
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{obj_current.dokumen_name}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
+    else:
+        sch.file = obj_current.file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
         #history
@@ -145,7 +159,6 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
-
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def update_riwayat(id:UUID, 
                         sch:RiwayatSch = Depends(RiwayatSch.as_form), 
@@ -160,7 +173,9 @@ async def update_riwayat(id:UUID,
     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     
     riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
-                                                                   dokumen=dokumen, 
+                                                                   dokumen=dokumen,
+                                                                   codehd=obj_current.bundlehd.code,
+                                                                   codedt=obj_current.code,
                                                                    sch=sch, 
                                                                    file=file)
     db_session = db.session
@@ -224,6 +239,7 @@ async def download_file(id:UUID):
         raise IdNotFoundException(BundleDt, id)
     if obj_current.file_path is None:
         raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
@@ -233,7 +249,7 @@ async def download_file(id:UUID):
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.bundlehd.code}-{obj_current.code}-{obj_current.dokumen_name}.{ext}"
     return response
 
 @router.get("/download-file/riwayat/{id}")
@@ -264,7 +280,7 @@ async def download_file_riwayat(id:UUID,
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename={id}-{obj_current.dokumen_name}-{key_value}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.bundlehd.code}-{obj_current.code}-{obj_current.dokumen_name}-{key_value}.{ext}"
     return response
 
 @router.get("/meta_dyn/{kjb_id}", response_model=GetResponseBaseSch[BundleDtMetaDynSch])

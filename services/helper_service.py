@@ -97,6 +97,8 @@ class HelperService:
                             current_riwayat_data:str,
                             dokumen:Dokumen,
                             sch:RiwayatSch,
+                            codehd:str = None,
+                            codedt:str = None,
                             file:UploadFile = None,
                             from_notaris:bool = False
                             ) -> Tuple[str | None, str | None]:
@@ -115,7 +117,10 @@ class HelperService:
             raise ContentNoChangeException(detail=f"Riwayat {sch.key_value} tidak ditemukan")
         
         if file:
-            file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{id}-{dokumen.name}-{key_value}')
+            if codehd is None and codedt is None:
+                file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{dokumen.name}-{key_value}')
+            else:
+                file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{codehd}-{codedt}-{dokumen.name}-{key_value}')
         else:
             file_path = sch.file_path
         

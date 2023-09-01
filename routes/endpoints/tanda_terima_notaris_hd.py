@@ -128,7 +128,7 @@ async def update(id:UUID,
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
     
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}')
         sch.file_path = file_path
     
     db_session = db.session

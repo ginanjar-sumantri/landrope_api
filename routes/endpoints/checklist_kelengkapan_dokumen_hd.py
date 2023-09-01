@@ -95,7 +95,7 @@ async def get_by_id(id:UUID):
     bidang_current = hasil_peta_lokasi_current.bidang
     kjb_dt_current = hasil_peta_lokasi_current.kjb_dt
     kjb_hd_current = kjb_dt_current.kjb_hd
-    kjb_harga = await crud.kjb_harga.get_by_kjb_jd_id_and_jenis_alashak(kjb_hd_id=kjb_hd_current.id, jenis_alashak=bidang_current.jenis_alashak)
+    kjb_harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_hd_current.id, jenis_alashak=bidang_current.jenis_alashak)
 
     detail_bayars = []
     jenis_bayars = [JenisBayarEnum.UTJ, JenisBayarEnum.DP, JenisBayarEnum.LUNAS]

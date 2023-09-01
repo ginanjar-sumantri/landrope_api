@@ -16,7 +16,7 @@ class KjbHdCreateSch(KjbHdBase):
     hargas:List[KjbHargaCreateExtSch]
     bebanbiayas:List[KjbBebanBiayaCreateExtSch]
     penjuals:List[KjbPenjualCreateExtSch]
-    details:List[KjbDtCreateExtSch]
+    details:List[KjbDtCreateExtSch] | None
 
 
 class KjbHdSch(KjbHdFullBase):

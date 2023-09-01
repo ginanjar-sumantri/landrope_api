@@ -96,7 +96,7 @@ class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass
 
 class BundleDt(BundleDtFullBase, table=True):
-    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'select'})
+    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'selectin'})
     dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
