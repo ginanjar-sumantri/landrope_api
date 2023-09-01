@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from sqlmodel import select, or_, and_
 from models.kjb_model import KjbDt
@@ -19,6 +19,10 @@ async def create(sch: KjbDtCreateSch,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
+
+    alashak = await crud.kjb_dt.get_by_alashak(alashak=sch.alashak)
+    if alashak:
+        raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
         
     new_obj = await crud.kjb_dt.create(obj_in=sch, created_by_id=current_worker.id)
     
@@ -94,8 +98,12 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
-
+        
     obj_current = await crud.kjb_dt.get(id=id)
+
+    alashak = await crud.kjb_dt.get_by_alashak_and_kjb_hd_id(alashak=sch.alashak, kjb_hd_id=sch.kjb_hd_id)
+    if alashak :
+        raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
 
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)

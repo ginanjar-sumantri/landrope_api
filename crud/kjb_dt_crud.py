@@ -67,4 +67,11 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
         return response.scalars().first()
     
+    async def get_by_alashak_and_kjb_hd_id(self, *, alashak:str | None, kjb_hd_id:UUID | None, db_session: AsyncSession | None = None) -> KjbDt | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.kjb_hd_id != kjb_hd_id, func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', '')))
+        response = await db_session.execute(query)
+
+        return response.scalars().first()
+    
 kjb_dt = CRUDKjbDt(KjbDt)
