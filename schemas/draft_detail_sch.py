@@ -9,6 +9,7 @@ class DraftDetailCreateSch(DraftDetailBase):
 
 class DraftDetailRawSch(DraftDetailRawBase):
     id_bidang:str | None = Field(alias="id_bidang")
+    id_bidang_lama:str | None = Field(alias="id_bidang_lama")
     pemilik_name:str | None = Field(alias="pemilik_name")
     alashak:str | None = Field(alias="alashak")
     image_png:str | None = Field(alias="image_png")
