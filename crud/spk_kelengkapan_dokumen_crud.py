@@ -1,0 +1,8 @@
+from crud.base_crud import CRUDBase
+from models.spk_model import SpkKelengkapanDokumen
+from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenUpdateSch
+
+class CRUDSpkKelengkapanDokumen(CRUDBase[SpkKelengkapanDokumen, SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenUpdateSch]):
+    pass
+
+spk_kelengkapan_dokumen = CRUDSpkKelengkapanDokumen(SpkKelengkapanDokumen)

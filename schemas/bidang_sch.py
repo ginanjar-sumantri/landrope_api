@@ -1,6 +1,8 @@
 from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
 from models.base_model import BaseGeoModel
 from schemas.kjb_termin_sch import KjbTerminSch
+from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
+from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
@@ -74,6 +76,12 @@ class BidangForSPKById(SQLModel):
     status_sk:str | None
 
     termins:list[KjbTerminSch] | None
+
+class BidangForSPKByIdExt(BidangForSPKById):
+
+    beban_biayas:list[KjbBebanBiayaSch] | None
+    kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
+
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None
