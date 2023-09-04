@@ -211,7 +211,7 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExt])
-async def get_by_id(id:UUID, jenis_bayar:JenisBayarEnum):
+async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
@@ -223,8 +223,7 @@ async def get_by_id(id:UUID, jenis_bayar:JenisBayarEnum):
     query_kelengkapan = select(ChecklistKelengkapanDokumenDt
                             ).select_from(ChecklistKelengkapanDokumenDt
                             ).join(ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == ChecklistKelengkapanDokumenHd.id
-                            ).where(and_(ChecklistKelengkapanDokumenHd.bidang_id == obj.id, 
-                                         ChecklistKelengkapanDokumenDt.jenis_bayar == jenis_bayar))
+                            ).where(ChecklistKelengkapanDokumenHd.bidang_id == obj.id)
     
     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(query=query_kelengkapan)
     
