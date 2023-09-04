@@ -61,7 +61,19 @@ class BidangForSPKById(SQLModel):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
     kjb_no:str | None
     satuan_bayar:SatuanBayarEnum | None
-    termins:list[KjbTerminSch]
+    group:str | None
+    pemilik_name:str | None
+    alashak:str | None
+    desa_name:str | None
+    project_name:str | None
+    luas_surat:Decimal | None
+    luas_ukur:Decimal | None
+    no_peta:str | None
+    notaris_name:str | None
+    ptsk_name:str | None
+    status_sk:str | None
+
+    termins:list[KjbTerminSch] | None
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None

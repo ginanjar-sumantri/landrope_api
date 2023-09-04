@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, String
 from models.base_model import BaseUUIDModel
-from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum
 from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING, Optional
@@ -14,6 +14,7 @@ class SpkBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
     nilai:condecimal(decimal_places=2) = Field(default=0)
+    satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
 
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass

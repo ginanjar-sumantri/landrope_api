@@ -9,7 +9,7 @@ from models.order_gambar_ukur_model import OrderGambarUkurBidang
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
 from models.worker_model import Worker
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch)
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKById
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -41,16 +41,48 @@ async def get_list(
     objs = await crud.spk.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
-@router.get("/{id}", response_model=GetResponseBaseSch[SpkSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
     obj = await crud.spk.get(id=id)
-    if obj:
-        return create_response(data=obj)
-    else:
+    if not obj:
         raise IdNotFoundException(Spk, id)
+    
+    bidang_obj = await crud.bidang.get(id=obj.bidang_id)
+    if not bidang_obj:
+        raise IdNotFoundException(Bidang, obj.bidang_id)
+
+    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
+    
+    bidang_sch = BidangForSPKById(id=bidang_obj.id,
+                                  id_bidang=bidang_obj.id_bidang,
+                                  hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
+                                  kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code,
+                                  satuan_bayar=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
+                                  group=bidang_obj.group,
+                                  pemilik_name=bidang_obj.pemilik_name,
+                                  alashak=bidang_obj.alashak,
+                                  desa_name=bidang_obj.desa_name,
+                                  project_name=bidang_obj.project_name,
+                                  luas_surat=bidang_obj.luas_surat,
+                                  luas_ukur=bidang_obj.luas_ukur,
+                                  no_peta=bidang_obj.no_peta,
+                                  notaris_name=bidang_obj.notaris_name,
+                                  ptsk_name=bidang_obj.ptsk_name,
+                                  status_sk=bidang_obj.status_sk,
+                                  termins=harga.termins)
+    
+    obj_return = SpkByIdSch(**obj.dict())
+    obj_return.bidang = bidang_sch
+    return create_response(data=obj_return)
+    
+    
+    # if obj:
+    #     return create_response(data=obj)
+    # else:
+    #     raise IdNotFoundException(Spk, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[SpkSch])
 async def update(id:UUID, sch:SpkUpdateSch,
@@ -111,7 +143,19 @@ async def get_by_id(id:UUID):
                                   hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
                                   kjb_no=obj.hasil_peta_lokasi.kjb_dt.kjb_code,
                                   satuan_bayar=obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
+                                  group=obj.group,
+                                  pemilik_name=obj.pemilik_name,
+                                  alashak=obj.alashak,
+                                  desa_name=obj.desa_name,
+                                  project_name=obj.project_name,
+                                  luas_surat=obj.luas_surat,
+                                  luas_ukur=obj.luas_ukur,
+                                  no_peta=obj.no_peta,
+                                  notaris_name=obj.notaris_name,
+                                  ptsk_name=obj.ptsk_name,
+                                  status_sk=obj.status_sk,
                                   termins=harga.termins)
+    
     
     if obj:
         return create_response(data=obj_return)
