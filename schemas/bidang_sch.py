@@ -74,6 +74,7 @@ class BidangForSPKById(SQLModel):
     notaris_name:str | None
     ptsk_name:str | None
     status_sk:str | None
+    bundle_hd_id:UUID | None
 
     termins:list[KjbTerminSch] | None
 

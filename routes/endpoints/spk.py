@@ -90,6 +90,7 @@ async def get_by_id(id:UUID):
                                   notaris_name=bidang_obj.notaris_name,
                                   ptsk_name=bidang_obj.ptsk_name,
                                   status_sk=bidang_obj.status_sk,
+                                  bundle_hd_id=bidang_obj.bundle_hd_id,
                                   termins=harga.termins)
     
     obj_return = SpkByIdSch(**obj.dict())
@@ -243,6 +244,7 @@ async def get_by_id(id:UUID, jenis_bayar:JenisBayarEnum):
                                   notaris_name=obj.notaris_name,
                                   ptsk_name=obj.ptsk_name,
                                   status_sk=obj.status_sk,
+                                  bundle_hd_id=obj.bundle_hd_id,
                                   beban_biayas=beban,
                                   kelengkapan_dokumens=kelengkapan_dokumen,
                                   termins=harga.termins)
