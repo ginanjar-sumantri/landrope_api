@@ -4,7 +4,7 @@ from fastapi_pagination import Params
 import crud
 from models.project_model import Project
 from models.worker_model import Worker
-from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch)
+from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch, ProjectForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -90,3 +90,13 @@ async def bulk_create(file:UploadFile=File()):
         raise HTTPException(status_code=13, detail="Failed import data")
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
+
+
+@router.get("/report/map", response_model=GetResponseBaseSch[list[ProjectForTreeReportSch]])
+async def get_list_for_report_map(current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Get for tree report map"""
+    
+    objs = await crud.project.get_all_project_tree_report_map()
+
+    return create_response(data=objs)

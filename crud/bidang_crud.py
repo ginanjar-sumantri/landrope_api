@@ -1,11 +1,18 @@
 from fastapi_async_sqlalchemy import db
+from fastapi_pagination import Params, Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from typing import List
 from crud.base_crud import CRUDBase
 from models.bidang_model import Bidang
-from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch, BidangRawSch, BidangGetAllSch
+from models.skpt_model import Skpt
+from models.ptsk_model import Ptsk
+from models.planing_model import Planing
+from models.desa_model import Desa
+from models.project_model import Project
+from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch, BidangRawSch, BidangGetAllSch, BidangForTreeReportSch
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from services.gcloud_storage_service import GCStorageService
 from services.geom_service import GeomService
@@ -64,6 +71,40 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response =  await db_session.execute(query)
         return response.scalars().all()
         
-
+    async def get_all_bidang_tree_report_map(
+            self, 
+            *,
+            project_id:UUID,
+            desa_id:UUID,
+            ptsk_id:UUID,
+            db_session : AsyncSession | None = None, 
+            query : Bidang | Select[Bidang]| None = None
+            ):
+        
+        db_session = db_session or db.session
+        query = select(Bidang.id,
+                       Bidang.id_bidang,
+                       Bidang.id_bidang_lama,
+                       Bidang.alashak,
+                       Ptsk.id.label("ptsk_id"),
+                       Ptsk.name.label("ptsk_name"),
+                       Desa.id.label("desa_id"),
+                       Desa.name.label("desa_name"),
+                       Project.id.label("project_id"),
+                       Project.name.label("project_name")
+                       ).select_from(Bidang
+                                    ).join(Skpt, Bidang.skpt_id == Skpt.id
+                                    ).join(Ptsk, Skpt.ptsk_id == Ptsk.id
+                                    ).join(Planing, Bidang.planing_id == Planing.id
+                                    ).join(Desa, Planing.desa_id == Desa.id
+                                    ).join(Project, Planing.project_id == Project.id
+                                    ).where(and_(
+                                        Project.id == project_id,
+                                        Desa.id == desa_id,
+                                        Ptsk.id == ptsk_id
+                                    ))
+        
+        response =  await db_session.execute(query)
+        return response.fetchall()
 
 bidang = CRUDBidang(Bidang)

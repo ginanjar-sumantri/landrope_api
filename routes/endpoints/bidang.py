@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPExcept
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
+from sqlalchemy import text
 from models.bidang_model import Bidang
 from models.worker_model import Worker
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
@@ -13,7 +14,7 @@ from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, 
-                                BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById)
+                                BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, 
@@ -507,7 +508,6 @@ async def export(
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
 
-
 def FindStatusBidang(status:str|None = None):
     if status:
         if status.replace(" ", "").lower() == StatusBidangEnum.Bebas.replace("_", "").lower():
@@ -548,4 +548,19 @@ def FindJenisAlashak(type:str|None = None):
             return None
     else:
         return None
+
+@router.get("/report/map", response_model=GetResponseBaseSch[list[BidangForTreeReportSch]])
+async def get_list_for_report_map(project_id:UUID,
+                                  desa_id:UUID,
+                                  ptsk_id:UUID,
+                                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Get for tree report map"""
+    
+    objs = await crud.bidang.get_all_bidang_tree_report_map(project_id=project_id, desa_id=desa_id, ptsk_id=ptsk_id)
+
+    return create_response(data=objs)
+
+    
+
 

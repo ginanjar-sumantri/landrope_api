@@ -5,7 +5,7 @@ import crud
 from models.ptsk_model import Ptsk
 from models.worker_model import Worker
 from schemas.skpt_sch import SkptShpSch
-from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch, PtskRawSch)
+from schemas.ptsk_sch import (PtskSch, PtskCreateSch, PtskUpdateSch, PtskRawSch, PtskForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, ImportResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
@@ -99,3 +99,15 @@ async def export_shp(
             obj_name = f"{obj_name}-{results[0].nomor_sk}"
 
     return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+
+
+@router.get("/report/map", response_model=GetResponseBaseSch[list[PtskForTreeReportSch]])
+async def get_list_for_report_map(project_id:UUID,
+                                  desa_id:UUID,
+                                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Get for tree report map"""
+    
+    objs = await crud.ptsk.get_all_ptsk_tree_report_map(project_id=project_id, desa_id=desa_id)
+
+    return create_response(data=objs)

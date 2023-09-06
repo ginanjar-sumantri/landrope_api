@@ -5,7 +5,7 @@ from models.desa_model import Desa
 from models.import_log_model import ImportLog
 from models.worker_model import Worker
 from models.code_counter_model import CodeCounterEnum
-from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch, DesaExportSch)
+from schemas.desa_sch import (DesaSch, DesaRawSch, DesaCreateSch, DesaUpdateSch, DesaExportSch, DesaForTreeReportSch)
 from schemas.import_log_sch import (ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -191,4 +191,12 @@ async def export_shp(
 
     return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     
+@router.get("/report/map", response_model=GetResponseBaseSch[list[DesaForTreeReportSch]])
+async def get_list_for_report_map(project_id:UUID,
+                                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Get for tree report map"""
+    
+    objs = await crud.desa.get_all_ptsk_tree_report_map(project_id=project_id)
 
+    return create_response(data=objs)

@@ -4,7 +4,7 @@ from common.as_form import as_form
 from models.base_model import BaseGeoModel
 from uuid import UUID
 from decimal import Decimal
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 
 @as_form
 class DesaCreateSch(DesaBase):
@@ -28,3 +28,9 @@ class DesaExportSch(BaseGeoModel):
 @optional
 class DesaUpdateSch(DesaBase):
     pass
+
+class DesaForTreeReportSch(SQLModel):
+    id:UUID|None
+    name:str|None
+    project_id:UUID|None
+    project_name:str|None

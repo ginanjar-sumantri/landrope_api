@@ -21,14 +21,6 @@ class BidangRawSch(BidangRawBase):
     desa_name:str|None = Field(alias='desa_name')
     updated_by_name:str|None = Field(alias='updated_by_name')
 
-class BidangSrcSch(SQLModel):
-    id:UUID
-    id_bidang:str
-
-class BidangGetAllSch(SQLModel):
-    id:UUID|None
-    id_bidang:str|None
-
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')
@@ -45,6 +37,11 @@ class BidangByIdSch(BidangRawBase):
     manager_name:str | None = Field(alias='manager_name')
     sales_name:str|None = Field(alias='sales_name')
     notaris_name:str | None = Field(alias='notaris_name')
+
+@as_form
+@optional
+class BidangUpdateSch(BidangBase):
+    pass
 
 class BidangForOrderGUById(SQLModel):
     id:UUID | None
@@ -79,7 +76,6 @@ class BidangForSPKById(SQLModel):
     termins:list[KjbTerminSch] | None
 
 class BidangForSPKByIdExt(BidangForSPKById):
-
     beban_biayas:list[KjbBebanBiayaSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 
@@ -145,7 +141,22 @@ class BidangShpExSch(BaseGeoModel):
     desa:str | None
     project:str | None
 
-@as_form
-@optional
-class BidangUpdateSch(BidangBase):
-    pass
+class BidangSrcSch(SQLModel):
+    id:UUID
+    id_bidang:str
+
+class BidangGetAllSch(SQLModel):
+    id:UUID|None
+    id_bidang:str|None
+
+class BidangForTreeReportSch(SQLModel):
+    id:UUID|None
+    id_bidang:str|None
+    id_bidang_lama:str|None
+    alashak:str|None
+    ptsk_id:UUID|None
+    ptsk_name:str|None
+    desa_id:UUID|None
+    desa_name:str|None
+    project_id:UUID|None
+    project_name:str|None
