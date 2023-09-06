@@ -11,8 +11,8 @@ from models.kjb_model import KjbDt, KjbHd
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch)
-from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateSch, SpkBebanBiayaSch
-from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch
+from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateSch, SpkBebanBiayaSch, SpkBebanBiayaUpdateSch
+from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKById, BidangForSPKByIdExt
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
@@ -147,11 +147,12 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     for beban_biaya in sch.spk_beban_biayas:
         if beban_biaya.id is None:
-            beban_biaya_sch = SpkBebanBiayaCreateSch(**beban_biaya.dict())
+            beban_biaya_sch = SpkBebanBiayaCreateSch(spk_id=id, beban_biaya_id=beban_biaya.beban_biaya_id, beban_pembeli=beban_biaya.beban_pembeli)
             await crud.spk_beban_biaya.create(obj_in=beban_biaya_sch, created_by_id=current_worker.id, with_commit=False)
         else:
             beban_biaya_current = await crud.spk_beban_biaya.get(id=beban_biaya.id)
-            await crud.spk_beban_biaya.update(obj_current=beban_biaya_current, obj_new=beban_biaya, updated_by_id=current_worker.id, with_commit=False)
+            beban_biaya_sch = SpkBebanBiayaUpdateSch(spk_id=id, beban_biaya_id=beban_biaya.beban_biaya_id, beban_pembeli=beban_biaya.beban_pembeli)
+            await crud.spk_beban_biaya.update(obj_current=beban_biaya_current, obj_new=beban_biaya_sch, updated_by_id=current_worker.id, with_commit=False)
     
     #remove kelengkapan dokumen 
     
@@ -167,11 +168,12 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         if kelengkapan_dokumen.id is None:
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(**kelengkapan_dokumen.dict())
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
             await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
         else:
-            kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=beban_biaya.id)
-            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen, updated_by_id=current_worker.id, with_commit=False)
+            kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
+            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     
     await db_session.commit()
