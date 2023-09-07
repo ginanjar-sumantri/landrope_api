@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from routes.endpoints import (bidang, bidang_overlap, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
-                              draft, draft_detail, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
+                              draft, draft_detail, draft_report_map, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, marketing, pemilik, beban_biaya,
                               kategori, kategori_sub, kategori_proyek, giro, spk,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
@@ -16,6 +16,7 @@ api_router.include_router(planing.router, prefix="/planing", tags=["planing"])
 api_router.include_router(project.router, prefix="/project", tags=["project"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
 api_router.include_router(draft_detail.router, prefix="/draft_detail", tags=["draft_detail"])
+api_router.include_router(draft_report_map.router, prefix="/draft_report_map", tags=["draft_report_map"])
 api_router.include_router(gps.router, prefix="/gps", tags=["gps"])
 api_router.include_router(ptsk.router, prefix="/ptsk", tags=["ptsk"])
 api_router.include_router(skpt.router, prefix="/skpt", tags=["skpt"])

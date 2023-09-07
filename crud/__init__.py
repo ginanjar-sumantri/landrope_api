@@ -8,6 +8,7 @@ from .bidang_overlap_crud import bidangoverlap
 
 from .draft_crud import draft
 from .draft_detail_crud import draft_detail
+from .draft_report_map_crud import draft_report_map
 from .gps_crud import gps
 from .skpt_crud import skpt
 from .skpt_dt_crud import skptdt

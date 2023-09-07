@@ -8,6 +8,7 @@ from .bidang_model import Bidang
 from .bidang_overlap_model import BidangOverlap
 from .mapping_model import (MappingBidangOverlap)
 from .draft_model import Draft, DraftDetail
+from .draft_report_map_model import DraftReportMap
 from .gps_model import Gps
 from .skpt_model import Skpt
 from .code_counter_model import CodeCounter
