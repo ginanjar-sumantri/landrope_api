@@ -5,6 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from decimal import Decimal
+from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum)
 
@@ -53,6 +54,7 @@ class BidangBase(SQLModel):
     luas_clear:Optional[Decimal] = Field(nullable=True)
     luas_pbt_perorangan:Optional[Decimal] = Field(nullable=True)
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
+    luas_bayar:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
 
