@@ -9,7 +9,8 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 router = APIRouter()
 
 @router.get("/search", response_model=GetResponseBaseSch[list[SearchMapObj]])
-async def search_for_map(keyword:str | None):
+async def search_for_map(keyword:str | None,
+                         size:int | None = 10):
 
     """Get for search"""
 
@@ -18,7 +19,7 @@ async def search_for_map(keyword:str | None):
     keyword = f"'%{keyword.lower().replace(' ', '')}%'"
 
     query = text(f"""
-            SELECT
+            (SELECT
                 'P' as type,
                 project.id as project_id,
                 project.name as project_name,
@@ -32,9 +33,9 @@ async def search_for_map(keyword:str | None):
             FROM
                 project
             WHERE
-                LOWER(TRIM(project.name)) LIKE {keyword}
+                LOWER(TRIM(project.name)) LIKE {keyword})
             UNION
-            SELECT
+            (SELECT
                 'D' as type,
                 project.id as project_id,
                 project.name as project_name,
@@ -50,9 +51,9 @@ async def search_for_map(keyword:str | None):
             INNER JOIN planing ON desa.id = planing.desa_id
             INNER JOIN project ON project.id = planing.project_id
             WHERE
-                LOWER(TRIM(desa.name)) LIKE {keyword}
+                LOWER(TRIM(desa.name)) LIKE {keyword})
             UNION
-            SELECT DISTINCT
+            (SELECT DISTINCT
                 'S' as type,
                 project.id as project_id,
                 project.name as project_name,
@@ -71,9 +72,9 @@ async def search_for_map(keyword:str | None):
             INNER JOIN desa ON desa.id = planing.desa_id
             INNER JOIN project ON project.id = planing.project_id
             WHERE
-                LOWER(TRIM(ptsk.name)) LIKE {keyword}
+                LOWER(TRIM(ptsk.name)) LIKE {keyword})
             UNION
-            SELECT
+            (SELECT
                 'B' as type,
                 project.id as project_id,
                 project.name as project_name,
@@ -92,9 +93,11 @@ async def search_for_map(keyword:str | None):
             INNER JOIN Desa ON Planing.desa_id = Desa.id
             INNER JOIN Project ON Planing.project_id = Project.id
             WHERE
-                LOWER(TRIM(bidang.id_bidang)) LIKE {keyword} OR LOWER(TRIM(bidang.alashak)) LIKE {keyword}
+                LOWER(TRIM(bidang.id_bidang)) LIKE {keyword} OR LOWER(TRIM(bidang.alashak)) LIKE {keyword})
             ORDER BY
                 project_id, project_name, desa_id, desa_name, ptsk_id, ptsk_name, bidang_id, id_bidang, alashak
+            LIMIT {size}
+            
         """)
 
     result = await db_session.execute(query)
