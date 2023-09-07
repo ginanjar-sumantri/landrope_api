@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, Optional
 
 class DraftReportMapBase(SQLModel):
     report_id:UUID = Field(nullable=False)
-    type:str = Field(max_length=2, nullable=False)
-    obj_id:UUID = Field(nullable=False)
+    project_id:Optional[UUID] = Field(nullable=True)
+    desa_id:Optional[UUID] = Field(nullable=True)
+    ptsk_id:Optional[UUID] = Field(nullable=True)
+    bidang_id:Optional[UUID] = Field(nullable=True)
 
 class DraftReportMapFullBase(BaseUUIDModel, DraftReportMapBase):
     pass

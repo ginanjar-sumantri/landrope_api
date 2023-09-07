@@ -3,15 +3,17 @@ from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import SQLModel
 from uuid import UUID
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 
 class DraftReportMapCreateSch(DraftReportMapBase):
     pass
 
 class DraftReportMapDtCreateSch(SQLModel):
-    type:str
-    obj_id:UUID
+    project_id:Optional[UUID]
+    desa_id:Optional[UUID]
+    ptsk_id:Optional[UUID]
+    bidang_id:Optional[UUID]
 
 class DraftReportMapHdCreateSch(SQLModel):
     report_id:UUID
@@ -24,13 +26,5 @@ class DraftReportMapSch(DraftReportMapFullBase):
 class DraftReportMapUpdateSch(DraftReportMapBase):
     pass
 
-class DraftReportMapDtUpdateSch(SQLModel):
-    id:UUID | None
-    type:str
-    obj_id:UUID 
-
-@optional
-class DraftReportMapHdUpdateSch(SQLModel):
-    details:list[DraftReportMapDtUpdateSch] | None
 
 

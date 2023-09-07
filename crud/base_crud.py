@@ -397,3 +397,26 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for i in list_obj:
             await db_session.delete(i)
 
+    async def delete(
+            self, 
+            *, 
+            id:UUID | str | None = None,
+            query: T | None = None,
+            db_session : AsyncSession | None = None,
+            with_commit:bool | None = True
+            ) -> bool:
+        
+        db_session = db_session or db.session
+        if query is None:
+            query = self.model.__table__.delete().where(self.model.id == id)
+
+        try:
+            await db_session.execute(query)
+            if with_commit:
+                await db_session.commit()
+        except exc.IntegrityError:
+            db_session.rollback()
+            raise HTTPException(status_code=422, detail="failed delete data")
+
+        return True
+
