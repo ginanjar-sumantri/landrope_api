@@ -1,10 +1,13 @@
 from uuid import UUID
 from fastapi import APIRouter
 from sqlmodel import text, select
+from models.bidang_model import Bidang
 from fastapi_async_sqlalchemy import db
-from schemas.report_map_sch import SearchMapObj
+from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori, 
+                                    FishboneProject, FishboneStatus, FishboneKategori) 
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, ImportResponseBaseSch, create_response)
+import crud
 
 router = APIRouter()
 
@@ -103,3 +106,175 @@ async def search_for_map(keyword:str | None,
     result = await db_session.execute(query)
     data = result.fetchall()
     return create_response(data=data)
+
+@router.get("/fishbone")
+async def fishbone(report_id:UUID):
+    
+    """Get For Fishbone"""
+
+    project_ids = await crud.draft_report_map.get_multi_project_id_by_report_id(report_id=report_id)
+    projects = ""
+    for project_id in project_ids:
+        projects += f"'{project_id}',"
+    
+    projects = projects[0:-1]
+
+    summary_project = await fishbone_get_project_data(projects=projects)
+    summary_status = await fishbone_get_status_data(projects=projects)
+    summary_kategori = await fishbone_get_kategori_data(projects=projects)
+
+    fishbone = []
+
+    for project in summary_project:
+
+        project_fishbone_sch = FishboneProject(project_id=project.project_id,
+                                               project_name=project.project_name,
+                                               luas=project.luas)
+
+        status_fishbones = []
+        for status in summary_status:
+            if status.project_id != project.project_id:
+                continue
+
+            status_fishbone_sch = FishboneStatus(status=status.status, luas=status.luas)
+
+            kategori_fishbones = []
+            for kategori in summary_kategori:
+
+                if kategori.project_id != project.project_id or kategori.status != status.status:
+                    continue
+
+                kategori_fishbone_sch = FishboneKategori(kategori_name=kategori.kategori_name,
+                                                         total=kategori.luas,
+                                                         shm=kategori.shm,
+                                                         girik=kategori.girik)
+                
+                kategori_fishbones.append(kategori_fishbone_sch)
+            
+            status_fishbone_sch.categories = kategori_fishbones
+            status_fishbones.append(status_fishbone_sch)
+        
+        project_fishbone_sch.status = status_fishbones
+        fishbone.append(project_fishbone_sch)
+
+    return fishbone
+        
+
+
+
+
+        
+            
+            
+            
+
+
+    
+
+async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
+
+    query = text(f"""
+                    SELECT
+                    project.id AS project_id,
+                    project.name AS project_name,
+                    SUM(CASE
+                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_clear
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_ukur
+                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN bidang.luas_surat
+                        END) AS LUAS
+                    FROM bidang
+                    INNER JOIN planing ON planing.id = bidang.planing_id
+                    INNER JOIN project ON project.id = planing.project_id
+                    WHERE status != 'Batal' 
+                    AND bidang.jenis_bidang != 'Bintang'
+                    AND project.id IN ({projects})
+                    GROUP by project.id
+                """)
+    
+    db_session = db.session
+    result = await db_session.execute(query)
+    datas = result.all()
+
+    list_data = [SummaryProject(project_id=data["project_id"], 
+                                project_name=data["project_name"], 
+                                luas=data["luas"]
+                                ) for data in datas]
+    
+    return list_data
+
+async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
+
+    query = text(f"""
+                    SELECT
+                    project.id AS project_id,
+                    project.name AS project_name,
+                    bidang.status,
+                    SUM(CASE
+                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_clear
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_bayar
+                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN bidang.luas_surat
+                        END) AS LUAS
+                    FROM bidang
+                    INNER JOIN planing ON planing.id = bidang.planing_id
+                    INNER JOIN project ON project.id = planing.project_id
+                    LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
+                    WHERE status != 'Batal' 
+                    AND bidang.jenis_bidang != 'Bintang'
+                    AND project.id IN ({projects})
+                    GROUP by project.id, bidang.status
+                """)
+    
+    db_session = db.session
+    result = await db_session.execute(query)
+    datas = result.all()
+
+    list_data = [SummaryStatus(project_id=data["project_id"], 
+                               project_name=data["project_name"], 
+                               luas=data["luas"], 
+                               status=data["status"]
+                               ) for data in datas]
+    
+    return list_data
+
+async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
+
+    query = text(f"""
+                    SELECT
+                    project.id AS project_id,
+                    project.name As project_name,
+                    bidang.status As status,
+                    CASE
+                        WHEN bidang.jenis_bidang = 'Standard' THEN COALESCE(kategori.name, 'Non Category')
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN 'Hibah'
+                    END AS kategori_name,
+                    SUM(CASE
+                            WHEN bidang.jenis_alashak = 'Sertifikat' THEN bidang.luas_surat
+                    END) AS SHM,
+                    SUM(CASE
+                            WHEN bidang.jenis_alashak = 'Girik' THEN bidang.luas_surat
+                    END) AS GIRIK,
+                    SUM(bidang.luas_surat) AS luas
+                    FROM bidang
+                    INNER JOIN planing ON planing.id = bidang.planing_id
+                    INNER JOIN project ON project.id = planing.project_id
+                    LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
+                    WHERE status != 'Batal' 
+                    AND bidang.jenis_bidang IN ('Standard','Bintang')
+                    AND project.id IN ({projects})
+                    GROUP by project.id, bidang.status, kategori.id, bidang.jenis_bidang
+                """)
+    
+    db_session = db.session
+    result = await db_session.execute(query)
+    datas = result.all()
+
+    list_data = [SummaryKategori(project_id=data["project_id"], 
+                                 project_name=data["project_name"], 
+                                 luas=data["luas"], 
+                                 status=data["status"], 
+                                 kategori_name=data["kategori_name"], 
+                                 shm=data["shm"], 
+                                 girik=data["girik"]
+                                 ) for data in datas]
+    
+    return list_data

@@ -48,5 +48,25 @@ class CRUDDraftReportMap(CRUDBase[DraftReportMap, DraftReportMapCreateSch, Draft
         
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_multi_project_id_by_report_id(
+            self,
+            *,
+            report_id:UUID,
+            db_session : AsyncSession | None = None) -> List[str]:
+        
+        db_session = db_session or db.session
+
+        query = select(self.model.project_id
+                       ).where(
+                           and_(
+                               self.model.project_id != None,
+                               self.model.report_id == report_id
+                           )
+                       ).distinct()
+        response = await db_session.execute(query)
+        return response.scalars().all()
+
+        
 
 draft_report_map = CRUDDraftReportMap(DraftReportMap)
