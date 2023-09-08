@@ -1,8 +1,8 @@
 """spk dan kawan-kawan
 
-Revision ID: b418db23fe03
+Revision ID: d96116b58cef
 Revises: 
-Create Date: 2023-09-08 17:45:01.313618
+Create Date: 2023-09-08 17:54:17.967739
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = 'b418db23fe03'
+revision = 'd96116b58cef'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -37,7 +37,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_draft_report_map_id'), 'draft_report_map', ['id'], unique=False)
     op.create_table('giro',
-    sa.Column('code', sa.NullType(), nullable=True),
+    sa.Column('code', sa.String(), nullable=True),
     sa.Column('amount', sa.Numeric(scale=2), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
