@@ -34,10 +34,12 @@ class FishboneKategori(SQLModel):
     total:condecimal(decimal_places=2) | None
     shm:condecimal(decimal_places=2) | None
     girik:condecimal(decimal_places=2) | None
+    percentage:condecimal(decimal_places=2) | None
 
 class FishboneStatus(SQLModel):
     status:str | None
     luas:condecimal(decimal_places=2) | None
+    percentage:condecimal(decimal_places=2) | None
     categories:list[FishboneKategori] | None
 
 class FishboneProject(SQLModel):

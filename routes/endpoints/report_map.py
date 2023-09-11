@@ -6,6 +6,7 @@ from fastapi_async_sqlalchemy import db
 from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori,
                                     FishboneProject, FishboneStatus, FishboneKategori) 
 from schemas.response_sch import (GetResponseBaseSch, create_response)
+from common.rounder import RoundTwo
 from decimal import Decimal
 import crud
 
@@ -124,9 +125,11 @@ async def fishbone(report_id:UUID):
     summary_kategori = await fishbone_get_kategori_data(projects=projects)
 
     fishbone = []
+    total_luas_project:Decimal = 0
 
     for project in summary_project:
 
+        total_luas_project = project.luas
         project_fishbone_sch = FishboneProject(project_id=project.project_id,
                                                project_name=project.project_name,
                                                luas=project.luas)
@@ -136,7 +139,8 @@ async def fishbone(report_id:UUID):
             if status.project_id != project.project_id:
                 continue
 
-            status_fishbone_sch = FishboneStatus(status=status.status, luas=status.luas)
+            percentage_luas_status = RoundTwo((status.luas/total_luas_project) * 100)
+            status_fishbone_sch = FishboneStatus(status=status.status, luas=status.luas, percentage=percentage_luas_status)
 
             kategori_fishbones = []
             for kategori in summary_kategori:
@@ -144,10 +148,12 @@ async def fishbone(report_id:UUID):
                 if kategori.project_id != project.project_id or kategori.status != status.status:
                     continue
 
+                percentage_luas_kategori = RoundTwo((kategori.luas/total_luas_project) * 100)
                 kategori_fishbone_sch = FishboneKategori(kategori_name=kategori.kategori_name,
                                                          total=kategori.luas,
                                                          shm=kategori.shm,
-                                                         girik=kategori.girik)
+                                                         girik=kategori.girik,
+                                                         percentage=percentage_luas_kategori)
                 
                 kategori_fishbones.append(kategori_fishbone_sch)
             

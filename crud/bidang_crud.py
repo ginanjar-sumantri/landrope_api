@@ -14,6 +14,7 @@ from models.desa_model import Desa
 from models.project_model import Project
 from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch, BidangRawSch, BidangGetAllSch, BidangForTreeReportSch
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
+from common.enum import StatusBidangEnum
 from services.gcloud_storage_service import GCStorageService
 from services.geom_service import GeomService
 from io import BytesIO
@@ -57,7 +58,9 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
 
         db_session = db_session or db.session
         query = select(self.model
-                       ).where(and_(self.model.id != id, functions.ST_IsValid(self.model.geom) == True)
+                       ).where(and_(self.model.id != id, 
+                                    functions.ST_IsValid(self.model.geom) == True,
+                                    self.model.status == StatusBidangEnum.Batal)
                                ).filter(functions.ST_Intersects(self.model.geom, geom))
         
         response =  await db_session.execute(query)
