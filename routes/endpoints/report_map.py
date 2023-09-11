@@ -3,10 +3,9 @@ from fastapi import APIRouter
 from sqlmodel import text, select
 from models.bidang_model import Bidang
 from fastapi_async_sqlalchemy import db
-from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori, 
+from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori,
                                     FishboneProject, FishboneStatus, FishboneKategori) 
-from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
-                                  PostResponseBaseSch, PutResponseBaseSch, ImportResponseBaseSch, create_response)
+from schemas.response_sch import (GetResponseBaseSch, create_response)
 import crud
 
 router = APIRouter()
@@ -107,7 +106,7 @@ async def search_for_map(keyword:str | None,
     data = result.fetchall()
     return create_response(data=data)
 
-@router.get("/fishbone")
+@router.get("/fishbone", response_model=GetResponseBaseSch[list[FishboneProject]])
 async def fishbone(report_id:UUID):
     
     """Get For Fishbone"""
@@ -157,7 +156,7 @@ async def fishbone(report_id:UUID):
         project_fishbone_sch.status = status_fishbones
         fishbone.append(project_fishbone_sch)
 
-    return fishbone
+    return create_response(data=fishbone)
         
 
 
