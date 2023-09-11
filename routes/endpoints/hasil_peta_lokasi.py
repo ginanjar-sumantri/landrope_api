@@ -245,7 +245,7 @@ async def update(
     
     tipe_proses = TipeProsesEnum.Standard
     jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Belum_Bebas
+    status_bidang = StatusBidangEnum.Deal
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
     if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
