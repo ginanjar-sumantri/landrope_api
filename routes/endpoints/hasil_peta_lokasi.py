@@ -2,10 +2,11 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select
+from sqlmodel import select, and_
 import crud
 from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from models.worker_model import Worker
+from models.bidang_model import Bidang
 from models.bidang_overlap_model import BidangOverlap
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
@@ -14,13 +15,11 @@ from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCr
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
-from schemas.bidang_sch import BidangSch, BidangUpdateSch
-from schemas.draft_sch import DraftSch, DraftForAnalisaSch
-from schemas.draft_detail_sch import DraftDetailSch
+from schemas.bidang_sch import BidangSch, BidangUpdateSch, BidangSrcSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
+from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.generator import generate_code, CodeCounterEnum
 from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum, HasilAnalisaPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
@@ -56,7 +55,7 @@ async def create(
 
     tipe_proses = TipeProsesEnum.Standard
     jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Belum_Bebas
+    status_bidang = StatusBidangEnum.Deal
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
     if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
@@ -226,7 +225,7 @@ async def update(
         if bidang_old.geom :
             bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
 
-        bidang_old_updated = BidangUpdateSch(bundle_hd_id=None)
+        bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
 
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 
@@ -429,3 +428,69 @@ async def download_file(id:UUID):
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.id_bidang}.{ext}"
     return response
+
+@router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSrcSch])
+async def get_list(
+                params: Params=Depends(),
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    status_ = [StatusBidangEnum.Batal, StatusBidangEnum.Belum_Bebas]
+    query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
+                    ).where(and_(
+                                Bidang.status.in_(status_),
+                                Bidang.jenis_bidang != JenisBidangEnum.Bintang
+                            ))
+    
+    if keyword:
+        query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
+
+
+    objs = await crud.bidang.get_multi_paginated(params=params, query=query)
+    return create_response(data=objs)
+
+# @router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExt])
+# async def get_by_id(id:UUID):
+
+#     """Get an object by id"""
+
+#     obj = await crud.bidang.get(id=id)
+
+#     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+#     beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id)
+    
+#     query_kelengkapan = select(ChecklistKelengkapanDokumenDt
+#                             ).select_from(ChecklistKelengkapanDokumenDt
+#                             ).join(ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == ChecklistKelengkapanDokumenHd.id
+#                             ).where(ChecklistKelengkapanDokumenHd.bidang_id == obj.id)
+    
+#     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(query=query_kelengkapan)
+    
+#     obj_return = BidangForSPKByIdExt(id=obj.id,
+#                                   id_bidang=obj.id_bidang,
+#                                   hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
+#                                   kjb_no=obj.hasil_peta_lokasi.kjb_dt.kjb_code,
+#                                   satuan_bayar=obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
+#                                   group=obj.group,
+#                                   pemilik_name=obj.pemilik_name,
+#                                   alashak=obj.alashak,
+#                                   desa_name=obj.desa_name,
+#                                   project_name=obj.project_name,
+#                                   luas_surat=obj.luas_surat,
+#                                   luas_ukur=obj.luas_ukur,
+#                                   no_peta=obj.no_peta,
+#                                   notaris_name=obj.notaris_name,
+#                                   ptsk_name=obj.ptsk_name,
+#                                   status_sk=obj.status_sk,
+#                                   bundle_hd_id=obj.bundle_hd_id,
+#                                   beban_biayas=beban,
+#                                   kelengkapan_dokumens=kelengkapan_dokumen,
+#                                   termins=harga.termins)
+    
+    
+#     if obj:
+#         return create_response(data=obj_return)
+#     else:
+#         raise IdNotFoundException(Spk, id)

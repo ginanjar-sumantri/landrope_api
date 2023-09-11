@@ -3,6 +3,7 @@ from enum import Enum
 class StatusBidangEnum(str, Enum):
     Bebas = "Bebas"
     Belum_Bebas = "Belum_Bebas"
+    Deal = "Deal"
     Batal = "Batal"
     Lanjut = "Lanjut"
     Pending = "Pending"
