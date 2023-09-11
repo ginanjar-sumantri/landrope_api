@@ -127,7 +127,7 @@ async def update(id:UUID,
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
     else:
-        sch.file = obj_current.file_path
+        sch.file_path = obj_current.file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
         #history
