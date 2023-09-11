@@ -9,8 +9,9 @@ from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCr
 from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch, OrderGambarUkurBidangCreateSch
 from schemas.order_gambar_ukur_tembusan_sch import OrderGambarUkurTembusanCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException)
+from common.exceptions import (IdNotFoundException, ContentNoChangeException)
 from common.generator import generate_code_month
+from common.enum import TipeSuratGambarUkurEnum
 from services.helper_service import HelperService
 from services.pdf_service import PdfService
 from datetime import datetime, date
@@ -30,6 +31,10 @@ async def create(
     
     """Create a new object"""
     db_session = db.session
+
+    if len(sch.tembusans) > 5:
+        raise ContentNoChangeException(detail="Tembusan tidak boleh lebih dari 5 orang!")
+
     last_number = await generate_code_month(entity=CodeCounterEnum.OrderGambarUkur, with_commit=False, db_session=db_session)
 
     today = date.today()
@@ -128,6 +133,11 @@ async def print_out(id:UUID | str,
     """Print out Order Gambar Ukur"""
 
     obj = await crud.order_gambar_ukur.get(id=id)
+    sla_hari:str = ""
+    if obj.tipe_surat == TipeSuratGambarUkurEnum.Surat_Tugas:
+        sla_hari = "3 (Tiga)"
+    else:
+        sla_hari = "4 (Empat)"
 
     tipesurat = obj.tipe_surat.replace("_", " ")
     code = obj.code
@@ -169,6 +179,7 @@ async def print_out(id:UUID | str,
                                       tujuansurat=tujuansurat,
                                       tembusans=tembusans,
                                       data=data_list, 
+                                      sla_hari=sla_hari,
                                       tanggal=formatted_date)
 
     try:

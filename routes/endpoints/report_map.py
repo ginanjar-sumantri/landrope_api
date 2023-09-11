@@ -6,6 +6,7 @@ from fastapi_async_sqlalchemy import db
 from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori,
                                     FishboneProject, FishboneStatus, FishboneKategori) 
 from schemas.response_sch import (GetResponseBaseSch, create_response)
+from decimal import Decimal
 import crud
 
 router = APIRouter()
@@ -167,13 +168,13 @@ async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
                     project.id AS project_id,
                     project.name AS project_name,
                     SUM(CASE
-                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_clear
+                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_clear/10000::numeric,2)
                             WHEN bidang.status = 'Bebas' THEN
                                 CASE
-                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_bayar
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN bidang.luas_surat
+                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
+                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                                 END
-                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN bidang.luas_surat
+                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                         END) AS LUAS
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
@@ -206,14 +207,14 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                         ELSE bidang.status
                     END AS status,
                     SUM(CASE
-                            WHEN bidang.jenis_bidang = 'Bintang' THEN bidang.luas_surat
-                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_clear
+                            WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_clear/10000::numeric,2)
                             WHEN bidang.status = 'Bebas' THEN
                                 CASE
-                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN bidang.luas_bayar
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN bidang.luas_surat
+                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
+                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                                 END
-                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN bidang.luas_surat
+                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                         END) AS LUAS
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
@@ -256,14 +257,14 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
                     SUM(CASE
                             WHEN bidang.jenis_alashak = 'Sertifikat' THEN 
                                 CASE 
-                                    WHEN bidang.jenis_bidang = 'Standard' THEN bidang.luas_surat
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN bidang.luas_surat
+                                    WHEN bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                                 END
                     END) AS SHM,
                     SUM(CASE
-                            WHEN bidang.jenis_alashak = 'Girik' THEN bidang.luas_surat
+                            WHEN bidang.jenis_alashak = 'Girik' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                     END) AS GIRIK,
-                    SUM(bidang.luas_surat) AS luas
+                    SUM(ROUND(bidang.luas_surat/10000::numeric,2)) AS luas
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
