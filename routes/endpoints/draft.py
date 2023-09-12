@@ -64,8 +64,6 @@ async def analisa(
             await crud.draft_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session_remove)
         await crud.draft.remove(id=obj_current.id, db_session=db_session_remove)
 
-    geom = None
-    crs = CRS("EPSG:32748")
     if file is not None:
 
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)

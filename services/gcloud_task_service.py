@@ -1,11 +1,10 @@
 import datetime
 import json
-
 from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
-
 from configs.config import settings
 from models.import_log_model import ImportLog
+from typing import Dict, Any
 
 
 class GCloudTaskService:
@@ -107,3 +106,18 @@ class GCloudTaskService:
         except Exception as e:
             print(e)
         return import_instance
+    
+    def create_task(self, payload: Dict[str, Any], base_url:str):
+        url = base_url
+        url = url.replace('http://', 'https://')
+
+        payload = payload
+        try:
+            task = self._create_task(
+                url=url,
+                queue_name='landrope-queue',
+                payload=payload
+            )
+        except Exception as e:
+            print(e)
+        return payload

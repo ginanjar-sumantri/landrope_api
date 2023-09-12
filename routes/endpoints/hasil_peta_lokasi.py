@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Response
+from fastapi import APIRouter, status, Depends, UploadFile, Response, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_
@@ -11,7 +11,8 @@ from models.bidang_overlap_model import BidangOverlap
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
-                                           HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch)
+                                           HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
+                                           HasilPetaLokasiTaskUpdateBidang)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
@@ -23,6 +24,7 @@ from common.exceptions import (IdNotFoundException, ContentNoChangeException, Do
 from common.generator import generate_code, CodeCounterEnum
 from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum, HasilAnalisaPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
+from services.gcloud_task_service import GCloudTaskService
 from shapely import wkb, wkt
 from geoalchemy2 import functions
 
@@ -30,6 +32,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[HasilPetaLokasiSch], status_code=status.HTTP_201_CREATED)
 async def create(
+            request: Request,
             sch: HasilPetaLokasiCreateExtSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -40,38 +43,16 @@ async def create(
     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
-    
-    # obj_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=sch.bidang_id)
-    # if obj_current:
-    #     raise ContentNoChangeException(detail="Bidang Sudah input hasil peta lokasi")
-    
-    bidang_current = await crud.bidang.get(id=sch.bidang_id)
-    if bidang_current.geom :
-        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-    
-    kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
-    kjb_hd_current = kjb_dt_current.kjb_hd
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
-    tipe_proses = TipeProsesEnum.Standard
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Deal
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
     if len(sch.hasilpetalokasidetails) > 0:
-        tipe_proses = TipeProsesEnum.Overlap
-        jenis_bidang = JenisBidangEnum.Overlap
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
-
-        bidang_overlap_id = None
         if dt.draft_detail_id is not None:
             #input bidang overlap dari hasil analisa
             draft_detail = await crud.draft_detail.get(id=dt.draft_detail_id)
@@ -91,37 +72,62 @@ async def create(
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
                                                                      with_commit=False, created_by_id=current_worker.id)
-            bidang_overlap_id = new_obj_bidang_overlap.id
         
         #input detail hasil peta lokasi
-
-        detail_sch = HasilPetaLokasiDetailCreateSch(
-            tipe_overlap=dt.tipe_overlap,
-            bidang_id=dt.bidang_id,
-            hasil_peta_lokasi_id=new_obj.id,
-            luas_overlap=dt.luas_overlap,
-            keterangan=dt.keterangan,
-            status_luas=dt.status_luas,
-            bidang_overlap_id=bidang_overlap_id
-        )
+        detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
+        detail_sch.hasil_peta_lokasi_id=new_obj.id
+        detail_sch.bidang_overlap_id=new_obj_bidang_overlap.id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    #update bidang from hasil peta lokasi
-    draft = None
-    if draft_header_id:
-        draft = await crud.draft.get(id=draft_header_id)
-    else:
-        draft = await crud.draft.get_by_rincik_id(rincik_id=sch.bidang_id)
+    payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(new_obj.bidang_id),
+                                              hasil_peta_lokasi_id=str(new_obj.id),
+                                              kjb_dt_id=str(new_obj.kjb_dt_id),
+                                              draft_id=str(draft_header_id))
+    
+    
+    url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang-generate-kelengkapan'
+    GCloudTaskService().create_task(payload=payload.dict(), base_url=url)
+
+    await db_session.commit()
+    await db_session.refresh(new_obj)
+
+    return create_response(data=new_obj)
+
+@router.post("/cloud-task-update-bidang-generate-kelengkapan")
+async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpdateBidang):
+
+    """Task update data bidang from hasil peta lokasi"""
+
+    db_session = db.session
+
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=payload.hasil_peta_lokasi_id)
+    kjb_dt_current = await crud.kjb_dt.get(id=payload.kjb_dt_id)
+    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+
+    draft = await crud.draft.get(id=payload.draft_id)
+
+    bidang_current = await crud.bidang.get(id=payload.bidang_id)
+    if bidang_current.geom :
+        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Deal
+
+    if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
+        jenis_bidang = JenisBidangEnum.Overlap
 
     bidang_updated = BidangSch(
-        tipe_proses=tipe_proses,
         jenis_bidang=jenis_bidang,
         status=status_bidang,
-        pemilik_id=sch.pemilik_id,
-        luas_surat=sch.luas_surat,
-        planing_id=sch.planing_id,
-        skpt_id=sch.skpt_id,
+        pemilik_id=hasil_peta_lokasi.pemilik_id,
+        luas_surat=hasil_peta_lokasi.luas_surat,
+        planing_id=hasil_peta_lokasi.planing_id,
+        skpt_id=hasil_peta_lokasi.skpt_id,
         group=kjb_hd_current.nama_group,
         jenis_alashak=kjb_dt_current.jenis_alashak,
         jenis_surat_id=kjb_dt_current.jenis_surat_id,
@@ -131,55 +137,57 @@ async def create(
         mediator=kjb_hd_current.mediator,
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
-        luas_ukur=sch.luas_ukur,
-        luas_nett=sch.luas_nett,
-        luas_clear=sch.luas_clear,
-        luas_gu_pt=sch.luas_gu_pt,
-        luas_gu_perorangan=sch.luas_gu_perorangan,
+        luas_ukur=hasil_peta_lokasi.luas_ukur,
+        luas_nett=hasil_peta_lokasi.luas_nett,
+        luas_clear=hasil_peta_lokasi.luas_clear,
+        luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
+        luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
         bundle_hd_id=kjb_dt_current.bundle_hd_id)
     
-    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
-                             db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
+    await crud.bidang.update(obj_current=bidang_current, 
+                             obj_new=bidang_updated, 
+                             updated_by_id=hasil_peta_lokasi.updated_by_id,
+                             db_session=db_session,
+                             with_commit=False)
     
     #generate kelengkapan dokumen
-    master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
-        jenis_alashak=bidang_current.jenis_alashak,
-        kategori_penjual=kjb_hd_current.kategori_penjual)
-    
-    checklist_kelengkapan_dts = []
-    for master in master_checklist_dokumens:
-        bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
-        if not bundle_dt_current:
-            code = bidang_current.bundlehd.code + master.dokumen.code
-            bundle_dt_current = BundleDtCreateSch(code=code, 
-                                          dokumen_id=master.dokumen_id,
-                                          bundle_hd_id=bidang_current.bundle_hd_id)
-            
-            bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
-
-        checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
-            jenis_bayar=master.jenis_bayar,
-            dokumen_id=master.dokumen_id,
-            bundle_dt_id=bundle_dt_current.id,
-            created_by_id=current_worker.id,
-            updated_by_id=current_worker.id)
+    if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
+        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+            jenis_alashak=kjb_dt_current.jenis_alashak,
+            kategori_penjual=kjb_hd_current.kategori_penjual)
         
-        checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
-    
-    checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=sch.bidang_id, details=checklist_kelengkapan_dts)
-    await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-    
-    #remove draft
-    if draft:
-        if len(draft.details) > 0:
-            await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
-        await crud.draft.remove(id=draft.id, db_session=db_session)
-    else:
-        await db_session.commit()
+        checklist_kelengkapan_dts = []
+        for master in master_checklist_dokumens:
+            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+            if not bundle_dt_current:
+                code = bidang_current.bundlehd.code + master.dokumen.code
+                bundle_dt_current = BundleDtCreateSch(code=code, 
+                                            dokumen_id=master.dokumen_id,
+                                            bundle_hd_id=bidang_current.bundle_hd_id)
+                
+                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
 
-    await db_session.refresh(new_obj)
-    return create_response(data=new_obj)
+            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+                jenis_bayar=master.jenis_bayar,
+                dokumen_id=master.dokumen_id,
+                bundle_dt_id=bundle_dt_current.id,
+                created_by_id=hasil_peta_lokasi.updated_by_id,
+                updated_by_id=hasil_peta_lokasi.updated_by_id)
+            
+            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+        
+        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload.bidang_id, details=checklist_kelengkapan_dts)
+        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
+                                                                        created_by_id=hasil_peta_lokasi.updated_by_id, 
+                                                                        db_session=db_session, 
+                                                                        with_commit=False)
+        
+
+    #remove draft
+    await crud.draft.remove(id=draft.id, db_session=db_session)
+
+    return {"message" : "successfully update bidang and generate kelengkapan dokumen"}
 
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
 async def get_list(
@@ -208,6 +216,7 @@ async def get_by_id(id:UUID):
 @router.put("/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def update(
             id:UUID, 
+            request:Request,
             sch:HasilPetaLokasiUpdateExtSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -220,40 +229,19 @@ async def update(
     
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
     if obj_current.bidang_id != sch.bidang_id:
-        #bidang
-        bidang_old = obj_current.bidang
-        if bidang_old.geom :
-            bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+        url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
+        payload = {"bidang_id" : str(obj_current.bidang_id)}
+        GCloudTaskService().create_task(payload=payload, base_url=url)
 
-        bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
-
-        await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
-
-        #kelengkapan dokumen
-        hds = []
-        checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
-        hds.append(checklist_kelengkapan_hd_old)
-
-        await crud.checklist_kelengkapan_dokumen_dt.remove_multiple_data(list_obj=checklist_kelengkapan_hd_old.details, db_session=db_session)
-        await crud.checklist_kelengkapan_dokumen_hd.remove_multiple_data(list_obj=hds, db_session=db_session)
-    
     #remove existing data detail dan overlap
     list_overlap = [ov.bidang_overlap for ov in obj_current.details if ov.bidang_overlap != None]
 
     await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
     await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session)
     
-    tipe_proses = TipeProsesEnum.Standard
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Deal
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if sch.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
     if len(sch.hasilpetalokasidetails) > 0:
-        tipe_proses = TipeProsesEnum.Overlap
-        jenis_bidang = JenisBidangEnum.Overlap
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     #update hasil peta lokasi
@@ -262,14 +250,6 @@ async def update(
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-
-    bidang_current = await crud.bidang.get(id=sch.bidang_id)
-    if bidang_current.geom :
-        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-    
-    kjb_dt_current = await crud.kjb_dt.get(id=sch.kjb_dt_id)
-    kjb_hd_current = kjb_dt_current.kjb_hd
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
     draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
@@ -295,99 +275,51 @@ async def update(
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
                                                                      with_commit=False, created_by_id=current_worker.id)
-            bidang_overlap_id = new_obj_bidang_overlap.id
         
         #input detail hasil peta lokasi
-
-        detail_sch = HasilPetaLokasiDetailCreateSch(
-            tipe_overlap=dt.tipe_overlap,
-            bidang_id=dt.bidang_id,
-            hasil_peta_lokasi_id=obj_updated.id,
-            luas_overlap=dt.luas_overlap,
-            keterangan=dt.keterangan,
-            status_luas=dt.status_luas,
-            bidang_overlap_id=bidang_overlap_id
-        )
+        detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
+        detail_sch.hasil_peta_lokasi_id=obj_updated.id
+        detail_sch.bidang_overlap_id=new_obj_bidang_overlap.id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    #update bidang from hasil peta lokasi
-    draft = None
-    if draft_header_id:
-        draft = await crud.draft.get(id=draft_header_id)
-    else:
-        draft = await crud.draft.get_by_rincik_id(rincik_id=sch.bidang_id)
-
-    bidang_updated = BidangSch(
-        tipe_proses=tipe_proses,
-        jenis_bidang=jenis_bidang,
-        status=status_bidang,
-        pemilik_id=sch.pemilik_id,
-        luas_surat=sch.luas_surat,
-        planing_id=sch.planing_id,
-        skpt_id=sch.skpt_id,
-        group=kjb_hd_current.nama_group,
-        jenis_alashak=kjb_dt_current.jenis_alashak,
-        jenis_surat_id=kjb_dt_current.jenis_surat_id,
-        alashak=kjb_dt_current.alashak,
-        manager_id=kjb_hd_current.manager_id,
-        sales_id=kjb_hd_current.sales_id,
-        mediator=kjb_hd_current.mediator,
-        telepon_mediator=kjb_hd_current.telepon_mediator,
-        notaris_id=tanda_terima_notaris_current.notaris_id,
-        luas_ukur=sch.luas_ukur,
-        luas_nett=sch.luas_nett,
-        luas_clear=sch.luas_clear,
-        luas_gu_pt=sch.luas_gu_pt,
-        luas_gu_perorangan=sch.luas_gu_perorangan,
-        geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
-        bundle_hd_id=kjb_dt_current.bundle_hd_id)
+    payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(obj_updated.bidang_id),
+                                              hasil_peta_lokasi_id=str(obj_updated.id),
+                                              kjb_dt_id=str(obj_updated.kjb_dt_id),
+                                              draft_id=str(draft_header_id))
     
-    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, 
-                             db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
+    url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang-generate-kelengkapan'
+    GCloudTaskService().create_task(payload=payload.dict(), base_url=url)
 
-    #generate kelengkapan dokumen
-    if obj_current.bidang_id != sch.bidang_id:
-        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
-            jenis_alashak=bidang_current.jenis_alashak,
-            kategori_penjual=kjb_hd_current.kategori_penjual)
-        
-        checklist_kelengkapan_dts = []
-        for master in master_checklist_dokumens:
-            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
-            if not bundle_dt_current:
-                code = bidang_current.bundlehd.code + master.dokumen.code
-                bundle_dt_current = BundleDtCreateSch(code=code, 
-                                            dokumen_id=master.dokumen_id,
-                                            bundle_hd_id=bidang_current.bundle_hd_id)
-                
-                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
-
-            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
-                jenis_bayar=master.jenis_bayar,
-                dokumen_id=master.dokumen_id,
-                bundle_dt_id=bundle_dt_current.id,
-                created_by_id=current_worker.id,
-                updated_by_id=current_worker.id)
-            
-            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
-        
-        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=sch.bidang_id, details=checklist_kelengkapan_dts)
-        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-    
-    #remove draft
-    
-    if draft:
-        if len(draft.details) > 0:
-            await crud.draft_detail.remove_multiple_data(list_obj=draft.details, db_session=db_session)
-        await crud.draft.remove(id=draft.id, db_session=db_session)
-    else:
-        await db_session.commit()
-
+    await db_session.commit()
     await db_session.refresh(obj_updated)
 
     return create_response(data=obj_updated)
+
+@router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
+async def update_bidang_and_generate_kelengkapan(bidang_id:UUID):
+
+    """Task Remove link bundle and remove existing kelengkapan dokumen"""
+
+    db_session = db.session
+
+    #bidang
+    bidang_old = await crud.bidang.get(id=bidang_id)
+    if bidang_old.geom :
+        bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+
+    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
+
+    await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
+
+    #kelengkapan dokumen
+    checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
+
+    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id)
+
+    return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 
+
 
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def upload_dokumen(
@@ -437,11 +369,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    status_ = [StatusBidangEnum.Batal, StatusBidangEnum.Belum_Bebas]
+    status_ = [StatusBidangEnum.Belum_Bebas]
     query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
                     ).where(and_(
                                 Bidang.status.in_(status_),
-                                Bidang.jenis_bidang != JenisBidangEnum.Bintang
+                                Bidang.jenis_bidang != JenisBidangEnum.Bintang,
+                                Bidang.hasil_peta_lokasi == None
                             ))
     
     if keyword:

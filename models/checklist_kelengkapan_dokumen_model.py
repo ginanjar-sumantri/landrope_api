@@ -21,7 +21,9 @@ class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table
         back_populates="checklist_kelengkapan_dokumen_hd",
         sa_relationship_kwargs=
         {
-            'lazy' : 'selectin'
+            'lazy' : 'selectin',
+            "cascade" : "delete, all",
+            "foreign_keys" : "[ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id]"
         }
     )
 

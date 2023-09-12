@@ -143,7 +143,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
 class HasilPetaLokasiDetailBase(SQLModel):
     tipe_overlap:TipeOverlapEnum
     bidang_id:UUID | None = Field(nullable=True, foreign_key="bidang.id")
-    hasil_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="hasil_peta_lokasi.id")
+    hasil_peta_lokasi_id:UUID | None = Field(nullable=False, foreign_key="hasil_peta_lokasi.id")
     luas_overlap:Decimal = Field(nullable=True)
     keterangan:str | None = Field(nullable=True)
     status_luas:StatusLuasOverlapEnum | None = Field(nullable=True)

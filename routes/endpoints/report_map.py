@@ -108,12 +108,12 @@ async def search_for_map(keyword:str | None,
     data = result.fetchall()
     return create_response(data=data)
 
-@router.get("/fishbone", response_model=GetResponseBaseSch[list[FishboneProject]])
-async def fishbone(report_id:UUID):
+@router.post("/fishbone", response_model=GetResponseBaseSch[list[FishboneProject]])
+async def fishbone(project_ids:list[UUID]):
     
     """Get For Fishbone"""
 
-    project_ids = await crud.draft_report_map.get_multi_project_id_by_report_id(report_id=report_id)
+    # project_ids = await crud.draft_report_map.get_multi_project_id_by_report_id(report_id=report_id)
     projects = ""
     for project_id in project_ids:
         projects += f"'{project_id}',"
@@ -139,6 +139,7 @@ async def fishbone(report_id:UUID):
             if status.project_id != project.project_id:
                 continue
 
+            total_luas_status = status.luas
             percentage_luas_status = RoundTwo((status.luas/total_luas_project) * 100)
             status_fishbone_sch = FishboneStatus(status=status.status, luas=status.luas, percentage=percentage_luas_status)
 
@@ -148,7 +149,7 @@ async def fishbone(report_id:UUID):
                 if kategori.project_id != project.project_id or kategori.status != status.status:
                     continue
 
-                percentage_luas_kategori = RoundTwo((kategori.luas/total_luas_project) * 100)
+                percentage_luas_kategori = RoundTwo((kategori.luas/total_luas_status) * 100)
                 kategori_fishbone_sch = FishboneKategori(kategori_name=kategori.kategori_name,
                                                          total=kategori.luas,
                                                          shm=kategori.shm,
