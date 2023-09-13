@@ -94,101 +94,6 @@ async def create(
 
     return create_response(data=new_obj)
 
-@router.post("/cloud-task-update-bidang-generate-kelengkapan")
-async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpdateBidang):
-
-    """Task update data bidang from hasil peta lokasi"""
-
-    db_session = db.session
-
-    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=payload.hasil_peta_lokasi_id)
-    kjb_dt_current = await crud.kjb_dt.get(id=payload.kjb_dt_id)
-    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
-
-    draft = await crud.draft.get(id=payload.draft_id)
-
-    bidang_current = await crud.bidang.get(id=payload.bidang_id)
-    if bidang_current.geom :
-        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Deal
-
-    if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
-    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
-        jenis_bidang = JenisBidangEnum.Overlap
-
-    bidang_updated = BidangSch(
-        jenis_bidang=jenis_bidang,
-        status=status_bidang,
-        pemilik_id=hasil_peta_lokasi.pemilik_id,
-        luas_surat=hasil_peta_lokasi.luas_surat,
-        planing_id=hasil_peta_lokasi.planing_id,
-        skpt_id=hasil_peta_lokasi.skpt_id,
-        group=kjb_hd_current.nama_group,
-        jenis_alashak=kjb_dt_current.jenis_alashak,
-        jenis_surat_id=kjb_dt_current.jenis_surat_id,
-        alashak=kjb_dt_current.alashak,
-        manager_id=kjb_hd_current.manager_id,
-        sales_id=kjb_hd_current.sales_id,
-        mediator=kjb_hd_current.mediator,
-        telepon_mediator=kjb_hd_current.telepon_mediator,
-        notaris_id=tanda_terima_notaris_current.notaris_id,
-        luas_ukur=hasil_peta_lokasi.luas_ukur,
-        luas_nett=hasil_peta_lokasi.luas_nett,
-        luas_clear=hasil_peta_lokasi.luas_clear,
-        luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
-        luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
-        geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
-        bundle_hd_id=kjb_dt_current.bundle_hd_id)
-    
-    await crud.bidang.update(obj_current=bidang_current, 
-                             obj_new=bidang_updated, 
-                             updated_by_id=hasil_peta_lokasi.updated_by_id,
-                             db_session=db_session,
-                             with_commit=False)
-    
-    #generate kelengkapan dokumen
-    if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
-        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
-            jenis_alashak=kjb_dt_current.jenis_alashak,
-            kategori_penjual=kjb_hd_current.kategori_penjual)
-        
-        checklist_kelengkapan_dts = []
-        for master in master_checklist_dokumens:
-            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
-            if not bundle_dt_current:
-                code = bidang_current.bundlehd.code + master.dokumen.code
-                bundle_dt_current = BundleDtCreateSch(code=code, 
-                                            dokumen_id=master.dokumen_id,
-                                            bundle_hd_id=bidang_current.bundle_hd_id)
-                
-                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
-
-            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
-                jenis_bayar=master.jenis_bayar,
-                dokumen_id=master.dokumen_id,
-                bundle_dt_id=bundle_dt_current.id,
-                created_by_id=hasil_peta_lokasi.updated_by_id,
-                updated_by_id=hasil_peta_lokasi.updated_by_id)
-            
-            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
-        
-        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload.bidang_id, details=checklist_kelengkapan_dts)
-        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
-                                                                        created_by_id=hasil_peta_lokasi.updated_by_id, 
-                                                                        db_session=db_session, 
-                                                                        with_commit=False)
-        
-
-    #remove draft
-    await crud.draft.remove(id=draft.id, db_session=db_session)
-
-    return {"message" : "successfully update bidang and generate kelengkapan dokumen"}
-
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
 async def get_list(
             params: Params=Depends(), 
@@ -297,30 +202,6 @@ async def update(
 
     return create_response(data=obj_updated)
 
-@router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
-async def update_bidang_and_generate_kelengkapan(bidang_id:UUID):
-
-    """Task Remove link bundle and remove existing kelengkapan dokumen"""
-
-    db_session = db.session
-
-    #bidang
-    bidang_old = await crud.bidang.get(id=bidang_id)
-    if bidang_old.geom :
-        bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
-
-    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
-
-    await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
-
-    #kelengkapan dokumen
-    checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
-
-    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id)
-
-    return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 
-
-
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def upload_dokumen(
             id:UUID, 
@@ -384,46 +265,120 @@ async def get_list(
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
-# @router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExt])
-# async def get_by_id(id:UUID):
+@router.post("/cloud-task-update-bidang-generate-kelengkapan")
+async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpdateBidang):
 
-#     """Get an object by id"""
+    """Task update data bidang from hasil peta lokasi"""
 
-#     obj = await crud.bidang.get(id=id)
+    db_session = db.session
 
-#     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
-#     beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id)
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=payload.hasil_peta_lokasi_id)
+    kjb_dt_current = await crud.kjb_dt.get(id=payload.kjb_dt_id)
+    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
+    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+
+    draft = await crud.draft.get(id=payload.draft_id)
+
+    bidang_current = await crud.bidang.get(id=payload.bidang_id)
+    if bidang_current.geom :
+        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+    jenis_bidang = JenisBidangEnum.Standard
+    status_bidang = StatusBidangEnum.Deal
+
+    if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        status_bidang = StatusBidangEnum.Batal
+
+    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
+        jenis_bidang = JenisBidangEnum.Overlap
+
+    bidang_updated = BidangSch(
+        jenis_bidang=jenis_bidang,
+        status=status_bidang,
+        pemilik_id=hasil_peta_lokasi.pemilik_id,
+        luas_surat=hasil_peta_lokasi.luas_surat,
+        planing_id=hasil_peta_lokasi.planing_id,
+        skpt_id=hasil_peta_lokasi.skpt_id,
+        group=kjb_hd_current.nama_group,
+        jenis_alashak=kjb_dt_current.jenis_alashak,
+        jenis_surat_id=kjb_dt_current.jenis_surat_id,
+        alashak=kjb_dt_current.alashak,
+        manager_id=kjb_hd_current.manager_id,
+        sales_id=kjb_hd_current.sales_id,
+        mediator=kjb_hd_current.mediator,
+        telepon_mediator=kjb_hd_current.telepon_mediator,
+        notaris_id=tanda_terima_notaris_current.notaris_id,
+        luas_ukur=hasil_peta_lokasi.luas_ukur,
+        luas_nett=hasil_peta_lokasi.luas_nett,
+        luas_clear=hasil_peta_lokasi.luas_clear,
+        luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
+        luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
+        geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
+        bundle_hd_id=kjb_dt_current.bundle_hd_id)
     
-#     query_kelengkapan = select(ChecklistKelengkapanDokumenDt
-#                             ).select_from(ChecklistKelengkapanDokumenDt
-#                             ).join(ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == ChecklistKelengkapanDokumenHd.id
-#                             ).where(ChecklistKelengkapanDokumenHd.bidang_id == obj.id)
+    await crud.bidang.update(obj_current=bidang_current, 
+                             obj_new=bidang_updated, 
+                             updated_by_id=hasil_peta_lokasi.updated_by_id,
+                             db_session=db_session,
+                             with_commit=False)
     
-#     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(query=query_kelengkapan)
-    
-#     obj_return = BidangForSPKByIdExt(id=obj.id,
-#                                   id_bidang=obj.id_bidang,
-#                                   hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
-#                                   kjb_no=obj.hasil_peta_lokasi.kjb_dt.kjb_code,
-#                                   satuan_bayar=obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
-#                                   group=obj.group,
-#                                   pemilik_name=obj.pemilik_name,
-#                                   alashak=obj.alashak,
-#                                   desa_name=obj.desa_name,
-#                                   project_name=obj.project_name,
-#                                   luas_surat=obj.luas_surat,
-#                                   luas_ukur=obj.luas_ukur,
-#                                   no_peta=obj.no_peta,
-#                                   notaris_name=obj.notaris_name,
-#                                   ptsk_name=obj.ptsk_name,
-#                                   status_sk=obj.status_sk,
-#                                   bundle_hd_id=obj.bundle_hd_id,
-#                                   beban_biayas=beban,
-#                                   kelengkapan_dokumens=kelengkapan_dokumen,
-#                                   termins=harga.termins)
-    
-    
-#     if obj:
-#         return create_response(data=obj_return)
-#     else:
-#         raise IdNotFoundException(Spk, id)
+    #generate kelengkapan dokumen
+    if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
+        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+            jenis_alashak=kjb_dt_current.jenis_alashak,
+            kategori_penjual=kjb_hd_current.kategori_penjual)
+        
+        checklist_kelengkapan_dts = []
+        for master in master_checklist_dokumens:
+            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+            if not bundle_dt_current:
+                code = bidang_current.bundlehd.code + master.dokumen.code
+                bundle_dt_current = BundleDtCreateSch(code=code, 
+                                            dokumen_id=master.dokumen_id,
+                                            bundle_hd_id=bidang_current.bundle_hd_id)
+                
+                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
+
+            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+                jenis_bayar=master.jenis_bayar,
+                dokumen_id=master.dokumen_id,
+                bundle_dt_id=bundle_dt_current.id,
+                created_by_id=hasil_peta_lokasi.updated_by_id,
+                updated_by_id=hasil_peta_lokasi.updated_by_id)
+            
+            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+        
+        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload.bidang_id, details=checklist_kelengkapan_dts)
+        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
+                                                                        created_by_id=hasil_peta_lokasi.updated_by_id, 
+                                                                        db_session=db_session, 
+                                                                        with_commit=False)
+        
+
+    #remove draft
+    await crud.draft.remove(id=draft.id, db_session=db_session)
+
+    return {"message" : "successfully update bidang and generate kelengkapan dokumen"}
+
+@router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
+async def update_bidang_and_generate_kelengkapan(bidang_id:UUID):
+
+    """Task Remove link bundle and remove existing kelengkapan dokumen"""
+
+    db_session = db.session
+
+    #bidang
+    bidang_old = await crud.bidang.get(id=bidang_id)
+    if bidang_old.geom :
+        bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+
+    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
+
+    await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
+
+    #kelengkapan dokumen
+    checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
+
+    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id)
+
+    return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 

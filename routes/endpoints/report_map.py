@@ -4,7 +4,8 @@ from sqlmodel import text, select
 from models.bidang_model import Bidang
 from fastapi_async_sqlalchemy import db
 from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori,
-                                    FishboneProject, FishboneStatus, FishboneKategori) 
+                                    FishboneProject, FishboneStatus, FishboneKategori,
+                                    ParamProject) 
 from schemas.response_sch import (GetResponseBaseSch, create_response)
 from common.rounder import RoundTwo
 from decimal import Decimal
@@ -109,13 +110,13 @@ async def search_for_map(keyword:str | None,
     return create_response(data=data)
 
 @router.post("/fishbone", response_model=GetResponseBaseSch[list[FishboneProject]])
-async def fishbone(project_ids:list[UUID]):
+async def fishbone(project_ids:ParamProject):
     
     """Get For Fishbone"""
 
     # project_ids = await crud.draft_report_map.get_multi_project_id_by_report_id(report_id=report_id)
     projects = ""
-    for project_id in project_ids:
+    for project_id in project_ids.project_ids:
         projects += f"'{project_id}',"
     
     projects = projects[0:-1]

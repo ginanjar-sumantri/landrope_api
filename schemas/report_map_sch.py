@@ -48,3 +48,6 @@ class FishboneProject(SQLModel):
     luas:condecimal(decimal_places=2) | None
     status:list[FishboneStatus] | None
 
+class ParamProject(SQLModel):
+    project_ids:list[UUID]
+
