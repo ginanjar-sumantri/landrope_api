@@ -2,9 +2,11 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select, or_, func
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
-from models.worker_model import Worker
 from models.kjb_model import KjbDt
+from models.worker_model import Worker
+from models.notaris_model import Notaris
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -14,6 +16,7 @@ from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
 import crud
+import json
 
 
 router = APIRouter()
@@ -84,6 +87,18 @@ async def create(
     
     return create_response(data=new_obj)
 
+# @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
+# async def get_list(
+#                 params: Params = Depends(), 
+#                 order_by:str = None, 
+#                 keyword:str = None, 
+#                 filter_query:str = None,
+#                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Gets a paginated list objects"""
+
+#     objs = await crud.tandaterimanotaris_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+#     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -95,7 +110,26 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.tandaterimanotaris_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(TandaTerimaNotarisHd).select_from(TandaTerimaNotarisHd
+                                        ).outerjoin(KjbDt, TandaTerimaNotarisHd.kjb_dt_id == KjbDt.id
+                                        ).outerjoin(Notaris, TandaTerimaNotarisHd.notaris_id == Notaris.id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                TandaTerimaNotarisHd.nomor_tanda_terima.ilike(f'%{keyword}%'),
+                KjbDt.alashak.ilike(f'%{keyword}%'),
+                Notaris.name.ilike(f'%{keyword}%'),
+                func.replace(TandaTerimaNotarisHd.status_peta_lokasi, '_', ' ').ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(TandaTerimaNotarisHd, key) == value)
+
+    objs = await crud.tandaterimanotaris_hd.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[TandaTerimaNotarisHdSch])

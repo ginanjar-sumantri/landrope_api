@@ -2,14 +2,18 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from models.kjb_model import KjbHd
+from sqlmodel import select, or_
+from models.kjb_model import KjbHd, KjbDt, KjbPenjual
 from models.worker_model import Worker
+from models.marketing_model import Manager, Sales
+from models.pemilik_model import Pemilik
 from models.code_counter_model import CodeCounterEnum
 from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 import crud
+import json
 
 
 router = APIRouter()
@@ -27,6 +31,19 @@ async def create(sch: KjbHdCreateSch,
     
     return create_response(data=new_obj)
 
+# @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
+# async def get_list(
+#         params: Params=Depends(), 
+#         order_by: str = None, 
+#         keyword: str = None, 
+#         filter_query: str= None,
+#         current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Gets a paginated list objects"""
+
+#     objs = await crud.kjb_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+#     return create_response(data=objs)
+
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(
         params: Params=Depends(), 
@@ -37,7 +54,32 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.kjb_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(KjbHd).select_from(KjbHd
+                        ).outerjoin(Manager, KjbHd.manager_id == Manager.id
+                        ).outerjoin(Sales, KjbHd.sales_id == Sales.id
+                        ).outerjoin(KjbPenjual, KjbHd.id == KjbPenjual.kjb_hd_id
+                        ).outerjoin(Pemilik, KjbPenjual.pemilik_id == Pemilik.id
+                        ).outerjoin(KjbDt, KjbHd.id == KjbDt.kjb_hd_id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                KjbHd.code.ilike(f'%{keyword}%'),
+                KjbHd.nama_group.ilike(f'%{keyword}%'),
+                Pemilik.name.ilike(f'%{keyword}%'),
+                Manager.name.ilike(f'%{keyword}%'),
+                Sales.name.ilike(f'%{keyword}%'),
+                KjbDt.alashak.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(KjbHd, key) == value)
+
+
+    objs = await crud.kjb_hd.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/not-draft", response_model=GetResponsePaginatedSch[KjbHdSch])

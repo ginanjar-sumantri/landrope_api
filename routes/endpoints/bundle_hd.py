@@ -2,8 +2,12 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select, and_, or_
 from models.bundle_model import BundleHd
 from models.worker_model import Worker
+from models.bidang_model import Bidang
+from models.kjb_model import KjbHd, KjbDt
+from models.planing_model import Planing
 from schemas.bundle_hd_sch import (BundleHdSch, BundleHdCreateSch, BundleHdUpdateSch, BundleHdByIdSch)
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -11,6 +15,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -25,6 +30,19 @@ async def create(sch: BundleHdCreateSch,
     
     return create_response(data=new_obj)
 
+# @router.get("", response_model=GetResponsePaginatedSch[BundleHdSch])
+# async def get_list(
+#             params: Params=Depends(), 
+#             order_by:str = None, 
+#             keyword:str = None, 
+#             filter_query:str = None,
+#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Gets a paginated list objects"""
+
+#     objs = await crud.bundlehd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+#     return create_response(data=objs)
+
 @router.get("", response_model=GetResponsePaginatedSch[BundleHdSch])
 async def get_list(
             params: Params=Depends(), 
@@ -35,7 +53,27 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bundlehd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(BundleHd).select_from(BundleHd
+                            ).outerjoin(Bidang, Bidang.bundle_hd_id == BundleHd.id
+                            ).outerjoin(KjbDt, KjbDt.bundle_hd_id == BundleHd.id
+                            ).outerjoin(Planing, Planing.id == BundleHd.planing_id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                BundleHd.code.ilike(f'%{keyword}%'),
+                Planing.name.ilike(f'%{keyword}%'),
+                KjbDt.alashak.ilike(f'%{keyword}%'),
+                Bidang.id_bidang.ilike(f'%{keyword}%')
+            ))
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(BundleHd, key) == value)
+
+    objs = await crud.bundlehd.get_multi_paginated(params=params, query=query)
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BundleHdByIdSch])

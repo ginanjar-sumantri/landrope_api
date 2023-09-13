@@ -17,6 +17,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.enum import StatusHasilPetaLokasiEnum, JenisBayarEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -79,7 +80,26 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.checklist_kelengkapan_dokumen_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(ChecklistKelengkapanDokumenHd).select_from(ChecklistKelengkapanDokumenHd
+                                                ).outerjoin(Bidang, ChecklistKelengkapanDokumenHd.bidang_id == Bidang.id
+                                                ).outerjoin(BundleHd, Bidang.bundle_hd_id == BundleHd.id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.jenis_alashak.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                BundleHd.code.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(ChecklistKelengkapanDokumenHd, key) == value)
+
+    objs = await crud.checklist_kelengkapan_dokumen_hd.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ChecklistKelengkapanDokumenHdByIdSch])
