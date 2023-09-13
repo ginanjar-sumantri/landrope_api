@@ -114,7 +114,10 @@ async def fishbone(project_ids:ParamProject):
     
     """Get For Fishbone"""
 
-    # project_ids = await crud.draft_report_map.get_multi_project_id_by_report_id(report_id=report_id)
+    if len(project_ids.project_ids) == 0:
+        fishbone = []
+        return fishbone
+
     projects = ""
     for project_id in project_ids.project_ids:
         projects += f"'{project_id}',"
