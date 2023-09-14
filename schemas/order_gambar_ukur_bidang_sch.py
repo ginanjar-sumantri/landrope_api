@@ -26,7 +26,9 @@ class OrderGambarUkurBidangPdfSch(SQLModel):
     ptsk_name:str | None 
     jenis_surat_name:str | None 
     alashak:str | None 
-    luas_surat:str | None 
+    luas_surat:str | None
+    mediator:str | None
+    sales_name:str | None 
     
 class OrderGambarUkurBidangRawSch(SQLModel):
     id:UUID | None

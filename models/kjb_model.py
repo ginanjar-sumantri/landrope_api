@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from models.bundle_model import BundleHd
     from models.request_peta_lokasi_model import RequestPetaLokasi
     from models.worker_model import Worker
+    from models.hasil_peta_lokasi_model import HasilPetaLokasi
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
@@ -132,6 +133,14 @@ class KjbDt(KjbDtFullBase, table=True):
     bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
     request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+    hasil_peta_lokasi:"HasilPetaLokasi" = Relationship(
+        back_populates="kjb_dt",
+        sa_relationship_kwargs=
+        {
+            "lazy":"selectin",
+            "uselist":False
+        }
+    )
 
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={

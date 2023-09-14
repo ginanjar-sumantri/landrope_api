@@ -8,11 +8,11 @@ from decimal import Decimal
 if TYPE_CHECKING:
     from models.worker_model import Worker
     from models.notaris_model import Notaris
-    from models.bidang_model import Bidang
+    from models.kjb_model import KjbDt
 
 class OrderGambarUkurBase(SQLModel):
     code:str | None = Field(nullable=True)
-    status_bidang:HasilAnalisaPetaLokasiEnum
+    status_bidang:HasilAnalisaPetaLokasiEnum | None = Field(nullable=True)
     tipe_surat:TipeSuratGambarUkurEnum
     tujuan_surat_worker_id:UUID | None = Field(nullable=True, foreign_key="worker.id")
     tujuan_surat_notaris_id:UUID | None = Field(nullable=True, foreign_key="notaris.id")
@@ -77,21 +77,31 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
         if self.status_bidang == HasilAnalisaPetaLokasiEnum.Clear:
             if len(self.bidangs) > 0:
                 bidang = self.bidangs[0]
-                pbt = bidang.bidang.proses_bpn_order_gu
+                if bidang.kjb_dt.hasil_peta_lokasi is None:
+                    return None
+                
+                pbt = bidang.proses_bpn_order_gu
                 if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
                     return "Proses Gambar Ukur Perorangan (Bidang Clear)"
-                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                elif pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
                     return "Proses Gambar Ukur PT (Bidang Clear)"
+                else:
+                    return None
             else:
                 return None
         if self.status_bidang == HasilAnalisaPetaLokasiEnum.Overlap:
             if len(self.bidangs) > 0:
                 bidang = self.bidangs[0]
-                pbt = bidang.bidang.proses_bpn_order_gu
+                if bidang.kjb_dt.hasil_peta_lokasi is None:
+                    return None
+                
+                pbt = bidang.proses_bpn_order_gu
                 if pbt == ProsesBPNOrderGambarUkurEnum.PBT_Perorangan:
                     return "Proses Gambar Ukur Perorangan (Bidang Overlap)"
-                if pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
+                elif pbt == ProsesBPNOrderGambarUkurEnum.PBT_PT:
                     return "Proses Gambar Ukur PT (Bidang Overlap)"
+                else:
+                    return None
             else:
                 return None
     
@@ -99,7 +109,7 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
 
 class OrderGambarUkurBidangBase(SQLModel):
     order_gambar_ukur_id:UUID | None = Field(nullable=False, foreign_key="order_gambar_ukur.id")
-    bidang_id:UUID = Field(nullable=False, foreign_key="bidang.id")
+    kjb_dt_id:UUID = Field(nullable=False, foreign_key="kjb_dt.id")
 
 class OrderGambarUkurBidangFullBase(BaseUUIDModel, OrderGambarUkurBidangBase):
     pass
@@ -113,7 +123,7 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
         }
     )
 
-    bidang:"Bidang" = Relationship(
+    kjb_dt:"KjbDt" = Relationship(
         sa_relationship_kwargs=
         {
             "lazy" : "selectin"
@@ -122,46 +132,80 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
 
     @property
     def id_bidang(self) -> str | None:
-        return getattr(getattr(self, "bidang", None), "id_bidang", None)
+        return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "id_bidang", None)
     
     @property
     def jenis_alashak(self) -> JenisAlashakEnum | None:
-        return getattr(getattr(self, "bidang", None), "jenis_alashak", None)
+        return getattr(getattr(self, "kjb_dt", None), "jenis_alashak", None)
     
     @property
     def alashak(self) -> str | None:
-        return getattr(getattr(self, "bidang", None), "alashak", None)
+        return getattr(getattr(self, "kjb_dt", None), "alashak", None)
     
     @property
     def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
-        return getattr(getattr(self, "bidang", None), "hasil_analisa_peta_lokasi", None)
+        return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "hasil_analisa_peta_lokasi", None)
     
     @property
     def proses_bpn_order_gu(self) -> ProsesBPNOrderGambarUkurEnum | None:
-        return getattr(getattr(self, "bidang", None), "proses_bpn_order_gu", None)
+        if self.kjb_dt.hasil_peta_lokasi is None:
+            return None
+        elif self.kjb_dt.hasil_peta_lokasi.bidang is None:
+            return None
+        else:
+            return self.kjb_dt.hasil_peta_lokasi.bidang.proses_bpn_order_gu
     
     @property
     def pemilik_name(self) -> str | None:
-        return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
-    
+        if self.kjb_dt.hasil_peta_lokasi is None:
+            return getattr(getattr(getattr(self, "kjb_dt", None), "pemilik", None), "name", None)
+        else:
+            if self.kjb_dt.hasil_peta_lokasi.bidang is None:
+                return getattr(getattr(getattr(self, "kjb_dt", None), "pemilik", None), "name", None)
+            else:
+                return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "pemilik_name", None)
+        
     @property
     def group(self) -> str | None:
-        return getattr(getattr(self, "bidang", None), "group", None)
+        if self.kjb_dt.hasil_peta_lokasi is None:
+            return getattr(getattr(getattr(self, "kjb_dt", None), "kjb_hd", None), "nama_group", None)
+        else:
+            if self.kjb_dt.hasil_peta_lokasi.bidang is None:
+                return getattr(getattr(getattr(self, "kjb_dt", None), "kjb_hd", None), "nama_group", None)
+            else:
+                return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "group", None)
     
     @property
     def ptsk_name(self) -> str | None:
-        return getattr(getattr(getattr(getattr(self, "bidang", None), "skpt", None), "ptsk", None), "name", None)
+        return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "ptsk_name", None)
     
     @property
     def jenis_surat_name(self) -> str | None:
-        return getattr(getattr(getattr(self, "bidang", None), "jenis_surat", None), "name", None)
+        if self.kjb_dt.hasil_peta_lokasi is None:
+            return getattr(getattr(self, "kjb_dt", None), "jenis_surat_name", None)
+        else:
+            if self.kjb_dt.hasil_peta_lokasi.bidang is None:
+                return getattr(getattr(self, "kjb_dt", None), "jenis_surat_name", None)
+            else:
+                return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "jenis_surat_name", None)
     
     @property
     def luas_surat(self) -> Decimal | None:
-        return getattr(getattr(self, "bidang", None), "luas_surat", None)
-
+        if self.kjb_dt.hasil_peta_lokasi is None:
+            return getattr(getattr(self, "kjb_dt", None), "luas_surat_by_ttn", None)
+        else:
+            if self.kjb_dt.hasil_peta_lokasi.bidang is None:
+                return getattr(getattr(self, "kjb_dt", None), "luas_surat_by_ttn", None)
+            else:
+                return getattr(getattr(getattr(getattr(self, "kjb_dt", None), "hasil_peta_lokasi", None), "bidang", None), "luas_surat", None)
     
-
+    @property
+    def mediator(self) -> str | None:
+        return getattr(getattr(getattr(self, "kjb_dt", None), "kjb_hd", None), "mediator", None)
+    
+    @property
+    def sales_name(self) -> str | None:
+        return getattr(getattr(getattr(self, "kjb_dt", None), "kjb_hd", None), "sales_name", None)
     
 class OrderGambarUkurTembusanBase(SQLModel):
     order_gambar_ukur_id:UUID | None = Field(nullable=False, foreign_key="order_gambar_ukur.id")

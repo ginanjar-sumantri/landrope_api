@@ -9,7 +9,7 @@ from uuid import UUID
 from decimal import Decimal
 
 class OrderGambarUkurCreateSch(OrderGambarUkurBase):
-    bidangs:list[UUID]
+    kjb_dts:list[UUID]
     tembusans:list[UUID]
 
 

@@ -57,10 +57,12 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                                             })
     
     kjb_dt: "KjbDt" = Relationship(
+                        back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
                                                 "lazy" : "selectin"
-                                            })
+                                            }
+                        )
     
     request_peta_lokasi: "RequestPetaLokasi" = Relationship(
                         back_populates="hasil_peta_lokasi",

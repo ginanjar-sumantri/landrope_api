@@ -372,7 +372,9 @@ async def update_bidang_and_generate_kelengkapan(bidang_id:UUID):
     if bidang_old.geom :
         bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
 
-    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, status=StatusBidangEnum.Belum_Bebas)
+    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, 
+                                         status=StatusBidangEnum.Belum_Bebas, 
+                                         jenis_bidang=JenisBidangEnum.Standard)
 
     await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 

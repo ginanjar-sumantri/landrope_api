@@ -82,6 +82,10 @@ class DraftDetail(DraftDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "id_bidang_lama", None)
     
     @property
+    def jenis_bidang(self) -> str | None :
+        return getattr(getattr(self, "bidang", None), "jenis_bidang", None)
+    
+    @property
     def pemilik_name(self) -> str | None :
         return getattr(getattr(getattr(self, "bidang", None), "pemilik", None), "name", None)
 

@@ -12,7 +12,7 @@ from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbDt
 from models.request_peta_lokasi_model import RequestPetaLokasi
-from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch
+from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -73,5 +73,14 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().first()
+    
+    async def get_multi_for_order_gu(self, *, skip : int = 0, limit : int = 100, query : KjbDt | Select[KjbDt] | None = None, db_session : AsyncSession | None = None
+                        ) -> List[KjbDtSrcForGUSch]:
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model).offset(skip).limit(limit).order_by(self.model.id)
+
+        response =  await db_session.execute(query)
+        return response.fetchall()
     
 kjb_dt = CRUDKjbDt(KjbDt)

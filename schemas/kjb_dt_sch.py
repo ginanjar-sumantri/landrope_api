@@ -38,3 +38,9 @@ class KjbDtSch(KjbDtFullBase):
 @optional
 class KjbDtUpdateSch(KjbDtBase):
     pass
+
+class KjbDtSrcForGUSch(SQLModel):
+    kjb_dt_id:UUID | None
+    kjb_dt_alashak:str | None
+    bidang_id:UUID | None
+    id_bidang:str | None

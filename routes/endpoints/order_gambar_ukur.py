@@ -2,16 +2,21 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select, and_, or_
 from models.order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
+from models.kjb_model import KjbDt
+from models.hasil_peta_lokasi_model import HasilPetaLokasi
+from models.bidang_model import Bidang
 from models.worker_model import Worker
 from models.code_counter_model import CodeCounterEnum
 from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch, OrderGambarUkurUpdateExtSch)
 from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch, OrderGambarUkurBidangCreateSch
 from schemas.order_gambar_ukur_tembusan_sch import OrderGambarUkurTembusanCreateSch
+from schemas.kjb_dt_sch import KjbDtSrcForGUSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException)
 from common.generator import generate_code_month
-from common.enum import TipeSuratGambarUkurEnum
+from common.enum import TipeSuratGambarUkurEnum, HasilAnalisaPetaLokasiEnum
 from services.helper_service import HelperService
 from services.pdf_service import PdfService
 from datetime import datetime, date
@@ -45,9 +50,9 @@ async def create(
         
     new_obj = await crud.order_gambar_ukur.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    for bidang in sch.bidangs:
-        sch_bidang = OrderGambarUkurBidangCreateSch(order_gambar_ukur_id=new_obj.id, bidang_id=bidang)
-        await crud.order_gambar_ukur_bidang.create(obj_in=sch_bidang, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    for kjb_dt in sch.kjb_dts:
+        sch_kjb_dt = OrderGambarUkurBidangCreateSch(order_gambar_ukur_id=new_obj.id, kjb_dt_id=kjb_dt)
+        await crud.order_gambar_ukur_bidang.create(obj_in=sch_kjb_dt, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     for tembusan in sch.tembusans:
         sch_tembusan = OrderGambarUkurTembusanCreateSch(order_gambar_ukur_id=new_obj.id, tembusan_id=tembusan)
@@ -101,14 +106,14 @@ async def update(
     obj_updated = await crud.order_gambar_ukur.update(obj_current=obj_current, obj_new=sch_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
     bidang_ids = [bidang for bidang in sch.bidangs]
-    order_gu_bidang_will_removed = await crud.order_gambar_ukur_bidang.get_not_in_by_bidang_ids(list_ids=bidang_ids, order_ukur_id=id)
+    order_gu_bidang_will_removed = await crud.order_gambar_ukur_bidang.get_not_in_by_kjb_dt_ids(list_ids=bidang_ids, order_ukur_id=id)
     if len(order_gu_bidang_will_removed) > 0 :
         await crud.order_gambar_ukur_bidang.remove_multiple_data(list_obj=order_gu_bidang_will_removed, db_session=db_session)
     
     for order_gu_bidang in sch.bidangs:
-        gu_bidang = await crud.order_gambar_ukur_bidang.get_by_bidang_id_and_order_ukur_id(bidang_id=order_gu_bidang, order_ukur_id=id)
+        gu_bidang = await crud.order_gambar_ukur_bidang.get_by_kjb_dt_id_and_order_ukur_id(kjb_dt_id=order_gu_bidang, order_ukur_id=id)
         if gu_bidang is None:
-            new_order_gu_bidang = OrderGambarUkurBidang(bidang_id=order_gu_bidang, order_gambar_ukur_id=id)
+            new_order_gu_bidang = OrderGambarUkurBidang(kjb_dt_id=order_gu_bidang, order_gambar_ukur_id=id)
             await crud.order_gambar_ukur_bidang.create(obj_in=new_order_gu_bidang, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
     tembusan_ids = [tembusan for tembusan in sch.tembusans]
@@ -141,7 +146,7 @@ async def print_out(id:UUID | str,
 
     tipesurat = obj.tipe_surat.replace("_", " ")
     code = obj.code
-    perihal = obj.perihal
+    perihal = obj.perihal or "-"
     tujuansurat = obj.tujuan_surat
 
     tembusans = [tembusan.cc_name for tembusan in obj.tembusans]
@@ -151,13 +156,15 @@ async def print_out(id:UUID | str,
     nomor = ""
     for bidang in obj.bidangs:
         data = OrderGambarUkurBidangPdfSch(no=no,
-                                           id_bidang=bidang.id_bidang,
-                                           pemilik_name=bidang.pemilik_name,
+                                           id_bidang=bidang.id_bidang or "-",
+                                           pemilik_name=bidang.pemilik_name or "-",
                                            group=bidang.group,
-                                           ptsk_name=bidang.ptsk_name,
+                                           ptsk_name=bidang.ptsk_name or "-",
                                            jenis_surat_name=bidang.jenis_surat_name,
                                            alashak=bidang.alashak,
-                                           luas_surat="{:,.2f}".format(bidang.luas_surat)
+                                           mediator=bidang.mediator,
+                                           sales_name=bidang.sales_name,
+                                           luas_surat="{:,.2f}".format(bidang.luas_surat or 0)
                                            )
         no = no + 1
         data_list.append(data)
@@ -191,4 +198,53 @@ async def print_out(id:UUID | str,
     response.headers["Content-Disposition"] = f"attachment; filename={code}.pdf"
     return response
 
-   
+@router.get("/search/kjb_dt", response_model=GetResponseBaseSch[list[KjbDtSrcForGUSch]])
+async def search_kjb_dt(
+    size:int = 10,
+    status_bidang:HasilAnalisaPetaLokasiEnum = None,
+    keyword:str = None):
+
+    """Gets a paginated list objects"""
+
+    
+    query = select(KjbDt.id.label("kjb_dt_id"),
+                    KjbDt.alashak.label("kjb_dt_alashak"),
+                    Bidang.id.label("bidang_id"),
+                    Bidang.id_bidang.label("id_bidang"))
+    
+    if status_bidang:
+        query = query.select_from(KjbDt
+                        ).join(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
+                        ).join(Bidang, HasilPetaLokasi.bidang_id == Bidang.id
+                        ).where(
+                                and_(
+                                        HasilPetaLokasi.hasil_analisa_peta_lokasi == status_bidang,
+                                        KjbDt.hasil_peta_lokasi != None
+                                    )
+                                )
+    else:
+        query = query.select_from(KjbDt
+                        ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
+                        ).outerjoin(Bidang, HasilPetaLokasi.bidang_id == Bidang.id
+                        ).where(
+                            and_(
+                                    KjbDt.hasil_peta_lokasi == None,
+                                    KjbDt.tanda_terima_notaris_hd != None
+                                )
+                            )
+
+
+    if keyword:
+        query = query.filter(
+                            or_(
+                                    Bidang.id_bidang.ilike(f'%{keyword}%'),
+                                    KjbDt.alashak.ilike(f'%{keyword}%')
+                                )
+                            )
+        
+    query = query.limit(size)
+    
+
+    objs = await crud.kjb_dt.get_multi_for_order_gu(query=query)
+
+    return create_response(data=objs) 
