@@ -60,7 +60,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         query = select(self.model
                        ).where(and_(self.model.id != id, 
                                     functions.ST_IsValid(self.model.geom) == True,
-                                    self.model.status == StatusBidangEnum.Batal)
+                                    self.model.status != StatusBidangEnum.Batal)
                                ).filter(functions.ST_Intersects(self.model.geom, geom))
         
         response =  await db_session.execute(query)
