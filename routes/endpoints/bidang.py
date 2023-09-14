@@ -521,9 +521,9 @@ def FindStatusBidang(status:str|None = None):
         elif status.replace(" ", "").lower() == StatusBidangEnum.Pending.replace("_", "").lower():
             return StatusBidangEnum.Pending
         else:
-            return StatusBidangEnum.Batal
+            return StatusBidangEnum.Belum_Bebas
     else:
-        return StatusBidangEnum.Batal
+        return StatusBidangEnum.Belum_Bebas
 
 def FindJenisBidang(type:str|None = None):
     if type:
@@ -534,9 +534,9 @@ def FindJenisBidang(type:str|None = None):
         elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
             return JenisBidangEnum.Overlap
         else:
-            return None
+            return JenisBidangEnum.Standard
     else:
-        return None
+        return JenisBidangEnum.Standard
 
 def FindJenisAlashak(type:str|None = None):
     if type:

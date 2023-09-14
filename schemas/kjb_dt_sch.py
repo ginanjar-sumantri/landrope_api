@@ -1,6 +1,6 @@
 from models.kjb_model import KjbDt, KjbDtBase, KjbDtFullBase
 from common.partial import optional
-from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusPetaLokasiEnum
+from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum
 from sqlmodel import Field, SQLModel
 from typing import List, Optional
 from uuid import UUID
@@ -44,3 +44,14 @@ class KjbDtSrcForGUSch(SQLModel):
     kjb_dt_alashak:str | None
     bidang_id:UUID | None
     id_bidang:str | None
+
+class KjbDtForOrderGUById(SQLModel):
+    id:UUID | None
+    id_bidang:str | None
+    jenis_alashak:JenisAlashakEnum | None
+    alashak:str | None
+    status_sk:StatusSKEnum | None
+    ptsk_name:str | None
+    hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
+    proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None
+    luas_surat:Decimal | None

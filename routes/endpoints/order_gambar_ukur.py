@@ -12,11 +12,11 @@ from models.code_counter_model import CodeCounterEnum
 from schemas.order_gambar_ukur_sch import (OrderGambarUkurSch, OrderGambarUkurCreateSch, OrderGambarUkurUpdateSch, OrderGambarUkurByIdSch, OrderGambarUkurUpdateExtSch)
 from schemas.order_gambar_ukur_bidang_sch import OrderGambarUkurBidangPdfSch, OrderGambarUkurBidangCreateSch
 from schemas.order_gambar_ukur_tembusan_sch import OrderGambarUkurTembusanCreateSch
-from schemas.kjb_dt_sch import KjbDtSrcForGUSch
+from schemas.kjb_dt_sch import KjbDtSrcForGUSch, KjbDtForOrderGUById
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException)
 from common.generator import generate_code_month
-from common.enum import TipeSuratGambarUkurEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import TipeSuratGambarUkurEnum, HasilAnalisaPetaLokasiEnum, StatusHasilPetaLokasiEnum
 from services.helper_service import HelperService
 from services.pdf_service import PdfService
 from datetime import datetime, date
@@ -219,6 +219,7 @@ async def search_kjb_dt(
                         ).where(
                                 and_(
                                         HasilPetaLokasi.hasil_analisa_peta_lokasi == status_bidang,
+                                        HasilPetaLokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Lanjut,
                                         KjbDt.hasil_peta_lokasi != None
                                     )
                                 )
@@ -248,3 +249,30 @@ async def search_kjb_dt(
     objs = await crud.kjb_dt.get_multi_for_order_gu(query=query)
 
     return create_response(data=objs) 
+
+
+@router.get("/search/kjb_dt/{id}", response_model=GetResponseBaseSch[KjbDtForOrderGUById])
+async def get_for_order_gu_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    obj = await crud.kjb_dt.get(id=id)
+    if obj is None:
+        raise IdNotFoundException(KjbDt, id)
+    
+    obj_bidang = None
+    if obj.hasil_peta_lokasi:
+        obj_bidang = await crud.bidang.get(id=obj.hasil_peta_lokasi.bidang_id)
+        
+
+    obj_return = KjbDtForOrderGUById(id=obj.id,
+                                      id_bidang=obj_bidang.id_bidang if obj_bidang is not None else None,
+                                      jenis_alashak=obj.jenis_alashak,
+                                      alashak=obj.alashak,
+                                      status_sk=obj_bidang.status_sk if obj_bidang is not None else None,
+                                      ptsk_name=obj_bidang.ptsk_name if obj_bidang is not None else None,
+                                      hasil_analisa_peta_lokasi=obj_bidang.hasil_analisa_peta_lokasi if obj_bidang is not None else None,
+                                      proses_bpn_order_gu=obj_bidang.proses_bpn_order_gu if obj_bidang is not None else None,
+                                      luas_surat=obj.luas_surat_by_ttn)
+    
+    return create_response(data=obj_return)
