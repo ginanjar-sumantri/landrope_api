@@ -536,7 +536,7 @@ def FindJenisBidang(type:str|None = None):
         else:
             return JenisBidangEnum.Standard
     else:
-        return JenisBidangEnum.Standard
+        return JenisBidangEnum.Standardm
 
 def FindJenisAlashak(type:str|None = None):
     if type:

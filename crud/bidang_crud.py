@@ -4,6 +4,7 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy import text
 from typing import List
 from crud.base_crud import CRUDBase
 from models.bidang_model import Bidang
@@ -105,7 +106,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                         Project.id == project_id,
                                         Desa.id == desa_id,
                                         Ptsk.id == ptsk_id
-                                    ))
+                                    )).order_by(text("id_bidang asc"))
         
         response =  await db_session.execute(query)
         return response.fetchall()
