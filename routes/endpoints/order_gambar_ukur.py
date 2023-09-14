@@ -50,7 +50,7 @@ async def create(
         
     new_obj = await crud.order_gambar_ukur.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    for kjb_dt in sch.kjb_dts:
+    for kjb_dt in sch.bidangs:
         sch_kjb_dt = OrderGambarUkurBidangCreateSch(order_gambar_ukur_id=new_obj.id, kjb_dt_id=kjb_dt)
         await crud.order_gambar_ukur_bidang.create(obj_in=sch_kjb_dt, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
