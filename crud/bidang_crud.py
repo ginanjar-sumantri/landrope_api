@@ -84,7 +84,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
             db_session : AsyncSession | None = None, 
             query : Bidang | Select[Bidang]| None = None
             ):
-        
+       
+    
         db_session = db_session or db.session
         query = select(Bidang.id,
                        Bidang.id_bidang,
@@ -105,8 +106,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                     ).where(and_(
                                         Project.id == project_id,
                                         Desa.id == desa_id,
-                                        Ptsk.id == ptsk_id
+                                        
                                     )).order_by(text("id_bidang asc"))
+        
+        if ptsk_id == UUID("00000000-0000-0000-0000-000000000000"):
+            query = query.where(Bidang.skpt_id == None)
+        else:
+            query = query.where(Ptsk.id == ptsk_id)
         
         response =  await db_session.execute(query)
         return response.fetchall()
