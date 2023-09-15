@@ -51,8 +51,10 @@ async def create(
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    draft_header_id = None  
+    draft_header_id = None
+    
     for dt in sch.hasilpetalokasidetails:
+        bidang_overlap_id = None 
         if dt.draft_detail_id is not None:
             #input bidang overlap dari hasil analisa
             draft_detail = await crud.draft_detail.get(id=dt.draft_detail_id)
@@ -72,11 +74,13 @@ async def create(
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
                                                                      with_commit=False, created_by_id=current_worker.id)
+            bidang_overlap_id = new_obj_bidang_overlap.id
+            
         
         #input detail hasil peta lokasi
         detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
         detail_sch.hasil_peta_lokasi_id=new_obj.id
-        detail_sch.bidang_overlap_id=new_obj_bidang_overlap.id
+        detail_sch.bidang_overlap_id=bidang_overlap_id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -158,7 +162,6 @@ async def update(
 
     draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
-
         bidang_overlap_id = None
         if dt.draft_detail_id is not None:
             #input bidang overlap dari hasil analisa
@@ -180,11 +183,13 @@ async def update(
             
             new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
                                                                      with_commit=False, created_by_id=current_worker.id)
+            
+            bidang_overlap_id = new_obj_bidang_overlap.id
         
         #input detail hasil peta lokasi
         detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
         detail_sch.hasil_peta_lokasi_id=obj_updated.id
-        detail_sch.bidang_overlap_id=new_obj_bidang_overlap.id
+        detail_sch.bidang_overlap_id=bidang_overlap_id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
