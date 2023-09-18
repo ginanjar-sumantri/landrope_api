@@ -11,7 +11,10 @@ class TahapDetailCreateSch(TahapDetailBase):
     pass
 
 class TahapDetailCreateExtSch(SQLModel):
-    bidang_id:UUID | None
+    bidang_id:Optional[UUID]
+    harga_akta:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]
+    luas_bayar:Optional[Decimal]
 
 class TahapDetailSch(TahapDetailFullBase):
     id_bidang:Optional[str] = Field(alias="id_bidang")
@@ -31,4 +34,7 @@ class TahapDetailUpdateSch(TahapDetailBase):
 class TahapDetailUpdateExtSch(SQLModel):
     id:Optional[UUID]
     bidang_id:UUID
+    harga_akta:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]
+    luas_bayar:Optional[Decimal]
     is_void:Optional[bool] = Field(default=False)

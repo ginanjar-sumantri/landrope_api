@@ -250,7 +250,6 @@ async def search_kjb_dt(
 
     return create_response(data=objs) 
 
-
 @router.get("/search/kjb_dt/{id}", response_model=GetResponseBaseSch[KjbDtForOrderGUById])
 async def get_for_order_gu_by_id(id:UUID):
 

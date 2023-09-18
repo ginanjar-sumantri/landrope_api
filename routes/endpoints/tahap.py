@@ -13,11 +13,12 @@ from models.ptsk_model import Ptsk
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
 from schemas.section_sch import SectionUpdateSch
-from schemas.bidang_sch import BidangSrcSch
+from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
+from shapely import wkb, wkt
 import crud
 import json
 
@@ -44,9 +45,21 @@ async def create(
 
     new_obj = await crud.tahap.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
-    for dt in sch.bidangs:
+    for dt in sch.details:
         dt_sch = TahapDetailCreateSch(tahap_id=new_obj.id, bidang_id=dt.bidang_id, is_void=False)
         await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
+        bidang_current = await crud.bidang.get(id=dt.bidang_id)
+        if bidang_current.geom :
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        bidang_updated = bidang_current
+        bidang_updated.luas_bayar = dt.luas_bayar
+        bidang_updated.harga_akta = dt.harga_akta
+        bidang_updated.harga_transaksi = dt.harga_transaksi
+
+        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
+                                  with_commit=False, db_session=db_session, 
+                                  updated_by_id=current_worker.id)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
@@ -139,6 +152,17 @@ async def update(
             await crud.tahap_detail.update(obj_current=dt_current, obj_new=dt_updated, 
                                            with_commit=False, db_session=db_session,
                                              updated_by_id=current_worker.id)
+        
+        bidang_current = await crud.bidang.get(id=dt.bidang_id)
+        if bidang_current.geom :
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        bidang_updated = bidang_current
+        bidang_updated.luas_bayar = dt.luas_bayar
+        bidang_updated.harga_akta = dt.harga_akta
+        bidang_updated.harga_transaksi = dt.harga_transaksi
+        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
+                                  with_commit=False, db_session=db_session, 
+                                  updated_by_id=current_worker.id)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -167,3 +191,16 @@ async def get_list(
 
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
+
+@router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForTahapByIdSch])
+async def get_by_id(id:UUID,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Get an object by id"""
+
+    obj = await crud.bidang.get(id=id)
+    
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(Bidang, id)

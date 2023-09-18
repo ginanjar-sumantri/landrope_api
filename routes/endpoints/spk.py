@@ -13,7 +13,7 @@ from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
 from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateSch, SpkBebanBiayaSch, SpkBebanBiayaUpdateSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
-from schemas.bidang_sch import BidangSrcSch, BidangForSPKById, BidangForSPKByIdExt
+from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -74,7 +74,7 @@ async def get_by_id(id:UUID):
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
     
-    bidang_sch = BidangForSPKById(id=bidang_obj.id,
+    bidang_sch = BidangForSPKByIdSch(id=bidang_obj.id,
                                   id_bidang=bidang_obj.id_bidang,
                                   hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
                                   kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code,
@@ -212,7 +212,7 @@ async def get_list(
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
-@router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExt])
+@router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExtSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
@@ -229,7 +229,7 @@ async def get_by_id(id:UUID):
     
     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(query=query_kelengkapan)
     
-    obj_return = BidangForSPKByIdExt(id=obj.id,
+    obj_return = BidangForSPKByIdExtSch(id=obj.id,
                                   id_bidang=obj.id_bidang,
                                   hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
                                   kjb_no=obj.hasil_peta_lokasi.kjb_dt.kjb_code,

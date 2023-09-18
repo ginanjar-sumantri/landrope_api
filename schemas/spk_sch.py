@@ -1,6 +1,6 @@
 from models.spk_model import SpkBase, SpkFullBase
 from common.partial import optional
-from schemas.bidang_sch import BidangForSPKById
+from schemas.bidang_sch import BidangForSPKByIdSch
 from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateExtSch, SpkBebanBiayaSch, SpkBebanBiayaUpdateExtSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateExtSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateExtSch
 from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum
@@ -20,7 +20,7 @@ class SpkSch(SpkFullBase):
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
 
 class SpkByIdSch(SpkFullBase):
-    bidang:BidangForSPKById | None
+    bidang:BidangForSPKByIdSch | None
 
     spk_beban_biayas:list[SpkBebanBiayaSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenSch] | None

@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class TahapCreateSch(TahapBase):
-    bidangs:list[TahapDetailCreateExtSch]
+    details:list[TahapDetailCreateExtSch]
 
 class TahapSch(TahapFullBase):
     planing_name:Optional[str] = Field(alias="planing_name")

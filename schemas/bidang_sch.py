@@ -8,6 +8,7 @@ from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel
+from typing import Optional
 from decimal import Decimal
 from uuid import UUID
 
@@ -43,6 +44,7 @@ class BidangByIdSch(BidangRawBase):
 class BidangUpdateSch(BidangBase):
     pass
 
+
 class BidangForOrderGUById(SQLModel):
     id:UUID | None
     id_bidang:str | None
@@ -54,7 +56,7 @@ class BidangForOrderGUById(SQLModel):
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None
     luas_surat:Decimal | None
 
-class BidangForSPKById(SQLModel):
+class BidangForSPKByIdSch(SQLModel):
     id:UUID | None
     id_bidang:str | None
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
@@ -75,17 +77,32 @@ class BidangForSPKById(SQLModel):
 
     termins:list[KjbTerminSch] | None
 
-class BidangForSPKByIdExt(BidangForSPKById):
+class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
     beban_biayas:list[KjbBebanBiayaSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 
+class BidangForTahapByIdSch(SQLModel):
+    id:Optional[UUID]
+    id_bidang:Optional[str]
+    luas_surat:Optional[Decimal]
+    luas_ukur:Optional[Decimal]
+    luas_gu_perorangan:Optional[Decimal]
+    luas_gu_pt:Optional[Decimal]
+    luas_nett:Optional[Decimal]
+    luas_clear:Optional[Decimal]
+    luas_pbt_perorangan:Optional[Decimal]
+    luas_pbt_pt:Optional[Decimal]
+    luas_bayar:Optional[Decimal]
+    harga_akta:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]
+    alashak:Optional[str]
+    no_peta:Optional[str]
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None
     jenis_bayar:str | None
     dokumen_id:UUID | None
     
-
 class BidangSch(BidangFullBase):
     pass
 

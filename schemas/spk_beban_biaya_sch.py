@@ -1,6 +1,6 @@
 from models.spk_model import SpkBebanBiayaBase, SpkBebanBiayaFullBase
 from common.partial import optional
-from schemas.bidang_sch import BidangForSPKById
+from schemas.bidang_sch import BidangForSPKByIdSch
 from common.enum import HasilAnalisaPetaLokasiEnum
 from sqlmodel import Field, SQLModel
 from uuid import UUID

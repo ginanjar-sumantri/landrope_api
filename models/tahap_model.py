@@ -134,7 +134,7 @@ class TahapDetail(TahapDetailFullBase, table=True):
     
     @property
     def harga_total(self) -> Decimal | None:
-        return (self.bidang.satuan or 0) * (self.bidang.luas_bayar or 0)
+        return (self.bidang.harga_transaksi or 0) * (self.bidang.luas_bayar or 0)
 
         
     

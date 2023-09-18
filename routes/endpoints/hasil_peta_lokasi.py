@@ -280,6 +280,7 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=payload.hasil_peta_lokasi_id)
     kjb_dt_current = await crud.kjb_dt.get(id=payload.kjb_dt_id)
     kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
+    kjb_harga_current = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=kjb_dt_current.jenis_alashak)
     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
     draft = await crud.draft.get(id=payload.draft_id)
@@ -319,7 +320,9 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
         luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
         luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
-        bundle_hd_id=kjb_dt_current.bundle_hd_id)
+        bundle_hd_id=kjb_dt_current.bundle_hd_id,
+        harga_akta=kjb_harga_current.harga_akta,
+        harga_transaksi=kjb_harga_current.harga_transaksi)
     
     await crud.bidang.update(obj_current=bidang_current, 
                              obj_new=bidang_updated, 
@@ -366,7 +369,7 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
     return {"message" : "successfully update bidang and generate kelengkapan dokumen"}
 
 @router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
-async def update_bidang_and_generate_kelengkapan(bidang_id:UUID):
+async def remove_link_bidang_and_kelengkapan(bidang_id:UUID):
 
     """Task Remove link bundle and remove existing kelengkapan dokumen"""
 
