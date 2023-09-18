@@ -1,0 +1,212 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="pdfkit-page-size" content="Legal" />
+    <meta name="pdfkit-orientation" content="Portrait" />
+    <title>Perintah Pengukuran Tanah</title>
+    <style>
+      @page {
+        size: A4;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      /* CSS untuk header */
+      .header {
+        text-align: center;
+        width: 100%;
+      }
+
+      /* CSS untuk sub header */
+      .sub-header {
+        text-align: left;
+      }
+
+      .sub-header td {
+        font-size: 12px;
+      }
+
+      /* CSS untuk content */
+
+      .content {
+        align-self: center;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .content p {
+        font-size: 12px;
+      }
+
+      .content th {
+        border: 1px solid;
+        font-size: 12px;
+        background-color: #b0b0b0;
+      }
+
+      .content td {
+        border: 1px solid;
+        font-size: 11px;
+      }
+
+      /* CSS untuk footer */
+      .footer {
+        align-self: center;
+        padding-top: 50px;
+        font-size: 12px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .footer td {
+        font-size: 11px;
+      }
+
+      .spasi-banyak {
+        margin: 20px;
+        /* Atur jarak margin sebesar 20px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h4>Permohonan Transaksi {{ jenisbayar }}</h4>
+      <div class="sub-header">
+        <table>
+          <tr>
+            <td style="padding-right: 80px" valign="top">
+              <table>
+                <tr>
+                  <td>Group</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{group}}</td>
+                </tr>
+                <tr>
+                  <td>Nama</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{pemilik_name}}</td>
+                </tr>
+                <tr>
+                  <td>Alashak</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{alashak}}</td>
+                </tr>
+                <tr>
+                  <td>Desa</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{desa_name}}</td>
+                </tr>
+                <tr>
+                  <td>Luas Surat</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{luas_surat}}</td>
+                </tr>
+                <tr>
+                  <td>Luas Ukur</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{luas_ukur}}</td>
+                </tr>
+              </table>
+            </td>
+            <td valign="top">
+              <table>
+                <tr>
+                  <td>Id Bidang</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{id_bidang}}</td>
+                </tr>
+                <tr>
+                  <td>No. Peta</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{no_peta}}</td>
+                </tr>
+                <tr>
+                  <td>Notaris</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{notaris_name}}</td>
+                </tr>
+                <tr>
+                  <td>Project</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{desa_name}}</td>
+                </tr>
+                <tr>
+                  <td colspan="4">{ptsk}</td>
+                </tr>
+                <tr>
+                  <td colspan="4">- {hasil_analisa_peta_lokasi}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="content">
+      <table
+        align="center"
+        style="border-collapse: collapse; border: 1px solid; width: 100%"
+      >
+        <tr>
+          <th>No.</th>
+          <th>Temuan Legal Pusat</th>
+          <th colspan="2">Tanggapan</th>
+        </tr>
+        {% for item in data %}
+        <tr>
+          <td align="center">{{ item.no }}</td>
+          <td>{{ item.temuan }}</td>
+          <td colspan="2">{{ item.tanggapan }}</td>
+          <!-- Tambahkan kolom sesuai dengan properti objek -->
+        </tr>
+        {% endfor %}
+        <tr style="border-left: none; border-right: none">
+          <td colspan="4">&nbsp;</td>
+        </tr>
+        <tr>
+          <td align="center">Dimohon Oleh,</td>
+          <td align="center">Diperiksa Oleh,</td>
+          <td align="center" colspan="2">Disetujui Oleh,</td>
+        </tr>
+        <tr height="40px">
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td align="center">{{worker_name}}</td>
+          <td align="center">Dennis Ariyanto</td>
+          <td align="center">Denny Wangsya</td>
+          <td align="center">Setyawathi Husin</td>
+        </tr>
+        <tr>
+          <td colspan="2">&nbsp;</td>
+          <td>MANAGER</td>
+          <td>: {{manager_name}}</td>
+        </tr>
+        <tr>
+          <td colspan="2">&nbsp;</td>
+          <td>SALES</td>
+          <td>: {{sales_name}}</td>
+        </tr>
+      </table>
+    </div>
+    <div class="footer"></div>
+  </body>
+</html>

@@ -55,6 +55,8 @@ class BidangBase(SQLModel):
     luas_pbt_perorangan:Optional[Decimal] = Field(nullable=True)
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
     luas_bayar:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    satuan:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
+    satuan_akta:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
 

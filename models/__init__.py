@@ -29,4 +29,5 @@ from .kategori_model import Kategori, KategoriSub, KategoriProyek
 from .order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from .giro_model import Giro
 from .spk_model import Spk, SpkBebanBiaya, SpkKelengkapanDokumen
+from .tahap_model import Tahap, TahapDetail
 

@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_
+from sqlmodel import select, and_, text
 from models.spk_model import Spk
 from models.bidang_model import Bidang
 from models.order_gambar_ukur_model import OrderGambarUkurBidang
@@ -10,7 +10,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from models.worker_model import Worker
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
 from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateSch, SpkBebanBiayaSch, SpkBebanBiayaUpdateSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKById, BidangForSPKByIdExt
@@ -256,4 +256,68 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(Spk, id)
 
-   
+@router.get("/print-out/{id}")
+async def search_for_map(id:UUID | str,
+                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Get for search"""
+
+    db_session = db.session
+
+    spk_query = text(f"""
+                select
+                kh.code As kjb_hd_code,
+                b.id_bidang,
+                b.alashak,
+                b.no_peta,
+                b.group,
+                b.luas_surat,
+                b.luas_ukur,
+                p.name As pemilik_name,
+                ds.name As desa_name,
+                nt.name As notaris_name,
+                pr.name As project_name,
+                pt.name As ptsk_name,
+                hpl.hasil_analisa_peta_lokasi As analisa,
+                s.jenis_bayar,
+                s.nilai,
+                s.satuan_bayar,
+                mng.name As manager_name,
+                sls.name As sales_name
+                from spk s
+                left join bidang b on s.bidang_id = b.id
+                left join hasil_peta_lokasi hpl on b.id = hpl.bidang_id
+                left join kjb_dt kd on hpl.kjb_dt_id = kd.id
+                left join kjb_hd kh on kd.kjb_hd_id = kh.id
+                left join pemilik p on b.pemilik_id = p.id
+                left join planing pl on b.planing_id = pl.id
+                left join project pr on pl.project_id = pr.id
+                left join desa ds on pl.desa_id = ds.id
+                left join notaris nt on b.notaris_id = nt.id
+                left join skpt sk on b.skpt_id = sk.id
+                left join ptsk pt on sk.ptsk_id = pt.id
+                left join manager mng on b.manager_id = mng.id
+                left join sales sls on b.sales_id = sls.id
+                where s.id = '{str(id)}'
+        """)
+
+    result = await db_session.execute(spk_query)
+    data = result.fetchone()
+    result = SpkPrintOut(kjb_hd_code=data["kjb_hd_code"],
+                        id_bidang=data["id_bidang"],
+                        alashak=data["alashak"],
+                        no_peta=data["no_peta"],
+                        group=data["group"],
+                        luas_surat=data["luas_surat"],
+                        luas_ukur=data["luas_ukur"],
+                        pemilik_name=data["pemilik_name"],
+                        desa_name=data["desa_name"],
+                        project_name=data["project_name"],
+                        ptsk_name=data["ptsk_name"],
+                        analisa=data["analisa"],
+                        jenis_bayar=data["jenis_bayar"],
+                        nilai=data["nilai"],
+                        satuan_bayar=data["satuan_bayar"],
+                        manager_name=data["manager_name"],
+                        sales_name=data["sales_name"])
+    return result
