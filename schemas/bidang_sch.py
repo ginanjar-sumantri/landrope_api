@@ -97,6 +97,7 @@ class BidangForTahapByIdSch(SQLModel):
     harga_transaksi:Optional[Decimal]
     alashak:Optional[str]
     no_peta:Optional[str]
+    group:Optional[str]
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None
