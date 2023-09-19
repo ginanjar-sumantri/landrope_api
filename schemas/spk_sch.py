@@ -1,8 +1,8 @@
 from models.spk_model import SpkBase, SpkFullBase
 from common.partial import optional
 from schemas.bidang_sch import BidangForSPKByIdSch
-from schemas.spk_beban_biaya_sch import SpkBebanBiayaCreateExtSch, SpkBebanBiayaSch, SpkBebanBiayaUpdateExtSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateExtSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateExtSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateExtSch, BidangKomponenBiayaSch
 from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum
 from sqlmodel import Field, SQLModel
 from typing import Optional
@@ -10,7 +10,7 @@ from decimal import Decimal
 
 
 class SpkCreateSch(SpkBase):
-    spk_beban_biayas:list[SpkBebanBiayaCreateExtSch] | None
+    spk_beban_biayas:list[BidangKomponenBiayaCreateExtSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenCreateExtSch] | None
 
 class SpkSch(SpkFullBase):
@@ -22,12 +22,12 @@ class SpkSch(SpkFullBase):
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
 
-    spk_beban_biayas:list[SpkBebanBiayaSch] | None
+    spk_beban_biayas:list[BidangKomponenBiayaSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenSch] | None
 
 @optional
 class SpkUpdateSch(SpkBase):
-    spk_beban_biayas:list[SpkBebanBiayaUpdateExtSch] | None
+    # spk_beban_biayas:list[SpkBebanBiayaUpdateExtSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenUpdateExtSch] | None
 
 

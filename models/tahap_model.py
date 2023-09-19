@@ -105,8 +105,28 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "luas_ukur", None)
     
     @property
+    def luas_gu_perorangan(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_gu_perorangan", None)
+    
+    @property
+    def luas_gu_pt(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_gu_pt", None)
+    
+    @property
+    def luas_nett(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_nett", None)
+    
+    @property
     def luas_clear(self) -> Decimal | None:
         return getattr(getattr(self, "bidang", None), "luas_clear", None)
+    
+    @property
+    def luas_pbt_perorangan(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_pbt_perorangan", None)
+    
+    @property
+    def luas_pbt_pt(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "luas_pbt_pt", None)
     
     @property
     def luas_bayar(self) -> Decimal | None:
@@ -119,6 +139,22 @@ class TahapDetail(TahapDetailFullBase, table=True):
     @property
     def satuan_akta(self) -> Decimal | None:
         return getattr(getattr(self, "bidang", None), "satuan_akta", None)
+    
+    @property
+    def project_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "project_name", None)
+    
+    @property
+    def desa_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "desa_name", None)
+    
+    @property
+    def planing_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "planing_name", None)
+    
+    @property
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "ptsk_name", None)
     
     @property
     def harga_total(self) -> Decimal | None:

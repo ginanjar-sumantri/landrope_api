@@ -12,7 +12,10 @@ if TYPE_CHECKING:
 class BidangKomponenBiayaBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
-    tanggungan_biaya:Optional[TanggunganBiayaEnum] = Field(nullable=True)
+    beban_pembeli:Optional[bool] = Field(nullable=True)
+    is_use:Optional[bool] = Field(nullable=True, default=False)
+    is_paid:Optional[bool] = Field(nullable=True, default=False)
+    
 
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass
@@ -41,6 +44,9 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
-
+    
+    @property
+    def beban_biaya_name(self) -> str :
+        return getattr(getattr(self, 'beban_biaya', None), 'name', None)
 
 

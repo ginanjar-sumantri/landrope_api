@@ -56,7 +56,7 @@ from .order_gambar_ukur_bidang_crud import order_gambar_ukur_bidang
 from .order_gambar_ukur_tembusan_crud import order_gambar_ukur_tembusan
 
 from .spk_crud import spk
-from .spk_beban_biaya_crud import spk_beban_biaya
+# from .spk_beban_biaya_crud import spk_beban_biaya
 from .spk_kelengkapan_dokumen_crud import spk_kelengkapan_dokumen
 
 from .tahap_crud import tahap

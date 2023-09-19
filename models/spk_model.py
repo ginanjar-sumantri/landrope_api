@@ -29,14 +29,6 @@ class Spk(SpkFullBase, table=True):
         }
     )
 
-    spk_beban_biayas:list["SpkBebanBiaya"] = Relationship(
-        back_populates="spk",
-        sa_relationship_kwargs=
-        {
-            "lazy" : "selectin"
-        }
-    )
-
     spk_kelengkapan_dokumens:list["SpkKelengkapanDokumen"] = Relationship(
         back_populates="spk",
         sa_relationship_kwargs=
@@ -62,37 +54,37 @@ class Spk(SpkFullBase, table=True):
         return self.bidang.hasil_peta_lokasi.kjb_dt.kjb_code
 
 
-class SpkBebanBiayaBase(SQLModel):
-    spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
-    beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
-    beban_pembeli:bool = Field(nullable=False)
+# class SpkBebanBiayaBase(SQLModel):
+#     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
+#     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
+#     beban_pembeli:bool = Field(nullable=False)
 
-class SpkBebanBiayaFullBase(BaseUUIDModel, SpkBebanBiayaBase):
-    pass
+# class SpkBebanBiayaFullBase(BaseUUIDModel, SpkBebanBiayaBase):
+#     pass
 
-class SpkBebanBiaya(SpkBebanBiayaFullBase, table=True):
-    spk:"Spk" = Relationship(
-        back_populates="spk_beban_biayas",
-        sa_relationship_kwargs=
-        {
-            "lazy" : "selectin",
-            'foreign_keys': 'SpkBebanBiaya.spk_id'
-        }
-    )
+# class SpkBebanBiaya(SpkBebanBiayaFullBase, table=True):
+#     spk:"Spk" = Relationship(
+#         back_populates="spk_beban_biayas",
+#         sa_relationship_kwargs=
+#         {
+#             "lazy" : "selectin",
+#             'foreign_keys': 'SpkBebanBiaya.spk_id'
+#         }
+#     )
 
-    beban_biaya:"BebanBiaya" = Relationship(
-        sa_relationship_kwargs=
-        {
-            "lazy" : "selectin"
-        }
-    )
+#     beban_biaya:"BebanBiaya" = Relationship(
+#         sa_relationship_kwargs=
+#         {
+#             "lazy" : "selectin"
+#         }
+#     )
 
-    @property
-    def beban_biaya_name(self) -> str :
-        if self.beban_biaya is None:
-            return ""
+#     @property
+#     def beban_biaya_name(self) -> str :
+#         if self.beban_biaya is None:
+#             return ""
         
-        return self.beban_biaya.name
+#         return self.beban_biaya.name
 
 
 class SpkKelengkapanDokumenBase(SQLModel):
