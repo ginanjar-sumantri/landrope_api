@@ -84,6 +84,10 @@ class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
 class BidangForTahapByIdSch(SQLModel):
     id:Optional[UUID]
     id_bidang:Optional[str]
+    project_name:Optional[str]
+    desa_name:Optional[str]
+    planing_name:Optional[str]
+    ptsk_name:Optional[str]
     luas_surat:Optional[Decimal]
     luas_ukur:Optional[Decimal]
     luas_gu_perorangan:Optional[Decimal]

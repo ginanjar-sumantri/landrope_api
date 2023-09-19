@@ -12,6 +12,7 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
@@ -31,9 +32,14 @@ async def create(
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
-    # for beban_biaya in sch.spk_beban_biayas:
-    #     beban_biaya_sch = SpkBebanBiayaCreateSch(spk_id=new_obj.id, beban_biaya_id=beban_biaya.beban_biaya_id, beban_pembeli=beban_biaya.beban_pembeli)
-    #     await crud.spk_beban_biaya.create(obj_in=beban_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+    for komponen_biaya in sch.spk_beban_biayas:
+        komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=new_obj.bidang_id, 
+                                                                                                      beban_biaya_id=komponen_biaya.beban_biaya_id)
+        komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
+                                                       beban_biaya_id=komponen_biaya.beban_biaya_id, 
+                                                       beban_pembeli=komponen_biaya.beban_pembeli)
+        
+        await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)

@@ -184,11 +184,9 @@ class Bidang(BidangFullBase, table=True):
         return self.kategori_proyek.name
     
     @property
-    def ptsk_name(self) -> str:
-        if self.skpt is None:
-            return ""
-        # return getattr(getattr(getattr(self, 'skpt'), 'ptsk'), 'name')
-        return self.skpt.ptsk.name
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'name', None)
+       
     
     @property
     def no_sk(self) -> str:
@@ -205,11 +203,8 @@ class Bidang(BidangFullBase, table=True):
         return self.skpt.status
     
     @property
-    def penampung_name(self) -> str:
-        if self.penampung is None:
-            return ""
-        
-        return self.penampung.name
+    def penampung_name(self) -> str | None:
+        return getattr(getattr(self, 'penampung', None), 'name', None)
     
     @property
     def manager_name(self) -> str:

@@ -15,8 +15,9 @@ class BidangKomponenBiayaBase(SQLModel):
     beban_pembeli:Optional[bool] = Field(nullable=True)
     is_use:Optional[bool] = Field(nullable=True, default=False)
     is_paid:Optional[bool] = Field(nullable=True, default=False)
+    is_void:Optional[bool] = Field(nullable=True, default=False)
+    remark:Optional[str] = Field(nullable=True)
     
-
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass
 
