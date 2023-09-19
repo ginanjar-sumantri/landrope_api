@@ -6,6 +6,7 @@ from .ptsk_model import Ptsk
 from .master_model import JenisLahan, BebanBiaya, JenisSurat
 from .bidang_model import Bidang 
 from .bidang_overlap_model import BidangOverlap
+from .bidang_komponen_biaya_model import BidangKomponenBiaya
 from .mapping_model import (MappingBidangOverlap)
 from .draft_model import Draft, DraftDetail
 from .draft_report_map_model import DraftReportMap
@@ -30,4 +31,5 @@ from .order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, Ord
 from .giro_model import Giro
 from .spk_model import Spk, SpkBebanBiaya, SpkKelengkapanDokumen
 from .tahap_model import Tahap, TahapDetail
+from .termin_model import Termin
 

@@ -62,6 +62,8 @@ from .spk_kelengkapan_dokumen_crud import spk_kelengkapan_dokumen
 from .tahap_crud import tahap
 from .tahap_detail_crud import tahap_detail
 
+from .termin_crud import termin
+
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error
 # from .mapping_crud import planing_ptsk, planing_ptsk_desa, planing_ptsk_desa_rincik, planing_ptsk_desa_rincik_bidang, bidang_overlap

@@ -14,7 +14,6 @@ class TahapSch(TahapFullBase):
     project_name:Optional[str] = Field(alias="project_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
-    penampung_name:Optional[str] = Field(alias="penampung_name")
     updated_by_name:Optional[str] = Field(alias="updated_by_name")
     jumlah_bidang:Optional[int] = Field(alias="jumlah_bidang")
 
@@ -23,7 +22,6 @@ class TahapByIdSch(TahapFullBase):
     project_name:Optional[str] = Field(alias="project_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
-    penampung_name:Optional[str] = Field(alias="penampung_name")
     details:list[TahapDetailSch]
 
 @optional

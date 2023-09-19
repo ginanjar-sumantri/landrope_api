@@ -7,8 +7,7 @@ from models.tahap_model import Tahap, TahapDetail
 from models.bidang_model import Bidang
 from models.worker_model import Worker
 from models.planing_model import Planing
-from models.project_model import Project
-from models.desa_model import Desa
+from models.skpt_model import Skpt
 from models.ptsk_model import Ptsk
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
@@ -171,18 +170,26 @@ async def update(
 
 @router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSrcSch])
 async def get_list(
-                params: Params=Depends(),
+                planing_id:UUID,
+                ptsk_id:UUID,
                 keyword:str = None,
+                params: Params=Depends(),
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    status_ = [StatusBidangEnum.Belum_Bebas]
+    status_ = [StatusBidangEnum.Deal]
     query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
+                    ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id
                     ).where(and_(
                                 Bidang.status.in_(status_),
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
-                                Bidang.hasil_peta_lokasi != None
+                                Bidang.hasil_peta_lokasi != None,
+                                Bidang.planing_id == planing_id,
+                                or_(
+                                    Skpt.ptsk_id == ptsk_id,
+                                    Bidang.penampung_id == ptsk_id
+                                )
                             ))
     
     if keyword:

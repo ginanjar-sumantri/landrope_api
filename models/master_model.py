@@ -1,17 +1,22 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
-from typing import TYPE_CHECKING
-from common.enum import JenisAlashakEnum
+from typing import TYPE_CHECKING, Optional
+from common.enum import JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum
 from decimal import Decimal
+from pydantic import condecimal
 
 if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.worker_model import Worker
 
 class BebanBiaya(BaseUUIDModel, table=True):
-    name:str
-    is_active:bool
+    name:Optional[str] = Field(nullable=True)
+    is_active:Optional[bool] = Field(nullable=True)
+    is_tax:Optional[bool] = Field(nullable=True)
+    satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
+    satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
+    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={

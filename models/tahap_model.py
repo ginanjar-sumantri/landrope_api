@@ -14,7 +14,6 @@ class TahapBase(SQLModel):
     nomor_tahap:Optional[int] = Field(nullable=False)
     planing_id:UUID = Field(foreign_key="planing.id", nullable=False)
     ptsk_id:Optional[UUID] = Field(foreign_key="ptsk.id", nullable=True)
-    penampung_id:Optional[UUID] = Field(foreign_key="ptsk.id", nullable=True)
     group:Optional[str] = Field(nullable=True)
 
 class TahapFullBase(BaseUUIDModel, TahapBase):
@@ -33,14 +32,7 @@ class Tahap(TahapFullBase, table=True):
                                      })
     ptsk:"Ptsk" = Relationship(sa_relationship_kwargs=
                                      {
-                                        "lazy" : "joined",
-                                        "primaryjoin" : "Tahap.ptsk_id == Ptsk.id"
-                                     })
-    
-    penampung:"Ptsk" = Relationship(sa_relationship_kwargs=
-                                     {
-                                        "lazy" : "joined",
-                                        "primaryjoin" : "Tahap.penampung_id == Ptsk.id"
+                                        "lazy" : "selectin"
                                      })
     
     worker: "Worker" = Relationship(  
@@ -57,10 +49,6 @@ class Tahap(TahapFullBase, table=True):
     @property
     def ptsk_name(self) -> str | None:
         return getattr(getattr(self, 'ptsk', None), 'name', None)
-    
-    @property
-    def penampung_name(self) -> str | None:
-        return getattr(getattr(self, 'penampung', None), 'name', None)
     
     @property
     def project_name(self) -> str | None:
