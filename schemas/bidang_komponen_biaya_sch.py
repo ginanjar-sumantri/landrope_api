@@ -8,9 +8,12 @@ from typing import Optional
 class BidangKomponenBiayaCreateSch(BidangKomponenBiayaBase):
     pass
 
-class BidangKomponenBiayaCreateExtSch(SQLModel):
+class BidangKomponenBiayaExtSch(SQLModel):
     beban_biaya_id:UUID | None
     beban_pembeli:bool | None
+    is_void:Optional[bool]
+    remark:Optional[bool]
+
 
 class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")

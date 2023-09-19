@@ -12,7 +12,7 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
@@ -35,11 +35,20 @@ async def create(
     for komponen_biaya in sch.spk_beban_biayas:
         komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=new_obj.bidang_id, 
                                                                                                       beban_biaya_id=komponen_biaya.beban_biaya_id)
-        komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
-                                                       beban_biaya_id=komponen_biaya.beban_biaya_id, 
-                                                       beban_pembeli=komponen_biaya.beban_pembeli)
         
-        await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+        if komponen_biaya_current:
+            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
+            komponen_biaya_updated.is_void, komponen_biaya_updated.remark = [komponen_biaya.is_void, komponen_biaya.remark]
+            await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
+                                                    db_session=db_session, with_commit=False,
+                                                    updated_by_id=current_worker.id)
+        else:
+            komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
+                                                        beban_biaya_id=komponen_biaya.beban_biaya_id, 
+                                                        beban_pembeli=komponen_biaya.beban_pembeli,
+                                                        is_void=komponen_biaya.is_void)
+            
+            await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
@@ -138,27 +147,25 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
-    #remove beban 
-    
-    # list_ids = [beban.id for beban in sch.spk_beban_biayas if beban.id != None]
-    # if len(list_ids) > 0:
-    #     beban_biaya_will_removed = await crud.spk_beban_biaya.get_not_in_by_ids(list_ids=list_ids)
-    #     if len(beban_biaya_will_removed) > 0:
-    #         await crud.spk_beban_biaya.remove_multiple_data(list_obj=beban_biaya_will_removed, db_session=db_session)
+    for komponen_biaya in sch.spk_beban_biayas:
+        komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=obj_updated.bidang_id, 
+                                                                                                      beban_biaya_id=komponen_biaya.beban_biaya_id)
+        
+        if komponen_biaya_current:
+            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
+            komponen_biaya_updated.is_void, komponen_biaya_updated.remark = [komponen_biaya.is_void, komponen_biaya.remark]
+            await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
+                                                    db_session=db_session, with_commit=False,
+                                                    updated_by_id=current_worker.id)
+        else:
+            komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
+                                                        beban_biaya_id=komponen_biaya.beban_biaya_id, 
+                                                        beban_pembeli=komponen_biaya.beban_pembeli,
+                                                        is_void=komponen_biaya.is_void)
+            
+            await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
-    # elif len(list_ids) == 0 and len(obj_current.spk_beban_biayas) > 0:
-    #     await crud.spk_beban_biaya.remove_multiple_data(list_obj=obj_current.spk_beban_biayas, db_session=db_session)
 
-    
-    # for beban_biaya in sch.spk_beban_biayas:
-    #     if beban_biaya.id is None:
-    #         beban_biaya_sch = SpkBebanBiayaCreateSch(spk_id=id, beban_biaya_id=beban_biaya.beban_biaya_id, beban_pembeli=beban_biaya.beban_pembeli)
-    #         await crud.spk_beban_biaya.create(obj_in=beban_biaya_sch, created_by_id=current_worker.id, with_commit=False)
-    #     else:
-    #         beban_biaya_current = await crud.spk_beban_biaya.get(id=beban_biaya.id)
-    #         beban_biaya_sch = SpkBebanBiayaUpdateSch(spk_id=id, beban_biaya_id=beban_biaya.beban_biaya_id, beban_pembeli=beban_biaya.beban_pembeli)
-    #         await crud.spk_beban_biaya.update(obj_current=beban_biaya_current, obj_new=beban_biaya_sch, updated_by_id=current_worker.id, with_commit=False)
-    
     #remove kelengkapan dokumen 
     
     list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
