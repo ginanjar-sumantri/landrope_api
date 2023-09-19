@@ -28,5 +28,18 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_multi_by_bidang_id(
+            self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BidangKomponenBiaya] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.bidang_id == bidang_id)
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 bidang_komponen_biaya = CRUDBidangKomponenBiaya(BidangKomponenBiaya)

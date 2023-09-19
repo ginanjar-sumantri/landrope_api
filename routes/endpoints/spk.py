@@ -12,7 +12,7 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
@@ -110,11 +110,13 @@ async def get_by_id(id:UUID):
     obj_return = SpkByIdSch(**obj.dict())
     obj_return.bidang = bidang_sch
 
-    # list_beban_biaya = []
-    # for bb in obj.spk_beban_biayas:
-    #     beban_biaya_sch = SpkBebanBiayaSch(**bb.dict())
-    #     beban_biaya_sch.beban_biaya_name = bb.beban_biaya_name
-    #     list_beban_biaya.append(beban_biaya_sch)
+    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id)
+
+    list_komponen_biaya = []
+    for kb in komponen_biayas:
+        komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
+        komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
+        list_komponen_biaya.append(komponen_biaya_sch)
     
     list_kelengkapan_dokumen = []
     for kd in obj.spk_kelengkapan_dokumens:
@@ -123,15 +125,9 @@ async def get_by_id(id:UUID):
         kelengkapan_dokumen_sch.has_meta_data = kd.has_meta_data
         list_kelengkapan_dokumen.append(kelengkapan_dokumen_sch)
 
-    # obj_return.spk_beban_biayas = list_beban_biaya
+    obj_return.spk_beban_biayas = list_komponen_biaya
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
     return create_response(data=obj_return)
-    
-    
-    # if obj:
-    #     return create_response(data=obj)
-    # else:
-    #     raise IdNotFoundException(Spk, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[SpkSch])
 async def update(id:UUID, sch:SpkUpdateSch,

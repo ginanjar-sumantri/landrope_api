@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
     from models.master_model import BebanBiaya
     from models.bundle_model import BundleDt
+    from models.bidang_komponen_biaya_model import BidangKomponenBiaya
 
 class SpkBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
