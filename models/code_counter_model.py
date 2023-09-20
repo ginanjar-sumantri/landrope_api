@@ -12,6 +12,7 @@ class CodeCounterEnum(str, Enum):
     BidangOverlap = "BidangOverlap"
     RequestPetaLokasi = "RequestPetaLokasi"
     OrderGambarUkur = "OrderGambarUkur"
+    Spk = "Spk"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

@@ -12,7 +12,7 @@ class BidangKomponenBiayaExtSch(SQLModel):
     beban_biaya_id:UUID | None
     beban_pembeli:bool | None
     is_void:Optional[bool]
-    remark:Optional[bool]
+    remark:Optional[str]
 
 
 class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):

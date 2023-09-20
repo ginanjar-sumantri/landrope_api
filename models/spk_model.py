@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from models.bidang_komponen_biaya_model import BidangKomponenBiaya
 
 class SpkBase(SQLModel):
+    code:Optional[str] = Field(nullable=True)
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
     nilai:condecimal(decimal_places=2) = Field(default=0)

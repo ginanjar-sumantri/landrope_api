@@ -2,12 +2,13 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_, text
+from sqlmodel import select, and_, text, or_
 from models.spk_model import Spk
 from models.bidang_model import Bidang
 from models.order_gambar_ukur_model import OrderGambarUkurBidang
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
+from models.code_counter_model import CodeCounterEnum
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
 from models.worker_model import Worker
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
@@ -17,7 +18,9 @@ from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKBy
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum
 from common.exceptions import (IdNotFoundException, NameExistException)
+from common.generator import generate_code
 import crud
+import json
 
 router = APIRouter()
 
@@ -29,6 +32,8 @@ async def create(
     """Create a new object"""
 
     db_session = db.session
+
+    sch.code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
@@ -46,7 +51,8 @@ async def create(
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
-                                                        is_void=komponen_biaya.is_void)
+                                                        is_void=komponen_biaya.is_void,
+                                                        remark=komponen_biaya.remark)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
@@ -69,7 +75,24 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.spk.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(Spk).select_from(Spk
+                    ).join(Bidang, Spk.bidang_id == Bidang.id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Spk.code.ilike(f'%{keyword}%'),
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%')
+            )
+        )
+
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Spk, key) == value)
+
+    objs = await crud.spk.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
@@ -157,7 +180,8 @@ async def update(id:UUID, sch:SpkUpdateSch,
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
-                                                        is_void=komponen_biaya.is_void)
+                                                        is_void=komponen_biaya.is_void,
+                                                        remark=komponen_biaya.remark)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 

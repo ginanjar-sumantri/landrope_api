@@ -97,6 +97,14 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "id_bidang", None)
     
     @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "alashak", None)
+    
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "group", None)
+    
+    @property
     def luas_surat(self) -> Decimal | None:
         return getattr(getattr(self, "bidang", None), "luas_surat", None)
     
@@ -133,12 +141,12 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "luas_bayar", None)
     
     @property
-    def satuan(self) -> Decimal | None:
-        return getattr(getattr(self, "bidang", None), "satuan", None)
+    def harga_akta(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "harga_akta", None)
     
     @property
-    def satuan_akta(self) -> Decimal | None:
-        return getattr(getattr(self, "bidang", None), "satuan_akta", None)
+    def harga_transaksi(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "harga_transaksi", None)
     
     @property
     def project_name(self) -> str | None:
@@ -153,14 +161,22 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "planing_name", None)
     
     @property
+    def planing_id(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "planing_id", None)
+    
+    @property
     def ptsk_name(self) -> str | None:
-        if self.bidang.skpt is None:
-            if self.bidang.penampung is None:
-                return None
-            else:
-                return f'{self.bidang.penampung_name} (PENAMPUNG)'
-            
-        return getattr(getattr(self, "bidang", None), "ptsk_name", None)
+        if self.bidang.skpt:
+            return self.bidang.ptsk_name
+        else:
+            return (f'{self.bidang.penampung_name} (PENAMPUNG)')
+    
+    @property
+    def ptsk_id(self) -> str | None:
+        if self.bidang.skpt:
+            return self.bidang.skpt.ptsk_id
+        else:
+            return self.bidang.penampung_id
     
     @property
     def harga_total(self) -> Decimal | None:

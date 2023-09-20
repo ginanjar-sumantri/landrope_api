@@ -208,7 +208,12 @@ async def get_by_id(id:UUID,
     obj = await crud.bidang.get(id=id)
 
     obj_return = BidangForTahapByIdSch(**obj.dict())
-    obj_return.project_name, obj_return.desa_name, obj_return.planing_name, obj_return.ptsk_name = [obj.project_name, obj.desa_name, obj.planing_name, obj.ptsk_name or (f'{obj.penampung_name} (PENAMPUNG)')]
+    obj_return.project_name, obj_return.desa_name, obj_return.planing_name, obj_return.planing_id, obj_return.ptsk_name, obj_return.ptsk_id = [obj.project_name, 
+                                                                                                    obj.desa_name, 
+                                                                                                    obj.planing_name,
+                                                                                                    obj.planing_id,
+                                                                                                    obj.ptsk_name or (f'{obj.penampung_name} (PENAMPUNG)'),
+                                                                                                    (obj.skpt.ptsk_id if obj.skpt is not None else obj.penampung_id)]
     
     if obj_return:
         return create_response(data=obj_return)
