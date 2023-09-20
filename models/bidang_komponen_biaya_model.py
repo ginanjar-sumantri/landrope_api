@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from common.enum import TanggunganBiayaEnum
 from uuid import UUID
+from datetime import date
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -14,9 +15,11 @@ class BidangKomponenBiayaBase(SQLModel):
     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
     beban_pembeli:Optional[bool] = Field(nullable=True)
     is_use:Optional[bool] = Field(nullable=True, default=False)
+    tanggal_bayar:Optional[date] = Field(nullable=True)
     is_paid:Optional[bool] = Field(nullable=True, default=False)
     is_void:Optional[bool] = Field(nullable=True, default=False)
     remark:Optional[str] = Field(nullable=True)
+    
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass

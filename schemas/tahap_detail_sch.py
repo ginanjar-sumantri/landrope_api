@@ -18,6 +18,8 @@ class TahapDetailCreateExtSch(SQLModel):
 
 class TahapDetailSch(TahapDetailFullBase):
     id_bidang:Optional[str] = Field(alias="id_bidang")
+    alashak:Optional[str] = Field(alias="alashak")
+    group:Optional[str] = Field(alias="group")
     luas_surat:Optional[Decimal] = Field(alias="luas_surat")
     luas_ukur:Optional[Decimal] = Field(alias="luas_ukur")
     luas_gu_perorangan:Optional[Decimal] = Field(alias="luas_gu_perorangan")

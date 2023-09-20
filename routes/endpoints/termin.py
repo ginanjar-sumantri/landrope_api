@@ -1,10 +1,12 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 import crud
 from models.termin_model import Termin
 from models.worker_model import Worker
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch)
+from schemas.invoice_sch import InvoiceCreateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -17,9 +19,18 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-    
-    new_obj = await crud.termin.create(obj_in=sch, created_by_id=current_worker.id)
-    return create_response(data=new_obj)
+    db_session = db.session
+
+    new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
+    #add invoice
+    for invoice in sch.invoices:
+        invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id)
+        await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False)
+
+
+
+    #return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
 async def get_list(

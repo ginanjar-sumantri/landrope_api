@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from models.kjb_model import KjbHd
     from models.worker_model import Worker
 
-
 class TerminBase(SQLModel):
     tahap_id:Optional[UUID] = Field(foreign_key="tahap.id", nullable=True)
     kjb_hd_id:Optional[UUID] = Field(foreign_key="kjb_hd.id", nullable=True)
@@ -24,14 +23,14 @@ class Termin(TerminFullBase, table=True):
     tahap:"Tahap" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
     kjb_hd:"KjbHd" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 

@@ -101,6 +101,10 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "alashak", None)
     
     @property
+    def group(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "group", None)
+    
+    @property
     def alashak(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "group", None)
     

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from models.bundle_model import BundleHd
     from models.hasil_peta_lokasi_model import HasilPetaLokasi
     from models.worker_model import Worker
+    from models.tahap_model import TahapDetail
     
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150)

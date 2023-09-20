@@ -9,11 +9,13 @@ from pydantic import condecimal
 if TYPE_CHECKING:
     from models.worker_model import Worker
     from models.termin_model import Termin
+    from models.spk_model import Spk
     from models.bidang_model import Bidang
 
 class InvoiceBase(SQLModel):
-    termin_id:UUID = Field(foreign_key="termin.id", nullable=False)
-    bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
+    termin_id:Optional[UUID] = Field(foreign_key="termin.id", nullable=False)
+    spk_id:Optional[UUID] = Field(foreign_key="spk.id", nullable=True)
+    bidang_id:Optional[UUID] = Field(foreign_key="bidang.id", nullable=True)
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
     is_void:Optional[bool] = Field(nullable=True, default=False)
     remark:Optional[str] = Field(nullable=True)
@@ -25,21 +27,36 @@ class Invoice(InvoiceFullBase, table=True):
     termin:"Termin" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
+        }
+    )
+
+    details:list["InvoiceDetail"] = Relationship(
+        back_populates="invoice",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    spk:"Spk" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
         }
     )
 
     bidang:"Bidang" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
-            "primaryjoin": "BebanBiaya.updated_by_id==Worker.id",
+            "primaryjoin": "Invoice.updated_by_id==Worker.id",
         }
     )
     @property
@@ -48,4 +65,17 @@ class Invoice(InvoiceFullBase, table=True):
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:UUID = Field(foreign_key="invoice.id")
-    komponen_id:Optional[UUID]
+    bidang_komponen_biaya_id:UUID = Field(foreign_key="bidang_komponen_biaya.id")
+    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+
+class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):
+    pass
+
+class InvoiceDetail(InvoiceDetailFullBase, table=True):
+    invoice:"Invoice" = Relationship(
+        back_populates="details",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
