@@ -154,6 +154,12 @@ class TahapDetail(TahapDetailFullBase, table=True):
     
     @property
     def ptsk_name(self) -> str | None:
+        if self.bidang.skpt is None:
+            if self.bidang.penampung is None:
+                return None
+            else:
+                return f'{self.bidang.penampung_name} (PENAMPUNG)'
+            
         return getattr(getattr(self, "bidang", None), "ptsk_name", None)
     
     @property
