@@ -16,7 +16,7 @@ class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
-    nilai:condecimal(decimal_places=2) = Field(default=0)
+    nilai:condecimal(decimal_places=2) = Field(nullable=False)
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
 
 class SpkFullBase(BaseUUIDModel, SpkBase):

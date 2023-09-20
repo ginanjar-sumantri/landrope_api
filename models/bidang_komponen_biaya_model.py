@@ -14,10 +14,10 @@ class BidangKomponenBiayaBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
     beban_pembeli:Optional[bool] = Field(nullable=True)
-    is_use:Optional[bool] = Field(nullable=True, default=False)
+    is_use:Optional[bool] = Field(nullable=True)
     tanggal_bayar:Optional[date] = Field(nullable=True)
-    is_paid:Optional[bool] = Field(nullable=True, default=False)
-    is_void:Optional[bool] = Field(nullable=True, default=False)
+    is_paid:Optional[bool] = Field(nullable=True)
+    is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
     
     

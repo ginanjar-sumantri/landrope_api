@@ -73,7 +73,7 @@ class Tahap(TahapFullBase, table=True):
 class TahapDetailBase(SQLModel):
     tahap_id:UUID = Field(foreign_key="tahap.id", nullable=False)
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
-    is_void:bool = Field(nullable=False, default=False)
+    is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
 
 class TahapDetailFullBase(BaseUUIDModel, TahapDetailBase):
