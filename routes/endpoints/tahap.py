@@ -187,9 +187,9 @@ async def get_list(
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
                                 Bidang.hasil_peta_lokasi != None,
                                 Bidang.planing_id == planing_id,
-                                or_(
-                                    TahapDetail.bidang == None,
-                                    TahapDetail.is_void == True),
+                                # or_(
+                                #     TahapDetail.bidang == None,
+                                #     TahapDetail.is_void == True),
                                 or_(
                                     Skpt.ptsk_id == ptsk_id,
                                     Bidang.penampung_id == ptsk_id
