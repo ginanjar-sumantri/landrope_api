@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from models.planing_model import Planing
     from models.worker_model import Worker
 
-class BebanBiaya(BaseUUIDModel, table=True):
+class BebanBiayaBase(SQLModel):
     name:Optional[str] = Field(nullable=True)
     is_active:Optional[bool] = Field(nullable=True)
     is_tax:Optional[bool] = Field(nullable=True)
@@ -18,6 +18,10 @@ class BebanBiaya(BaseUUIDModel, table=True):
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
+class BebanBiayaFullBase(BebanBiayaBase, BaseUUIDModel):
+    pass
+
+class BebanBiaya(BebanBiayaFullBase, table=True):
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
