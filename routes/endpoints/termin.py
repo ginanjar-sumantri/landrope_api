@@ -67,18 +67,27 @@ async def create(
 async def get_list(
             params: Params=Depends(), 
             order_by:str = None, 
-            keyword:str = None, 
+            keyword:str = None,
+            is_utj:bool = False,
             filter_query:str = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+
+    jenis_bayars = []
+    if is_utj:
+        jenis_bayars.append("UTJ")
+    else:
+        jenis_bayars.append("DP")
+        jenis_bayars.append("LUNAS")
 
     query = select(Termin).select_from(Termin
                         ).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
                         ).outerjoin(KjbHd, KjbHd.id == Termin.kjb_hd_id
                         ).outerjoin(Spk, Spk.id == Invoice.spk_id
-                        ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id)
+                        ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
+                        ).where(Termin.jenis_bayar.in_(jenis_bayars))
     
     if keyword:
         query = query.filter_by(
@@ -217,6 +226,7 @@ async def get_list_bidang_by_kjb_hd_id(
 @router.get("/search/komponen_biaya/{id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
 async def get_list_komponen_biaya_by_bidang_id(
                 id:UUID,
+                invoice_id:UUID,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
