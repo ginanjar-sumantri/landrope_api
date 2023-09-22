@@ -54,7 +54,10 @@ async def create(
             invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
             await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
             
-            
+            payload = {"id" : dt.bidang_komponen_biaya_id}
+            url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
+            GCloudTaskService().create_task(payload=payload, base_url=url)
+    
     await db_session.commit()
     await db_session.refresh(new_obj)
 
@@ -111,7 +114,8 @@ async def get_by_id(id:UUID):
     
 @router.put("/{id}", response_model=PutResponseBaseSch[TerminSch])
 async def update(
-            id:UUID, 
+            id:UUID,
+            request:Request,
             sch:TerminUpdateSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -144,7 +148,10 @@ async def update(
                         invoice_dtl_current = await crud.invoice_detail.get(id=dt.id)
                         invoice_dtl_updated_sch = InvoiceDetailUpdateSch(**dt.dict(), invoice_id=invoice_updated.id)
                         await crud.invoice_detail.update(obj_current=invoice_dtl_current, obj_new=invoice_dtl_updated_sch, db_session=db_session, with_commit=False)
-
+                    
+                    payload = {"id" : dt.bidang_komponen_biaya_id}
+                    url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
+                    GCloudTaskService().create_task(payload=payload, base_url=url)
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
@@ -155,7 +162,10 @@ async def update(
             for dt in invoice.details:
                 invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
                 await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-        
+
+                payload = {"id" : dt.bidang_komponen_biaya_id}
+                url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
+                GCloudTaskService().create_task(payload=payload, base_url=url)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
