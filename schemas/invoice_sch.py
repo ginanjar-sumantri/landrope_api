@@ -1,4 +1,5 @@
 from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
+from schemas.invoice_detail_sch import InvoiceDetailExtSch
 from common.partial import optional
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
@@ -13,6 +14,7 @@ class InvoiceExtSch(SQLModel):
     spk_id:Optional[UUID]
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
+    details:list[InvoiceDetailExtSch]
 
 class InvoiceSch(InvoiceFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
