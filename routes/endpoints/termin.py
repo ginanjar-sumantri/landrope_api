@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
@@ -15,6 +15,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, TerminByIdSch)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
+from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
 from schemas.bidang_sch import BidangForUtjSch
@@ -24,6 +25,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
 from common.enum import JenisBayarEnum, StatusHasilPetaLokasiEnum, SatuanBayarEnum
+from services.gcloud_task_service import GCloudTaskService
 from decimal import Decimal
 import json
 import numpy
@@ -33,6 +35,7 @@ router = APIRouter()
 @router.post("/create", response_model=PostResponseBaseSch[TerminSch], status_code=status.HTTP_201_CREATED)
 async def create(
             sch: TerminCreateSch,
+            request: Request,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -44,8 +47,14 @@ async def create(
     #add invoice
     for invoice in sch.invoices:
         invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id)
-        await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False)
-    
+        new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+        
+        #add invoice_detail
+        for dt in invoice.details:
+            invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
+            await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+            
+            
     await db_session.commit()
     await db_session.refresh(new_obj)
 
@@ -120,13 +129,33 @@ async def update(
         if invoice.id:
             invoice_current = await crud.invoice.get(id=invoice.id)
             if invoice_current:
-                invoice_updated = InvoiceUpdateSch(**invoice.dict())
-                await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated, with_commit=False, db_session=db_session, updated_by_id=current_worker.id)
+                invoice_updated_sch = InvoiceUpdateSch(**invoice.dict())
+                invoice_updated = await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated_sch, with_commit=False, db_session=db_session, updated_by_id=current_worker.id)
+
+                #delete invoice_detail not exists
+                list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
+                await crud.invoice_detail.delete_multiple_where_not_in(ids=list_id_invoice_dt, db_session=db_session, with_commit=False)
+
+                for dt in invoice.details:
+                    if dt.id is None:
+                        invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=invoice.id)
+                        await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+                    else:
+                        invoice_dtl_current = await crud.invoice_detail.get(id=dt.id)
+                        invoice_dtl_updated_sch = InvoiceDetailUpdateSch(**dt.dict(), invoice_id=invoice_updated.id)
+                        await crud.invoice_detail.update(obj_current=invoice_dtl_current, obj_new=invoice_dtl_updated_sch, db_session=db_session, with_commit=False)
+
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
             invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=obj_updated.id)
-            await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False)
+            new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False)
+
+            #add invoice_detail
+            for dt in invoice.details:
+                invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
+                await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+        
 
     await db_session.commit()
     await db_session.refresh(obj_updated)

@@ -1,5 +1,5 @@
 from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
-from schemas.invoice_detail_sch import InvoiceDetailExtSch
+from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
 from common.partial import optional
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
@@ -17,8 +17,9 @@ class InvoiceExtSch(SQLModel):
     details:list[InvoiceDetailExtSch]
 
 class InvoiceSch(InvoiceFullBase):
+    details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 @optional
-class InvoiceUpdateSch(InvoiceSch):
+class InvoiceUpdateSch(InvoiceBase):
     pass

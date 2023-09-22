@@ -36,7 +36,7 @@ class Invoice(InvoiceFullBase, table=True):
         back_populates="invoice",
         sa_relationship_kwargs=
         {
-            "lazy" : "select"
+            "lazy" : "selectin"
         }
     )
 
@@ -65,8 +65,8 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, 'worker', None), 'name', None)
 
 class InvoiceDetailBase(SQLModel):
-    invoice_id:UUID = Field(foreign_key="invoice.id")
-    bidang_komponen_biaya_id:UUID = Field(foreign_key="bidang_komponen_biaya.id")
+    invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
+    bidang_komponen_biaya_id:Optional[UUID] = Field(foreign_key="bidang_komponen_biaya.id")
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
 class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):

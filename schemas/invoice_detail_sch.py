@@ -3,17 +3,19 @@ from common.partial import optional
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from uuid import UUID
+from decimal import Decimal
 
 class InvoiceDetailCreateSch(InvoiceDetailBase):
     pass
 
 class InvoiceDetailExtSch(SQLModel):
     id:Optional[UUID]
-    komponen_id:Optional[UUID]
+    bidang_komponen_biaya_id:Optional[UUID]
+    amount:Optional[Decimal]
 
 class InvoiceDetailSch(InvoiceDetailFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 @optional
-class InvoiceDetailUpdateSch(InvoiceDetailSch):
+class InvoiceDetailUpdateSch(InvoiceDetailBase):
     pass

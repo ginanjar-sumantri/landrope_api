@@ -419,4 +419,50 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             raise HTTPException(status_code=422, detail="failed delete data")
 
         return True
+    
+    async def delete_multiple(
+            self, 
+            *, 
+            ids:list[UUID] = None,
+            query: T | None = None,
+            db_session : AsyncSession | None = None,
+            with_commit:bool | None = True
+            ) -> bool:
+        
+        db_session = db_session or db.session
+        if query is None:
+            query = self.model.__table__.delete().where(self.model.id.in_(ids))
+
+        try:
+            await db_session.execute(query)
+            if with_commit:
+                await db_session.commit()
+        except exc.IntegrityError:
+            db_session.rollback()
+            raise HTTPException(status_code=422, detail="failed delete data")
+
+        return True
+    
+    async def delete_multiple_where_not_in(
+            self, 
+            *, 
+            ids:list[UUID] = None,
+            query: T | None = None,
+            db_session : AsyncSession | None = None,
+            with_commit:bool | None = True
+            ) -> bool:
+        
+        db_session = db_session or db.session
+        if query is None:
+            query = self.model.__table__.delete().where(~self.model.id.in_(ids))
+
+        try:
+            await db_session.execute(query)
+            if with_commit:
+                await db_session.commit()
+        except exc.IntegrityError:
+            db_session.rollback()
+            raise HTTPException(status_code=422, detail="failed delete data")
+
+        return True
 
