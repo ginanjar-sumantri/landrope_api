@@ -32,4 +32,5 @@ from .giro_model import Giro
 from .spk_model import Spk, SpkKelengkapanDokumen
 from .tahap_model import Tahap, TahapDetail
 from .termin_model import Termin
+from .invoice_model import Invoice, InvoiceDetail
 

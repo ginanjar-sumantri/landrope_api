@@ -13,7 +13,7 @@ from models.ptsk_model import Ptsk
 from models.planing_model import Planing
 from models.desa_model import Desa
 from models.project_model import Project
-from schemas.bidang_sch import BidangCreateSch, BidangUpdateSch, BidangShpSch, BidangShpExSch, BidangRawSch, BidangGetAllSch, BidangForTreeReportSch
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, BidangForUtjSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
 from services.gcloud_storage_service import GCStorageService
@@ -114,6 +114,33 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         else:
             query = query.where(Ptsk.id == ptsk_id)
         
+        response =  await db_session.execute(query)
+        return response.fetchall()
+    
+    async def get_multi_by_kjb_hd_id(self, 
+                                *,
+                                kjb_hd_id:UUID,
+                               db_session : AsyncSession | None = None
+                        ) -> List[BidangForUtjSch]:
+        db_session = db_session or db.session
+        
+        query = text(f"""
+                    select 
+                    b.id as bidang_id,
+                    b.id_bidang,
+                    b.luas_surat,
+                    pr.name as project_name,
+                    ds.name as desa_name
+                    from bidang b
+                    inner join hasil_peta_lokasi hpl on hpl.bidang_id = b.id
+                    inner join kjb_dt kdt on hpl.kjb_dt_id = kdt.id
+                    inner join kjb_hd khd on khd.id = kdt.kjb_hd_id
+                    left outer join planing pl on pl.id = b.planing_id
+                    left outer join project pr on pr.id = pl.project_id
+                    left outer join desa ds on ds.id = pl.desa_id
+                    Where khd.id = '{str(kjb_hd_id)}'
+                """)
+
         response =  await db_session.execute(query)
         return response.fetchall()
 

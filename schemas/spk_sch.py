@@ -7,6 +7,7 @@ from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarE
 from sqlmodel import Field, SQLModel
 from typing import Optional
 from decimal import Decimal
+from uuid import UUID
 
 
 class SpkCreateSch(SpkBase):
@@ -18,6 +19,11 @@ class SpkSch(SpkFullBase):
     alashak:str | None = Field(alias="alashak")
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(alias="hasil_analisa_peta_lokasi")
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
+
+class SpkSrcSch(SQLModel):
+    id:UUID
+    code:str
+    id_bidang:str
 
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
@@ -49,4 +55,24 @@ class SpkPrintOut(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum]
     manager_name:Optional[str]
     sales_name:Optional[str]
+
+class SpkForTerminSch(SQLModel):
+    spk_id:Optional[UUID]
+    spk_code:Optional[str]
+    spk_amount:Optional[Decimal]
+    spk_nilai:Optional[Decimal]
+    spk_satuan_bayar:Optional[str]
+    bidang_id:Optional[UUID]
+    id_bidang:Optional[str]
+    alashak:Optional[str]
+    group:Optional[str]
+    luas_bayar:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]
+    harga_akta:Optional[Decimal]
+    total_harga:Optional[Decimal]
+    total_beban:Optional[Decimal]
+    total_invoice:Optional[Decimal]
+    sisa_pelunasan:Optional[Decimal]
+    amount:Optional[Decimal]
+    
 

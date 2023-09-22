@@ -25,6 +25,7 @@ class InvoiceFullBase(BaseUUIDModel, InvoiceBase):
 
 class Invoice(InvoiceFullBase, table=True):
     termin:"Termin" = Relationship(
+        back_populates="invoices",
         sa_relationship_kwargs=
         {
             "lazy" : "select"

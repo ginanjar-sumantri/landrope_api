@@ -1,8 +1,8 @@
 from models.termin_model import Termin, TerminBase, TerminFullBase
-from schemas.invoice_sch import InvoiceExtSch
+from schemas.invoice_sch import InvoiceExtSch, InvoiceSch
 from common.partial import optional
-from common.as_form import as_form
 from sqlmodel import SQLModel, Field
+from typing import Optional
 
 class TerminCreateSch(TerminBase):
     invoices:list[InvoiceExtSch]
@@ -10,6 +10,11 @@ class TerminCreateSch(TerminBase):
 class TerminSch(TerminFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+class TerminByIdSch(TerminFullBase):
+    nomor_tahap:Optional[str] = Field(alias="nomor_tahap")
+    kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
+    invoices:list[InvoiceSch]
+
 @optional
 class TerminUpdateSch(TerminBase):
-    pass
+    invoices:list[InvoiceExtSch]

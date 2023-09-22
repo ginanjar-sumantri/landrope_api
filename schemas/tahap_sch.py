@@ -1,9 +1,11 @@
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 from models.tahap_model import TahapBase, TahapFullBase
 from schemas.tahap_detail_sch import TahapDetailCreateExtSch, TahapDetailSch, TahapDetailUpdateExtSch
+from schemas.spk_sch import SpkForTerminSch
 from common.partial import optional
 from common.as_form import as_form
 from typing import Optional
+from uuid import UUID
 
 
 class TahapCreateSch(TahapBase):
@@ -23,6 +25,16 @@ class TahapByIdSch(TahapFullBase):
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     details:list[TahapDetailSch]
+
+class TahapForTerminByIdSch(SQLModel):
+    id:UUID
+    planing_name:Optional[str]
+    project_name:Optional[str]
+    desa_name:Optional[str]
+    ptsk_name:Optional[str]
+    nomor_tahap:Optional[int]
+    group:Optional[str]
+    spkts:list[SpkForTerminSch] | None
 
 @optional
 class TahapUpdateSch(TahapBase):

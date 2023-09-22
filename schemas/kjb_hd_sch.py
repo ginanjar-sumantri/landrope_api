@@ -6,10 +6,12 @@ from schemas.kjb_harga_sch import KjbHargaCreateExtSch, KjbHargaExtSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateExtSch, KjbBebanBiayaSch
 from schemas.kjb_penjual_sch import KjbPenjualCreateExtSch, KjbPenjualSch
 from schemas.kjb_dt_sch import KjbDtCreateExtSch
+from schemas.bidang_sch import BidangForUtjSch
 from common.partial import optional
-from sqlmodel import Field
-from typing import List
+from sqlmodel import Field, SQLModel
+from typing import List, Optional
 from decimal import Decimal
+from uuid import UUID
 
 class KjbHdCreateSch(KjbHdBase):
     rekenings:List[KjbRekeningCreateExtSch]
@@ -44,3 +46,10 @@ class KjbHdByIdSch(KjbHdFullBase):
 @optional
 class KjbHdUpdateSch(KjbHdBase):
     pass
+
+class KjbHdForTerminByIdSch(SQLModel):
+    id:UUID
+    code:Optional[str]
+    nama_group:Optional[str]
+    utj_amount:Optional[Decimal]
+    bidangs:list[BidangForUtjSch] | None

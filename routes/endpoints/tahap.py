@@ -12,7 +12,7 @@ from models.ptsk_model import Ptsk
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
 from schemas.section_sch import SectionUpdateSch
-from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch
+from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch, BidangUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -76,7 +76,8 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Tahap).select_from(Tahap
-                                    ).join(Planing, Planing.id == Tahap.planing_id
+                                    ).outerjoin(Planing, Planing.id == Tahap.planing_id,
+                                    ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
                                     ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
                                     ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id)
     
@@ -146,7 +147,7 @@ async def update(
             await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         else:
             dt_current = await crud.tahap_detail.get(id=dt.id)
-            dt_updated = TahapDetailUpdateSch(tahap_id=id, bidang_id=dt.bidang_id, is_void=dt.is_void)
+            dt_updated = TahapDetailUpdateSch(**dt_current.dict())
 
             await crud.tahap_detail.update(obj_current=dt_current, obj_new=dt_updated, 
                                            with_commit=False, db_session=db_session,
@@ -155,7 +156,7 @@ async def update(
         bidang_current = await crud.bidang.get(id=dt.bidang_id)
         if bidang_current.geom :
             bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        bidang_updated = bidang_current
+        bidang_updated = BidangUpdateSch(**bidang_current.dict())
         bidang_updated.luas_bayar = dt.luas_bayar
         bidang_updated.harga_akta = dt.harga_akta
         bidang_updated.harga_transaksi = dt.harga_transaksi
@@ -194,7 +195,7 @@ async def get_list(
                                     Skpt.ptsk_id == ptsk_id,
                                     Bidang.penampung_id == ptsk_id
                                 )
-                            ))
+                            ))  
     
     if keyword:
         query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))

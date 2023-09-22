@@ -9,11 +9,10 @@ class InvoiceCreateSch(InvoiceBase):
     pass
 
 class InvoiceExtSch(SQLModel):
+    id:Optional[UUID]
     spk_id:Optional[UUID]
     bidang_id:Optional[UUID]
-    amount:Optional[Decimal] 
-    is_void:Optional[bool] 
-    remark:Optional[str]
+    amount:Optional[Decimal]
 
 class InvoiceSch(InvoiceFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
