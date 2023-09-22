@@ -144,4 +144,5 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response =  await db_session.execute(query)
         return response.fetchall()
 
+
 bidang = CRUDBidang(Bidang)

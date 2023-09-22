@@ -1,5 +1,5 @@
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_
+from sqlmodel import select, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from crud.base_crud import CRUDBase
@@ -43,4 +43,6 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    
+
 tahap_detail = CRUDTahapDetail(TahapDetail)

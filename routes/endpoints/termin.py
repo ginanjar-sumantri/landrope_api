@@ -223,15 +223,15 @@ async def get_list_bidang_by_kjb_hd_id(
 
     return create_response(data=obj_return)
 
-@router.get("/search/komponen_biaya/{id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
-async def get_list_komponen_biaya_by_bidang_id(
-                id:UUID,
+@router.get("/search/komponen_biaya", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
+async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
+                bidang_id:UUID,
                 invoice_id:UUID,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id(bidang_id=id)
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id_and_invoice_id(bidang_id=bidang_id, invoice_id=invoice_id)
 
     return create_response(data=objs)
 
