@@ -67,5 +67,7 @@ from .termin_crud import termin
 from .invoice_crud import invoice
 from .invoice_detail_crud import invoice_detail
 
+from .payment_crud import payment
+
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error

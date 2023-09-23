@@ -38,6 +38,32 @@ class TahapDetailSch(TahapDetailFullBase):
     harga_total:Optional[Decimal] = Field(alias="harga_total")
     sisa_pelunasan:Optional[Decimal]
 
+class TahapDetailExtSch(SQLModel):
+    id:UUID
+    tahap_id:Optional[UUID]
+    id_bidang:Optional[str]
+    alashak:Optional[str]
+    group:Optional[str]
+    luas_surat:Optional[Decimal]
+    luas_ukur:Optional[Decimal]
+    luas_gu_perorangan:Optional[Decimal]
+    luas_gu_pt:Optional[Decimal]
+    luas_nett:Optional[Decimal] 
+    luas_clear:Optional[Decimal] 
+    luas_pbt_perorangan:Optional[Decimal] 
+    luas_pbt_pt:Optional[Decimal] 
+    luas_bayar:Optional[Decimal] 
+    harga_akta:Optional[Decimal] 
+    harga_transaksi:Optional[Decimal] 
+    project_name:Optional[str] 
+    desa_name:Optional[str] 
+    planing_name:Optional[str] 
+    ptsk_name:Optional[str] 
+    total_harga:Optional[Decimal] 
+    total_beban:Optional[Decimal]
+    total_invoice:Optional[Decimal]
+    sisa_pelunasan:Optional[Decimal]
+
 @optional
 class TahapDetailUpdateSch(TahapDetailBase):
     pass

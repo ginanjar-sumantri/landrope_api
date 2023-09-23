@@ -124,4 +124,8 @@ class TanggunganBiayaEnum(str, Enum):
     Pembeli = "Pembeli"
     Penjual = "Penjual"
     Penjual_Dibayar_Pembeli = "Penjual_Dibayar_Pembeli"
+
+class PaymentMethodEnum(str, Enum):
+    Giro = "Giro"
+    Cek = "Cek"
     

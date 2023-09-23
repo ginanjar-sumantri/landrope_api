@@ -10,7 +10,7 @@ from models.planing_model import Planing
 from models.skpt_model import Skpt
 from models.ptsk_model import Ptsk
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
-from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
+from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.section_sch import SectionUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch, BidangUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -105,12 +105,21 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.tahap.get(id=id)
-
-    if obj:
-        return create_response(data=obj)
-    else:
+    obj = await crud.tahap.get_by_id(id=id)
+    if obj is None:
         raise IdNotFoundException(Tahap, id)
+    
+    tahap_details = await crud.tahap_detail.get_multi_by_tahap_id(tahap_id=id)
+    
+    obj_return = TahapByIdSch(**dict(obj))
+
+    details = [TahapDetailExtSch(**dict(dt)) for dt in tahap_details]
+    
+    obj_return.details = details
+
+    return create_response(data=obj_return)
+    
+    
     
 @router.put("/{id}", response_model=PutResponseBaseSch[TahapSch])
 async def update(

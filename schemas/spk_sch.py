@@ -3,7 +3,7 @@ from common.partial import optional
 from schemas.bidang_sch import BidangForSPKByIdSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateExtSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateExtSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaExtSch, BidangKomponenBiayaSch
-from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum
+from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum, JenisBidangEnum, StatusSKEnum
 from sqlmodel import Field, SQLModel
 from typing import Optional
 from decimal import Decimal
@@ -40,6 +40,7 @@ class SpkUpdateSch(SpkBase):
 class SpkPrintOut(SQLModel):
     kjb_hd_code:Optional[str]
     id_bidang:Optional[str]
+    jenis_bidang:Optional[JenisBidangEnum]
     alashak:Optional[str]
     no_peta:Optional[str]
     group:Optional[str]
@@ -55,6 +56,14 @@ class SpkPrintOut(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum]
     manager_name:Optional[str]
     sales_name:Optional[str]
+    notaris_name:Optional[str]
+    status_il:Optional[StatusSKEnum]
+    worker_name:Optional[str]
+
+class SpkDetailPrintOut(SQLModel):
+    no:Optional[int]
+    tanggapan:Optional[str]
+    name:Optional[str]
 
 class SpkForTerminSch(SQLModel):
     spk_id:Optional[UUID]

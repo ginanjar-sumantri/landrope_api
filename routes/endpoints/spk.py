@@ -1,24 +1,20 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
-from models.spk_model import Spk
-from models.bidang_model import Bidang
-from models.order_gambar_ukur_model import OrderGambarUkurBidang
-from models.hasil_peta_lokasi_model import HasilPetaLokasi
-from models.kjb_model import KjbDt, KjbHd
+from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker)
 from models.code_counter_model import CodeCounterEnum
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt
-from models.worker_model import Worker
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkDetailPrintOut)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum
-from common.exceptions import (IdNotFoundException, NameExistException)
+from common.enum import JenisBayarEnum, StatusSKEnum
+from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
+from services.pdf_service import PdfService
+from jinja2 import Environment, FileSystemLoader
 import crud
 import json
 
@@ -289,67 +285,74 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Spk, id)
 
 @router.get("/print-out/{id}")
-async def search_for_map(id:UUID | str,
+async def printout(id:UUID | str,
                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Get for search"""
 
     db_session = db.session
 
-    spk_query = text(f"""
-                select
-                kh.code As kjb_hd_code,
-                b.id_bidang,
-                b.alashak,
-                b.no_peta,
-                b.group,
-                b.luas_surat,
-                b.luas_ukur,
-                p.name As pemilik_name,
-                ds.name As desa_name,
-                nt.name As notaris_name,
-                pr.name As project_name,
-                pt.name As ptsk_name,
-                hpl.hasil_analisa_peta_lokasi As analisa,
-                s.jenis_bayar,
-                s.nilai,
-                s.satuan_bayar,
-                mng.name As manager_name,
-                sls.name As sales_name
-                from spk s
-                left join bidang b on s.bidang_id = b.id
-                left join hasil_peta_lokasi hpl on b.id = hpl.bidang_id
-                left join kjb_dt kd on hpl.kjb_dt_id = kd.id
-                left join kjb_hd kh on kd.kjb_hd_id = kh.id
-                left join pemilik p on b.pemilik_id = p.id
-                left join planing pl on b.planing_id = pl.id
-                left join project pr on pl.project_id = pr.id
-                left join desa ds on pl.desa_id = ds.id
-                left join notaris nt on b.notaris_id = nt.id
-                left join skpt sk on b.skpt_id = sk.id
-                left join ptsk pt on sk.ptsk_id = pt.id
-                left join manager mng on b.manager_id = mng.id
-                left join sales sls on b.sales_id = sls.id
-                where s.id = '{str(id)}'
-        """)
+    obj = await crud.spk.get_by_id_for_printout(id=id)
+    if obj is None:
+        raise IdNotFoundException(Spk, id)
+    
+    spk_header = SpkPrintOut(**dict(obj))
+    
+    spk_details = []
+    no = 1
+    obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
+    for bb in obj_beban_biayas:
+        beban_biaya = SpkDetailPrintOut(**dict(bb))
+        beban_biaya.no = no
+        spk_details.append(beban_biaya)
+        no = no + 1
 
-    result = await db_session.execute(spk_query)
-    data = result.fetchone()
-    result = SpkPrintOut(kjb_hd_code=data["kjb_hd_code"],
-                        id_bidang=data["id_bidang"],
-                        alashak=data["alashak"],
-                        no_peta=data["no_peta"],
-                        group=data["group"],
-                        luas_surat=data["luas_surat"],
-                        luas_ukur=data["luas_ukur"],
-                        pemilik_name=data["pemilik_name"],
-                        desa_name=data["desa_name"],
-                        project_name=data["project_name"],
-                        ptsk_name=data["ptsk_name"],
-                        analisa=data["analisa"],
-                        jenis_bayar=data["jenis_bayar"],
-                        nilai=data["nilai"],
-                        satuan_bayar=data["satuan_bayar"],
-                        manager_name=data["manager_name"],
-                        sales_name=data["sales_name"])
-    return result
+    obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
+    for k in obj_kelengkapans:
+        kelengkapan = SpkDetailPrintOut(**dict(k))
+        kelengkapan.no = no
+        spk_details.append(kelengkapan)
+        no = no + 1
+    
+    rekening:str = ""
+    rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
+    for rek in rekenings:
+        rekening += f"{rek.__str__}, "
+    
+    rekening = rekening[0:-2]
+
+    filename:str = "spk_clear.html"
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template(filename)
+
+    akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
+
+    render_template = template.render(jenisbayar=spk_header.jenis_bayar.value,
+                                      group=spk_header.group, 
+                                      pemilik_name=spk_header.pemilik_name,
+                                      alashak=spk_header.alashak,
+                                      desa_name=spk_header.desa_name,
+                                      luas_surat=spk_header.luas_surat,
+                                      luas_ukur=spk_header.luas_ukur, 
+                                      id_bidang=spk_header.id_bidang,
+                                      no_peta=spk_header.no_peta,
+                                      notaris_name=spk_header.notaris_name,
+                                      project_name=spk_header.project_name, 
+                                      ptsk=spk_header.ptsk_name,
+                                      status_il=spk_header.status_il.value,
+                                      hasil_analisa_peta_lokasi=spk_header.analisa.value,
+                                      data=spk_details,
+                                      worker_name=spk_header.worker_name, 
+                                      manager_name=spk_header.manager_name,
+                                      sales_name=spk_header.sales_name,
+                                      akta_peralihan=akta_peralihan,
+                                      no_rekening=rekening)
+    
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
+    return response
