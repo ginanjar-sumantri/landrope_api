@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum
 from decimal import Decimal
+import numpy
 
 if TYPE_CHECKING:
     from models.tahap_model import Tahap
@@ -63,3 +64,13 @@ class Termin(TerminFullBase, table=True):
     @property
     def kjb_hd_code(self) -> str | None:
         return getattr(getattr(self, 'kjb_hd', None), 'code', None)
+    
+    @property
+    def utj_amount(self) -> str | None:
+        return getattr(getattr(self, 'kjb_hd', None), 'utj_amount', None)
+    
+    @property
+    def total_amount(self) -> Optional[Decimal]:
+        array_total = numpy.array([invoice.amount for invoice in self.invoices])
+        total = numpy.sum(array_total)
+        return total or 0
