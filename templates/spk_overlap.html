@@ -160,6 +160,40 @@
     <div class="content">
       <table
         align="center"
+        style="border-collapse: collapse; border: 1px solid; width: 80%"
+      >
+        <tr>
+          <th colspan="9">OVERLAP(DAMAI)</th>
+        </tr>
+        <tr>
+          <th>Nama</th>
+          <th>Alashak</th>
+          <th>Tahap</th>
+          <th>Luas Surat</th>
+          <th>Luas Overlap</th>
+          <th>Kat</th>
+          <th>No. NIB</th>
+          <th>Id Bidang</th>
+          <th>Status Overlap</th>
+        </tr>
+        {% for item in data_overlap %}
+        <tr>
+          <td align="center">{{ item.pemilik_name }}</td>
+          <td align="center">{{ item.alashak }}</td>
+          <td align="right">{{ item.tahap }}</td>
+          <td align="right">{{ item.luas_surat }}</td>
+          <td align="right">{{ item.luas_overlap }}</td>
+          <td align="center">{{ item.kategori }}</td>
+          <td align="center">{{ item.no_nib }}</td>
+          <td align="center">{{ item.id_bidang }}</td>
+          <td align="center">{{ item.tipe_overlap.value }}</td>
+          <!-- Tambahkan kolom sesuai dengan properti objek -->
+        </tr>
+        {% endfor %}
+      </table>
+      &nbsp; &nbsp;
+      <table
+        align="center"
         style="border-collapse: collapse; border: 1px solid; width: 100%"
       >
         <tr>

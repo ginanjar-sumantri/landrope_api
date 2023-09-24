@@ -5,12 +5,12 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker)
 from models.code_counter_model import CodeCounterEnum
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkDetailPrintOut)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum, StatusSKEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
@@ -290,13 +290,16 @@ async def printout(id:UUID | str,
 
     """Get for search"""
 
-    db_session = db.session
-
     obj = await crud.spk.get_by_id_for_printout(id=id)
     if obj is None:
         raise IdNotFoundException(Spk, id)
     
+    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+    
     spk_header = SpkPrintOut(**dict(obj))
+    percentage_value:str = ""
+    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage:
+        percentage_value = f" {spk_header.nilai}%"
     
     spk_details = []
     no = 1
@@ -314,20 +317,30 @@ async def printout(id:UUID | str,
         spk_details.append(kelengkapan)
         no = no + 1
     
-    rekening:str = ""
-    rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
-    for rek in rekenings:
-        rekening += f"{rek.__str__}, "
-    
-    rekening = rekening[0:-2]
+    overlap_details = []
+    if obj.jenis_bidang == JenisBidangEnum.Overlap:
+        filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+        obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
+        for ov in obj_overlaps:
+            overlap = SpkOverlapPrintOut(**dict(ov))
+            overlap_details.append(overlap)
 
-    filename:str = "spk_clear.html"
+    rekening:str = ""
+    if obj.jenis_bayar != JenisBayarEnum.PAJAK:
+        rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
+        for r in rekenings:
+            rek = SpkRekeningPrintOut(**dict(r))
+            rekening += f"{rek.rekening}, "
+        
+        rekening = rekening[0:-2]
+
+    
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(filename)
 
     akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
-    render_template = template.render(jenisbayar=spk_header.jenis_bayar.value,
+    render_template = template.render(jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
                                       group=spk_header.group, 
                                       pemilik_name=spk_header.pemilik_name,
                                       alashak=spk_header.alashak,
@@ -342,6 +355,7 @@ async def printout(id:UUID | str,
                                       status_il=spk_header.status_il.value,
                                       hasil_analisa_peta_lokasi=spk_header.analisa.value,
                                       data=spk_details,
+                                      data_overlap=overlap_details,
                                       worker_name=spk_header.worker_name, 
                                       manager_name=spk_header.manager_name,
                                       sales_name=spk_header.sales_name,

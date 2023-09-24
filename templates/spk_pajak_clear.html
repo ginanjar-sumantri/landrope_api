@@ -117,6 +117,30 @@
                   <td>:</td>
                   <td>{{luas_ukur}}</td>
                 </tr>
+                <tr>
+                  <td>NOP</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{nop}}</td>
+                </tr>
+                <tr>
+                  <td>NPWP</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{npwp}}</td>
+                </tr>
+                <tr>
+                  <td>KTP</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{ktp}}</td>
+                </tr>
+                <tr>
+                  <td>KK</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{kk}}</td>
+                </tr>
               </table>
             </td>
             <td valign="top">
@@ -164,7 +188,7 @@
       >
         <tr>
           <th width="30%">No.</th>
-          <th width="30%">Temuan Legal Pusat</th>
+          <th width="30%">Pajak-Pajak</th>
           <th colspan="2" width="40%">Tanggapan</th>
         </tr>
         {% for item in data %}
@@ -183,8 +207,10 @@
       >
         <tr>
           <td width="30%" align="center">Dimohon Oleh,</td>
-          <td width="30%" align="center">Diperiksa Oleh,</td>
-          <td width="40%" align="center" colspan="2">Disetujui Oleh,</td>
+          <td width="30%" align="center">Disetujui Oleh,</td>
+          <td width="40%" align="center">
+            Divisi Finance, Mohon Proses Pembayaran<br />Diketahui Oleh,
+          </td>
         </tr>
         <tr height="50px">
           <td>&nbsp;</td>
@@ -194,52 +220,8 @@
         </tr>
         <tr>
           <td align="center">{{worker_name}}</td>
-          <td align="center">Dennis Ariyanto</td>
-          <td align="center">Denny Wangsya</td>
-          <td align="center">Setyawathi Husin</td>
-        </tr>
-      </table>
-      &nbsp; &nbsp;
-      <table
-        align="right"
-        style="border-collapse: collapse; border: 1px solid; margin-top: 5px"
-      >
-        <tr>
-          <td width="100px">MANAGER</td>
-          <td width="100px">: {{manager_name}}</td>
-        </tr>
-        <tr>
-          <td width="100px">SALES</td>
-          <td width="100px">: {{sales_name}}</td>
-        </tr>
-      </table>
-      &nbsp; &nbsp;
-      <table
-        align="center"
-        style="
-          border-collapse: collapse;
-          border: 1px solid;
-          width: 100%;
-          margin-top: 25px;
-        "
-      >
-        <tr>
-          <td>KOMENTAR :</td>
-        </tr>
-        <tr>
-          <td>AKTA PERALIHAN PT : {{akta_peralihan}}</td>
-        </tr>
-        <tr>
-          <td>PETA CITRIK = TERLAMPIR</td>
-        </tr>
-        <tr>
-          <td>KESEPAKATAN = TERLAMPIR</td>
-        </tr>
-        <tr>
-          <td>NO REKENING : {{no_rekening}}</td>
-        </tr>
-        <tr>
-          <td>KOMENTAR :</td>
+          <td align="center">Denny P. Wangsya</td>
+          <td align="center">Yaya</td>
         </tr>
       </table>
     </div>

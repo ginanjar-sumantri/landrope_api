@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from crud.base_crud import CRUDBase
 from models import Spk, Bidang
-from schemas.spk_sch import SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, SpkDetailPrintOut
+from schemas.spk_sch import SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut
 from common.enum import JenisBayarEnum
 from uuid import UUID
 from decimal import Decimal
@@ -164,7 +164,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                  *, 
                                                  id: UUID | str, 
                                                  db_session: AsyncSession | None = None
-                                                 ) -> SpkDetailPrintOut | None:
+                                                 ) -> List[SpkDetailPrintOut] | None:
         db_session = db_session or db.session
         query = text(f"""
                     select 
@@ -190,7 +190,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                 *, 
                                                 id: UUID | str, 
                                                 db_session: AsyncSession | None = None
-                                                ) -> SpkDetailPrintOut | None:
+                                                ) -> List[SpkDetailPrintOut] | None:
             
             db_session = db_session or db.session
 
@@ -213,7 +213,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                 *, 
                                                 id: UUID | str, 
                                                 db_session: AsyncSession | None = None
-                                                ) -> List[str] | None:
+                                                ) -> List[SpkRekeningPrintOut] | None:
             
             db_session = db_session or db.session
 
@@ -230,4 +230,35 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
             response = await db_session.execute(query)
 
             return response.fetchall()
+    
+    async def get_overlap_by_id_for_printout(self,
+                                                *, 
+                                                id: UUID | str, 
+                                                db_session: AsyncSession | None = None
+                                                ) -> List[SpkOverlapPrintOut] | None:
+            
+            db_session = db_session or db.session
+
+            query = text(f"""
+                    select
+                    p.name as pemilik_name,
+                    bi.alashak,
+                    bi.tahap,
+                    bi.luas_surat,
+                    bo.luas as luas_overlap,
+                    bi.id_bidang,
+                    hpl.tipe_overlap
+                    from spk s
+                    inner join bidang b on b.id = s.bidang_id
+                    inner join bidang_overlap bo on bo.parent_bidang_id = b.id
+                    inner join bidang bi on bi.id = bo.parent_bidang_intersect_id
+                    inner join hasil_peta_lokasi_detail hpl on hpl.bidang_overlap_id = bo.id
+                    left outer join pemilik p on p.id = bi.pemilik_id
+                    where s.id = '{str(id)}'
+                    """)
+
+            response = await db_session.execute(query)
+
+            return response.fetchall()
+    
 spk = CRUDSpk(Spk)

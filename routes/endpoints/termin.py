@@ -13,7 +13,9 @@ from models.spk_model import Spk
 from models.bidang_model import Bidang
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from schemas.tahap_sch import TahapForTerminByIdSch
-from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, TerminByIdSch)
+from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
+                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, 
+                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -41,12 +43,14 @@ async def create(
     """Create a new object"""
 
     db_session = db.session
+    sch.is_void = False
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
     #add invoice
     for invoice in sch.invoices:
         invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id)
+        invoice_sch.is_void = False
         new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         
         #add invoice_detail
@@ -293,4 +297,120 @@ async def get_by_id(id:UUID,
     else:
         raise IdNotFoundException(Bidang, id)
 
+@router.get("/print-out/{id}")
+async def printout(id:UUID | str,
+                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
+    """Get for search"""
+
+    obj = await crud.termin.get_by_id_for_printout(id=id)
+    if obj is None:
+        raise IdNotFoundException(Termin, id)
+    
+    termin_header = TerminByIdForPrintOut(**dict(obj))
+    
+    bidangs = []
+    obj_bidangs_on_tahap = await crud.termin.get_bidang_tahap_by_id_for_printout(id=id)
+    for bd in obj_bidangs_on_tahap:
+        bidang = TerminBidangForPrintOut(**dict(bd))
+        bidangs.append(bidang)
+
+    invoices = []
+    list_bidang_id = []
+    obj_invoices_on_termin = await crud.termin.get_invoice_by_id_for_printout(id=id)
+    for inv in obj_invoices_on_termin:
+        invoice = TerminInvoiceforPrintOut(**dict(inv))
+        invoices.append(invoice)
+        list_bidang_id.append(invoice.bidang_id)
+
+    invoices_history = []
+    obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
+    for his in obj_invoices_history:
+        history = TerminInvoiceHistoryforPrintOut(**dict(his))
+        invoices_history.append(history)
+
+    termins_history = []
+    obj_termins_history = await crud.termin.get_history_termin_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id, termin_id=termin_header.id)
+    for t_his in obj_termins_history:
+        termin_history = TerminHistoryForPrintOut(**dict(t_his))
+        termins_history.append(termin_history)
+    
+
+
+    
+    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+    
+    # # spk_header = SpkPrintOut(**dict(obj))
+    # # percentage_value:str = ""
+    # # if spk_header.satuan_bayar == SatuanBayarEnum.Percentage:
+    # #     percentage_value = f" {spk_header.nilai}%"
+    
+    # # spk_details = []
+    # # no = 1
+    # # obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
+    # # for bb in obj_beban_biayas:
+    # #     beban_biaya = SpkDetailPrintOut(**dict(bb))
+    # #     beban_biaya.no = no
+    # #     spk_details.append(beban_biaya)
+    # #     no = no + 1
+
+    # # obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
+    # # for k in obj_kelengkapans:
+    # #     kelengkapan = SpkDetailPrintOut(**dict(k))
+    # #     kelengkapan.no = no
+    # #     spk_details.append(kelengkapan)
+    # #     no = no + 1
+    
+    # # overlap_details = []
+    # # if obj.jenis_bidang == JenisBidangEnum.Overlap:
+    # #     filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+    # #     obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
+    # #     for ov in obj_overlaps:
+    # #         overlap = SpkOverlapPrintOut(**dict(ov))
+    # #         overlap_details.append(overlap)
+
+    # # rekening:str = ""
+    # # if obj.jenis_bayar != JenisBayarEnum.PAJAK:
+    # #     rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
+    # #     for r in rekenings:
+    # #         rek = SpkRekeningPrintOut(**dict(r))
+    # #         rekening += f"{rek.rekening}, "
+        
+    # #     rekening = rekening[0:-2]
+
+    
+    # env = Environment(loader=FileSystemLoader("templates"))
+    # template = env.get_template(filename)
+
+    # akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
+
+    # render_template = template.render(jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
+    #                                   group=spk_header.group, 
+    #                                   pemilik_name=spk_header.pemilik_name,
+    #                                   alashak=spk_header.alashak,
+    #                                   desa_name=spk_header.desa_name,
+    #                                   luas_surat=spk_header.luas_surat,
+    #                                   luas_ukur=spk_header.luas_ukur, 
+    #                                   id_bidang=spk_header.id_bidang,
+    #                                   no_peta=spk_header.no_peta,
+    #                                   notaris_name=spk_header.notaris_name,
+    #                                   project_name=spk_header.project_name, 
+    #                                   ptsk=spk_header.ptsk_name,
+    #                                   status_il=spk_header.status_il.value,
+    #                                   hasil_analisa_peta_lokasi=spk_header.analisa.value,
+    #                                   data=spk_details,
+    #                                   data_overlap=overlap_details,
+    #                                   worker_name=spk_header.worker_name, 
+    #                                   manager_name=spk_header.manager_name,
+    #                                   sales_name=spk_header.sales_name,
+    #                                   akta_peralihan=akta_peralihan,
+    #                                   no_rekening=rekening)
+    
+    # try:
+    #     doc = await PdfService().get_pdf(render_template)
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    # response = Response(doc, media_type='application/pdf')
+    # response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
+    # return response
