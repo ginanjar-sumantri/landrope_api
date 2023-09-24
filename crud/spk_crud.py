@@ -99,7 +99,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 WHERE 
                 s.jenis_bayar = '{jenis_bayar}' and 
                 (i.spk_id is null or i.is_void = true) and
-                kb.is_void != true and
+                kb.is_void != true
                 and t.id = '{str(tahap_id)}'
                 GROUP BY b.id, s.id
                 """)
