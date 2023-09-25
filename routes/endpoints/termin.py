@@ -145,6 +145,9 @@ async def update(
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
+    list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
+    await crud.invoice.delete_multiple_where_not_in(ids=list_id_invoice, db_session=db_session, with_commit=False)
+
     for invoice in sch.invoices:
         if invoice.id:
             invoice_current = await crud.invoice.get(id=invoice.id)
