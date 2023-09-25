@@ -168,11 +168,11 @@
           <td colspan="10">&nbsp</td>
           <td>Nominal</td>
         </tr>
-        {% for item in data_ %}
+        {% for item2 in data_invoice_history %}
         <tr>
           <td>&nbsp;</td>
-          <td>ID Bidang</td>
-          <td>Jenis Pembayaran</td>
+          <td>{{item2.id_bidang}}</td>
+          <td>{{item2.str_jenis_bayar}}</td>
           <td>Tanggal</td>
           <td colspan="10">&nbsp</td>
           <td>Nominal</td>

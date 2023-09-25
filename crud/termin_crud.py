@@ -130,22 +130,48 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                             db_session: AsyncSession | None = None
                                             ) -> List[TerminInvoiceHistoryforPrintOut] | None:
             db_session = db_session or db.session
-            query = select(Bidang.id,
-                           Bidang.id_bidang,
-                           Termin.jenis_bayar,
-                           Spk.nilai,
-                           Spk.satuan_bayar,
-                           Termin.created_at.label("tanggal_bayar"),
-                           Invoice.amount
-                           ).select_from(Invoice
-                                ).join(Termin, Termin.id == Invoice.termin_id
-                                ).join(Spk, Spk.id == Invoice.spk_id
-                                ).join(Bidang, Bidang.id == Invoice.bidang_id
-                                ).where(and_(
-                                    Invoice.is_void != True,
-                                    Bidang.id.in_(b for b in list_id),
-                                    Termin.id != termin_id
-                                ))
+            # query = select(Bidang.id,
+            #                Bidang.id_bidang,
+            #                Termin.jenis_bayar,
+            #                Spk.nilai,
+            #                Spk.satuan_bayar,
+            #                Termin.created_at.label("tanggal_bayar"),
+            #                Invoice.amount
+            #                ).select_from(Invoice
+            #                     ).join(Termin, Termin.id == Invoice.termin_id
+            #                     ).join(Spk, Spk.id == Invoice.spk_id
+            #                     ).join(Bidang, Bidang.id == Invoice.bidang_id
+            #                     ).where(and_(
+            #                         Invoice.is_void != True,
+            #                         Bidang.id.in_(b for b in list_id),
+            #                         Termin.id != termin_id
+            #                     ))
+            ids:str = ""
+            for bidang_id in list_id:
+                ids += f"'{bidang_id}',"
+
+            query = text(f"""select 
+                            b.id_bidang,
+                            case
+                                when tr.jenis_bayar != 'UTJ' then 
+                                    case 
+                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || s.nilai || '%'
+                                        else tr.jenis_bayar || ' (' || s.nilai || ')'
+                                    end
+                                else tr.jenis_bayar
+                            end as str_jenis_bayar,
+                            tr.tanggal_transaksi,
+                            tr.jenis_bayar,
+                            Sum(i.amount) as amount
+                            from Invoice i
+                            inner join Termin tr on tr.id = i.termin_id
+                            inner join bidang b on b.id = i.bidang_id
+                            left outer join spk s on s.id = i.spk_id
+                            where tr.is_void != true
+                            and i.is_void != true
+                            and i.bidang_id in ({ids})
+                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, s.satuan_bayar, s.nilai
+                         """)
             
 
             response = await db_session.execute(query)
@@ -160,14 +186,17 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
             db_session = db_session or db.session
             query = text(f"""
                         select 
+                        b.id_bidang,
                         tr.jenis_bayar,
-                        i.amount 
+                        Sum(i.amount) as amount
                         from Invoice i
                         inner join Termin tr on tr.id = i.termin_id
+                        inner join bidang b on b.id = i.bidang_id
                         where tr.is_void != true
                         and i.is_void != true
                         and tr.jenis_bayar = 'UTJ'
                         and i.bidang_id in ({ids})
+                        group by b.id, tr.jenis_bayar
                         """)
 
             response = await db_session.execute(query)

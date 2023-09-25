@@ -143,6 +143,8 @@ async def update(
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
+    sch.is_void = obj_current.is_void
+    
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
@@ -154,6 +156,7 @@ async def update(
             invoice_current = await crud.invoice.get(id=invoice.id)
             if invoice_current:
                 invoice_updated_sch = InvoiceUpdateSch(**invoice.dict())
+                invoice_updated_sch.is_void = invoice_current.is_void
                 invoice_updated = await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated_sch, with_commit=False, db_session=db_session, updated_by_id=current_worker.id)
 
                 #delete invoice_detail not exists
@@ -380,14 +383,14 @@ async def printout(id:UUID | str,
         history = TerminInvoiceHistoryforPrintOut(**dict(his))
         invoices_history.append(history)
     
-    utj_history = None
-    bidang_ids:str = ""
-    for bidang_id in list_bidang_id:
-        bidang_ids += f"'{bidang_id}',"
-    bidang_ids = bidang_ids[0:-1]
-    obj_utj_history = await crud.termin.get_history_utj_by_bidang_ids_for_printout(ids=bidang_ids)
-    if obj_utj_history:
-        utj_history = TerminUtjHistoryForPrintOut(**dict(obj_utj_history))
+    # utj_history = []
+    # bidang_ids:str = ""
+    # for bidang_id in list_bidang_id:
+    #     bidang_ids += f"'{bidang_id}',"
+    # bidang_ids = bidang_ids[0:-1]
+    # obj_utj_history = await crud.termin.get_history_utj_by_bidang_ids_for_printout(ids=bidang_ids)
+    # if obj_utj_history:
+    #     utj_history = TerminUtjHistoryForPrintOut(**dict(obj_utj_history))
 
 
     termins_history = []
