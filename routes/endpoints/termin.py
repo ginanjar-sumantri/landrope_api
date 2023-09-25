@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, Request
+from fastapi import APIRouter, status, Depends, Request, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
@@ -14,8 +14,9 @@ from models.bidang_model import Bidang
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
-                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, 
-                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut)
+                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, TerminBidangForPrintOutExt,
+                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut,
+                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -29,6 +30,8 @@ from common.ordered import OrderEnumSch
 from common.enum import JenisBayarEnum, StatusHasilPetaLokasiEnum, SatuanBayarEnum
 from services.gcloud_task_service import GCloudTaskService
 from decimal import Decimal
+from services.pdf_service import PdfService
+from jinja2 import Environment, FileSystemLoader
 import json
 import numpy
 
@@ -321,10 +324,37 @@ async def printout(id:UUID | str,
     termin_header = TerminByIdForPrintOut(**dict(obj))
     
     bidangs = []
+    no = 1
     obj_bidangs_on_tahap = await crud.termin.get_bidang_tahap_by_id_for_printout(id=id)
     for bd in obj_bidangs_on_tahap:
-        bidang = TerminBidangForPrintOut(**dict(bd))
+        bidang = TerminBidangForPrintOutExt(**dict(bd))
+        bidang.total_hargaExt = "{:,.2f}".format(bidang.total_harga)
+        bidang.harga_transaksiExt = "{:,.2f}".format(bidang.harga_transaksi)
+        bidang.no = no
         bidangs.append(bidang)
+        no = no + 1
+    
+    array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs_on_tahap])
+    total_luas_surat = numpy.sum(array_total_luas_surat)
+
+    array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs_on_tahap])
+    total_luas_ukur = numpy.sum(array_total_luas_ukur)
+
+    array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs_on_tahap])
+    total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
+
+    array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs_on_tahap])
+    total_luas_gu_nett = numpy.sum(array_total_luas_nett)
+
+    array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs_on_tahap])
+    total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
+
+    array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs_on_tahap])
+    total_luas_bayar = numpy.sum(array_total_luas_bayar)
+
+    array_total_harga = numpy.array([b.total_harga for b in obj_bidangs_on_tahap])
+    total_harga = numpy.sum(array_total_harga)
+
 
     invoices = []
     list_bidang_id = []
@@ -332,96 +362,57 @@ async def printout(id:UUID | str,
     for inv in obj_invoices_on_termin:
         invoice = TerminInvoiceforPrintOut(**dict(inv))
         invoices.append(invoice)
-        list_bidang_id.append(invoice.bidang_id)
+        list_bidang_id.append(str(invoice.bidang_id))
 
     invoices_history = []
     obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
     for his in obj_invoices_history:
         history = TerminInvoiceHistoryforPrintOut(**dict(his))
         invoices_history.append(history)
+    
+    utj_history = None
+    bidang_ids:str = ""
+    for bidang_id in list_bidang_id:
+        bidang_ids += f"'{bidang_id}',"
+    bidang_ids = bidang_ids[0:-1]
+    obj_utj_history = await crud.termin.get_history_utj_by_bidang_ids_for_printout(ids=bidang_ids)
+    if obj_utj_history:
+        utj_history = TerminUtjHistoryForPrintOut(**dict(obj_utj_history))
+
 
     termins_history = []
     obj_termins_history = await crud.termin.get_history_termin_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id, termin_id=termin_header.id)
     for t_his in obj_termins_history:
         termin_history = TerminHistoryForPrintOut(**dict(t_his))
         termins_history.append(termin_history)
-    
 
-
+    komponen_biayas = []
+    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id)
+    for bb in obj_komponen_biayas:
+        beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
+        komponen_biayas.append(beban_biaya)
     
-    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+    # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
     
-    # # spk_header = SpkPrintOut(**dict(obj))
-    # # percentage_value:str = ""
-    # # if spk_header.satuan_bayar == SatuanBayarEnum.Percentage:
-    # #     percentage_value = f" {spk_header.nilai}%"
-    
-    # # spk_details = []
-    # # no = 1
-    # # obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
-    # # for bb in obj_beban_biayas:
-    # #     beban_biaya = SpkDetailPrintOut(**dict(bb))
-    # #     beban_biaya.no = no
-    # #     spk_details.append(beban_biaya)
-    # #     no = no + 1
-
-    # # obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
-    # # for k in obj_kelengkapans:
-    # #     kelengkapan = SpkDetailPrintOut(**dict(k))
-    # #     kelengkapan.no = no
-    # #     spk_details.append(kelengkapan)
-    # #     no = no + 1
-    
-    # # overlap_details = []
-    # # if obj.jenis_bidang == JenisBidangEnum.Overlap:
-    # #     filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
-    # #     obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
-    # #     for ov in obj_overlaps:
-    # #         overlap = SpkOverlapPrintOut(**dict(ov))
-    # #         overlap_details.append(overlap)
-
-    # # rekening:str = ""
-    # # if obj.jenis_bayar != JenisBayarEnum.PAJAK:
-    # #     rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
-    # #     for r in rekenings:
-    # #         rek = SpkRekeningPrintOut(**dict(r))
-    # #         rekening += f"{rek.rekening}, "
-        
-    # #     rekening = rekening[0:-2]
-
-    
-    # env = Environment(loader=FileSystemLoader("templates"))
-    # template = env.get_template(filename)
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template("memo_tanah.html")
 
     # akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
-    # render_template = template.render(jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
-    #                                   group=spk_header.group, 
-    #                                   pemilik_name=spk_header.pemilik_name,
-    #                                   alashak=spk_header.alashak,
-    #                                   desa_name=spk_header.desa_name,
-    #                                   luas_surat=spk_header.luas_surat,
-    #                                   luas_ukur=spk_header.luas_ukur, 
-    #                                   id_bidang=spk_header.id_bidang,
-    #                                   no_peta=spk_header.no_peta,
-    #                                   notaris_name=spk_header.notaris_name,
-    #                                   project_name=spk_header.project_name, 
-    #                                   ptsk=spk_header.ptsk_name,
-    #                                   status_il=spk_header.status_il.value,
-    #                                   hasil_analisa_peta_lokasi=spk_header.analisa.value,
-    #                                   data=spk_details,
-    #                                   data_overlap=overlap_details,
-    #                                   worker_name=spk_header.worker_name, 
-    #                                   manager_name=spk_header.manager_name,
-    #                                   sales_name=spk_header.sales_name,
-    #                                   akta_peralihan=akta_peralihan,
-    #                                   no_rekening=rekening)
+    render_template = template.render(code=termin_header.code or "",
+                                      created_at=termin_header.created_at.date(),
+                                      nomor_tahap=termin_header.nomor_tahap,
+                                      project_name=termin_header.project_name,
+                                      data=bidangs,
+                                      total_luas_surat=total_luas_surat,
+                                      
+                                    )
     
-    # try:
-    #     doc = await PdfService().get_pdf(render_template)
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail="Failed generate document")
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
     
-    # response = Response(doc, media_type='application/pdf')
-    # response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
-    # return response
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
+    return response

@@ -4,11 +4,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="pdfkit-page-size" content="Legal" />
-    <meta name="pdfkit-orientation" content="Portrait" />
+    <meta name="pdfkit-orientation" content="Landscape" />
     <title>SPK</title>
     <style>
       @page {
-        size: A4;
+        size: A4 landscape;
       }
 
       body {
@@ -75,81 +75,29 @@
   </head>
   <body>
     <div class="header">
-      <h4>Permohonan Transaksi {{ jenisbayar }}</h4>
       <div class="sub-header">
-        <table>
+        <table widht="100%">
           <tr>
-            <td style="padding-right: 80px" valign="top">
-              <table>
+            <td valign="top" align="left">
+              <table widht="50%">
                 <tr>
-                  <td>Group</td>
+                  <td>No.</td>
                   <td>&emsp;&emsp;&emsp;&emsp;</td>
                   <td>:</td>
-                  <td>{{group}}</td>
+                  <td>{{code}}</td>
                 </tr>
                 <tr>
-                  <td>Nama</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{pemilik_name}}</td>
-                </tr>
-                <tr>
-                  <td>Alashak</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{alashak}}</td>
-                </tr>
-                <tr>
-                  <td>Desa</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{desa_name}}</td>
-                </tr>
-                <tr>
-                  <td>Luas Surat</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_surat}}</td>
-                </tr>
-                <tr>
-                  <td>Luas Ukur</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_ukur}}</td>
+                  <td>Kepada Yth. Bapak Susanto Kusumo</td>
                 </tr>
               </table>
             </td>
-            <td valign="top">
-              <table>
+            <td valign="top" align="right">
+              <table widht="50%">
                 <tr>
-                  <td>Id Bidang</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{id_bidang}}</td>
+                  <td>Jakarta, {{created_at}}</td>
                 </tr>
                 <tr>
-                  <td>No. Peta</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{no_peta}}</td>
-                </tr>
-                <tr>
-                  <td>Notaris</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{notaris_name}}</td>
-                </tr>
-                <tr>
-                  <td>Project</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{project_name}}</td>
-                </tr>
-                <tr>
-                  <td colspan="4">{{ptsk}} ({{status_il}})</td>
-                </tr>
-                <tr>
-                  <td colspan="4">- {{hasil_analisa_peta_lokasi}}</td>
+                  <td>THP {{nomor_tahap}}/{{project_name}}</td>
                 </tr>
               </table>
             </td>
@@ -163,18 +111,54 @@
         style="border-collapse: collapse; border: 1px solid; width: 100%"
       >
         <tr>
-          <th width="30%">No.</th>
-          <th width="30%">Temuan Legal Pusat</th>
-          <th colspan="2" width="40%">Tanggapan</th>
+          <th>NO</th>
+          <th>ID BID</th>
+          <th>ALIAS</th>
+          <th>LOKASI</th>
+          <th>PEMILIK</th>
+          <th>SURAT ASAL</th>
+          <th>L SURAT</th>
+          <th>L UKUR</th>
+          <th>L GU</th>
+          <th>L NETT</th>
+          <th>L PBT</th>
+          <th>L BAYAR</th>
+          <th>NO PETA</th>
+          <th>HARGA</th>
+          <th>JUMLAH</th>
         </tr>
         {% for item in data %}
         <tr>
           <td align="center">{{ item.no }}</td>
-          <td>{{ item.name }}</td>
-          <td colspan="2">{{ item.tanggapan }}</td>
+          <td align="center">{{ item.id_bidang }}</td>
+          <td align="center">{{ item.group }}</td>
+          <td align="center">{{ item.lokasi }}</td>
+          <td align="center">{{ item.pemilik_name }}</td>
+          <td align="center">{{ item.alashak }}</td>
+          <td align="right">{{ item.luas_surat }}</td>
+          <td align="right">{{ item.luas_ukur }}</td>
+          <td align="right">{{ item.luas_gu_perorangan }}</td>
+          <td align="right">{{ item.luas_nett }}</td>
+          <td align="right">{{ item.luas_pbt_perorangan }}</td>
+          <td align="right">{{ item.luas_bayar }}</td>
+          <td align="center">{{ item.no_peta }}</td>
+          <td align="right">{{ item.harga_transaksiExt }}</td>
+          <td align="right">{{ item.total_hargaExt }}</td>
           <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
         {% endfor %}
+        <tr>
+          <td colspan="6"></td>
+          <td>{{total_luas_surat}}</td>
+          <td>{{total_luas_ukur}}</td>
+          <td>{{total_luas_gu_perorangan}}</td>
+          <td>{{total_luas_nett}}</td>
+          <td>{{total_luas_pbt_perorangan}}</td>
+          <td>{{total_luas_bayar}}</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>{{total_harga}}</td>
+        </tr>
       </table>
       &nbsp
       <table

@@ -18,7 +18,7 @@ class TerminSch(TerminFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class TerminByIdSch(TerminFullBase):
-    nomor_tahap:Optional[str] = Field(alias="nomor_tahap")
+    nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     invoices:list[InvoiceSch]
@@ -32,11 +32,15 @@ class TerminByIdForPrintOut(SQLModel):
     code:Optional[str]
     tahap_id:Optional[str]
     created_at:Optional[datetime]
+    nomor_tahap:Optional[int]
+    amount:Optional[Decimal]
+    project_name:Optional[str]
 
 class TerminBidangForPrintOut(SQLModel):
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     group:Optional[str]
+    lokasi:Optional[str]
     ptsk_name:Optional[str]
     status_il:Optional[str]
     project_name:Optional[str]
@@ -53,6 +57,11 @@ class TerminBidangForPrintOut(SQLModel):
     harga_transaksi:Optional[Decimal]
     total_harga:Optional[Decimal]
 
+class TerminBidangForPrintOutExt(TerminBidangForPrintOut):
+    no:Optional[int]
+    harga_transaksiExt:Optional[str]
+    total_hargaExt:Optional[str]
+
 class TerminInvoiceforPrintOut(SQLModel):
     invoice_id:Optional[UUID]
     bidang_id:Optional[UUID]
@@ -67,7 +76,17 @@ class TerminInvoiceHistoryforPrintOut(SQLModel):
     tanggal_bayar:Optional[datetime]
     amount:Optional[Decimal]
 
+class TerminUtjHistoryForPrintOut(SQLModel):
+    jenis_bayar:Optional[JenisBayarEnum]
+    amount:Optional[Decimal]
+
 class TerminHistoryForPrintOut(SQLModel):
     id:UUID
     jenis_bayar:Optional[JenisBayarEnum]
     amount:Optional[Decimal]
+
+class TerminBebanBiayaForPrintOut(SQLModel):
+    beban_biaya_name:Optional[str]
+    tanggungan:Optional[str]
+    amount:Optional[Decimal]
+

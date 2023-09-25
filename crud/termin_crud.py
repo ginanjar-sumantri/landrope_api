@@ -12,8 +12,10 @@ from models.tahap_model import Tahap
 from models.kjb_model import KjbHd
 from models.spk_model import Spk
 from models.bidang_model import Bidang
+from models import Planing, Project
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
-                                TerminBidangForPrintOut, TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut)
+                                TerminBidangForPrintOut, TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut,
+                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
 from typing import List
 from uuid import UUID
 
@@ -26,10 +28,23 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         
         db_session = db_session or db.session
 
-        query = select(self.model.id,
-                       self.model.code,
-                       self.model.tahap_id,
-                       self.model.created_at).where(self.model.id == id)
+        query = text(f"""
+                    select
+                    tr.id,
+                    tr.code,
+                    t.id,
+                    tr.created_at,
+                    t.nomor_tahap,
+                    SUM(i.amount) as amount,
+                    pr.name as project_name
+                    from termin tr
+                    inner join invoice i on i.termin_id = tr.id
+                    inner join tahap t on t.id = tr.tahap_id
+                    inner join planing pl on pl.id = t.planing_id
+                    inner join project pr on pr.id = pl.project_id
+                    where tr.id = '{id}'
+                    group by tr.id, t.id, pr.id
+                    """)
 
         response = await db_session.execute(query)
 
@@ -41,13 +56,16 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                         db_session: AsyncSession | None = None
                                                         ) -> List[TerminBidangForPrintOut] | None:
         db_session = db_session or db.session
-        query = text(f""""
-                     
+        query = text(f"""
                     select
                     b.id as bidang_id,
                     b.id_bidang,
                     b.group,
                     case
+                        when b.skpt_id is Null then ds.name || '-' || pr.name || '-' || pn.name || ' (PENAMPUNG)'
+                        else ds.name || '-' || pr.name || '-' || pt.name || ' (' || sk.status || ')'
+                    end as lokasi,
+					case
                         when b.skpt_id is Null then pn.name
                         else pt.name
                     end as ptsk_name,
@@ -77,7 +95,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     left outer join ptsk pn on pn.id = b.penampung_id
                     left outer join pemilik pm on pm.id = b.pemilik_id
                     where tr.id = '{str(id)}' and thd.is_void != true
-                     """)
+                    """)
         
 
         response = await db_session.execute(query)
@@ -119,7 +137,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                            Termin.created_at.label("tanggal_bayar"),
                            Invoice.amount
                            ).select_from(Invoice
-                                ).join(Invoice, Termin.id == Invoice.termin_id
+                                ).join(Termin, Termin.id == Invoice.termin_id
                                 ).join(Spk, Spk.id == Invoice.spk_id
                                 ).join(Bidang, Bidang.id == Invoice.bidang_id
                                 ).where(and_(
@@ -132,6 +150,29 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
             response = await db_session.execute(query)
 
             return response.fetchall()
+    
+    async def get_history_utj_by_bidang_ids_for_printout(self, 
+                                            *, 
+                                            ids:str,
+                                            db_session: AsyncSession | None = None
+                                            ) -> TerminUtjHistoryForPrintOut | None:
+            db_session = db_session or db.session
+            query = text(f"""
+                        select 
+                        tr.jenis_bayar,
+                        SUM(i.amount) 
+                        from Invoice i
+                        inner join Termin tr on tr.id = i.termin_id
+                        where tr.is_void != true
+                        and i.is_void != true
+                        and tr.jenis_bayar = 'UTJ'
+                        and i.bidang_id in ({ids})
+                        group by tr.jenis_bayar
+                        """)
+
+            response = await db_session.execute(query)
+
+            return response.fetchone()
     
     async def get_history_termin_by_tahap_id_for_printout(self, 
                                             *, 
@@ -154,5 +195,35 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
             response = await db_session.execute(query)
 
             return response.fetchall()
+    
+    async def get_beban_biaya_by_id_for_printout(self, 
+                                                *, 
+                                                id: UUID | str, 
+                                                db_session: AsyncSession | None = None
+                                                ) -> List[TerminBebanBiayaForPrintOut] | None:
+        db_session = db_session or db.session
+        query = text(f"""
+                    select
+                    bb.name as beban_biaya_name,
+                    case
+                        when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
+                        else '(BEBAN PENJUAL)'
+                    end as tanggungan,
+                    SUM(idt.amount) as amount
+                    from termin t
+                    inner join invoice i on i.termin_id = t.id
+                    inner join invoice_detail idt on idt.invoice_id = i.id
+                    inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
+                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where i.is_void != true
+                    and bkb.is_void != true
+                    and t.id = '{str(id)}'
+                    group by bb.id, bkb.id
+                     """)
+        
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
 
 termin = CRUDTermin(Termin)
