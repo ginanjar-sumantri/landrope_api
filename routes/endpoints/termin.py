@@ -16,7 +16,7 @@ from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, TerminBidangForPrintOutExt,
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut,
-                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
+                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminInvoiceHistoryforPrintOutExt)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -161,7 +161,7 @@ async def update(
 
                 #delete invoice_detail not exists
                 list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
-                query_inv_dtl = InvoiceDetail.__table__.delete().where(and_(~InvoiceDetail.id.in_(list_id_invoice), InvoiceDetail.invoice_id == invoice_current.id))
+                query_inv_dtl = InvoiceDetail.__table__.delete().where(and_(~InvoiceDetail.id.in_(list_id_invoice_dt), InvoiceDetail.invoice_id == invoice_current.id))
                 await crud.invoice_detail.delete_multiple_where_not_in(query=query_inv_dtl, db_session=db_session, with_commit=False)
 
                 for dt in invoice.details:
@@ -380,7 +380,8 @@ async def printout(id:UUID | str,
     invoices_history = []
     obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
     for his in obj_invoices_history:
-        history = TerminInvoiceHistoryforPrintOut(**dict(his))
+        history = TerminInvoiceHistoryforPrintOutExt(**dict(his))
+        history.amountExt = "{:,.2f}".format(history.amount)
         invoices_history.append(history)
     
     # utj_history = []
@@ -423,7 +424,8 @@ async def printout(id:UUID | str,
                                       total_luas_nett=total_luas_nett,
                                       total_luas_pbt_perorangan=total_luas_pbt_perorangan,
                                       total_luas_bayar=total_luas_bayar,
-                                      total_harga=total_harga
+                                      total_harga=total_harga,
+                                      data_invoice_history=invoices_history 
 
                                     )
     
