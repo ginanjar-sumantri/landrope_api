@@ -344,7 +344,7 @@ async def printout(id:UUID | str,
     total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
 
     array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs_on_tahap])
-    total_luas_gu_nett = numpy.sum(array_total_luas_nett)
+    total_luas_nett = numpy.sum(array_total_luas_nett)
 
     array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs_on_tahap])
     total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
@@ -405,7 +405,13 @@ async def printout(id:UUID | str,
                                       project_name=termin_header.project_name,
                                       data=bidangs,
                                       total_luas_surat=total_luas_surat,
-                                      
+                                      total_luas_ukur=total_luas_ukur,
+                                      total_luas_gu_perorangan=total_luas_gu_perorangan,
+                                      total_luas_nett=total_luas_nett,
+                                      total_luas_pbt_perorangan=total_luas_pbt_perorangan,
+                                      total_luas_bayar=total_luas_bayar,
+                                      total_harga=total_harga
+
                                     )
     
     try:

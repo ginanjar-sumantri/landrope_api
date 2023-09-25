@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum
 from decimal import Decimal
+from datetime import date
 import numpy
 
 if TYPE_CHECKING:
@@ -19,6 +20,7 @@ class TerminBase(SQLModel):
     jenis_bayar:JenisBayarEnum = Field(nullable=True)
     amount:Optional[Decimal] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=False)
+    tanggal_transaksi:Optional[date] = Field(nullable=True)
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass
