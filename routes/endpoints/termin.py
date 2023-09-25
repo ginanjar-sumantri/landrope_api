@@ -6,7 +6,7 @@ from sqlmodel import select, or_, and_
 import crud
 from models.termin_model import Termin
 from models.worker_model import Worker
-from models.invoice_model import Invoice
+from models.invoice_model import Invoice, InvoiceDetail
 from models.tahap_model import Tahap, TahapDetail
 from models.kjb_model import KjbHd, KjbDt
 from models.spk_model import Spk
@@ -146,7 +146,8 @@ async def update(
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
-    await crud.invoice.delete_multiple_where_not_in(ids=list_id_invoice, db_session=db_session, with_commit=False)
+    query_inv = Invoice.__table__.delete().where(and_(~Invoice.id.in_(list_id_invoice), Invoice.termin_id == obj_updated.id))
+    await crud.invoice.delete_multiple_where_not_in(query=query_inv, db_session=db_session, with_commit=False)
 
     for invoice in sch.invoices:
         if invoice.id:
@@ -157,7 +158,8 @@ async def update(
 
                 #delete invoice_detail not exists
                 list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
-                await crud.invoice_detail.delete_multiple_where_not_in(ids=list_id_invoice_dt, db_session=db_session, with_commit=False)
+                query_inv_dtl = InvoiceDetail.__table__.delete().where(and_(~InvoiceDetail.id.in_(list_id_invoice), InvoiceDetail.invoice_id == invoice_current.id))
+                await crud.invoice_detail.delete_multiple_where_not_in(query=query_inv_dtl, db_session=db_session, with_commit=False)
 
                 for dt in invoice.details:
                     if dt.id is None:

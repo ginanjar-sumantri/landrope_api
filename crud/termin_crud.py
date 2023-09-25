@@ -161,14 +161,13 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
             query = text(f"""
                         select 
                         tr.jenis_bayar,
-                        SUM(i.amount) 
+                        i.amount 
                         from Invoice i
                         inner join Termin tr on tr.id = i.termin_id
                         where tr.is_void != true
                         and i.is_void != true
                         and tr.jenis_bayar = 'UTJ'
                         and i.bidang_id in ({ids})
-                        group by tr.jenis_bayar
                         """)
 
             response = await db_session.execute(query)
