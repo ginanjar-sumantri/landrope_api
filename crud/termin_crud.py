@@ -149,6 +149,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
             ids:str = ""
             for bidang_id in list_id:
                 ids += f"'{bidang_id}',"
+            
+            ids = ids[0:-1]
 
             query = text(f"""select 
                             b.id_bidang,

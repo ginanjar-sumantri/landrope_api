@@ -165,7 +165,7 @@
           <td>ID Bidang</td>
           <td>Jenis Pembayaran</td>
           <td>Tanggal</td>
-          <td colspan="10">&nbsp</td>
+          <td colspan="10">&nbsp;</td>
           <td>Nominal</td>
         </tr>
         {% for item2 in data_invoice_history %}
@@ -174,8 +174,29 @@
           <td>{{item2.id_bidang}}</td>
           <td>{{item2.str_jenis_bayar}}</td>
           <td>{{item2.tanggal_transaksi}}</td>
-          <td colspan="10">&nbsp</td>
+          <td colspan="10">&nbsp;</td>
           <td>{{item2.amountExt}}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="16">&nbsp;</td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+          <td>ID Bidang</td>
+          <td>Beban Biaya</td>
+          <td>&nbsp;</td>
+          <td colspan="10">&nbsp;</td>
+          <td>Nominal</td>
+        </tr>
+        {% for item3 in data_invoice_history %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>{{item3.id_bidang}}</td>
+          <td>{{item3.beban_biaya_name}}</td>
+          <td>&nbsp;</td>
+          <td colspan="10">&nbsp;</td>
+          <td>{{item3.amountExt}}</td>
         </tr>
         {% endfor %}
       </table>
