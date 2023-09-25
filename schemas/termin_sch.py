@@ -6,7 +6,7 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from uuid import UUID
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 class TerminCreateSch(TerminBase):
     invoices:list[InvoiceExtSch]
@@ -35,6 +35,7 @@ class TerminByIdForPrintOut(SQLModel):
     nomor_tahap:Optional[int]
     amount:Optional[Decimal]
     project_name:Optional[str]
+    tanggal_transaksi:Optional[date]
 
 class TerminBidangForPrintOut(SQLModel):
     bidang_id:Optional[UUID]
@@ -63,7 +64,7 @@ class TerminBidangForPrintOutExt(TerminBidangForPrintOut):
     total_hargaExt:Optional[str]
 
 class TerminInvoiceforPrintOut(SQLModel):
-    invoice_id:Optional[UUID]
+    id_bidang:Optional[UUID]
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
 

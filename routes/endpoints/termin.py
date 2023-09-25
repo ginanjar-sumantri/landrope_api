@@ -192,12 +192,16 @@ async def update(
 async def get_list_spk_by_tahap_id(
                 id:UUID,
                 jenis_bayar:JenisBayarEnum,
+                termin_id:UUID | None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
     tahap = await crud.tahap.get_by_id_for_termin(id=id)
     spk_details = await crud.spk.get_multi_by_tahap_id(tahap_id=id, jenis_bayar=jenis_bayar)
+    if termin_id:
+        exists_spk_details = await crud.spk.get_multi_by_tahap_id_and_termin_id(tahap_id=id, jenis_bayar=jenis_bayar, termin_id=termin_id)
+        spk_details = spk_details + exists_spk_details
 
     obj_return = TahapForTerminByIdSch(**dict(tahap))
 
@@ -354,6 +358,7 @@ async def printout(id:UUID | str,
 
     array_total_harga = numpy.array([b.total_harga for b in obj_bidangs_on_tahap])
     total_harga = numpy.sum(array_total_harga)
+    total_harga = "{:,.2f}".format(total_harga)
 
 
     invoices = []

@@ -34,6 +34,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     tr.code,
                     t.id,
                     tr.created_at,
+                    tr.tanggal_transaksi,
                     t.nomor_tahap,
                     SUM(i.amount) as amount,
                     pr.name as project_name

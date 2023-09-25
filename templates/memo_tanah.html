@@ -149,16 +149,35 @@
         {% endfor %}
         <tr>
           <td colspan="6"></td>
-          <td>{{total_luas_surat}}</td>
-          <td>{{total_luas_ukur}}</td>
-          <td>{{total_luas_gu_perorangan}}</td>
-          <td>{{total_luas_nett}}</td>
-          <td>{{total_luas_pbt_perorangan}}</td>
-          <td>{{total_luas_bayar}}</td>
+          <td align="center">{{total_luas_surat}}</td>
+          <td align="center">{{total_luas_ukur}}</td>
+          <td align="center">{{total_luas_gu_perorangan}}</td>
+          <td align="center">{{total_luas_nett}}</td>
+          <td align="center">{{total_luas_pbt_perorangan}}</td>
+          <td align="center">{{total_luas_bayar}}</td>
           <td>&nbsp;</td>
           <td>&nbsp;</td>
-          <td>{{total_harga}}</td>
+          <td align="center">{{total_harga}}</td>
         </tr>
+
+        <tr>
+          <td>&nbsp;</td>
+          <td>ID Bidang</td>
+          <td>Jenis Pembayaran</td>
+          <td>Tanggal</td>
+          <td colspan="10">&nbsp</td>
+          <td>Nominal</td>
+        </tr>
+        {% for item in data_ %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>ID Bidang</td>
+          <td>Jenis Pembayaran</td>
+          <td>Tanggal</td>
+          <td colspan="10">&nbsp</td>
+          <td>Nominal</td>
+        </tr>
+        {% endfor %}
       </table>
       &nbsp
       <table
