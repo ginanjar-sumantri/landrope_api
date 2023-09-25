@@ -162,11 +162,11 @@
 
         <tr>
           <td>&nbsp;</td>
-          <td>ID Bidang</td>
-          <td>Jenis Pembayaran</td>
-          <td>Tanggal</td>
+          <th>ID Bidang</th>
+          <th>Jenis Pembayaran</th>
+          <th>Tanggal</th>
           <td colspan="10">&nbsp;</td>
-          <td>Nominal</td>
+          <th>Nominal</th>
         </tr>
         {% for item2 in data_invoice_history %}
         <tr>
@@ -175,7 +175,7 @@
           <td>{{item2.str_jenis_bayar}}</td>
           <td>{{item2.tanggal_transaksi}}</td>
           <td colspan="10">&nbsp;</td>
-          <td>{{item2.amountExt}}</td>
+          <td align="right">{{item2.amountExt}}</td>
         </tr>
         {% endfor %}
         <tr>
@@ -183,87 +183,32 @@
         </tr>
         <tr>
           <td>&nbsp;</td>
-          <td>ID Bidang</td>
-          <td>Beban Biaya</td>
+          <th>ID Bidang</th>
+          <th>Beban Biaya</th>
           <td>&nbsp;</td>
           <td colspan="10">&nbsp;</td>
-          <td>Nominal</td>
+          <th>Nominal</th>
         </tr>
-        {% for item3 in data_invoice_history %}
+        {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
           <td>{{item3.id_bidang}}</td>
           <td>{{item3.beban_biaya_name}}</td>
           <td>&nbsp;</td>
           <td colspan="10">&nbsp;</td>
-          <td>{{item3.amountExt}}</td>
+          <td align="right">{{item3.amountExt}}</td>
         </tr>
         {% endfor %}
-      </table>
-      &nbsp
-      <table
-        align="center"
-        style="border-collapse: collapse; border: 1px solid; width: 100%"
-      >
         <tr>
-          <td width="30%" align="center">Dimohon Oleh,</td>
-          <td width="30%" align="center">Diperiksa Oleh,</td>
-          <td width="40%" align="center" colspan="2">Disetujui Oleh,</td>
+          <td colspan="16">&nbsp;</td>
         </tr>
-        <tr height="50px">
+        <tr>
           <td>&nbsp;</td>
+          <td style="font-weight: bold">{{tanggal_transaksi}}</td>
+          <td style="font-weight: bold">{{jenis_bayar}}</td>
           <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="center">{{worker_name}}</td>
-          <td align="center">Dennis Ariyanto</td>
-          <td align="center">Denny Wangsya</td>
-          <td align="center">Setyawathi Husin</td>
-        </tr>
-      </table>
-      &nbsp; &nbsp;
-      <table
-        align="right"
-        style="border-collapse: collapse; border: 1px solid; margin-top: 5px"
-      >
-        <tr>
-          <td width="100px">MANAGER</td>
-          <td width="100px">: {{manager_name}}</td>
-        </tr>
-        <tr>
-          <td width="100px">SALES</td>
-          <td width="100px">: {{sales_name}}</td>
-        </tr>
-      </table>
-      &nbsp; &nbsp;
-      <table
-        align="center"
-        style="
-          border-collapse: collapse;
-          border: 1px solid;
-          width: 100%;
-          margin-top: 25px;
-        "
-      >
-        <tr>
-          <td>KOMENTAR :</td>
-        </tr>
-        <tr>
-          <td>AKTA PERALIHAN PT : {{akta_peralihan}}</td>
-        </tr>
-        <tr>
-          <td>PETA CITRIK = TERLAMPIR</td>
-        </tr>
-        <tr>
-          <td>KESEPAKATAN = TERLAMPIR</td>
-        </tr>
-        <tr>
-          <td>NO REKENING : {{no_rekening}}</td>
-        </tr>
-        <tr>
-          <td>KOMENTAR :</td>
+          <td colspan="10">&nbsp;</td>
+          <td align="right" style="font-weight: bold">{{amount}}</td>
         </tr>
       </table>
     </div>

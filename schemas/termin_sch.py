@@ -36,6 +36,7 @@ class TerminByIdForPrintOut(SQLModel):
     amount:Optional[Decimal]
     project_name:Optional[str]
     tanggal_transaksi:Optional[date]
+    jenis_bayar:Optional[str]
 
 class TerminBidangForPrintOut(SQLModel):
     bidang_id:Optional[UUID]
@@ -89,7 +90,11 @@ class TerminHistoryForPrintOut(SQLModel):
     amount:Optional[Decimal]
 
 class TerminBebanBiayaForPrintOut(SQLModel):
+    id_bidang:Optional[str]
     beban_biaya_name:Optional[str]
     tanggungan:Optional[str]
     amount:Optional[Decimal]
+
+class TerminBebanBiayaForPrintOutExt(TerminBebanBiayaForPrintOut):
+    amountExt:Optional[str]
 

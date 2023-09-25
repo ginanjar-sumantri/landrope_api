@@ -16,7 +16,8 @@ from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, TerminBidangForPrintOutExt,
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut,
-                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminInvoiceHistoryforPrintOutExt)
+                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminInvoiceHistoryforPrintOutExt,
+                                TerminBebanBiayaForPrintOutExt)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -200,7 +201,7 @@ async def update(
 async def get_list_spk_by_tahap_id(
                 id:UUID,
                 jenis_bayar:JenisBayarEnum,
-                termin_id:UUID | None,
+                termin_id:UUID | None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -403,7 +404,9 @@ async def printout(id:UUID | str,
     komponen_biayas = []
     obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id)
     for bb in obj_komponen_biayas:
-        beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
+        beban_biaya = TerminBebanBiayaForPrintOutExt(**dict(bb))
+        beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
+        beban_biaya.amountExt = "{:,.2f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
     
     # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
@@ -425,8 +428,11 @@ async def printout(id:UUID | str,
                                       total_luas_pbt_perorangan=total_luas_pbt_perorangan,
                                       total_luas_bayar=total_luas_bayar,
                                       total_harga=total_harga,
-                                      data_invoice_history=invoices_history 
-
+                                      data_invoice_history=invoices_history,
+                                      data_beban_biaya=komponen_biayas,
+                                      tanggal_transaksi=termin_header.tanggal_transaksi,
+                                      jenis_bayar=termin_header.jenis_bayar,
+                                      amount="{:,.2f}".format(termin_header.amount)
                                     )
     
     try:
