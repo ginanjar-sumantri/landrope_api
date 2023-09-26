@@ -1,8 +1,8 @@
 """kjb termin in spk
 
-Revision ID: 48efdd258802
+Revision ID: 85f932f43fe2
 Revises: 
-Create Date: 2023-09-26 12:22:01.749119
+Create Date: 2023-09-26 13:07:54.223265
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '48efdd258802'
+revision = '85f932f43fe2'
 down_revision = None
 branch_labels = None
 depends_on = None

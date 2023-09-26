@@ -159,9 +159,17 @@ async def update(
                 invoice_updated_sch = InvoiceUpdateSch(**invoice.dict())
                 invoice_updated_sch.is_void = invoice_current.is_void
                 invoice_updated = await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated_sch, with_commit=False, db_session=db_session, updated_by_id=current_worker.id)
+                
+                list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
+
+                #get invoice detail not exists on update and update komponen is not use
+                list_invoice_detail = await crud.invoice_detail.get_multi_by_ids_not_in(list_ids=list_id_invoice_dt)
+                for inv_dt in list_invoice_detail:
+                    kb_payload = {"id" : inv_dt.bidang_komponen_biaya_id}
+                    url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-not-use'
+                    GCloudTaskService().create_task(payload=kb_payload, base_url=url)
 
                 #delete invoice_detail not exists
-                list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
                 query_inv_dtl = InvoiceDetail.__table__.delete().where(and_(~InvoiceDetail.id.in_(list_id_invoice_dt), InvoiceDetail.invoice_id == invoice_current.id))
                 await crud.invoice_detail.delete_multiple_where_not_in(query=query_inv_dtl, db_session=db_session, with_commit=False)
 
@@ -217,6 +225,12 @@ async def get_list_spk_by_tahap_id(
     spkts = []
     for s in spk_details:
         spk = SpkForTerminSch(**dict(s))
+        total_beban_penjual = await crud.bidang.get_total_beban_penjual_by_bidang_id(bidang_id=spk.bidang_id)
+        total_invoice = await crud.bidang.get_total_invoice_by_bidang_id(bidang_id=spk.bidang_id)
+        spk.total_beban = total_beban_penjual.total_beban_penjual
+        spk.total_invoice = total_invoice.total_invoice
+        spk.sisa_pelunasan = spk.total_harga - (total_beban_penjual.total_beban_penjual + total_invoice.total_invoice)
+
         spkts.append(spk)
 
     obj_return.spkts = spkts
@@ -250,8 +264,11 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
-
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id_and_invoice_id(bidang_id=bidang_id, invoice_id=invoice_id)
+    
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_invoice_id(invoice_id=invoice_id)
+    if bidang_id:
+        objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id(bidang_id=bidang_id)
+        objs = objs + objs_2
 
     return create_response(data=objs)
 

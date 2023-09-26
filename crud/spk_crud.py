@@ -58,50 +58,19 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     b.harga_transaksi,
                     b.harga_akta,
                     (b.luas_bayar * b.harga_transaksi) as total_harga,
-                    SUM(CASE
-                        WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                    End) As total_beban,
-                    SUM(CASE WHEN i.is_void != false THEN i.amount ELSE 0 END) As total_invoice,
-                    ((b.luas_bayar * b.harga_transaksi) - (SUM(CASE
-                        WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                    End) + SUM(CASE WHEN i.is_void != false THEN i.amount ELSE 0 END))) As sisa_pelunasan,
                     CASE
                         WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
                         ELSE s.nilai
                     END As amount
-                FROM spk s
-                LEFT OUTER JOIN bidang b ON s.bidang_id = b.id
-                LEFT OUTER JOIN tahap_detail td ON td.bidang_id = b.id
-                LEFT OUTER JOIN invoice i ON i.spk_id = s.id
-                LEFT OUTER JOIN tahap t ON t.id = td.tahap_id
-                INNER JOIN bidang_komponen_biaya kb ON kb.bidang_id = b.id
-                INNER JOIN beban_biaya bb ON kb.beban_biaya_id = bb.id
-                WHERE 
-                s.jenis_bayar = '{jenis_bayar.value}' and 
-                (i.spk_id is null or i.is_void = true) and
-                kb.is_void != true
-                and t.id = '{str(tahap_id)}'
-                GROUP BY b.id, s.id
+                    FROM spk s
+                    LEFT OUTER JOIN bidang b ON s.bidang_id = b.id
+                    LEFT OUTER JOIN tahap_detail td ON td.bidang_id = b.id
+                    LEFT OUTER JOIN tahap t ON t.id = td.tahap_id
+                    LEFT OUTER JOIN invoice i on i.spk_id = s.id
+                    WHERE 
+                    s.jenis_bayar = '{jenis_bayar.value}' 
+                    and (i.spk_id is null or i.is_void = true)
+                    and t.id = '{str(tahap_id)}'
                 """)
 
         response =  await db_session.execute(query)
@@ -130,33 +99,6 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     b.harga_transaksi,
                     b.harga_akta,
                     (b.luas_bayar * b.harga_transaksi) as total_harga,
-                    SUM(CASE
-                        WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                    End) As total_beban,
-                    SUM(CASE WHEN i.is_void != false THEN i.amount ELSE 0 END) As total_invoice,
-                    ((b.luas_bayar * b.harga_transaksi) - (SUM(CASE
-                        WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                            Case
-                                WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                            End
-                        WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                    End) + SUM(CASE WHEN i.is_void != false THEN i.amount ELSE 0 END))) As sisa_pelunasan,
                     CASE
                         WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
                         ELSE s.nilai
@@ -167,15 +109,10 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     LEFT OUTER JOIN tahap t ON t.id = tr.tahap_id
                     LEFT OUTER JOIN tahap_detail td ON td.tahap_id = t.id
                     LEFT OUTER JOIN bidang b ON b.id = td.bidang_id
-                    INNER JOIN bidang_komponen_biaya kb ON kb.bidang_id = b.id
-                    INNER JOIN beban_biaya bb ON kb.beban_biaya_id = bb.id
-                    WHERE 
-                    s.jenis_bayar = '{jenis_bayar.value}' and 
-                    kb.is_void != true and
-                    t.id = '{str(tahap_id)}' and
-                    tr.id = '{str(termin_id)}' and
-                    i.is_void != true
-                    GROUP BY b.id, s.id
+                    WHERE s.jenis_bayar = '{jenis_bayar.value}'  
+                    and t.id = '{str(tahap_id)}'
+                    and tr.id = '{str(termin_id)}'
+                    and i.is_void != true
                 """)
 
         response =  await db_session.execute(query)

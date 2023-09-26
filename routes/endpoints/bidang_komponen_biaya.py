@@ -81,6 +81,22 @@ async def update_komponen_is_use(id:UUID):
     
     await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch)
     
+    return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
 
+@router.post("/cloud-task-is-not-use")
+async def update_komponen_is_use(id:UUID):
+
+    """Task Update Komponen Biaya Is Use"""
+
+    obj_current = await crud.bidang_komponen_biaya.get(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(BidangKomponenBiaya, id)
+    
+    sch = BidangKomponenBiayaUpdateSch(**obj_current.dict())
+    sch.is_use = False
+    
+    await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch)
+    
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 
    
