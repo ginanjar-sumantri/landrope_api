@@ -5,7 +5,8 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker)
 from models.code_counter_model import CodeCounterEnum
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, 
+                             SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
@@ -322,7 +323,10 @@ async def printout(id:UUID | str,
         filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
         obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
         for ov in obj_overlaps:
-            overlap = SpkOverlapPrintOut(**dict(ov))
+            overlap = SpkOverlapPrintOutExt(**dict(ov))
+            overlap.luas_overlapExt = "{:,.2f}".format(overlap.luas_overlap)
+            overlap.luas_suratExt = "{:,.2f}".format(overlap.luas_surat)
+            overlap.tipe_overlapExt = overlap.tipe_overlap.value.replace('_', ' ')
             overlap_details.append(overlap)
 
     rekening:str = ""
@@ -340,19 +344,20 @@ async def printout(id:UUID | str,
 
     akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
-    render_template = template.render(jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
+    render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
+                                      jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
                                       group=spk_header.group, 
                                       pemilik_name=spk_header.pemilik_name,
                                       alashak=spk_header.alashak,
                                       desa_name=spk_header.desa_name,
-                                      luas_surat=spk_header.luas_surat,
-                                      luas_ukur=spk_header.luas_ukur, 
+                                      luas_surat="{:,.0f}".format(spk_header.luas_surat),
+                                      luas_ukur="{:,.0f}".format(spk_header.luas_ukur), 
                                       id_bidang=spk_header.id_bidang,
                                       no_peta=spk_header.no_peta,
                                       notaris_name=spk_header.notaris_name,
                                       project_name=spk_header.project_name, 
                                       ptsk=spk_header.ptsk_name,
-                                      status_il=spk_header.status_il.value,
+                                      status_il=spk_header.status_il.value.replace("_"," "),
                                       hasil_analisa_peta_lokasi=spk_header.analisa.value,
                                       data=spk_details,
                                       data_overlap=overlap_details,

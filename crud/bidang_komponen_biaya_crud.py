@@ -9,7 +9,8 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.bidang_komponen_biaya_model import BidangKomponenBiaya
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaBebanPenjualSch
+from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, 
+                                               BidangKomponenBiayaBebanPenjualSch)
 from typing import List
 from uuid import UUID
 
@@ -141,5 +142,6 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
 
-
+    
+    
 bidang_komponen_biaya = CRUDBidangKomponenBiaya(BidangKomponenBiaya)

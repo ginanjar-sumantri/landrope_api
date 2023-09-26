@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from models.request_peta_lokasi_model import RequestPetaLokasi
     from models.worker_model import Worker
     from models.hasil_peta_lokasi_model import HasilPetaLokasi
+    from models.spk_model import Spk
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
@@ -264,6 +265,7 @@ class KjbHargaFullBase(BaseUUIDModel, KjbHargaBase):
 class KjbHarga(KjbHargaFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'selectin'})
     termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'selectin'})
+    
 
 ################################################################################################
 
@@ -278,6 +280,15 @@ class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
 
 class KjbTermin(KjbTerminFullBase, table=True):
     harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'selectin'})
+    spk:"Spk" = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+
+    @property
+    def spk_id(self) -> Optional[UUID]:
+        return getattr(getattr(self, "spk", None), "id", None)
+    
+    @property
+    def spk_code(self) -> Optional[UUID]:
+        return getattr(getattr(self, "spk", None), "code", None)
 
 #################################################################################
 

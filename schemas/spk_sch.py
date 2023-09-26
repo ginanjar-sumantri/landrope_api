@@ -74,6 +74,11 @@ class SpkOverlapPrintOut(SQLModel):
     id_bidang:Optional[str]
     tipe_overlap:Optional[TipeOverlapEnum]
 
+class SpkOverlapPrintOutExt(SpkOverlapPrintOut):
+    luas_suratExt:Optional[str]
+    luas_overlapExt:Optional[str]
+    tipe_overlapExt:Optional[str]
+
 class SpkRekeningPrintOut(SQLModel):
     rekening:Optional[str]
 

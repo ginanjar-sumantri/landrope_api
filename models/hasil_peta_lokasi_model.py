@@ -126,7 +126,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     
     @property
     def ptsk_name(self) -> str | None:
-        return getattr(getattr(self, 'ptsk', None), 'name', None)
+        return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'name', None)
     
     @property
     def no_sk(self) -> str | None:

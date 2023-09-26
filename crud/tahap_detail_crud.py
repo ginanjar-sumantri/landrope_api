@@ -80,41 +80,10 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                         When b.skpt_id is NULL Then pn.name
                         ELSE pt.name
                     End as ptsk_name,
-                    (b.luas_bayar * b.harga_transaksi) as total_harga,
-                    SUM(CASE
-                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                                End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                        End) As total_beban,
-                    SUM(i.amount) As total_invoice,
-                    ((b.luas_bayar * b.harga_transaksi) - (SUM(CASE
-                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
-                                End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
-                        End) + SUM(i.amount))) As sisa_pelunasan
+                    (b.luas_bayar * b.harga_transaksi) as total_harga
                     from tahap_detail td
                     inner join bidang b on b.id = td.bidang_id
                     inner join tahap t on t.id = td.tahap_id
-                    inner join invoice i on i.bidang_id = b.id
-                    inner join invoice_detail idt on idt.invoice_id = i.id
-                    inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
-                    inner join beban_biaya bb on kb.beban_biaya_id = bb.id
                     left outer join planing pl on pl.id = b.planing_id
                     left outer join project pr on pr.id = pl.project_id
                     left outer join desa ds on ds.id = pl.desa_id
@@ -123,9 +92,6 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                     left outer join ptsk pn on pn.id = b.penampung_id
                     where 
                     t.id = '{str(tahap_id)}'
-                    and i.is_void != true
-                    and kb.is_void != true
-                    group by td.id, t.id, b.id, i.id, pr.id, ds.id, pl.id, pn.id, pt.id
             """)
             
         response =  await db_session.execute(query)

@@ -114,12 +114,22 @@ async def get_by_id(id:UUID):
     obj_return = TahapByIdSch(**dict(obj))
 
     details = [TahapDetailExtSch(**dict(dt)) for dt in tahap_details]
+
+    details = []
+    for dt in tahap_details:
+        detail = TahapDetailExtSch(**dict(dt))
+        total_beban_penjual = await crud.bidang.get_total_beban_penjual_by_bidang_id(bidang_id=detail.bidang_id)
+        total_invoice = await crud.bidang.get_total_invoice_by_bidang_id(bidang_id=detail.bidang_id)
+
+        detail.total_beban = total_beban_penjual.total_beban_penjual
+        detail.total_invoice = total_invoice.total_invoice
+        detail.sisa_pelunasan = detail.total_harga - (total_beban_penjual.total_beban_penjual + total_invoice.total_invoice)
+
+        details.append(detail)
     
     obj_return.details = details
 
     return create_response(data=obj_return)
-    
-    
     
 @router.put("/{id}", response_model=PutResponseBaseSch[TahapSch])
 async def update(

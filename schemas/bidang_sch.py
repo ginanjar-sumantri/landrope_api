@@ -191,3 +191,13 @@ class BidangForUtjSch(SQLModel):
     luas_surat:Optional[Decimal]
     project_name:Optional[str]
     desa_name:Optional[str]
+
+class BidangTotalBebanPenjualByIdSch(SQLModel):
+    id:UUID
+    id_bidang:Optional[str]
+    total_beban_penjual:Optional[Decimal]
+
+class BidangTotalInvoiceByIdSch(SQLModel):
+    id:UUID
+    id_bidang:Optional[str]
+    total_invoice:Optional[Decimal]

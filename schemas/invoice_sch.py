@@ -23,3 +23,4 @@ class InvoiceSch(InvoiceFullBase):
 @optional
 class InvoiceUpdateSch(InvoiceBase):
     pass
+

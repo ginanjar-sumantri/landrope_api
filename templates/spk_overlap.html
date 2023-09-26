@@ -75,7 +75,12 @@
   </head>
   <body>
     <div class="header">
-      <h4>Permohonan Transaksi {{ jenisbayar }}</h4>
+      <div>
+        <h3>Permohonan Transaksi {{ jenisbayar }}</h3>
+      </div>
+      <div>
+        <h4>KJB NO: {{kjb_hd_code}}</h4>
+      </div>
       <div class="sub-header">
         <table>
           <tr>
@@ -181,12 +186,12 @@
           <td align="center">{{ item.pemilik_name }}</td>
           <td align="center">{{ item.alashak }}</td>
           <td align="right">{{ item.tahap }}</td>
-          <td align="right">{{ item.luas_surat }}</td>
-          <td align="right">{{ item.luas_overlap }}</td>
+          <td align="right">{{ item.luas_suratExt }}</td>
+          <td align="right">{{ item.luas_overlapExt }}</td>
           <td align="center">{{ item.kategori }}</td>
           <td align="center">{{ item.no_nib }}</td>
           <td align="center">{{ item.id_bidang }}</td>
-          <td align="center">{{ item.tipe_overlap.value }}</td>
+          <td align="center">{{ item.tipe_overlapExt }}</td>
           <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
         {% endfor %}

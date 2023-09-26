@@ -13,7 +13,8 @@ from models.ptsk_model import Ptsk
 from models.planing_model import Planing
 from models.desa_model import Desa
 from models.project_model import Project
-from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, BidangForUtjSch)
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, 
+                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
 from services.gcloud_storage_service import GCStorageService
@@ -144,5 +145,67 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response =  await db_session.execute(query)
         return response.fetchall()
 
+    async def get_total_beban_penjual_by_bidang_id(
+            self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> BidangTotalBebanPenjualByIdSch | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                        select
+                        b.id as bidang_id,
+                        b.id_bidang,
+                        SUM(CASE
+                                WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
+                                    Case
+                                        WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                        ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                    End
+                                WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
+                                    Case
+                                        WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
+                                        ELSE ROUND((bb.amount * b.luas_bayar), 2)
+                                    End
+                                WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
+                            End) As total_beban_penjual
+                        from bidang b
+                        inner join bidang_komponen_biaya kb on b.id = kb.bidang_id
+                        inner join beban_biaya bb on bb.id = kb.beban_biaya_id
+                        where kb.is_void != true
+                        and kb.beban_pembeli = false
+                        and b.id = '{str(bidang_id)}'
+                        group by b.id
+                """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone()
+    
+    async def get_total_invoice_by_bidang_id(
+            self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> BidangTotalInvoiceByIdSch | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                        select
+                        b.id,
+                        b.id_bidang,
+                        sum(i.amount) as total_invoice
+                        from bidang b
+                        inner join spk s on b.id = s.bidang_id
+                        inner join invoice i on s.id = i.spk_id
+                        and i.is_void != true
+                        and b.id = '{str(bidang_id)}'
+                        group by b.id
+                """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone()
 
 bidang = CRUDBidang(Bidang)

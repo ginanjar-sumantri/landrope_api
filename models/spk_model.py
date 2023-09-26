@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from models.bidang_model import Bidang
     from models.master_model import BebanBiaya
     from models.bundle_model import BundleDt
-    from models.bidang_komponen_biaya_model import BidangKomponenBiaya
+    from models.kjb_model import KjbTermin
 
 class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -18,6 +18,7 @@ class SpkBase(SQLModel):
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
     nilai:condecimal(decimal_places=2) = Field(nullable=False)
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
+    kjb_termin_id:Optional[UUID] = Field(nullable=True, foreign_key="kjb_termin.id")
 
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
@@ -36,6 +37,13 @@ class Spk(SpkFullBase, table=True):
         sa_relationship_kwargs=
         {
             "lazy" : "selectin"
+        }
+    )
+
+    kjb_termin:"KjbTermin" = Relationship(sa_relationship_kwargs=
+        {
+            "lazy" : "selectin",
+
         }
     )
 
