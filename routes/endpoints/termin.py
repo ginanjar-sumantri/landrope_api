@@ -7,18 +7,18 @@ import crud
 from models.termin_model import Termin
 from models.worker_model import Worker
 from models.invoice_model import Invoice, InvoiceDetail
-from models.tahap_model import Tahap, TahapDetail
-from models.kjb_model import KjbHd, KjbDt
+from models.tahap_model import Tahap
+from models.kjb_model import KjbHd
 from models.spk_model import Spk
 from models.bidang_model import Bidang
-from models.hasil_peta_lokasi_model import HasilPetaLokasi
+from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, TerminBidangForPrintOutExt,
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
+from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
@@ -29,12 +29,15 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
 from common.enum import JenisBayarEnum, StatusHasilPetaLokasiEnum, SatuanBayarEnum
+from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
 from decimal import Decimal
 from services.pdf_service import PdfService
 from jinja2 import Environment, FileSystemLoader
+from datetime import date
 import json
 import numpy
+import roman
 
 router = APIRouter()
 
@@ -48,6 +51,15 @@ async def create(
 
     db_session = db.session
     sch.is_void = False
+
+    if sch.jenis_bayar == JenisBayarEnum.UTJ:
+        last_number = await generate_code_month(entity=CodeCounterEnum.Utj, with_commit=False, db_session=db_session)
+
+        today = date.today()
+        month = roman.toRoman(today.month)
+        year = today.year
+
+        sch.code = f"{last_number}/UTJ/LA/{month}/{year}"
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
@@ -345,7 +357,7 @@ async def get_by_id(id:UUID,
 async def printout(id:UUID | str,
                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    """Get for search"""
+    """Print out DP Pelunasan"""
 
     obj = await crud.termin.get_by_id_for_printout(id=id)
     if obj is None:
@@ -465,6 +477,39 @@ async def printout(id:UUID | str,
     return response
 
 
-# @router.get("/print-out/{id}")
-# async def printout(id:UUID | str,
-#                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
+@router.get("/print-out/utj/{id}")
+async def printout(id:UUID | str,
+                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Print out UTJ"""
+
+    obj = await crud.termin.get_by_id_for_printout(id=id)
+    if obj is None:
+        raise IdNotFoundException(Termin, id)
+    
+    termin_header = TerminByIdForPrintOut(**dict(obj))
+
+    data =  []
+    invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id)
+    for inv in invoices:
+        invoice = InvoiceForPrintOutUtj(**dict(inv))
+        data.append(invoice)
+
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template("utj.html")
+
+    render_template = template.render(code=termin_header.code,
+                                      data=data)
+    
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={termin_header.code}.pdf"
+    return response
+
+
+
+    

@@ -42,9 +42,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     from termin tr
                     inner join invoice i on i.termin_id = tr.id
                     inner join bidang b on b.id = i.bidang_id
-                    inner join tahap t on t.id = tr.tahap_id
-                    inner join planing pl on pl.id = t.planing_id
-                    inner join project pr on pr.id = pl.project_id
+                    left outer join tahap t on t.id = tr.tahap_id
+                    left outer join planing pl on pl.id = t.planing_id
+                    left outer join project pr on pr.id = pl.project_id
                     where tr.id = '{str(id)}'
                     group by tr.id, t.id, pr.id
                     """)

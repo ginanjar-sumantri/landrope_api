@@ -121,9 +121,9 @@ async def get_by_id(id:UUID):
         total_beban_penjual = await crud.bidang.get_total_beban_penjual_by_bidang_id(bidang_id=detail.bidang_id)
         total_invoice = await crud.bidang.get_total_invoice_by_bidang_id(bidang_id=detail.bidang_id)
 
-        detail.total_beban = total_beban_penjual.total_beban_penjual
-        detail.total_invoice = total_invoice.total_invoice
-        detail.sisa_pelunasan = detail.total_harga - (total_beban_penjual.total_beban_penjual + total_invoice.total_invoice)
+        detail.total_beban = total_beban_penjual.total_beban_penjual if total_beban_penjual != None else 0
+        detail.total_invoice = total_invoice.total_invoice if total_invoice != None else 0
+        detail.sisa_pelunasan = detail.total_harga - (detail.total_beban + detail.total_invoice)
 
         details.append(detail)
     

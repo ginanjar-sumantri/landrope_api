@@ -24,3 +24,16 @@ class InvoiceSch(InvoiceFullBase):
 class InvoiceUpdateSch(InvoiceBase):
     pass
 
+class InvoiceForPrintOutUtj(SQLModel):
+    pemilik_name:Optional[str]
+    mediator:Optional[str]
+    alashak:Optional[str]
+    luas_surat:Optional[Decimal]
+    id_bidang:Optional[str]
+    keterangan:Optional[str]
+    desa_name:Optional[str]
+    no_peta:Optional[str]
+    project_name:Optional[str]
+    ptsk_name:Optional[str]
+    amount:Optional[Decimal]
+

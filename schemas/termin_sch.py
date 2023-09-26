@@ -28,7 +28,7 @@ class TerminUpdateSch(TerminBase):
     invoices:list[InvoiceExtSch]
 
 class TerminByIdForPrintOut(SQLModel):
-    id:UUID
+    id:Optional[UUID]
     code:Optional[str]
     tahap_id:Optional[str]
     created_at:Optional[datetime]

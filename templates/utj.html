@@ -1,0 +1,254 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="pdfkit-page-size" content="Legal" />
+    <meta name="pdfkit-orientation" content="Portrait" />
+    <title>UTJ</title>
+    <style>
+      @page {
+        size: A4;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      /* CSS untuk header */
+      .header {
+        text-align: center;
+        width: 100%;
+      }
+
+      /* CSS untuk sub header */
+      .sub-header {
+        text-align: left;
+      }
+
+      .sub-header td {
+        font-size: 12px;
+      }
+
+      /* CSS untuk content */
+
+      .content {
+        align-self: center;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .content p {
+        font-size: 12px;
+      }
+
+      .content th {
+        border: 1px solid;
+        font-size: 12px;
+        background-color: #b0b0b0;
+      }
+
+      .content td {
+        border: 1px solid;
+        font-size: 11px;
+      }
+
+      /* CSS untuk footer */
+      .footer {
+        align-self: center;
+        padding-top: 50px;
+        font-size: 12px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .footer td {
+        font-size: 11px;
+      }
+
+      .spasi-banyak {
+        margin: 20px;
+        /* Atur jarak margin sebesar 20px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <h3>FORM PENGAMBILAN UTJ</h3>
+      </div>
+      <div>
+        <h4>NO : {{code}}</h4>
+      </div>
+    </div>
+    <div class="content">
+      <table
+        align="center"
+        style="border-collapse: collapse; border: 1px solid; width: 100%"
+      >
+        <tr>
+          <th>No.</th>
+          <th>PEMILIK</th>
+          <th>MEDIATOR</th>
+          <th>ALASHAK</th>
+          <th>LUAS SURAT</th>
+          <th>ID BID</th>
+          <th>KETERANGAN</th>
+          <th>DESA</th>
+          <th>NO. PETA</th>
+          <th>PROYEK</th>
+          <th>PT</th>
+          <th>NO. CEK</th>
+          <th>NOMINAL UTJ</th>
+        </tr>
+        {% for item in data %}
+        <tr>
+          <td align="center">{{ item.no }}</td>
+          <td>{{ item.pemilik_name }}</td>
+          <td>{{ item.mediator }}</td>
+          <td>{{ item.alashak }}</td>
+          <td align="right">{{ item.luas_surat }}</td>
+          <td align="center">{{ item.id_bidang }}</td>
+          <td>{{ item.keterangan }}</td>
+          <td>{{ item.desa_name }}</td>
+          <td align="center">{{ item.no_peta }}</td>
+          <td>{{ item.project_name }}</td>
+          <td>{{ item.ptsk_name }}</td>
+          <td>&nbsp;</td>
+          <td align="right">{{ item.amount }}</td>
+          <!-- Tambahkan kolom sesuai dengan properti objek -->
+        </tr>
+        {% endfor %}
+        <tr>
+          <td align="center" colspan="4">TOTAL</td>
+          <td>{{total_luas_surat}}</td>
+          <td colspan="7">&nbsp;</td>
+          <td>{{total_amount}}</td>
+        </tr>
+      </table>
+    </div>
+    <div class="footer">
+      <table align="center">
+        <tr>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>PEMOHON & PENERIMA</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>DEPT PEMBELIAN TANAH</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>VERIFIKASI</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>DEPT ANALISA</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td>MENYETUJUI</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>SENIOR MNG</td>
+              </tr>
+            </table>
+          </td>
+          <td>
+            <table
+              style="
+                border-collapse: collapse;
+                border: 1px solid;
+                text-align: center;
+              "
+            >
+              <tr>
+                <td colspan="3">MENGETAHUI</td>
+              </tr>
+              <tr>
+                <td height="30px">&nbsp;</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+                <td>
+                  <div class="spasi-banyak">
+                    <p>_________________</p>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>MNG. PRA TRANS</td>
+                <td>DEPT LAND PAYMENT</td>
+                <td>DEPT KASIR</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

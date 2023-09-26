@@ -13,6 +13,7 @@ class CodeCounterEnum(str, Enum):
     RequestPetaLokasi = "RequestPetaLokasi"
     OrderGambarUkur = "OrderGambarUkur"
     Spk = "Spk"
+    Utj = "Utj"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None
