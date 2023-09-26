@@ -366,26 +366,31 @@ async def printout(id:UUID | str,
     
     array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs_on_tahap])
     total_luas_surat = numpy.sum(array_total_luas_surat)
+    total_luas_surat = "{:,.0f}".format(total_luas_surat)
 
     array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs_on_tahap])
     total_luas_ukur = numpy.sum(array_total_luas_ukur)
+    total_luas_ukur = "{:,.0f}".format(total_luas_ukur)
 
     array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs_on_tahap])
     total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
+    total_luas_gu_perorangan = "{:,.0f}".format(total_luas_gu_perorangan)
 
     array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs_on_tahap])
     total_luas_nett = numpy.sum(array_total_luas_nett)
+    total_luas_nett = "{:,.0f}".format(total_luas_nett)
 
     array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs_on_tahap])
     total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
+    total_luas_pbt_perorangan = "{:,.0f}".format(total_luas_pbt_perorangan)
 
     array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs_on_tahap])
     total_luas_bayar = numpy.sum(array_total_luas_bayar)
+    total_luas_bayar = "{:,.0f}".format(total_luas_bayar)
 
     array_total_harga = numpy.array([b.total_harga for b in obj_bidangs_on_tahap])
     total_harga = numpy.sum(array_total_harga)
     total_harga = "{:,.2f}".format(total_harga)
-
 
     invoices = []
     list_bidang_id = []
@@ -412,11 +417,11 @@ async def printout(id:UUID | str,
     #     utj_history = TerminUtjHistoryForPrintOut(**dict(obj_utj_history))
 
 
-    termins_history = []
-    obj_termins_history = await crud.termin.get_history_termin_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id, termin_id=termin_header.id)
-    for t_his in obj_termins_history:
-        termin_history = TerminHistoryForPrintOut(**dict(t_his))
-        termins_history.append(termin_history)
+    # termins_history = []
+    # obj_termins_history = await crud.termin.get_history_termin_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id, termin_id=termin_header.id)
+    # for t_his in obj_termins_history:
+    #     termin_history = TerminHistoryForPrintOut(**dict(t_his))
+    #     termins_history.append(termin_history)
 
     komponen_biayas = []
     obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id)
@@ -430,8 +435,6 @@ async def printout(id:UUID | str,
     
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template("memo_tanah.html")
-
-    # akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
     render_template = template.render(code=termin_header.code or "",
                                       created_at=termin_header.created_at.date(),

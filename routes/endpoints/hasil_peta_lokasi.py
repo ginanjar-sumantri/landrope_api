@@ -332,6 +332,10 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
     
     #generate kelengkapan dokumen
     if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
+        checklist_kelengkapan_dokumen_hd_current = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
+        if checklist_kelengkapan_dokumen_hd_current:
+            await crud.checklist_kelengkapan_dokumen_hd.delete(id=checklist_kelengkapan_dokumen_hd_current.id, with_commit=False, db_session=db_session)
+
         master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
             jenis_alashak=kjb_dt_current.jenis_alashak,
             kategori_penjual=kjb_hd_current.kategori_penjual)
@@ -364,7 +368,8 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
         
 
     #remove draft
-    await crud.draft.remove(id=draft.id, db_session=db_session)
+    # await crud.draft.remove(id=draft.id, db_session=db_session)
+    await db_session.commit()
 
     return {"message" : "successfully update bidang and generate kelengkapan dokumen"}
 
