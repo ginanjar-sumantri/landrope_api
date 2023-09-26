@@ -144,7 +144,7 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(RequestPetaLokasi, id)
 
-@router.put("/{id}", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
+@router.put("", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
 async def update(sch:RequestPetaLokasiUpdateExtSch,
                  current_worker:Worker=Depends(crud.worker.get_current_user)):
     

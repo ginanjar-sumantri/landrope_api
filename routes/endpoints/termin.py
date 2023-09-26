@@ -463,3 +463,8 @@ async def printout(id:UUID | str,
     response = Response(doc, media_type='application/pdf')
     response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
     return response
+
+
+# @router.get("/print-out/{id}")
+# async def printout(id:UUID | str,
+#                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
