@@ -97,7 +97,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 INNER JOIN bidang_komponen_biaya kb ON kb.bidang_id = b.id
                 INNER JOIN beban_biaya bb ON kb.beban_biaya_id = bb.id
                 WHERE 
-                s.jenis_bayar = '{jenis_bayar}' and 
+                s.jenis_bayar = '{jenis_bayar.value}' and 
                 (i.spk_id is null or i.is_void = true) and
                 kb.is_void != true
                 and t.id = '{str(tahap_id)}'
@@ -170,7 +170,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     INNER JOIN bidang_komponen_biaya kb ON kb.bidang_id = b.id
                     INNER JOIN beban_biaya bb ON kb.beban_biaya_id = bb.id
                     WHERE 
-                    s.jenis_bayar = '{jenis_bayar}' and 
+                    s.jenis_bayar = '{jenis_bayar.value}' and 
                     kb.is_void != true and
                     t.id = '{str(tahap_id)}' and
                     tr.id = '{str(termin_id)}' and

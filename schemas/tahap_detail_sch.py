@@ -41,6 +41,7 @@ class TahapDetailSch(TahapDetailFullBase):
 class TahapDetailExtSch(SQLModel):
     id:UUID
     tahap_id:Optional[UUID]
+    bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     alashak:Optional[str]
     group:Optional[str]

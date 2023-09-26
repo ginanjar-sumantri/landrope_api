@@ -21,6 +21,7 @@ async def create(
     
     """Create a new object"""
     db_session = db.session
+    sch.is_void = False
         
     new_obj = await crud.bidang_komponen_biaya.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     
@@ -61,6 +62,7 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
     if not obj_current:
         raise IdNotFoundException(BidangKomponenBiaya, id)
     
+    sch.is_void = obj_current.is_void
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
