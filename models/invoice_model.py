@@ -16,7 +16,7 @@ class InvoiceBase(SQLModel):
     termin_id:Optional[UUID] = Field(foreign_key="termin.id", nullable=False)
     spk_id:Optional[UUID] = Field(foreign_key="spk.id", nullable=True)
     bidang_id:Optional[UUID] = Field(foreign_key="bidang.id", nullable=True)
-    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
+    amount:Optional[Decimal] = Field(nullable=True, default=0)
     is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
 

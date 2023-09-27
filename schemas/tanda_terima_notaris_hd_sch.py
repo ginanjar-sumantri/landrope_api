@@ -2,8 +2,9 @@ from models.tanda_terima_notaris_model import TandaTerimaNotarisHd, TandaTerimaN
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import StatusPetaLokasiEnum
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 from typing import List
+from uuid import UUID
 
 @as_form
 class TandaTerimaNotarisHdCreateSch(TandaTerimaNotarisHdBase):
@@ -25,3 +26,7 @@ class TandaTerimaNotarisHdSch(TandaTerimaNotarisHdFullBase):
 @optional
 class TandaTerimaNotarisHdUpdateSch(TandaTerimaNotarisHdBase):
     pass
+
+class TandaTerimaNotarisHdForCloud(SQLModel):
+    id:UUID
+    notaris_id:UUID | None

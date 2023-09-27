@@ -55,3 +55,11 @@ class KjbDtForOrderGUById(SQLModel):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
     proses_bpn_order_gu:ProsesBPNOrderGambarUkurEnum | None
     luas_surat:Decimal | None
+
+class KjbDtForCloud(SQLModel):
+    id:UUID
+    kjb_hd_id:Optional[UUID]
+    jenis_alashak:Optional[JenisAlashakEnum]
+    jenis_surat_id:Optional[UUID]
+    alashak:Optional[str]
+    bundle_hd_id:Optional[UUID]

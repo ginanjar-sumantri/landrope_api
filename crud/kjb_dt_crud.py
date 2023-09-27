@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_, func
+from sqlmodel import select, or_, and_, func, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from sqlmodel.sql.expression import Select
@@ -12,7 +12,7 @@ from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbDt
 from models.request_peta_lokasi_model import RequestPetaLokasi
-from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch
+from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -82,5 +82,29 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
         response =  await db_session.execute(query)
         return response.fetchall()
+    
+    async def get_by_id_for_cloud(
+                    self, 
+                    *, 
+                    id: UUID | str,
+                    db_session: AsyncSession | None = None
+                    ) -> KjbDtForCloud | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                    select
+                    id,
+                    kjb_hd_id,
+                    jenis_alashak,
+                    jenis_surat_id,
+                    alashak,
+                    bundle_hd_id
+                    from kjb_dt
+                    where id = '{str(id)}'
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone()
     
 kjb_dt = CRUDKjbDt(KjbDt)

@@ -2,7 +2,7 @@ from crud.base_crud import CRUDBase
 from models.bundle_model import BundleHd, BundleDt
 from models.kjb_model import KjbDt
 from models.dokumen_model import Dokumen
-from schemas.bundle_dt_sch import BundleDtCreateSch, BundleDtUpdateSch, BundleDtMetaDynSch, BundleDtMetaData
+from schemas.bundle_dt_sch import BundleDtCreateSch, BundleDtUpdateSch, BundleDtMetaDynSch, BundleDtMetaData,BundleDtForCloud
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, and_, text
 from fastapi_async_sqlalchemy import db
@@ -25,6 +25,22 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().one_or_none()
+    
+    async def get_by_bundle_hd_id_and_dokumen_id_for_cloud(self, 
+                *,
+                bundle_hd_id: UUID | str,
+                dokumen_id: UUID | str,
+                db_session: AsyncSession | None = None
+                ) -> BundleDtForCloud | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model.id).where(                                           
+            and_(self.model.bundle_hd_id == bundle_hd_id,
+                self.model.dokumen_id == dokumen_id))
+        
+        response = await db_session.execute(query)
+
+        return response.fetchone()
     
     async def get_meta_data_and_dyn_form(self, 
                                          *, 

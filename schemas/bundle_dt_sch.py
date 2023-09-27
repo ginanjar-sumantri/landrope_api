@@ -29,3 +29,6 @@ class BundleDtMetaData(SQLModel):
     id_bidang:Optional[str]
     meta_data:Optional[str]
     key_field:Optional[str]
+
+class BundleDtForCloud(SQLModel):
+    id:UUID

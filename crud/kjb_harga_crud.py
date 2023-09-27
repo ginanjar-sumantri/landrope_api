@@ -11,7 +11,7 @@ from common.ordered import OrderEnumSch
 from common.enum import JenisAlashakEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHarga, KjbTermin
-from schemas.kjb_harga_sch import KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch
+from schemas.kjb_harga_sch import KjbHargaCreateSch, KjbHargaUpdateSch, KjbHargaCreateExtSch, KjbHargaForCloud
 from schemas.kjb_termin_sch import KjbTerminSch, KjbTerminCreateExtSch
 from typing import List
 from uuid import UUID
@@ -53,5 +53,16 @@ class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().one_or_none()
+    
+    async def get_harga_by_id_for_cloud(self, *, 
+                  kjb_hd_id: UUID | str, 
+                  jenis_alashak:JenisAlashakEnum,
+                  db_session: AsyncSession | None = None) -> KjbHargaForCloud | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model.harga_akta, self.model.harga_transaksi, self.model.id).where(and_(self.model.kjb_hd_id == kjb_hd_id, self.model.jenis_alashak == jenis_alashak))
+        response = await db_session.execute(query)
+
+        return response.fetchone()
 
 kjb_harga = CRUDKjbHarga(KjbHarga)

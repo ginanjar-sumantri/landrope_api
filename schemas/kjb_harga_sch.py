@@ -6,6 +6,8 @@ from typing import List
 from uuid import UUID
 from common.enum import JenisAlashakEnum
 from decimal import Decimal
+from sqlmodel import SQLModel
+from typing import Optional
 
 class KjbHargaCreateSch(KjbHargaBase):
     termins:list[KjbTerminCreateExtSch]
@@ -26,3 +28,8 @@ class KjbHargaExtSch(KjbHargaFullBase):
 @optional
 class KjbHargaUpdateSch(KjbHargaFullBase):
     pass
+
+class KjbHargaForCloud(SQLModel):
+    id:UUID
+    harga_akta:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]

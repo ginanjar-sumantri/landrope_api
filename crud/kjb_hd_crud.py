@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from sqlmodel.sql.expression import Select
@@ -11,7 +11,7 @@ from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
-from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch
+from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -210,6 +210,31 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                        KjbHd.utj_amount,
                        ).select_from(KjbHd
                             ).where(KjbHd.id == id)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone()
+    
+    async def get_by_id_for_cloud(
+                    self, 
+                    *, 
+                    id: UUID | str,
+                    db_session: AsyncSession | None = None
+                    ) -> KjbHdForCloud | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                    select
+                    id,
+                    nama_group,
+                    manager_id,
+                    sales_id,
+                    mediator,
+                    telepon_mediator,
+                    kategori_penjual
+                    from kjb_hd
+                    where id = '{str(id)}'
+                    """)
 
         response = await db_session.execute(query)
 

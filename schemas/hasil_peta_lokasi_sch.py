@@ -2,9 +2,11 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiF
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailSch
 from common.partial import optional
 from common.as_form import as_form
+from common.enum import StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from uuid import UUID
+from decimal import Decimal
 from typing import Optional
 
 @as_form
@@ -52,3 +54,18 @@ class HasilPetaLokasiTaskUpdateBidang(SQLModel):
     hasil_peta_lokasi_id:str
     kjb_dt_id:str
     draft_id:str
+
+class HasilPetaLokasiUpdateCloud(SQLModel):
+    id:UUID
+    status_hasil_peta_lokasi:Optional[StatusHasilPetaLokasiEnum]
+    hasil_analisa_peta_lokasi:Optional[HasilAnalisaPetaLokasiEnum]
+    pemilik_id:Optional[UUID]
+    luas_surat:Optional[Decimal]
+    planing_id:Optional[UUID]
+    skpt_id:Optional[UUID]
+    luas_ukur:Optional[Decimal]
+    luas_nett:Optional[Decimal]
+    luas_clear:Optional[Decimal]
+    luas_gu_pt:Optional[Decimal]
+    luas_gu_perorangan:Optional[Decimal]
+    updated_by_id:Optional[UUID]

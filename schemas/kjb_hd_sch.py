@@ -8,6 +8,7 @@ from schemas.kjb_penjual_sch import KjbPenjualCreateExtSch, KjbPenjualSch
 from schemas.kjb_dt_sch import KjbDtCreateExtSch
 from schemas.bidang_sch import BidangForUtjSch
 from common.partial import optional
+from common.enum import KategoriPenjualEnum
 from sqlmodel import Field, SQLModel
 from typing import List, Optional
 from decimal import Decimal
@@ -53,3 +54,12 @@ class KjbHdForTerminByIdSch(SQLModel):
     nama_group:Optional[str]
     utj_amount:Optional[Decimal]
     bidangs:list[BidangForUtjSch] | None
+
+class KjbHdForCloud(SQLModel):
+    id:UUID
+    nama_group:Optional[str]
+    manager_id:Optional[UUID]
+    sales_id:Optional[UUID]
+    mediator:Optional[str]
+    telepon_mediator:Optional[str]
+    kategori_penjual:Optional[KategoriPenjualEnum]
