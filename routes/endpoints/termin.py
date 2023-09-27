@@ -245,6 +245,9 @@ async def get_list_spk_by_tahap_id(
         spk.total_invoice = total_invoice.total_invoice if total_invoice != None else 0
         spk.sisa_pelunasan = spk.total_harga - (spk.total_beban + spk.total_invoice)
 
+        if jenis_bayar == JenisBayarEnum.LUNAS:
+            spk.amount = spk.sisa_pelunasan
+
         spkts.append(spk)
 
     obj_return.spkts = spkts
