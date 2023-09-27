@@ -338,7 +338,12 @@ async def printout(id:UUID | str,
     
     spk_details = []
     no = 1
-    obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
+    obj_beban_biayas = []
+    if spk_header.jenis_bayar == JenisBayarEnum.PAJAK:
+        obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
+    else:
+        obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
+        
     for bb in obj_beban_biayas:
         beban_biaya = SpkDetailPrintOut(**dict(bb))
         beban_biaya.no = no

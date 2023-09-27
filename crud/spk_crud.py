@@ -171,7 +171,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         return response.fetchone()
 
-    async def get_beban_biaya_by_id_for_printout(self, 
+    async def get_beban_biaya_pajak_by_id_for_printout(self, 
                                                  *, 
                                                  id: UUID | str, 
                                                  db_session: AsyncSession | None = None
@@ -190,6 +190,31 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
                     where s.id = '{str(id)}'
                     and bb.is_tax = true
+                    and bkb.is_void != true
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+    
+    async def get_beban_biaya_by_id_for_printout(self, 
+                                                 *, 
+                                                 id: UUID | str, 
+                                                 db_session: AsyncSession | None = None
+                                                 ) -> List[SpkDetailPrintOut] | None:
+        db_session = db_session or db.session
+        query = text(f"""
+                    select 
+                    case
+                        when bkb.beban_pembeli = true Then 'DITANGGUNG PT'
+                        else 'DITANGGUNG PENJUAL'
+                    end as tanggapan,
+                    bb.name
+                    from spk s
+                    inner join bidang b on b.id = s.bidang_id
+                    inner join bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where s.id = '{str(id)}'
                     and bkb.is_void != true
                     """)
 
