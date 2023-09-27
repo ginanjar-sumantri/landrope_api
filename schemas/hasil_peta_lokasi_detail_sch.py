@@ -3,6 +3,7 @@ from common.partial import optional
 from common.as_form import as_form
 from common.enum import TipeOverlapEnum, StatusLuasOverlapEnum
 from sqlmodel import SQLModel, Field
+from typing import Optional
 from uuid import UUID
 from decimal import Decimal
 
@@ -24,6 +25,10 @@ class HasilPetaLokasiDetailSch(HasilPetaLokasiDetailFullBase):
 @optional
 class HasilPetaLokasiDetailUpdateSch(HasilPetaLokasiDetailBase):
     pass
+
+class HasilPetaLokasiDetailForUtj(SQLModel):
+    id:Optional[UUID]
+    keterangan:Optional[str]
 
 # @optional
 # class HasilPetaLokasiDetailUpdateExtSch(SQLModel):

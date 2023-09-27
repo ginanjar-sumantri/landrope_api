@@ -4,11 +4,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="pdfkit-page-size" content="Legal" />
-    <meta name="pdfkit-orientation" content="Portrait" />
+    <meta name="pdfkit-orientation" content="Landscape" />
     <title>UTJ</title>
     <style>
       @page {
-        size: A4;
+        size: A4 landscape;
       }
 
       body {
@@ -116,7 +116,7 @@
           <td>{{ item.project_name }}</td>
           <td>{{ item.ptsk_name }}</td>
           <td>&nbsp;</td>
-          <td align="right">{{ item.amount }}</td>
+          <td align="right">{{ item.amountExt }}</td>
           <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
         {% endfor %}

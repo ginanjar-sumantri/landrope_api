@@ -25,6 +25,8 @@ class InvoiceUpdateSch(InvoiceBase):
     pass
 
 class InvoiceForPrintOutUtj(SQLModel):
+    no:Optional[int]
+    bidang_id:Optional[UUID]
     pemilik_name:Optional[str]
     mediator:Optional[str]
     alashak:Optional[str]
@@ -36,4 +38,5 @@ class InvoiceForPrintOutUtj(SQLModel):
     project_name:Optional[str]
     ptsk_name:Optional[str]
     amount:Optional[Decimal]
+    amountExt:Optional[str]
 

@@ -24,6 +24,7 @@ from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
 from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -239,9 +240,9 @@ async def get_list_spk_by_tahap_id(
         spk = SpkForTerminSch(**dict(s))
         total_beban_penjual = await crud.bidang.get_total_beban_penjual_by_bidang_id(bidang_id=spk.bidang_id)
         total_invoice = await crud.bidang.get_total_invoice_by_bidang_id(bidang_id=spk.bidang_id)
-        spk.total_beban = total_beban_penjual.total_beban_penjual
-        spk.total_invoice = total_invoice.total_invoice
-        spk.sisa_pelunasan = spk.total_harga - (total_beban_penjual.total_beban_penjual + total_invoice.total_invoice)
+        spk.total_beban = total_beban_penjual.total_beban_penjual if total_beban_penjual != None else 0
+        spk.total_invoice = total_invoice.total_invoice if total_invoice != None else 0
+        spk.sisa_pelunasan = spk.total_harga - (spk.total_beban + spk.total_invoice)
 
         spkts.append(spk)
 
@@ -490,16 +491,39 @@ async def printout(id:UUID | str,
     termin_header = TerminByIdForPrintOut(**dict(obj))
 
     data =  []
+    no:int = 1
     invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id)
     for inv in invoices:
         invoice = InvoiceForPrintOutUtj(**dict(inv))
+        invoice.amountExt = "{:,.2f}".format(invoice.amount)
+        keterangan:str = ""
+        keterangans = await crud.hasil_peta_lokasi_detail.get_keterangan_by_bidang_id_for_printout_utj(bidang_id=inv.bidang_id)
+        for k in keterangans:
+            kt = HasilPetaLokasiDetailForUtj(**dict(k))
+            if kt.keterangan is not None and kt.keterangan != '':
+                keterangan += f'{kt.keterangan}, '
+        keterangan = keterangan[0:-2]
+        invoice.keterangan = keterangan
+        invoice.no = no
+        no = no + 1
+
         data.append(invoice)
+
+    array_total_luas_surat = numpy.array([b.luas_surat for b in invoices])
+    total_luas_surat = numpy.sum(array_total_luas_surat)
+    total_luas_surat = "{:,.0f}".format(total_luas_surat)
+
+    array_total_amount = numpy.array([b.amount for b in invoices])
+    total_amount = numpy.sum(array_total_amount)
+    total_amount = "{:,.0f}".format(total_amount)
 
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template("utj.html")
 
     render_template = template.render(code=termin_header.code,
-                                      data=data)
+                                      data=data,
+                                      total_luas_surat=total_luas_surat,
+                                      total_amount=total_amount)
     
     try:
         doc = await PdfService().get_pdf(render_template)

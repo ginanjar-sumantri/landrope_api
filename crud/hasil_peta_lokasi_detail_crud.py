@@ -1,7 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from sqlmodel.sql.expression import Select
@@ -9,7 +9,7 @@ from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.hasil_peta_lokasi_model import HasilPetaLokasiDetail
-from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailUpdateSch
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailForUtj
 from typing import List
 from uuid import UUID
 
@@ -42,6 +42,27 @@ class CRUDHasilPetaLokasiDetail(CRUDBase[HasilPetaLokasiDetail, HasilPetaLokasiD
 
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_keterangan_by_bidang_id_for_printout_utj(
+            self, 
+            *, 
+            bidang_id:UUID | str, 
+            db_session : AsyncSession | None = None) -> List[HasilPetaLokasiDetailForUtj] | None:
+        
+        db_session = db_session or db.session
+
+        query = text(f"""
+                    select
+                    hpl_dt.id,
+                    hpl_dt.keterangan
+                    from hasil_peta_lokasi_detail hpl_dt
+                    inner join hasil_peta_lokasi hpl on hpl.id = hpl_dt.hasil_peta_lokasi_id
+                    inner join bidang b on b.id = hpl.bidang_id
+                    where b.id = '{str(bidang_id)}'
+                    """)
+
+        response =  await db_session.execute(query)
+        return response.fetchall()
     
     async def remove_multiple_data(self, *, list_obj: list[HasilPetaLokasiDetail],
                                    db_session: AsyncSession | None = None) -> None:

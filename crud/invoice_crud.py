@@ -20,6 +20,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
             db_session = db_session or db.session
             query = text(f"""
                         select 
+                        b.id as bidang_id,
                         pm.name as pemilik_name,
                         b.mediator,
                         b.alashak,
@@ -29,7 +30,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         b.no_peta,
                         pr.name as project_name,
                         case
-                            when b.skpt_id != null then pt.name
+                            when b.skpt_id is not null then pt.name
                             else pn.name || '(PENAMPUNG)'
                         end as ptsk_name,
                         i.amount,
