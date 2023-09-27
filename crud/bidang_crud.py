@@ -197,8 +197,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                         b.id_bidang,
                         sum(i.amount) as total_invoice
                         from bidang b
-                        inner join spk s on b.id = s.bidang_id
-                        inner join invoice i on s.id = i.spk_id
+                        inner join invoice i on b.id = i.bidang_id
                         and i.is_void != true
                         and b.id = '{str(bidang_id)}'
                         group by b.id
