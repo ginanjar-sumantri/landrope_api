@@ -44,4 +44,18 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
 
         return response.scalars().one_or_none()
 
+    async def get_by_id(
+                    self, 
+                    *, 
+                    kjb_dt_id: UUID | str,
+                    db_session: AsyncSession | None = None
+                    ) -> HasilPetaLokasi | None:
+        
+        db_session = db_session or db.session
+        query = select(HasilPetaLokasi).where(HasilPetaLokasi.kjb_dt_id == kjb_dt_id)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone
+    
 hasil_peta_lokasi = CRUDHasilPetaLokasi(HasilPetaLokasi)

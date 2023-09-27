@@ -67,7 +67,7 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
                     inner join bundle_hd bhd on bhd.id = bdt.bundle_hd_id
                     inner join bidang b on bhd.id = b.bundle_hd_id
                     inner join dokumen d on d.id = bdt.dokumen_id
-                    where d.name like '%{dokumen_name}%'
+                    where d.name = '{dokumen_name}'
                     and b.id = '{str(bidang_id)}'
                     """)
         
