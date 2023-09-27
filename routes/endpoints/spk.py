@@ -108,6 +108,14 @@ async def get_by_id(id:UUID):
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
     
+    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
+    metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
+    ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
+
+    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=bidang_obj.id)
+    metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
+    npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
+
     bidang_sch = BidangForSPKByIdSch(id=bidang_obj.id,
                                   id_bidang=bidang_obj.id_bidang,
                                   hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
@@ -125,6 +133,8 @@ async def get_by_id(id:UUID):
                                   ptsk_name=bidang_obj.ptsk_name,
                                   status_sk=bidang_obj.status_sk,
                                   bundle_hd_id=bidang_obj.bundle_hd_id,
+                                  ktp=ktp_value,
+                                  npwp=npwp_value,
                                   termins=harga.termins)
     
     obj_return = SpkByIdSch(**obj.dict())
