@@ -30,21 +30,21 @@ class Termin(TerminFullBase, table=True):
         back_populates="termin",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
     tahap:"Tahap" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
     kjb_hd:"KjbHd" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 

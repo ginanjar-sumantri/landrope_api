@@ -23,16 +23,16 @@ class Tahap(TahapFullBase, table=True):
     details: "TahapDetail" = Relationship(back_populates="tahap",
                                            sa_relationship_kwargs=
                                            {
-                                               "lazy" : "selectin"
+                                               "lazy" : "select"
                                            })
 
     planing:"Planing" = Relationship(sa_relationship_kwargs=
                                      {
-                                        "lazy" : "selectin"
+                                        "lazy" : "select"
                                      })
     ptsk:"Ptsk" = Relationship(sa_relationship_kwargs=
                                      {
-                                        "lazy" : "selectin"
+                                        "lazy" : "select"
                                      })
     
     worker: "Worker" = Relationship(  
@@ -53,6 +53,10 @@ class Tahap(TahapFullBase, table=True):
     @property
     def project_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'planing', None), 'project', None), "name", None)
+    
+    @property
+    def section_name(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, 'planing', None), 'project', None), "section", None), "name", None)
     
     @property
     def desa_name(self) -> str | None:

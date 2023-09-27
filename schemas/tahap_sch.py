@@ -14,24 +14,25 @@ class TahapCreateSch(TahapBase):
 class TahapSch(TahapFullBase):
     planing_name:Optional[str] = Field(alias="planing_name")
     project_name:Optional[str] = Field(alias="project_name")
+    section_name:Optional[str] = Field(alias="section_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     updated_by_name:Optional[str] = Field(alias="updated_by_name")
     jumlah_bidang:Optional[int] = Field(alias="jumlah_bidang")
 
-class TahapSchExt(SQLModel):
-    id:UUID
-    nomor_tahap:Optional[int] 
-    planing_id:Optional[UUID] 
-    ptsk_id:Optional[UUID] 
-    group:Optional[str]
-    section_name:Optional[str]
-    planing_name:Optional[str]
-    project_name:Optional[str]
-    desa_name:Optional[str]
-    ptsk_name:Optional[str]
-    updated_by_name:Optional[str]
-    jumlah_bidang:Optional[int]
+# class TahapSchExt(SQLModel):
+#     id:UUID
+#     nomor_tahap:Optional[int] 
+#     planing_id:Optional[UUID] 
+#     ptsk_id:Optional[UUID] 
+#     group:Optional[str]
+#     section_name:Optional[str]
+#     planing_name:Optional[str]
+#     project_name:Optional[str]
+#     desa_name:Optional[str]
+#     ptsk_name:Optional[str]
+#     updated_by_name:Optional[str]
+#     jumlah_bidang:Optional[int]
     
 
 class TahapByIdSch(SQLModel):

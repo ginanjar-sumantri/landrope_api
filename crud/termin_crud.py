@@ -77,14 +77,14 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     ds.name as desa_name,
                     pm.name as pemilik_name,
                     b.alashak,
-                    b.luas_surat,
-                    b.luas_ukur,
-                    b.luas_gu_perorangan,
-                    b.luas_nett,
-                    b.luas_pbt_perorangan,
-                    b.luas_bayar,
+                    COALESCE(b.luas_surat, 0) as luas_surat,
+                    COALESCE(b.luas_ukur,0) as luas_ukur,
+                    COALESCE(b.luas_gu_perorangan,0) as luas_gu_perorangan,
+                    COALESCE(b.luas_nett,0) as luas_nett,
+                    COALESCE(b.luas_pbt_perorangan,0) as luas_pbt_perorangan,
+                    COALESCE(b.luas_bayar,0) as luas_bayar,
                     b.no_peta,
-                    b.harga_transaksi,
+                    COALESCE(b.harga_transaksi,0) as harga_transaksi,
                     (b.harga_transaksi * b.luas_bayar) as total_harga
                     from termin tr
                     inner join tahap th on th.id = tr.tahap_id

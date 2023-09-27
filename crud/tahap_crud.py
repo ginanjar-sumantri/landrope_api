@@ -7,18 +7,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
 from models.tahap_model import Tahap
 from models import Planing, Project, Desa, Ptsk
-from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch, TahapForTerminByIdSch, TahapByIdSch, TahapSchExt
+from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch, TahapForTerminByIdSch, TahapByIdSch
 from uuid import UUID
 
 class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
-   
-   async def get_multi_paginated(self, *, params: Params | None = Params(),
-                                  query: Tahap | Select[Tahap] | None = None, 
-                                  db_session: AsyncSession | None = None) -> Page[TahapSchExt]:
-        db_session = db_session or db.session
-        if query is None:
-                query = select(self.model)
-        return await paginate(db_session, query, params)
    
    async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> TahapForTerminByIdSch | None:
         db_session = db_session or db.session

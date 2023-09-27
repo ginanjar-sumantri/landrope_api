@@ -10,7 +10,7 @@ from models.planing_model import Planing
 from models.skpt_model import Skpt
 from models.ptsk_model import Ptsk
 from models import Project, Desa, Section
-from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch, TahapSchExt)
+from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.section_sch import SectionUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch, BidangUpdateSch
@@ -66,7 +66,7 @@ async def create(
 
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[TahapSchExt])
+@router.get("", response_model=GetResponsePaginatedSch[TahapSch])
 async def get_list(
             params: Params=Depends(), 
             order_by:str = None, 
@@ -76,20 +76,8 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Tahap.id,
-                   Tahap.nomor_tahap,
-                   Tahap.planing_id,
-                   Tahap.ptsk_id,
-                   Tahap.group,
-                   Section.name.label("section_name"),
-                   Planing.name.label("planing_name"),
-                   Project.name.label("project_name"),
-                   Desa.name.label("desa_name"),
-                   Ptsk.name.label("ptsk_name")
-                   ).select_from(Tahap
-                                    ).outerjoin(Planing, Planing.id == Tahap.planing_id,
+    query = select(Tahap).outerjoin(Planing, Planing.id == Tahap.planing_id,
                                     ).outerjoin(Project, Project.id == Planing.project_id
-                                    ).outerjoin(Section, Section.id == Project.section_id
                                     ).outerjoin(Desa, Desa.id == Planing.desa_id
                                     ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
                                     ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
@@ -112,6 +100,7 @@ async def get_list(
 
 
     objs = await crud.tahap.get_multi_paginated(params=params, query=query)
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[TahapByIdSch])
