@@ -51,7 +51,7 @@ async def create(
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    draft_header_id = None
+    # draft_header_id = None
     
     for dt in sch.hasilpetalokasidetails:
         bidang_overlap_id = None 
@@ -61,7 +61,7 @@ async def create(
             if draft_detail is None:
                 raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
             
-            draft_header_id = draft_detail.draft_id
+            # draft_header_id = draft_detail.draft_id
             
             code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
             bidang_overlap_sch = BidangOverlapSch(
@@ -87,7 +87,7 @@ async def create(
     payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(new_obj.bidang_id),
                                               hasil_peta_lokasi_id=str(new_obj.id),
                                               kjb_dt_id=str(new_obj.kjb_dt_id),
-                                              draft_id=str(draft_header_id))
+                                              draft_id=str(sch.draft_id))
     
     
     url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang-generate-kelengkapan'
@@ -160,7 +160,7 @@ async def update(
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
 
-    draft_header_id = None  
+    # draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
         bidang_overlap_id = None
         if dt.draft_detail_id is not None:
@@ -170,7 +170,7 @@ async def update(
             if draft_detail is None:
                 raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
             
-            draft_header_id = draft_detail.draft_id
+            # draft_header_id = draft_detail.draft_id
             
             code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
             bidang_overlap_sch = BidangOverlapSch(
@@ -196,7 +196,7 @@ async def update(
     payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(obj_updated.bidang_id),
                                               hasil_peta_lokasi_id=str(obj_updated.id),
                                               kjb_dt_id=str(obj_updated.kjb_dt_id),
-                                              draft_id=str(draft_header_id))
+                                              draft_id=str(sch.draft_id))
     
     
     url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang-generate-kelengkapan'

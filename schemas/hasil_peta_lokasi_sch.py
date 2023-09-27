@@ -5,12 +5,14 @@ from common.as_form import as_form
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from uuid import UUID
+from typing import Optional
 
 @as_form
 class HasilPetaLokasiCreateSch(HasilPetaLokasiBase):
     pass
 
 class HasilPetaLokasiCreateExtSch(HasilPetaLokasiBase):
+    draft_id:Optional[UUID]
     hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]
 
 class HasilPetaLokasiSch(HasilPetaLokasiFullBase):
@@ -42,6 +44,7 @@ class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
 
 @optional
 class HasilPetaLokasiUpdateExtSch(HasilPetaLokasiBase):
+    draft_id:Optional[UUID]
     hasilpetalokasidetails:list[HasilPetaLokasiDetailCreateExtSch]
 
 class HasilPetaLokasiTaskUpdateBidang(SQLModel):
