@@ -272,6 +272,6 @@ async def get_for_order_gu_by_id(id:UUID):
                                       ptsk_name=obj_bidang.ptsk_name if obj_bidang is not None else None,
                                       hasil_analisa_peta_lokasi=obj_bidang.hasil_analisa_peta_lokasi if obj_bidang is not None else None,
                                       proses_bpn_order_gu=obj_bidang.proses_bpn_order_gu if obj_bidang is not None else None,
-                                      luas_surat=obj.luas_surat_by_ttn)
+                                      luas_surat=obj.luas_surat)
     
     return create_response(data=obj_return)

@@ -215,6 +215,13 @@ class KjbDt(KjbDtFullBase, table=True):
         if self.pemilik is None:
             return ""
         return self.pemilik.name
+    
+    @property
+    def luas_surat(self) -> Decimal | None:
+        if self.hasil_peta_lokasi:
+            return self.hasil_peta_lokasi.bidang.luas_surat
+        else:
+            return self.luas_surat_by_ttn
 
 ##########################################################################
 

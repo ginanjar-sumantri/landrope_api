@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from sqlmodel import select, or_, and_
-from models.kjb_model import KjbDt
+from models.kjb_model import KjbDt, KjbHd
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch)
@@ -10,6 +10,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.enum import StatusPetaLokasiEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -38,7 +39,23 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.kjb_dt.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(KjbDt).select_from(KjbDt
+                    ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                KjbDt.alashak.ilike(f'%{keyword}%'),
+                KjbHd.code.ilike(f'%{keyword}%')
+            )
+        )
+
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(KjbDt, key) == value)
+
+    objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/tanda-terima/notaris", response_model=GetResponsePaginatedSch[KjbDtSch])
