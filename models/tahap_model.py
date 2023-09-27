@@ -23,16 +23,16 @@ class Tahap(TahapFullBase, table=True):
     details: "TahapDetail" = Relationship(back_populates="tahap",
                                            sa_relationship_kwargs=
                                            {
-                                               "lazy" : "select"
+                                               "lazy" : "selectin"
                                            })
 
     planing:"Planing" = Relationship(sa_relationship_kwargs=
                                      {
-                                        "lazy" : "select"
+                                        "lazy" : "selectin"
                                      })
     ptsk:"Ptsk" = Relationship(sa_relationship_kwargs=
                                      {
-                                        "lazy" : "select"
+                                        "lazy" : "selectin"
                                      })
     
     worker: "Worker" = Relationship(  

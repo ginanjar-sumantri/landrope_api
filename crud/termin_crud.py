@@ -12,7 +12,7 @@ from models.tahap_model import Tahap
 from models.kjb_model import KjbHd
 from models.spk_model import Spk
 from models.bidang_model import Bidang
-from models import Planing, Project
+from models import Planing, Project, Worker
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
                                 TerminBidangForPrintOut, TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
@@ -20,6 +20,17 @@ from typing import List
 from uuid import UUID
 
 class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
+
+    async def get(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> Termin | None:
+        db_session = db_session or db.session
+        query = select(Termin).outerjoin(Tahap, Tahap.id == Termin.tahap_id
+                        ).outerjoin(KjbHd, KjbHd.id == Termin.kjb_hd_id
+                        ).outerjoin(Worker, Worker.id == Termin.updated_by_id
+                        ).outerjoin(Invoice, Invoice.termin_id == Termin.id
+                        ).where(Termin.id == id)
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
     async def get_by_id_for_printout(self, 
                   *, 
