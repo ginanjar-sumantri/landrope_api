@@ -228,13 +228,13 @@ async def get_list_spk_by_tahap_id(
     """Gets a paginated list objects"""
 
     tahap = await crud.tahap.get_by_id_for_termin(id=id)
+    obj_return = TahapForTerminByIdSch(**dict(tahap))
+
     spk_details = await crud.spk.get_multi_by_tahap_id(tahap_id=id, jenis_bayar=jenis_bayar)
     if termin_id:
         exists_spk_details = await crud.spk.get_multi_by_tahap_id_and_termin_id(tahap_id=id, jenis_bayar=jenis_bayar, termin_id=termin_id)
         spk_details = spk_details + exists_spk_details
-
-    obj_return = TahapForTerminByIdSch(**dict(tahap))
-
+        
     spkts = []
     for s in spk_details:
         spk = SpkForTerminSch(**dict(s))

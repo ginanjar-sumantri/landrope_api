@@ -74,6 +74,8 @@ class BidangForSPKByIdSch(SQLModel):
     ptsk_name:str | None
     status_sk:str | None
     bundle_hd_id:UUID | None
+    ktp:str | None
+    npwp:str | None
 
     termins:list[KjbTerminSch] | None
 

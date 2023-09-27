@@ -250,6 +250,16 @@ async def get_by_id(id:UUID):
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
     beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id)
+
+    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=obj.id)
+    metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
+    ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
+
+    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=obj.id)
+    metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
+    npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
+
+
     
     query_kelengkapan = select(ChecklistKelengkapanDokumenDt
                             ).select_from(ChecklistKelengkapanDokumenDt
@@ -277,6 +287,8 @@ async def get_by_id(id:UUID):
                                   bundle_hd_id=obj.bundle_hd_id,
                                   beban_biayas=beban,
                                   kelengkapan_dokumens=kelengkapan_dokumen,
+                                  ktp=ktp_value,
+                                  npwp=npwp_value,
                                   termins=harga.termins)
     
     

@@ -2,6 +2,8 @@ from models.bundle_model import BundleDt, BundleDtBase, BundleDtFullBase
 from common.partial import optional
 from common.as_form import as_form
 from sqlmodel import Field, SQLModel
+from typing import Optional
+from uuid import UUID
 
 class BundleDtCreateSch(BundleDtBase):
     pass
@@ -21,3 +23,9 @@ class BundleDtMetaDynSch(SQLModel):
 @optional
 class BundleDtUpdateSch(BundleDtBase):
     pass
+
+class BundleDtMetaData(SQLModel):
+    bidang_id:Optional[UUID]
+    id_bidang:Optional[str]
+    meta_data:Optional[str]
+    key_field:Optional[str]
