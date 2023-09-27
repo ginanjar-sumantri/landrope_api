@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from crud.base_crud import CRUDBase
 from models.tahap_model import TahapDetail
-from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
+from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from typing import List
 from uuid import UUID
 
@@ -49,7 +49,7 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                                     tahap_id:UUID | str,
                                     db_session : AsyncSession | None = None, 
                                     query : TahapDetail | Select[TahapDetail]| None = None
-                                    ) -> List[UUID] | None:
+                                    ) -> List[TahapDetailExtSch] | None:
         
         db_session = db_session or db.session
         
@@ -76,10 +76,15 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                     pr.name as project_name,
                     ds.name as desa_name,
                     pl.name as planing_name,
+                    pl.id as planing_id,
                     Case
                         When b.skpt_id is NULL Then pn.name
                         ELSE pt.name
                     End as ptsk_name,
+                    Case
+                        When b.skpt_id is NULL Then pn.id
+                        ELSE pt.id
+                    End as ptsk_id,
                     (b.luas_bayar * b.harga_transaksi) as total_harga
                     from tahap_detail td
                     inner join bidang b on b.id = td.bidang_id
