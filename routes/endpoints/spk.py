@@ -40,7 +40,7 @@ async def create(
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.remark = [komponen_biaya.is_void, komponen_biaya.remark]
+            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.remark]
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
@@ -48,7 +48,9 @@ async def create(
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
-                                                        is_void=komponen_biaya.is_void,
+                                                        is_void=False,
+                                                        is_paid=False,
+                                                        is_use=False,
                                                         remark=komponen_biaya.remark)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
@@ -185,7 +187,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.remark = [komponen_biaya.is_void, komponen_biaya.remark]
+            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.remark]
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
@@ -193,7 +195,9 @@ async def update(id:UUID, sch:SpkUpdateSch,
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
-                                                        is_void=komponen_biaya.is_void,
+                                                        is_void=False,
+                                                        is_paid=False,
+                                                        is_use=False,
                                                         remark=komponen_biaya.remark)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
@@ -343,7 +347,7 @@ async def printout(id:UUID | str,
         obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
     else:
         obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
-        
+
     for bb in obj_beban_biayas:
         beban_biaya = SpkDetailPrintOut(**dict(bb))
         beban_biaya.no = no
