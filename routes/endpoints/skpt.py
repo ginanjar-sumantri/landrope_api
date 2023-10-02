@@ -1,6 +1,8 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Params
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 import crud
 from models.skpt_model import Skpt
 from models.worker_model import Worker
@@ -24,6 +26,12 @@ async def create(
         raise NameExistException(Skpt, name=sch.nomor_sk)
     
     new_obj = await crud.skpt.create(obj_in=sch, created_by_id=current_worker.id)
+
+    query = select(Skpt).where(Skpt.id == new_obj.id
+                            ).options(selectinload(Skpt.ptsk))
+    
+    new_obj = await crud.skpt.get(query=query)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[SkptSch])
@@ -48,7 +56,10 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.skpt.get(id=id)
+    query = select(Skpt).where(Skpt.id == id
+                            ).options(selectinload(Skpt.ptsk))
+
+    obj = await crud.skpt.get(query=query)
     if obj:
         return create_response(data=obj)
     else:
@@ -68,4 +79,10 @@ async def update(
         raise IdNotFoundException(Skpt, id)
     
     obj_updated = await crud.skpt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+
+    query = select(Skpt).where(Skpt.id == id
+                            ).options(selectinload(Skpt.ptsk))
+    
+    obj_updated = await crud.skpt.get(query=query)
+    
     return create_response(data=obj_updated)

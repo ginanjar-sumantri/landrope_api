@@ -69,47 +69,47 @@ class BidangFullBase(BaseGeoModel, BidangRawBase):
 
 class Bidang(BidangFullBase, table=True):
     pemilik:"Pemilik" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin'})
+        sa_relationship_kwargs = {'lazy':'select'})
     
     planing:"Planing" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin'})
+        sa_relationship_kwargs = {'lazy':'select'})
     
     jenis_surat:"JenisSurat" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin'})
+        sa_relationship_kwargs = {'lazy':'select'})
     
     kategori:"Kategori" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin' })
+        sa_relationship_kwargs = {'lazy':'select' })
     
     kategori_sub:"KategoriSub" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin'})
+        sa_relationship_kwargs = {'lazy':'select'})
     
     kategori_proyek:"KategoriProyek" = Relationship(
-        sa_relationship_kwargs = {'lazy':'selectin'})
+        sa_relationship_kwargs = {'lazy':'select'})
     
     skpt:"Skpt" = Relationship(
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     penampung:"Ptsk" = Relationship(
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     manager:"Manager" = Relationship(
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     sales:"Sales" = Relationship(
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     notaris:"Notaris" = Relationship(
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     bundlehd:"BundleHd" = Relationship(
         back_populates="bidang",
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     hasil_peta_lokasi:"HasilPetaLokasi" = Relationship(
         back_populates="bidang",
         sa_relationship_kwargs=
         {
-            "lazy":"selectin",
+            "lazy":"select",
             "uselist":False
         }
     )
@@ -234,6 +234,9 @@ class Bidang(BidangFullBase, table=True):
     
     @property
     def proses_bpn_order_gu(self) -> ProsesBPNOrderGambarUkurEnum | None:
+        if self.hasil_peta_lokasi == None:
+            return None
+        
         if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Belum_IL and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
             return ProsesBPNOrderGambarUkurEnum.PBT_Perorangan
         if self.jenis_alashak == JenisAlashakEnum.Girik and self.skpt.status == StatusSKEnum.Belum_IL and self.hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear:

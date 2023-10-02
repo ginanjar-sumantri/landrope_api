@@ -49,15 +49,15 @@ class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
     pass
 
 class KjbHd(KjbHdFullBase, table=True):
-    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    manager:"Manager" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    sales:"Sales" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    manager:"Manager" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    sales:"Sales" = Relationship(sa_relationship_kwargs={'lazy':'select'})
 
-    kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_dts:list["KjbDt"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    rekenings:list["KjbRekening"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
 
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
@@ -128,17 +128,17 @@ class KjbDt(KjbDtFullBase, table=True):
     desa_by_ttn:Optional["Desa"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.desa_by_ttn_id==Desa.id", "lazy": "joined"})
     project:Optional["Project"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.project_id==Project.id", "lazy": "joined"})
     project_by_ttn:Optional["Project"] = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbDt.project_by_ttn_id==Project.id", "lazy": "joined"})
-    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'selectin'})
-    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
-    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin'})
-    request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="kjb_dts", sa_relationship_kwargs={'lazy':'select'})
+    jenis_surat:"JenisSurat" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    bundlehd:"BundleHd" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'select'})
+    tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'select'})
+    request_peta_lokasi:"RequestPetaLokasi" = Relationship(back_populates="kjb_dt", sa_relationship_kwargs={'lazy':'select', 'uselist':False})
     hasil_peta_lokasi:"HasilPetaLokasi" = Relationship(
         back_populates="kjb_dt",
         sa_relationship_kwargs=
         {
-            "lazy":"selectin",
+            "lazy":"select",
             "uselist":False
         }
     )
@@ -234,7 +234,7 @@ class KjbPenjualFullBase(BaseUUIDModel, KjbPenjualBase):
 
 class KjbPenjual(KjbPenjualFullBase, table=True):
     pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={"primaryjoin": "KjbPenjual.pemilik_id==Pemilik.id", "lazy": "joined"})
-    kjb_hd:"KjbHd" = Relationship(back_populates="penjuals", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="penjuals", sa_relationship_kwargs={'lazy':'select'})
 
     @property
     def penjual_tanah(self) -> str | None:
@@ -255,7 +255,7 @@ class KjbRekeningFullBase(BaseUUIDModel, KjbRekeningBase):
     pass
 
 class KjbRekening(KjbRekeningFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="rekenings", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="rekenings", sa_relationship_kwargs={'lazy':'select'})
 
 ########################################################################################
 
@@ -270,8 +270,8 @@ class KjbHargaFullBase(BaseUUIDModel, KjbHargaBase):
     pass
 
 class KjbHarga(KjbHargaFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'selectin'})
-    termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'select'})
+    termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'select'})
     
 
 ################################################################################################
@@ -286,8 +286,8 @@ class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
     pass
 
 class KjbTermin(KjbTerminFullBase, table=True):
-    harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'selectin'})
-    spk:"Spk" = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+    harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'select'})
+    spk:"Spk" = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'select', 'uselist':False})
 
     @property
     def spk_id(self) -> Optional[UUID]:
@@ -309,8 +309,8 @@ class KjbBebanBiayaFullBase(BaseUUIDModel, KjbBebanBiayaBase):
     pass
 
 class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
-    kjb_hd:"KjbHd" = Relationship(back_populates="bebanbiayas", sa_relationship_kwargs={'lazy':'selectin'})
-    beban_biaya:"BebanBiaya" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_hd:"KjbHd" = Relationship(back_populates="bebanbiayas", sa_relationship_kwargs={'lazy':'select'})
+    beban_biaya:"BebanBiaya" = Relationship(sa_relationship_kwargs={'lazy':'select'})
 
     @property
     def beban_biaya_name(self) -> str :

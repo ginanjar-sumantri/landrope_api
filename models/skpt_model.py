@@ -28,10 +28,10 @@ class SkptFullBase(BaseUUIDModel, SkptBase):
     pass
 
 class Skpt(SkptFullBase, table=True):
-    skpt_planings:list["SkptDt"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
-    ptsk:"Ptsk" = Relationship(back_populates="skpts", sa_relationship_kwargs={'lazy':'selectin'})
-    bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
-    gpsts:list["Gps"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'selectin'})
+    skpt_planings:list["SkptDt"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
+    ptsk:"Ptsk" = Relationship(back_populates="skpts", sa_relationship_kwargs={'lazy':'select'})
+    bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
+    gpsts:list["Gps"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
 
 
     @property
@@ -75,33 +75,6 @@ class SkptDt(SkptDtFullBase, table=True):
             return ""
         
         return self.skpt.nomor_sk
-    
-    @property
-    def ptsk_name(self) -> str | None:
-        if self.skpt is None:
-            return ""
-        if self.skpt.ptsk is None:
-            return ""
-        
-        return self.skpt.ptsk.name
-    
-    @property
-    def section_name(self) -> str:
-        if self.planing is None:
-            return ""
-        if self.planing.project is None:
-            return ""
-        if self.planing.project.section is None:
-            return ""
-        
-        return self.planing.project.section.name
-    
-    @property
-    def planing_name(self) -> str:
-        if self.planing is None:
-            return ""
-        
-        return self.planing.name
 
     @property
     def project_name(self) -> str:
@@ -120,12 +93,3 @@ class SkptDt(SkptDtFullBase, table=True):
             return ""
         
         return self.planing.desa.name
-    
-    @property
-    def desa_code(self) -> str:
-        if self.planing is None:
-            return ""
-        if self.planing.desa is None:
-            return ""
-        
-        return self.planing.desa.code

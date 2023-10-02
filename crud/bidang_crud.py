@@ -5,14 +5,11 @@ from sqlmodel import select, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import text
+from sqlalchemy.orm import selectinload
 from typing import List
 from crud.base_crud import CRUDBase
-from models.bidang_model import Bidang
-from models.skpt_model import Skpt
-from models.ptsk_model import Ptsk
-from models.planing_model import Planing
-from models.desa_model import Desa
-from models.project_model import Project
+from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, 
+                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, 
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
@@ -27,6 +24,31 @@ from geoalchemy2.shape import from_shape
 
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
+    async def get_by_id(
+                  self,
+                  *,
+                  id:UUID,
+                  db_session: AsyncSession | None = None
+    ) -> Bidang | None:
+           
+           db_session = db_session or db.session
+
+           query = select(Bidang).where(Bidang.id == id).options(selectinload(Bidang.pemilik)
+                                                        ).options(selectinload(Bidang.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
+                                                        ).options(selectinload(Bidang.jenis_surat)
+                                                        ).options(selectinload(Bidang.kategori)
+                                                        ).options(selectinload(Bidang.kategori_sub)
+                                                        ).options(selectinload(Bidang.kategori_proyek)
+                                                        ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+                                                        ).options(selectinload(Bidang.manager)
+                                                        ).options(selectinload(Bidang.sales)
+                                                        ).options(selectinload(Bidang.notaris)
+                                                        ).options(selectinload(Bidang.bundlehd)
+                                                        ).options(selectinload(Bidang.hasil_peta_lokasi))
+           
+           response = await db_session.execute(query)
+           return response.scalar_one_or_none()
+   
     async def get_by_id_bidang(
         self, *, idbidang: str, db_session: AsyncSession | None = None
     ) -> Bidang:
@@ -67,13 +89,6 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         response =  await db_session.execute(query)
         
-        return response.scalars().all()
-    
-    async def get_all_bidang_order_gu(self, *, db_session : AsyncSession | None = None, query : Bidang | Select[Bidang]| None = None) -> List[BidangGetAllSch] | None:
-        db_session = db_session or db.session
-        if query is None:
-            query = select(self.model)
-        response =  await db_session.execute(query)
         return response.scalars().all()
         
     async def get_all_bidang_tree_report_map(

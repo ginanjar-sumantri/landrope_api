@@ -14,4 +14,4 @@ class SectionFullBase(BaseUUIDModel, SectionBase):
     pass
 
 class Section(SectionFullBase, table=True):
-    projects: list["Project"] = Relationship(back_populates="section", sa_relationship_kwargs={'lazy':'selectin'})
+    projects: list["Project"] = Relationship(back_populates="section", sa_relationship_kwargs={'lazy':'select'})

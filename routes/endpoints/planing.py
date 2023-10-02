@@ -1,10 +1,9 @@
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response
 from fastapi_pagination import Params
-from models.planing_model import Planing
-from models.project_model import Project
-from models.desa_model import Desa
-from models.worker_model import Worker
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
+from models import Planing, Project, Desa, Worker, Section
 from schemas.planing_sch import (PlaningSch, PlaningCreateSch, PlaningUpdateSch, PlaningRawSch, PlaningExtSch, PlaningShpSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -32,16 +31,20 @@ async def create(
     obj_current = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
     if obj_current:
         raise NameExistException(Planing, name=sch.name)
-
+    
     project = await crud.project.get(id=sch.project_id)
     if project is None:
         raise IdNotFoundException(Project, id=sch.project_id)
+    
+    section = await crud.section.get(id=project.section_id)
+    if section is None:
+        raise IdNotFoundException(Section, id=project.section_id)
     
     desa = await crud.desa.get(id=sch.desa_id)
     if desa is None:
         raise IdNotFoundException(Desa, id=sch.desa_id)
     
-    code = project.section.code + project.code + desa.code
+    code = section.code + project.code + desa.code
     sch.code = code
     sch.name = project.name + "-" + desa.name + "-" + code
     
@@ -57,6 +60,13 @@ async def create(
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         
     new_obj = await crud.planing.create(obj_in=sch, created_by_id=current_worker.id)
+
+    query = select(Planing).where(Planing.id == new_obj.id
+                                ).options(selectinload(Planing.project)
+                                ).options(selectinload(Planing.desa))
+
+    new_obj = await crud.planing.get(query=query)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[PlaningRawSch])
@@ -76,8 +86,13 @@ async def get_list(
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
-
-    obj = await crud.planing.get(id=id)
+    
+    query = select(Planing).where(Planing.id == id
+                                ).options(selectinload(Planing.project
+                                ).options(selectinload(Project.section))
+                                ).options(selectinload(Planing.desa))
+    
+    obj = await crud.planing.get(query=query)
     if obj:
         return create_response(data=obj)
     else:
@@ -111,6 +126,14 @@ async def update(
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
     obj_updated = await crud.planing.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+
+    query = select(Planing).where(Planing.id == obj_updated.id
+                                ).options(selectinload(Planing.project
+                                ).options(selectinload(Project.section))
+                                ).options(selectinload(Planing.desa))
+    
+    obj_updated = await crud.planing.get(query=query)
+
     return create_response(data=obj_updated)
 
 @router.post("/bulk")

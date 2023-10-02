@@ -26,6 +26,7 @@ async def create(sch: KjbDtCreateSch,
         raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
         
     new_obj = await crud.kjb_dt.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.kjb_dt.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -104,7 +105,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.kjb_dt.get(id=id)
+    obj = await crud.kjb_dt.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -126,6 +127,7 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
         raise IdNotFoundException(KjbDt, id)
     
     obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 

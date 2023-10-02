@@ -20,10 +20,10 @@ class BundleHdFullBase(BaseUUIDModel, BundleHdBase):
     pass
 
 class BundleHd(BundleHdFullBase, table=True):
-    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
-    bidang:"Bidang" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'selectin', 'uselist':False})
+    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    bundledts:list["BundleDt"] = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'select'})
+    kjb_dt:"KjbDt" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'select', 'uselist':False})
+    bidang:"Bidang" = Relationship(back_populates="bundlehd", sa_relationship_kwargs={'lazy':'select', 'uselist':False})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -96,8 +96,8 @@ class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass
 
 class BundleDt(BundleDtFullBase, table=True):
-    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'selectin'})
-    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    bundlehd:"BundleHd" = Relationship(back_populates="bundledts", sa_relationship_kwargs={'lazy':'select'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'select'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",

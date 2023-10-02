@@ -4,9 +4,8 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
@@ -20,6 +19,52 @@ import crud
 import json
 
 class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> KjbHd | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(KjbHd).where(KjbHd.id == id).options(selectinload(KjbHd.desa)
+                                                ).options(selectinload(KjbHd.manager)
+                                                ).options(selectinload(KjbHd.sales)
+                                                ).options(selectinload(KjbHd.kjb_dts
+                                                                        ).options(selectinload(KjbDt.pemilik)
+                                                                        ).options(selectinload(KjbDt.kjb_hd)
+                                                                        ).options(selectinload(KjbDt.jenis_surat)
+                                                                        ).options(selectinload(KjbDt.request_peta_lokasi))
+                                                ).options(selectinload(KjbHd.rekenings)
+                                                ).options(selectinload(KjbHd.hargas
+                                                                        ).options(selectinload(KjbHarga.termins
+                                                                                               ).options(selectinload(KjbTermin.spk)))
+                                                ).options(selectinload(KjbHd.bebanbiayas
+                                                                        ).options(selectinload(KjbBebanBiaya.beban_biaya))
+                                                ).options(selectinload(KjbHd.penjuals))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+
+    async def get_by_id_cu(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> KjbHd | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(KjbHd).where(KjbHd.id == id).options(selectinload(KjbHd.desa)
+                                                ).options(selectinload(KjbHd.manager)
+                                                ).options(selectinload(KjbHd.sales)
+                                                ).options(selectinload(KjbHd.kjb_dts)
+                                                ).options(selectinload(KjbHd.penjuals))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def create_kjb_hd(self, *, obj_in: KjbHdCreateSch | KjbHd, created_by_id : UUID | str | None = None, 
                      db_session : AsyncSession | None = None) -> KjbHd :
         db_session = db_session or db.session

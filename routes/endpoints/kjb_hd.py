@@ -28,21 +28,9 @@ async def create(sch: KjbHdCreateSch,
     sch.code = await generate_code(CodeCounterEnum.Kjb, db_session=db_session, with_commit=False)
 
     new_obj = await crud.kjb_hd.create_kjb_hd(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
+    new_obj = await crud.kjb_hd.get_by_id_cu(id=new_obj.id)
     
     return create_response(data=new_obj)
-
-# @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
-# async def get_list(
-#         params: Params=Depends(), 
-#         order_by: str = None, 
-#         keyword: str = None, 
-#         filter_query: str= None,
-#         current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-#     """Gets a paginated list objects"""
-
-#     objs = await crud.kjb_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
-#     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(
@@ -95,7 +83,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.kjb_hd.get(id=id)
+    obj = await crud.kjb_hd.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -113,6 +101,7 @@ async def update(id:UUID, sch:KjbHdUpdateSch,
         raise IdNotFoundException(KjbHd, id)
     
     obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 

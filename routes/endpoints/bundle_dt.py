@@ -73,14 +73,6 @@ async def get_list(
     
     objs = await crud.bundledt.get_multi_paginated(params=params, query=query)
 
-
-    # objs = await crud.bundledt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
-    #                                                                         order_by=order_by, 
-    #                                                                         keyword=keyword, 
-    #                                                                         filter_query=filter_query,
-    #                                                                         order=order,
-    #                                                                         join=True)
-
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[BundleDtSch])
@@ -88,7 +80,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bundledt.get(id=id)
+    obj = await crud.bundledt.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -105,7 +97,7 @@ async def update(id:UUID,
     db_session = db.session
     file_path = None
 
-    obj_current = await crud.bundledt.get(id=id)
+    obj_current = await crud.bundledt.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
 
@@ -157,6 +149,8 @@ async def update(id:UUID,
                                              updated_by_id=current_worker.id,
                                              with_commit=True)
 
+    obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
@@ -195,7 +189,8 @@ async def update_riwayat(id:UUID,
                                                         db_session=db_session)
 
     obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, db_session=db_session, with_commit=True, updated_by_id=current_worker.id)
-    
+    obj = await crud.bundledt.get_by_id(id=obj.id)
+
     return create_response(data=obj)
 
 @router.put("/delete-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
@@ -228,13 +223,14 @@ async def delete_riwayat(id:UUID,
         obj_updated.riwayat_data = None
 
     obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+    obj = await crud.bundledt.get_by_id(id=obj.id)
     return create_response(data=obj)
     
 @router.get("/download-file/{id}")
 async def download_file(id:UUID):
     """Download File Dokumen"""
 
-    obj_current = await crud.bundledt.get(id=id)
+    obj_current = await crud.bundledt.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     if obj_current.file_path is None:
@@ -258,7 +254,7 @@ async def download_file_riwayat(id:UUID,
     
     """Download File Dokumen Riwayat"""
 
-    obj_current = await crud.bundledt.get(id=id)
+    obj_current = await crud.bundledt.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
@@ -294,24 +290,3 @@ async def get_meta_data_and_dyn_form(kjb_id:UUID,
         return create_response(data=obj)
     else:
         raise IdNotFoundException(BundleDt, kjb_id)
-
-
-# @router.get("/get/json")
-# async def extract_json():
-#     str_json = "{'history':[{'tanggal':'2023-06-06 08:15:39','nomor':'AJB 5123','meta_data': {'Nomor':'AJB 5123','Tanggal':'2023-06-28'}}]}".replace("'",'"')
-
-#     obj_json = json.loads(str_json)
-#     values = []
-#     nomor = 'Nomor'
-#     # for item in obj_json:
-#     #     for field in item['field']:
-#     #         value = field['value']
-#     #         is_datetime = is_datetimecheck(value=value)
-#     #         if type(field['value']).__name__ in ["str", "string"] and is_datetime == False:
-#     #             values.append(str(value))
-
-#     for data in obj_json['history']:
-#         value = data['meta_data'][f'{nomor}']
-#         values.append(value)
-
-#     return valuess

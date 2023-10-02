@@ -4,14 +4,13 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
+from sqlalchemy.orm import selectinload
 from common.generator import generate_code_bundle
-
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.bundle_model import BundleHd, BundleDt
+from models import BundleHd, BundleDt, Planing
 from schemas.bundle_hd_sch import BundleHdCreateSch, BundleHdUpdateSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from datetime import datetime
@@ -19,6 +18,23 @@ from uuid import UUID
 import crud
 
 class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> BundleHd | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(BundleHd).where(BundleHd.id == id).options(selectinload(BundleHd.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
+                                                        ).options(selectinload(BundleHd.kjb_dt)
+                                                        ).options(selectinload(BundleHd.bidang)
+                                                        ).options(selectinload(BundleHd.bundledts))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def create_and_generate(self, *, obj_in: BundleHdCreateSch | BundleHd, created_by_id : UUID | str | None = None, 
                      db_session : AsyncSession | None = None) -> BundleHd :
         db_session = db_session or db.session

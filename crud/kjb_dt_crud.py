@@ -4,14 +4,12 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, func, text
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbHd, KjbDt
-from models.request_peta_lokasi_model import RequestPetaLokasi
+from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud
 from typing import List
 from uuid import UUID
@@ -20,6 +18,28 @@ from sqlalchemy import exc
 
 
 class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> KjbDt | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(KjbDt).where(KjbDt.id == id).options(selectinload(KjbDt.pemilik
+                                                                        ).options(selectinload(Pemilik.kontaks))
+                                                ).options(selectinload(KjbDt.kjb_hd)
+                                                ).options(selectinload(KjbDt.jenis_surat)
+                                                ).options(selectinload(KjbDt.bundlehd)
+                                                ).options(selectinload(KjbDt.tanda_terima_notaris_hd)
+                                                ).options(selectinload(KjbDt.request_peta_lokasi)
+                                                ).options(selectinload(KjbDt.hasil_peta_lokasi
+                                                                        ).options(selectinload(HasilPetaLokasi.bidang)))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_multi_for_petlok(self, *,
                                     params: Params | None = Params(),
                                     kjb_hd_id:UUID | None,
@@ -62,14 +82,17 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
     async def get_by_alashak(self, *, alashak:str, db_session: AsyncSession | None = None) -> KjbDt | None:
         db_session = db_session or db.session
-        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', ''))
+        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', '')
+                                         ).options(selectinload(KjbDt.kjb_hd))
         response = await db_session.execute(query)
 
         return response.scalars().first()
     
     async def get_by_alashak_and_kjb_hd_id(self, *, alashak:str | None, kjb_hd_id:UUID | None, db_session: AsyncSession | None = None) -> KjbDt | None:
         db_session = db_session or db.session
-        query = select(self.model).where(and_(self.model.kjb_hd_id != kjb_hd_id, func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', '')))
+        query = select(self.model
+                       ).where(and_(self.model.kjb_hd_id != kjb_hd_id, func.lower(func.trim(func.replace(self.model.alashak, ' ', ''))) == alashak.strip().lower().replace(' ', ''))
+                               ).options(selectinload(KjbDt.kjb_hd))
         response = await db_session.execute(query)
 
         return response.scalars().first()

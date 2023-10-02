@@ -1,6 +1,8 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, Response
 from fastapi_pagination import Params
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 import crud
 from models.planing_model import Planing
 from models.project_model import Project
@@ -53,6 +55,15 @@ async def create(
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     new_obj = await crud.skptdt.create(obj_in=sch, created_by_id=current_worker.id)
+
+    query = select(SkptDt).where(SkptDt.id == id).options(selectinload(SkptDt.skpt)
+                                                        ).options(selectinload(SkptDt.planing
+                                                                                ).options(selectinload(Planing.project)
+                                                                                ).options(selectinload(Planing.desa))
+                                                        )
+    
+    new_obj = await crud.skptdt.get(query=query)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[SkptDtRawSch])
@@ -78,7 +89,14 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.skptdt.get(id=id)
+    query = select(SkptDt).where(SkptDt.id == id).options(selectinload(SkptDt.skpt)
+                                                        ).options(selectinload(SkptDt.planing
+                                                                                ).options(selectinload(Planing.project)
+                                                                                ).options(selectinload(Planing.desa))
+                                                        )
+    
+    obj = await crud.skptdt.get(query=query)
+
     if obj:
         return create_response(data=obj)
     else:
@@ -114,6 +132,15 @@ async def update(
                       geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry))
     
     obj_updated = await crud.skpt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+
+    query = select(SkptDt).where(SkptDt.id == obj_updated.id).options(selectinload(SkptDt.skpt)
+                                                        ).options(selectinload(SkptDt.planing
+                                                                                ).options(selectinload(Planing.project)
+                                                                                ).options(selectinload(Planing.desa))
+                                                        )
+    
+    obj_updated = await crud.skptdt.get(query=query)
+
     return create_response(data=obj_updated)
 
 @router.post("/bulk", response_model=ImportResponseBaseSch[SkptDtRawSch], status_code=status.HTTP_201_CREATED)

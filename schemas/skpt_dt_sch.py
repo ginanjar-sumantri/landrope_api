@@ -10,10 +10,8 @@ class SkptDtCreateSch(SkptDtBase):
 
 class SkptDtRawSch(SkptDtRawBase):
     nomor_sk:str | None = Field(alias="nomor_sk")
-    ptsk_name:str | None = Field(alias="ptsk_name")
     project_name:str | None = Field(alias="project_name")
     desa_name:str | None = Field(alias="desa_name")
-    planing_name:str | None = Field(alias="planing_name")
 
 class SkptDtSch(SkptDtFullBase):
     pass

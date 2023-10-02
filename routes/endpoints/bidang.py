@@ -9,6 +9,7 @@ from sqlmodel import select, or_, and_
 from sqlalchemy import text
 from models.bidang_model import Bidang
 from models.worker_model import Worker
+from models.master_model import JenisSurat
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
@@ -49,6 +50,12 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 
     sch.id_bidang = await generate_id_bidang(sch.planing_id, db_session=db_session, with_commit=False)
 
+    jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
+    if jenis_surat is None:
+        raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
+    
+    sch.jenis_alashak = jenis_surat.jenis_alashak
+
     if file:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
@@ -62,6 +69,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         raise ImportFailedException()
 
     new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
+
+    new_obj = await crud.bidang.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
 
@@ -101,7 +110,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get(id=id)
+    obj = await crud.bidang.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -112,19 +121,11 @@ async def get_for_order_gu_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get(id=id)
+    obj = await crud.bidang.get_by_id(id=id)
     if obj is None:
         raise IdNotFoundException(Bidang, id)
     
-    obj_return = BidangForOrderGUById(id=obj.id,
-                                      id_bidang=obj.id_bidang,
-                                      jenis_alashak=obj.jenis_alashak,
-                                      alashak=obj.alashak,
-                                      status_sk=obj.status_sk,
-                                      ptsk_name=obj.ptsk_name,
-                                      hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
-                                      proses_bpn_order_gu=obj.proses_bpn_order_gu,
-                                      luas_surat=obj.luas_surat)
+    obj_return = BidangForOrderGUById(**dict(obj))
     
     return create_response(data=obj_return)
     
@@ -154,6 +155,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 @router.post(

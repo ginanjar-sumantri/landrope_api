@@ -30,7 +30,7 @@ class Dokumen(DokumenFullBase, table=True):
     tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(back_populates="dokumen", sa_relationship_kwargs={'lazy':'select'})
     kategori_dokumen:"KategoriDokumen" = Relationship(
         back_populates="dokumens",
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
@@ -58,7 +58,7 @@ class KategoriDokumenFullBase(BaseUUIDModel, KategoriDokumenBase):
 class KategoriDokumen(KategoriDokumenFullBase, table=True):
     dokumens:list["Dokumen"] = Relationship(
         back_populates="kategori_dokumen", 
-        sa_relationship_kwargs={'lazy':'selectin'})
+        sa_relationship_kwargs={'lazy':'select'})
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={

@@ -33,7 +33,7 @@ class GpsFullBase(BaseGeoModel, GpsRawBase):
     pass
 
 class Gps(GpsFullBase, table=True):
-    skpt:"Skpt"=Relationship(back_populates="gpsts", sa_relationship_kwargs={'lazy':'selectin'})
+    skpt:"Skpt"=Relationship(back_populates="gpsts", sa_relationship_kwargs={'lazy':'select'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",

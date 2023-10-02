@@ -32,9 +32,18 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    async def get(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> ModelType | None:
+    async def get(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  query : T | Select[T] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> ModelType | None:
+        
         db_session = db_session or db.session
-        query = select(self.model).where(self.model.id == id)
+
+        if query == None:
+            query = select(self.model).where(self.model.id == id)
+
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
@@ -120,7 +129,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                                   db_session: AsyncSession | None = None) -> Page[ModelType]:
         db_session = db_session or db.session
         if query is None:
-                query = select(self.model)
+            query = select(self.model)
         return await paginate(db_session, query, params)
     
     async def get_multi_paginate_ordered_with_keyword_dict(

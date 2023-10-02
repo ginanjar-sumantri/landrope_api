@@ -22,7 +22,6 @@ class BundleHdByIdSch(BundleHdFullBase):
     alashak:str|None = Field(alias="alashak")
     idbidang:str|None = Field(alias="idbidang")
     updated_by_name:str|None = Field(alias="updated_by_name")
-    bundledts:list[BundleDt]
 
 @optional
 class BundleHdUpdateSch(BundleHdBase):

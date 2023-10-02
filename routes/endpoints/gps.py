@@ -1,6 +1,8 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
 from fastapi_pagination import Params
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 import crud
 from models.gps_model import Gps, StatusGpsEnum
 from models.worker_model import Worker
@@ -48,6 +50,10 @@ async def create(
         )
         
     new_obj = await crud.gps.create(obj_in=sch, created_by_id=current_worker.id)
+
+    query = select(Gps).where(Gps.id == new_obj.id).options(selectinload(Gps.skpt))
+    new_obj = await crud.gps.get(query=query)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
@@ -68,7 +74,8 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.gps.get(id=id)
+    query = select(Gps).where(Gps.id == id).options(selectinload(Gps.skpt))
+    obj = await crud.gps.get(query=query)
     if obj:
         return create_response(data=obj)
     else:
@@ -108,4 +115,6 @@ async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:U
         )
     
     obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    query = select(Gps).where(Gps.id == obj_updated.id).options(selectinload(Gps.skpt))
+    obj_updated = await crud.gps.get(query=query)
     return create_response(data=obj_updated)

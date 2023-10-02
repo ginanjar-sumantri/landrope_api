@@ -1,8 +1,10 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from fastapi_pagination import Params
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 import crud
-from models.project_model import Project
+from models import Project, Section
 from models.worker_model import Worker
 from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch, ProjectForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
@@ -24,6 +26,11 @@ async def create(
         raise NameExistException(Project, name=sch.name)
     
     new_obj = await crud.project.create(obj_in=sch, created_by_id=current_worker.id)
+    
+    query = select(Project).where(Project.id == new_obj.id).options(selectinload(Project.section))
+    section = await crud.section.get(query=query)
+
+    new_obj.section = section
 
     return create_response(data=new_obj)
 
@@ -46,7 +53,9 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.project.get(id=id)
+    query = select(Project).where(Project.id == id).options(selectinload(Project.section))
+    
+    obj = await crud.project.get(query=query)
     if obj:
         return create_response(data=obj)
     else:
@@ -65,6 +74,12 @@ async def update(
         raise IdNotFoundException(Project, id)
     
     obj_updated = await crud.project.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+
+    query = select(Section).where(Section.id == obj_updated.section_id)
+    section = await crud.section.get(query=query)
+
+    obj_updated.section = section
+
     return create_response(data=obj_updated)
 
 @router.post("/bulk")
