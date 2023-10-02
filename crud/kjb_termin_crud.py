@@ -4,9 +4,8 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbTermin
@@ -20,6 +19,21 @@ import crud
 
 
 class CRUDKjbTermin(CRUDBase[KjbTermin, KjbTerminCreateSch, KjbTerminUpdateSch]):
-    pass
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> KjbTermin | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(KjbTermin).where(KjbTermin.id == id
+                                                ).options(selectinload(KjbTermin.harga)
+                                                ).options(selectinload(KjbTermin.spk))
+                                                
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 kjb_termin = CRUDKjbTermin(KjbTermin)
