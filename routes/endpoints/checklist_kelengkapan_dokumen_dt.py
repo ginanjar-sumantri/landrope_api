@@ -20,7 +20,7 @@ async def create(sch: ChecklistKelengkapanDokumenDtCreateSch,
     
     """Create a new object"""
 
-    checklist_kelengkapan_hd = await crud.checklist_kelengkapan_dokumen_hd.get(id=sch.checklist_kelengkapan_dokumen_hd_id)
+    checklist_kelengkapan_hd = await crud.checklist_kelengkapan_dokumen_hd.get_by_id(id=sch.checklist_kelengkapan_dokumen_hd_id)
     if checklist_kelengkapan_hd is None:
         raise IdNotFoundException(ChecklistKelengkapanDokumenHd, sch.checklist_kelengkapan_dokumen_hd_id)
     
