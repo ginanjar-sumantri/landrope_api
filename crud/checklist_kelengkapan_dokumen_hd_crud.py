@@ -5,18 +5,40 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exc
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenHd
+from models import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Bidang
 from schemas.checklist_kelengkapan_dokumen_hd_sch import ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdUpdateSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
 
 class CRUDChecklistKelengkapanDokumenHd(CRUDBase[ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> ChecklistKelengkapanDokumenHd | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(ChecklistKelengkapanDokumenHd).where(ChecklistKelengkapanDokumenHd.id == id
+                                                            ).options(selectinload(ChecklistKelengkapanDokumenHd.details
+                                                                                    ).options(selectinload(ChecklistKelengkapanDokumenDt.bundle_dt)
+                                                                                    ).options(selectinload(ChecklistKelengkapanDokumenDt.dokumen))
+                                                            ).options(selectinload(ChecklistKelengkapanDokumenHd.bidang
+                                                                                    ).options(selectinload(Bidang.bundlehd))
+                                                            )
+                                                    
+                                                   
+                                                    
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def create_and_generate(self, *, 
                      obj_in: ChecklistKelengkapanDokumenHd, 
                      created_by_id : UUID | str | None = None, 

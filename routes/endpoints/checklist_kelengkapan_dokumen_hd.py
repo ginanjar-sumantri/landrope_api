@@ -107,14 +107,14 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.checklist_kelengkapan_dokumen_hd.get(id=id)
+    obj = await crud.checklist_kelengkapan_dokumen_hd.get_by_id(id=id)
     if obj is None:
         raise IdNotFoundException(ChecklistKelengkapanDokumenHd, id)
     
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.bidang_id)
-    bidang_current = hasil_peta_lokasi_current.bidang
-    kjb_dt_current = hasil_peta_lokasi_current.kjb_dt
-    kjb_hd_current = kjb_dt_current.kjb_hd
+    bidang_current = await crud.bidang.get(id=hasil_peta_lokasi_current.bidang_id)
+    kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
+    kjb_hd_current = await crud.kjb_hd.get(id=kjb_dt_current.kjb_hd_id)
     kjb_harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_hd_current.id, jenis_alashak=bidang_current.jenis_alashak)
 
     detail_bayars = []
@@ -164,7 +164,8 @@ async def update(id:UUID, sch:list[ChecklistKelengkapanDokumenHdUpdateSch],
     if not obj_current:
         raise IdNotFoundException(ChecklistKelengkapanDokumenHd, id)
     
-    obj_updated = await crud.checklistdokumen.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.checklist_kelengkapan_dokumen_hd.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.checklist_kelengkapan_dokumen_hd.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[ChecklistKelengkapanDokumenHdSch], status_code=status.HTTP_200_OK)

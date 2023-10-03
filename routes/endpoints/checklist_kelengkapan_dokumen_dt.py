@@ -30,6 +30,7 @@ async def create(sch: ChecklistKelengkapanDokumenDtCreateSch,
     
     sch.bundle_dt_id = bundle_dt.id
     new_obj = await crud.checklist_kelengkapan_dokumen_dt.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.checklist_kelengkapan_dokumen_dt.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -54,7 +55,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.checklist_kelengkapan_dokumen_dt.get(id=id)
+    obj = await crud.checklist_kelengkapan_dokumen_dt.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -72,6 +73,7 @@ async def update(id:UUID, sch:ChecklistKelengkapanDokumenDt,
         raise IdNotFoundException(ChecklistKelengkapanDokumenDt, id)
     
     obj_updated = await crud.checklist_kelengkapan_dokumen_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.checklist_kelengkapan_dokumen_dt.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[ChecklistKelengkapanDokumenDtSch], status_code=status.HTTP_200_OK)

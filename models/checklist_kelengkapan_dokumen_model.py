@@ -21,7 +21,7 @@ class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table
         back_populates="checklist_kelengkapan_dokumen_hd",
         sa_relationship_kwargs=
         {
-            'lazy' : 'selectin',
+            'lazy' : 'select',
             "cascade" : "delete, all",
             "foreign_keys" : "[ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id]"
         }
@@ -30,7 +30,7 @@ class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table
     bidang:"Bidang" = Relationship(
         sa_relationship_kwargs=
         {
-            'lazy' : 'selectin'
+            'lazy' : 'select'
         })
     
     worker: "Worker" = Relationship(  
@@ -83,14 +83,14 @@ class ChecklistKelengkapanDokumenDt(ChecklistKelengkapanDokumenDtFullBase, table
         back_populates = "details",
         sa_relationship_kwargs = 
         {
-            'lazy' : 'selectin'
+            'lazy' : 'select'
         }
     )
 
     bundle_dt:"BundleDt" = Relationship(
         sa_relationship_kwargs = 
         {
-            'lazy' : 'selectin'
+            'lazy' : 'select'
         }
     )
 
