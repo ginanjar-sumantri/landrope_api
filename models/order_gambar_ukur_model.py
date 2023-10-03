@@ -39,7 +39,7 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
     notaris_tujuan:"Notaris" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
@@ -47,7 +47,7 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
         back_populates="order_gambar_ukur",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
@@ -55,7 +55,7 @@ class OrderGambarUkur(OrderGambarUkurFullBase, table=True):
         back_populates="order_gambar_ukur",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
@@ -119,14 +119,14 @@ class OrderGambarUkurBidang(OrderGambarUkurBidangFullBase, table=True):
         back_populates="bidangs",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
     kjb_dt:"KjbDt" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
@@ -219,7 +219,7 @@ class OrderGambarUkurTembusan(OrderGambarUkurTembusanFullBase, table=True):
         back_populates="tembusans",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 

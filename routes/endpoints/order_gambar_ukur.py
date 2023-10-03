@@ -60,6 +60,8 @@ async def create(
 
     await db_session.commit()
     await db_session.refresh(new_obj)
+
+    new_obj = await crud.order_gambar_ukur.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -81,7 +83,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.order_gambar_ukur.get(id=id)
+    obj = await crud.order_gambar_ukur.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -129,6 +131,8 @@ async def update(
     
     await db_session.commit()
     await db_session.refresh(obj_updated)
+
+    obj_updated = await crud.order_gambar_ukur.get_by_id(id=obj_updated.id)
    
     return create_response(data=obj_updated)
 
@@ -137,7 +141,7 @@ async def print_out(id:UUID | str,
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
     """Print out Order Gambar Ukur"""
 
-    obj = await crud.order_gambar_ukur.get(id=id)
+    obj = await crud.order_gambar_ukur.get_by_id(id=id)
     sla_hari:str = ""
     if obj.tipe_surat == TipeSuratGambarUkurEnum.Surat_Tugas:
         sla_hari = "3 (Tiga)"
@@ -255,13 +259,13 @@ async def get_for_order_gu_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.kjb_dt.get(id=id)
+    obj = await crud.kjb_dt.get_by_id(id=id)
     if obj is None:
         raise IdNotFoundException(KjbDt, id)
     
     obj_bidang = None
     if obj.hasil_peta_lokasi:
-        obj_bidang = await crud.bidang.get(id=obj.hasil_peta_lokasi.bidang_id)
+        obj_bidang = await crud.bidang.get_by_id(id=obj.hasil_peta_lokasi.bidang_id)
         
 
     obj_return = KjbDtForOrderGUById(id=obj.id,
