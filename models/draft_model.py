@@ -64,13 +64,13 @@ class DraftDetail(DraftDetailFullBase, table=True):
                             back_populates="details",
                             sa_relationship_kwargs=
                             {
-                                "lazy" : "selectin"
+                                "lazy" : "select"
                             })
     
     bidang:"Bidang" = Relationship(
                             sa_relationship_kwargs=
                             {
-                                "lazy" : "selectin"
+                                "lazy" : "select"
                             })
     
     @property

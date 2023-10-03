@@ -46,7 +46,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                         back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                         {
-                            "lazy" : "selectin"
+                            "lazy" : "select"
                         }
     )
 
@@ -54,14 +54,14 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                         back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             })
     
     kjb_dt: "KjbDt" = Relationship(
                         back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             }
                         )
     
@@ -69,25 +69,25 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                         back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             })
     
     planing: "Planing" = Relationship(
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             })
     
     skpt: "Skpt" = Relationship(
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             })
     
     pemilik: "Pemilik" = Relationship(
                         sa_relationship_kwargs=
                                             {
-                                                "lazy" : "selectin"
+                                                "lazy" : "select"
                                             })
     
     worker: "Worker" = Relationship(  
@@ -160,21 +160,21 @@ class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
                             back_populates="details",
                             sa_relationship_kwargs=
                             {
-                                "lazy" : "selectin"
+                                "lazy" : "select"
                             }
     )
 
     bidang : "Bidang" = Relationship(
                             sa_relationship_kwargs=
                             {
-                                "lazy" : "selectin"
+                                "lazy" : "select"
                             }
     )
 
     bidang_overlap : "BidangOverlap" = Relationship(
                             sa_relationship_kwargs=
                             {
-                                "lazy" : "selectin"
+                                "lazy" : "select"
                             }
     )
 

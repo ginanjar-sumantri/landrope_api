@@ -71,7 +71,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.draft_detail.get(id=id)
+    obj = await crud.draft_detail.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:

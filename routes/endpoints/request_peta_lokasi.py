@@ -149,12 +149,17 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
                  current_worker:Worker=Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
-
+    db_session = db.session
     obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=sch.code)
 
+    list_removed = []
     for i in obj_currents:
         if i.kjb_dt_id not in sch.kjb_dt_ids:
-            await crud.request_peta_lokasi.remove_kjb_dt(id=i.kjb_dt_id)
+            request_removed = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=i.kjb_dt_id)
+            list_removed.append(request_removed)
+    
+    if len(list_removed) > 0:
+        await crud.request_peta_lokasi.remove_multiple_data(list_obj=list_removed, db_session=db_session)
 
     ids = [x.kjb_dt_id for x in obj_currents]  
 
@@ -168,7 +173,7 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
                                  diperiksa_oleh="Land Adm & Verification Section Head",
                                  diterima_oleh="Land Measurement Analyst",
                                  is_disabled=False)
-            obj = await crud.request_peta_lokasi.create(obj_in=new_obj, created_by_id=current_worker.id)
+            obj = await crud.request_peta_lokasi.create(obj_in=new_obj, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         else:
             obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
             obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
@@ -176,7 +181,9 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
                                                      remark=sch.remark,
                                                      kjb_dt_id=j)
             
-            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
 
     return create_response(data=obj)
 

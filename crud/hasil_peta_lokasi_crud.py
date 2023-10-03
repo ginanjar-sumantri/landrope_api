@@ -5,17 +5,42 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
-from sqlalchemy import exc
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
+from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt
 from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, HasilPetaLokasiCreateExtSch, HasilPetaLokasiUpdateCloud
 from typing import List
 from uuid import UUID
 from datetime import datetime
 
 class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch]):
-    
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> HasilPetaLokasi | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(HasilPetaLokasi).where(HasilPetaLokasi.id == id
+                                                    ).options(selectinload(HasilPetaLokasi.details
+                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang))
+                                                    ).options(selectinload(HasilPetaLokasi.bidang)
+                                                    ).options(selectinload(HasilPetaLokasi.kjb_dt)
+                                                    ).options(selectinload(HasilPetaLokasi.request_peta_lokasi)
+                                                    ).options(selectinload(HasilPetaLokasi.planing
+                                                                            ).options(selectinload(Planing.project)
+                                                                            ).options(selectinload(Planing.desa))
+                                                    ).options(selectinload(HasilPetaLokasi.skpt
+                                                                            ).options(selectinload(Skpt.ptsk))
+                                                    ).options(selectinload(HasilPetaLokasi.pemilik))
+                                                    
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+
     async def get_by_bidang_id(
                     self, 
                     *, 

@@ -3,17 +3,36 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.hasil_peta_lokasi_model import HasilPetaLokasiDetail
+from models import HasilPetaLokasiDetail, Bidang
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailForUtj
 from typing import List
 from uuid import UUID
 
 class CRUDHasilPetaLokasiDetail(CRUDBase[HasilPetaLokasiDetail, HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> HasilPetaLokasiDetail | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(HasilPetaLokasiDetail).where(HasilPetaLokasiDetail.id == id
+                                                    ).options(selectinload(HasilPetaLokasiDetail.hasil_peta_lokasi)
+                                                    ).options(selectinload(HasilPetaLokasiDetail.bidang
+                                                                            ).options(selectinload(Bidang.pemilik))
+                                                    ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap))
+                                                   
+                                                    
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_multi_data_removed_by_hasil_peta_lokasi_id(
             self, 
             *, 

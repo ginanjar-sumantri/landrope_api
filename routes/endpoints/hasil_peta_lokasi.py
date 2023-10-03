@@ -100,6 +100,8 @@ async def create(
     await db_session.commit()
     await db_session.refresh(new_obj)
 
+    new_obj = await crud.hasil_peta_lokasi.get_by_id(id=new_obj.id)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
@@ -120,7 +122,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.hasil_peta_lokasi.get(id=id)
+    obj = await crud.hasil_peta_lokasi.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -212,6 +214,8 @@ async def update(
     await db_session.commit()
     await db_session.refresh(obj_updated)
 
+    obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
@@ -231,13 +235,14 @@ async def upload_dokumen(
         object_updated = HasilPetaLokasiUpdateSch(file_path=file_path)
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
+    obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 @router.get("/download-file/{id}")
 async def download_file(id:UUID):
     """Download File Dokumen"""
 
-    obj_current = await crud.hasil_peta_lokasi.get(id=id)
+    obj_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     if obj_current.file_path is None:

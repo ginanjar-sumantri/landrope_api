@@ -19,6 +19,7 @@ async def create(
     """Create a new object"""
     
     new_obj = await crud.hasil_peta_lokasi_detail.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.hasil_peta_lokasi_detail.get_by_id(id=new_obj.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiDetailSch])
@@ -39,7 +40,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.hasil_peta_lokasi_detail.get(id=id)
+    obj = await crud.hasil_peta_lokasi_detail.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -58,4 +59,5 @@ async def update(
         raise IdNotFoundException(HasilPetaLokasiDetail, id)
     
     obj_updated = await crud.hasil_peta_lokasi_detail.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.hasil_peta_lokasi_detail.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
