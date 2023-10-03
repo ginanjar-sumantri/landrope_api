@@ -23,7 +23,7 @@ class RequestPetaLokasiFullBase(BaseUUIDModel, RequestPetaLokasiBase):
     pass
 
 class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
-    kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_dt: "KjbDt" = Relationship(back_populates="request_peta_lokasi", sa_relationship_kwargs={'lazy':'select'})
     hasil_peta_lokasi: "HasilPetaLokasi" = Relationship(
         back_populates="request_peta_lokasi",
         sa_relationship_kwargs={

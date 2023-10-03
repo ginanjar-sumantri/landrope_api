@@ -84,21 +84,8 @@ async def create(
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
-    
+    new_obj = await crud.tandaterimanotaris_hd.get_by_id(id=new_obj.id)
     return create_response(data=new_obj)
-
-# @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
-# async def get_list(
-#                 params: Params = Depends(), 
-#                 order_by:str = None, 
-#                 keyword:str = None, 
-#                 filter_query:str = None,
-#                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-#     """Gets a paginated list objects"""
-
-#     objs = await crud.tandaterimanotaris_hd.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
-#     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -137,7 +124,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.tandaterimanotaris_hd.get(id=id)
+    obj = await crud.tandaterimanotaris_hd.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -196,6 +183,8 @@ async def update(id:UUID,
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 
+    obj_updated = await crud.tandaterimanotaris_hd.get_by_id(id=obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.get("/download-file/{id}")
@@ -208,11 +197,11 @@ async def download_file(
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     if obj_current.file_path is None:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+        raise DocumentFileNotFoundException(dokumenname=obj_current.nomor_tanda_terima)
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+        raise DocumentFileNotFoundException(dokumenname=obj_current.nomor_tanda_terima)
     
     ext = obj_current.file_path.split('.')[-1]
 

@@ -35,12 +35,12 @@ class TandaTerimaNotarisHdFullBase(BaseUUIDModel, TandaTerimaNotarisHdBase):
 
 class TandaTerimaNotarisHd(TandaTerimaNotarisHdFullBase, table=True):
     # kjb_hd:"KjbHd" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'selectin'})
-    notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    project:"Project" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    kjb_dt:"KjbDt" = Relationship(back_populates="tanda_terima_notaris_hd", sa_relationship_kwargs={'lazy':'select'})
+    notaris:"Notaris" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    project:"Project" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    pemilik:"Pemilik" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    tanda_terima_notaris_dts:list["TandaTerimaNotarisDt"] = Relationship(sa_relationship_kwargs={'lazy':'select'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -116,8 +116,8 @@ class TandaTerimaNotarisDtFullBase(BaseUUIDModel, TandaTerimaNotarisDtBase):
     pass
 
 class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
-    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'selectin'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    tanda_terima_notaris_hd:"TandaTerimaNotarisHd" = Relationship(back_populates="tanda_terima_notaris_dts", sa_relationship_kwargs={'lazy':'select'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",

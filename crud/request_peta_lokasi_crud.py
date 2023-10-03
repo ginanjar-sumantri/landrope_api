@@ -3,7 +3,7 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.sql import func
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
@@ -121,7 +121,21 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
     
     async def get_all_by_code(self, *, code: str, db_session : AsyncSession | None = None) -> List[RequestPetaLokasi] | None:
         db_session = db_session or db.session
-        query = select(self.model).where(self.model.code == code)
+
+        query = select(self.model).where(self.model.code == code
+                                            ).options(selectinload(RequestPetaLokasi.kjb_dt
+                                                                    ).options(selectinload(KjbDt.kjb_hd)
+                                                                    ).options(selectinload(KjbDt.pemilik
+                                                                                            ).options(selectinload(Pemilik.kontaks))
+                                                                    ).options(selectinload(KjbDt.desa_by_ttn)
+                                                                    ).options(selectinload(KjbDt.project_by_ttn)
+                                                                    ).options(selectinload(KjbDt.kjb_hd
+                                                                                            ).options(selectinload(KjbHd.desa))
+                                                                    )
+                                            ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi
+                                                                    ).options(selectinload(HasilPetaLokasi.bidang))
+                                            )
+
         response =  await db_session.execute(query)
         return response.scalars().all()
     

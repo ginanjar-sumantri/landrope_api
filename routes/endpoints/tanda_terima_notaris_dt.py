@@ -39,9 +39,17 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     if not tanda_terima_hd:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    kjb_dt = await crud.kjb_dt.get(id=tanda_terima_hd.kjb_dt_id)
+    if not kjb_dt:
+        raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
+    
+    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)                                                                        
+        raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
+    
+    # bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    # if not bundlehd_obj_current:
+    #     raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)                                                                        
     
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
     if dokumen is None:
@@ -84,7 +92,8 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
                                                                     is_default=True)
     sch.tanggal_tanda_terima = tanda_terima_hd.tanggal_tanda_terima
     new_obj = await crud.tandaterimanotaris_dt.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
-    
+    new_obj = await crud.tandaterimanotaris_dt.get_by_id(id=new_obj.id)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisDtSch])
@@ -105,7 +114,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.tandaterimanotaris_dt.get(id=id)
+    obj = await crud.tandaterimanotaris_dt.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -132,9 +141,13 @@ async def update(id:UUID,
     if not tanda_terima_hd:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    kjb_dt = await crud.kjb_dt.get(id=tanda_terima_hd.kjb_dt_id)
+    if not kjb_dt:
+        raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
+    
+    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+        raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
     if dokumen is None:
@@ -180,6 +193,7 @@ async def update(id:UUID,
     
 
     obj_updated = await crud.tandaterimanotaris_dt.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=True, updated_by_id=current_worker.id)
+    obj_updated = await crud.tandaterimanotaris_dt.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
 
@@ -197,9 +211,13 @@ async def update_riwayat(id:UUID,
     if not tanda_terima_hd:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    kjb_dt = await crud.kjb_dt.get(id=tanda_terima_hd.kjb_dt_id)
+    if not kjb_dt:
+        raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
+    
+    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+        raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
     bundledt_obj_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundlehd_obj_current.id, dokumen_id=obj_current.dokumen_id)
     if not bundledt_obj_current:
@@ -225,7 +243,7 @@ async def update_riwayat(id:UUID,
 
     bundledt_obj_updated.riwayat_data = riwayat_data
     
-    bundle_dt = await crud.bundledt.update(obj_current=bundledt_obj_current, 
+    await crud.bundledt.update(obj_current=bundledt_obj_current, 
                                            obj_new=bundledt_obj_updated, 
                                            db_session=db_session, 
                                            with_commit=False, 
@@ -257,6 +275,8 @@ async def update_riwayat(id:UUID,
                                      obj_new=obj_updated, 
                                      db_session=db_session, 
                                      updated_by_id=current_worker.id)
+    
+    obj = await crud.tandaterimanotaris_dt.get_by_id(id=obj.id)
     #----------
     
     return create_response(data=obj)
@@ -328,6 +348,7 @@ async def delete_riwayat(id:UUID,
         obj_updated.riwayat_data = None
     
     obj = await crud.tandaterimanotaris_dt.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+    obj = await crud.tandaterimanotaris_dt.get_by_id(id=obj.id)
     #------------------------
 
     return create_response(data=obj)
@@ -342,9 +363,17 @@ async def download_file(
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
-    bundlehd_obj_current = obj_current.kjb_dt.bundlehd
+    tanda_terima_hd = await crud.tandaterimanotaris_hd.get(id=obj_current.tanda_terima_notaris_hd_id)
+    if not tanda_terima_hd:
+        raise IdNotFoundException(TandaTerimaNotarisHd, id)
+    
+    kjb_dt = await crud.kjb_dt.get(id=tanda_terima_hd.kjb_dt_id)
+    if not kjb_dt:
+        raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
+    
+    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, obj_current.kjb_dt.bundle_hd_id)                                                                        
+        raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id)                                                                      
     
     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     if dokumen is None:
