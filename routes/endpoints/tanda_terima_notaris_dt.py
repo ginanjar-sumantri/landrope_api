@@ -43,7 +43,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     if not kjb_dt:
         raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
     
-    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
+    bundlehd_obj_current = await crud.bundlehd.get_by_id(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
         raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
@@ -145,7 +145,7 @@ async def update(id:UUID,
     if not kjb_dt:
         raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
     
-    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
+    bundlehd_obj_current = await crud.bundlehd.get_by_id(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
         raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
@@ -215,7 +215,7 @@ async def update_riwayat(id:UUID,
     if not kjb_dt:
         raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
     
-    bundlehd_obj_current = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
+    bundlehd_obj_current = await crud.bundlehd.get_by_id(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
         raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
@@ -294,9 +294,13 @@ async def delete_riwayat(id:UUID,
     if not tanda_terima_hd:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    bundlehd_obj_current = tanda_terima_hd.kjb_dt.bundlehd
+    kjb_dt = await crud.kjb_dt.get(id=tanda_terima_hd.kjb_dt_id)
+    if not kjb_dt:
+        raise ContentNoChangeException(detail="Kjb detail di tanda terima tidak ditemukan")
+    
+    bundlehd_obj_current = await crud.bundlehd.get_by_id(id=kjb_dt.bundle_hd_id)
     if not bundlehd_obj_current:
-        raise IdNotFoundException(BundleHd, tanda_terima_hd.kjb_dt.bundle_hd_id)
+        raise IdNotFoundException(BundleHd, kjb_dt.bundle_hd_id) 
     
     bundledt_obj_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundlehd_obj_current.id, dokumen_id=obj_current.dokumen_id)
     if not bundledt_obj_current:
