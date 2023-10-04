@@ -76,10 +76,12 @@ class BidangForSPKByIdSch(SQLModel):
     bundle_hd_id:UUID | None
     ktp:str | None
     npwp:str | None
-
+    percentage_lunas:Optional[int]
+    jenis_alashak:JenisAlashakEnum | None
     termins:list[KjbTerminSch] | None
 
 class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
+    
     beban_biayas:list[KjbBebanBiayaSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 
@@ -203,3 +205,7 @@ class BidangTotalInvoiceByIdSch(SQLModel):
     id:UUID
     id_bidang:Optional[str]
     total_invoice:Optional[Decimal]
+
+class BidangPercentageLunasForSpk(SQLModel):
+    bidang_id:Optional[UUID]
+    percentage_lunas:Optional[Decimal]

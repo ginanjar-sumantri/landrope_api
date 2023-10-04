@@ -7,7 +7,8 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt
-from schemas.spk_sch import SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut
+from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, 
+                             SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
 from uuid import UUID
 from decimal import Decimal
@@ -323,5 +324,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
             response = await db_session.execute(query)
 
             return response.fetchall()
+    
+    
     
 spk = CRUDSpk(Spk)

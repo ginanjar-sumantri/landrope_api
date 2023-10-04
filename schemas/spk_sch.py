@@ -100,5 +100,7 @@ class SpkForTerminSch(SQLModel):
     total_invoice:Optional[Decimal]
     sisa_pelunasan:Optional[Decimal]
     amount:Optional[Decimal]
+
+
     
 

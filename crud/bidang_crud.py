@@ -10,7 +10,7 @@ from typing import List
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, 
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi)
-from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, 
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, BidangPercentageLunasForSpk,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
@@ -222,4 +222,24 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
 
         return response.fetchone()
 
+    async def get_percentage_lunas(self,
+                                   *, 
+                                    bidang_id: UUID | str, 
+                                    db_session: AsyncSession | None = None
+                                    ) ->  BidangPercentageLunasForSpk | None:
+            
+            db_session = db_session or db.session
+
+            query = text(f"""
+                    select
+                    bidang_id,
+                    (100 - SUM(nilai)) as percentage_lunas
+                    from spk
+                    where bidang_id = '{str(bidang_id)}'
+                    group by bidang_id
+                    """)
+
+            response = await db_session.execute(query)
+
+            return response.fetchone()
 bidang = CRUDBidang(Bidang)
