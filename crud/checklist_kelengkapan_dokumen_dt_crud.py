@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt, ChecklistKelengkapanDokumenHd
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtCreateSch, ChecklistKelengkapanDokumenDtExtSch, ChecklistKelengkapanDokumenDtUpdateSch, ChecklistKelengkapanDokumenDtSch
 from typing import List
 from uuid import UUID
@@ -50,13 +50,18 @@ class CRUDChecklistKelengkapanDokumenDt(CRUDBase[ChecklistKelengkapanDokumenDt, 
     
     async def get_all_for_spk(self, 
                       *, 
+                      bidang_id:UUID,
                       db_session : AsyncSession | None = None,
                       query : Select[ChecklistKelengkapanDokumenDt] | None = None) -> List[ChecklistKelengkapanDokumenDtSch] | None:
         
         db_session = db_session or db.session
 
-        if query is None:
-            query = select(self.model)
+        query = select(ChecklistKelengkapanDokumenDt
+                            ).select_from(ChecklistKelengkapanDokumenDt
+                            ).join(ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == ChecklistKelengkapanDokumenHd.id
+                            ).where(ChecklistKelengkapanDokumenHd.bidang_id == bidang_id
+                                    ).options(selectinload(ChecklistKelengkapanDokumenDt.dokumen)
+                                    ).options(selectinload(ChecklistKelengkapanDokumenDt.bundle_dt))
             
         response =  await db_session.execute(query)
         return response.scalars().all()

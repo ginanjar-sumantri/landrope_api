@@ -61,6 +61,8 @@ async def create(
     
     await db_session.commit()
     await db_session.refresh(new_obj)
+
+    new_obj = await crud.spk.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -99,12 +101,12 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.spk.get(id=id)
+    obj = await crud.spk.get_by_id(id=id)
 
     if not obj:
         raise IdNotFoundException(Spk, id)
     
-    bidang_obj = await crud.bidang.get(id=obj.bidang_id)
+    bidang_obj = await crud.bidang.get_by_id(id=obj.bidang_id)
     if not bidang_obj:
         raise IdNotFoundException(Bidang, obj.bidang_id)
 
@@ -174,7 +176,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
     """Update a obj by its id"""
 
     db_session = db.session
-    obj_current = await crud.spk.get(id=id)
+    obj_current = await crud.spk.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
@@ -204,7 +206,6 @@ async def update(id:UUID, sch:SpkUpdateSch,
 
 
     #remove kelengkapan dokumen 
-    
     list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
     if len(list_ids) > 0:
         kelengkapan_biaya_will_removed = await crud.spk_kelengkapan_dokumen.get_not_in_by_ids(list_ids=list_ids)
@@ -227,6 +228,8 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     await db_session.commit()
     await db_session.refresh(obj_updated)
+
+    obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
 
@@ -266,10 +269,13 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get(id=id)
+    obj = await crud.bidang.get_by_id(id=id)
 
-    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
-    beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id)
+    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
+    kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
+
+    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+    beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
     
     ktp_value:str = ""
     ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=obj.id)
@@ -284,21 +290,14 @@ async def get_by_id(id:UUID):
         if npwp_meta_data.meta_data is not None and npwp_meta_data.meta_data != "": 
             metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
             npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
-
-
     
-    query_kelengkapan = select(ChecklistKelengkapanDokumenDt
-                            ).select_from(ChecklistKelengkapanDokumenDt
-                            ).join(ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == ChecklistKelengkapanDokumenHd.id
-                            ).where(ChecklistKelengkapanDokumenHd.bidang_id == obj.id)
-    
-    kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(query=query_kelengkapan)
+    kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
     
     obj_return = BidangForSPKByIdExtSch(id=obj.id,
                                   id_bidang=obj.id_bidang,
-                                  hasil_analisa_peta_lokasi=obj.hasil_analisa_peta_lokasi,
-                                  kjb_no=obj.hasil_peta_lokasi.kjb_dt.kjb_code,
-                                  satuan_bayar=obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
+                                  hasil_analisa_peta_lokasi=hasil_peta_lokasi_current.hasil_analisa_peta_lokasi,
+                                  kjb_no=kjb_dt_current.kjb_code,
+                                  satuan_bayar=kjb_dt_current.kjb_hd.satuan_bayar,
                                   group=obj.group,
                                   pemilik_name=obj.pemilik_name,
                                   alashak=obj.alashak,

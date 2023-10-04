@@ -64,6 +64,8 @@ async def create(
     await db_session.commit()
     await db_session.refresh(new_obj)
 
+    new_obj = await crud.tahap.get_by_id(id=new_obj.id)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TahapSch])
@@ -108,7 +110,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.tahap.get_by_id(id=id)
+    obj = await crud.tahap.fetch_one_by_id(id=id)
     if obj is None:
         raise IdNotFoundException(Tahap, id)
     
@@ -144,7 +146,7 @@ async def update(
 
     db_session = db.session
 
-    obj_current = await crud.tahap.get(id=id)
+    obj_current = await crud.tahap.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(Tahap, id)
     
@@ -189,6 +191,8 @@ async def update(
     await db_session.commit()
     await db_session.refresh(obj_updated)
 
+    obj_updated = await crud.tahap.get_by_id(id=obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSrcSch])
@@ -232,7 +236,7 @@ async def get_by_id(id:UUID,
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get(id=id)
+    obj = await crud.bidang.get_by_id(id=id)
 
     obj_return = BidangForTahapByIdSch(**obj.dict())
     obj_return.project_name, obj_return.desa_name, obj_return.planing_name, obj_return.planing_id, obj_return.ptsk_name, obj_return.ptsk_id = [obj.project_name, 

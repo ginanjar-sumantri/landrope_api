@@ -1,6 +1,6 @@
 from models.request_peta_lokasi_model import RequestPetaLokasiBase, RequestPetaLokasiFullBase
 from common.partial import optional
-from common.enum import HasilAnalisaPetaLokasiEnum
+from common.enum import HasilAnalisaPetaLokasiEnum, StatusHasilPetaLokasiEnum
 from sqlmodel import Field, SQLModel
 from typing import List
 from decimal import Decimal
@@ -48,6 +48,8 @@ class RequestPetaLokasiForInputHasilSch(SQLModel):
     kjb_dt_id:UUID | None
     hasil_peta_lokasi_id:UUID | None
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
+    status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum | None
+    remark:str | None
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     alashak:str | None

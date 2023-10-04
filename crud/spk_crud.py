@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen
+from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt
 from schemas.spk_sch import SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut
 from common.enum import JenisBayarEnum
 from uuid import UUID
@@ -27,11 +27,15 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                     ).options(selectinload(Spk.bidang
                                                         ).options(selectinload(Bidang.hasil_peta_lokasi
                                                                             ).options(selectinload(HasilPetaLokasi.kjb_dt
-                                                                                                ).options(KjbDt.kjb_hd)
+                                                                                                ).options(selectinload(KjbDt.kjb_hd))
                                                                             )
                                                         )
                                     ).options(selectinload(Spk.kjb_termin)
-                                    ).options(selectinload(Spk.spk_kelengkapan_dokumens))
+                                    ).options(selectinload(Spk.spk_kelengkapan_dokumens
+                                                        ).options(selectinload(SpkKelengkapanDokumen.bundledt
+                                                                            ).options(selectinload(BundleDt.dokumen))
+                                                        )
+                                    )
 
         response = await db_session.execute(query)
 

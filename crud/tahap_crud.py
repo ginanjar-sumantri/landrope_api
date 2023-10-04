@@ -4,6 +4,7 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select
 from sqlmodel.sql.expression import Select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models.tahap_model import Tahap
 from models import Planing, Project, Desa, Ptsk
@@ -11,6 +12,25 @@ from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch, TahapForTerminById
 from uuid import UUID
 
 class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
+   async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Tahap | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Tahap).where(Tahap.id == id
+                                        ).options(selectinload(Tahap.planing
+                                                            ).options(selectinload(Planing.project
+                                                                                ).options(selectinload(Project.section))
+                                                            ).options(selectinload(Planing.desa))
+                                        ).options(selectinload(Tahap.ptsk)
+                                        ).options(selectinload(Tahap.details))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
    
    async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> TahapForTerminByIdSch | None:
         db_session = db_session or db.session
@@ -32,7 +52,7 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
 
         return response.fetchone()
    
-   async def get_by_id(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> TahapByIdSch | None:
+   async def fetch_one_by_id(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> TahapByIdSch | None:
         db_session = db_session or db.session
 
         query = select(Tahap.id,
