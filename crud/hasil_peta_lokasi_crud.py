@@ -25,7 +25,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
         
         query = select(HasilPetaLokasi).where(HasilPetaLokasi.id == id
                                                     ).options(selectinload(HasilPetaLokasi.details
-                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang))
+                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang)
+                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap))
                                                     ).options(selectinload(HasilPetaLokasi.bidang)
                                                     ).options(selectinload(HasilPetaLokasi.kjb_dt)
                                                     ).options(selectinload(HasilPetaLokasi.request_peta_lokasi)

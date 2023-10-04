@@ -138,7 +138,7 @@ async def update(
     """Update a obj by its id"""
 
     db_session = db.session
-    obj_current = await crud.hasil_peta_lokasi.get(id=id)
+    obj_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     

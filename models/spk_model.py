@@ -27,7 +27,7 @@ class Spk(SpkFullBase, table=True):
     bidang:"Bidang" = Relationship(
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin",
+            "lazy" : "select",
 
         }
     )
@@ -36,13 +36,13 @@ class Spk(SpkFullBase, table=True):
         back_populates="spk",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
     kjb_termin:"KjbTermin" = Relationship(sa_relationship_kwargs=
         {
-            "lazy" : "selectin",
+            "lazy" : "select",
 
         }
     )

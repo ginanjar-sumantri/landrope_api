@@ -4,8 +4,9 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, case, text, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Spk, Bidang
+from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen
 from schemas.spk_sch import SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut
 from common.enum import JenisBayarEnum
 from uuid import UUID
@@ -14,6 +15,28 @@ from typing import List
 
 
 class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Spk | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk).where(Spk.id == id
+                                    ).options(selectinload(Spk.bidang
+                                                        ).options(selectinload(Bidang.hasil_peta_lokasi
+                                                                            ).options(selectinload(HasilPetaLokasi.kjb_dt
+                                                                                                ).options(KjbDt.kjb_hd)
+                                                                            )
+                                                        )
+                                    ).options(selectinload(Spk.kjb_termin)
+                                    ).options(selectinload(Spk.spk_kelengkapan_dokumens))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+
     async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> SpkForTerminSch | None:
         db_session = db_session or db.session
         query = select(Spk.id.label("spk_id"),
