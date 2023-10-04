@@ -4,6 +4,7 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.termin_model import Termin
@@ -20,17 +21,25 @@ from typing import List
 from uuid import UUID
 
 class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
-
-    async def get(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> Termin | None:
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Termin | None:
+        
         db_session = db_session or db.session
-        query = select(Termin).outerjoin(Tahap, Tahap.id == Termin.tahap_id
-                        ).outerjoin(KjbHd, KjbHd.id == Termin.kjb_hd_id
-                        ).outerjoin(Worker, Worker.id == Termin.updated_by_id
-                        ).outerjoin(Invoice, Invoice.termin_id == Termin.id
-                        ).where(Termin.id == id)
+        
+        query = select(Termin).where(Termin.id == id
+                                                    ).options(selectinload(Termin.tahap)
+                                                    ).options(selectinload(Termin.kjb_hd)
+                                                    ).options(selectinload(Termin.invoices
+                                                                        ).options(selectinload(Invoice.details))
+                                                    )
+        
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
 
     async def get_by_id_for_printout(self, 
                   *, 

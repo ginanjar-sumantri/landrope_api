@@ -83,6 +83,8 @@ async def create(
     await db_session.commit()
     await db_session.refresh(new_obj)
 
+    new_obj = await crud.termin.get_by_id(id=new_obj.id)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
@@ -137,7 +139,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
     
-    obj = await crud.termin.get(id=id)
+    obj = await crud.termin.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -216,6 +218,8 @@ async def update(
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
+
+    obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
 

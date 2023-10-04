@@ -36,7 +36,7 @@ class Invoice(InvoiceFullBase, table=True):
         back_populates="invoice",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin",
+            "lazy" : "select",
             "cascade" : "delete, all",
              "foreign_keys" : "[InvoiceDetail.invoice_id]"
         }
