@@ -149,7 +149,7 @@ async def get_by_id(id:UUID):
                                     ktp=ktp_value,
                                     npwp=npwp_value,
                                     termins=harga.termins,
-                                    percentage_lunas=percentage_lunas.percentage_lunas)
+                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
     obj_return = SpkByIdSch(**obj.dict())
     obj_return.bidang = bidang_sch
@@ -322,7 +322,7 @@ async def get_by_id(id:UUID):
                                     ktp=ktp_value,
                                     npwp=npwp_value,
                                     termins=harga.termins,
-                                    percentage_lunas=percentage_lunas.percentage_lunas)
+                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
     
     if obj:
