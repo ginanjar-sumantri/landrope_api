@@ -14,6 +14,7 @@ from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpda
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.section_sch import SectionUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch, BidangUpdateSch
+from schemas.bidang_overlap_sch import BidangOverlapForTahap
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -60,6 +61,19 @@ async def create(
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
                                   with_commit=False, db_session=db_session, 
                                   updated_by_id=current_worker.id)
+        
+        for ov in dt.overlaps:
+            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.bidang_overlap_id)
+            if bidang_overlap_current.geom :
+                bidang_overlap_current.geom = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
+            
+            bidang_overlap_updated = bidang_overlap_current
+            bidang_overlap_updated.kategori = ov.kategori
+            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi
+
+            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
+                                            with_commit=False, db_session=db_session,
+                                            updated_by_id=current_worker.id)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
@@ -130,6 +144,20 @@ async def get_by_id(id:UUID):
         detail.total_invoice = total_invoice.total_invoice if total_invoice != None else 0
         detail.sisa_pelunasan = detail.total_harga - (detail.total_beban + detail.total_invoice)
 
+        obj_overlaps = await crud.bidangoverlap.get_multi_by_override_bidang_id(bidang_id=dt.bidang_id)
+        overlaps = []
+        for ov in obj_overlaps:
+            overlap = BidangOverlapForTahap(bidang_overlap_id=ov.id,
+                                            bidang_id=ov.parent_bidang_intersect_id,
+                                            id_bidang=ov.id_bidang_intersect,
+                                            luas_intersect=ov.luas,
+                                            luas_surat=ov.luas_surat_intersect,
+                                            kategori=ov.kategori,
+                                            harga_transaksi=ov.harga_transaksi
+                                            )
+            overlaps.append(overlap)
+        
+        detail.overlaps = overlaps
         details.append(detail)
     
     obj_return.details = details
@@ -187,6 +215,20 @@ async def update(
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
                                   with_commit=False, db_session=db_session, 
                                   updated_by_id=current_worker.id)
+        
+        for ov in dt.overlaps:
+            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.bidang_overlap_id)
+            if bidang_overlap_current.geom :
+                bidang_overlap_current.geom = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
+            
+            bidang_overlap_updated = bidang_overlap_current
+            bidang_overlap_updated.kategori = ov.kategori
+            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi
+
+            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
+                                            with_commit=False, db_session=db_session,
+                                            updated_by_id=current_worker.id)
+        
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -237,6 +279,7 @@ async def get_by_id(id:UUID,
     """Get an object by id"""
 
     obj = await crud.bidang.get_by_id(id=id)
+    obj_overlaps = await crud.bidangoverlap.get_multi_by_override_bidang_id(bidang_id=id)
 
     obj_return = BidangForTahapByIdSch(**obj.dict())
     obj_return.project_name, obj_return.desa_name, obj_return.planing_name, obj_return.planing_id, obj_return.ptsk_name, obj_return.ptsk_id = [obj.project_name, 
@@ -245,7 +288,20 @@ async def get_by_id(id:UUID,
                                                                                                     obj.planing_id,
                                                                                                     obj.ptsk_name or (f'{obj.penampung_name} (PENAMPUNG)'),
                                                                                                     (obj.skpt.ptsk_id if obj.skpt is not None else obj.penampung_id)]
-    
+    overlaps = []
+    for ov in obj_overlaps:
+        overlap = BidangOverlapForTahap(bidang_overlap_id=ov.id,
+                                        bidang_id=ov.parent_bidang_intersect_id,
+                                        id_bidang=ov.id_bidang_intersect,
+                                        luas_intersect=ov.luas,
+                                        luas_surat=ov.luas_surat_intersect,
+                                        kategori=ov.kategori,
+                                        harga_transaksi=ov.harga_transaksi
+                                        )
+        overlaps.append(overlap)
+
+    obj_return.overlaps = overlaps
+
     if obj_return:
         return create_response(data=obj_return)
     else:

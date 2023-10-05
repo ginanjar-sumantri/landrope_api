@@ -3,6 +3,7 @@ from models.base_model import BaseGeoModel
 from schemas.kjb_termin_sch import KjbTerminSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
+from schemas.bidang_overlap_sch import BidangOverlapForTahap
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
@@ -108,6 +109,7 @@ class BidangForTahapByIdSch(SQLModel):
     alashak:Optional[str]
     no_peta:Optional[str]
     group:Optional[str]
+    overlaps:list[BidangOverlapForTahap] | None
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None

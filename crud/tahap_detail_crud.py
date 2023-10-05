@@ -2,8 +2,9 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models.tahap_model import TahapDetail
+from models import TahapDetail, Bidang, Planing
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from typing import List
 from uuid import UUID
@@ -101,6 +102,26 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
             
         response =  await db_session.execute(query)
         return response.fetchall()
+    
+    # async def get_multi_by_tahap(self, 
+    #                                 *, 
+    #                                 tahap_id:UUID | str,
+    #                                 db_session : AsyncSession | None = None, 
+    #                                 query : TahapDetail | Select[TahapDetail]| None = None
+    #                                 ) -> List[TahapDetailExtSch] | None:
+        
+    #     db_session = db_session or db.session
+        
+    #     query = select(TahapDetail).where(TahapDetail.tahap_id == tahap_id
+    #                                     ).options(selectinload(TahapDetail.tahap)
+    #                                     ).options(selectinload(TahapDetail.bidang
+    #                                                         ).options(selectinload(Bidang.planing
+    #                                                                             ).options(sele)
+    #                                                         )
+    #                                     )
+            
+    #     response =  await db_session.execute(query)
+    #     return response.fetchall()
     
 
 tahap_detail = CRUDTahapDetail(TahapDetail)

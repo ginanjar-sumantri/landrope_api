@@ -130,4 +130,10 @@ class TanggunganBiayaEnum(str, Enum):
 class PaymentMethodEnum(str, Enum):
     Giro = "Giro"
     Cek = "Cek"
+
+class KategoriOverlapEnum(str, Enum):
+    A = "A" #alashak
+    B = "B" #PBT/NIB
+    C = "C" #pengumuman
+    D = "D" #SHM
     

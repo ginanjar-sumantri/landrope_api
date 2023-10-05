@@ -1,6 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel, BaseGeoModel
-from models.mapping_model import MappingBidangOverlap
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
@@ -10,18 +9,8 @@ from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, St
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum)
 
 if TYPE_CHECKING:
-    from models.planing_model import Planing
-    from models.skpt_model import Skpt
-    from models.ptsk_model import Ptsk
-    from models.pemilik_model import Pemilik
-    from models.master_model import JenisSurat
-    from models.kategori_model import Kategori, KategoriSub, KategoriProyek
-    from models.marketing_model import Manager, Sales
-    from models.notaris_model import Notaris
-    from models.bundle_model import BundleHd
-    from models.hasil_peta_lokasi_model import HasilPetaLokasi
-    from models.worker_model import Worker
-    from models.tahap_model import TahapDetail
+    from models import (Planing, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
+                        Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice)
     
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150)
@@ -111,6 +100,30 @@ class Bidang(BidangFullBase, table=True):
         {
             "lazy":"select",
             "uselist":False
+        }
+    )
+
+    komponen_biayas:list["BidangKomponenBiaya"] = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+
+    overlaps:list["BidangOverlap"] = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+
+    invoices:list["Invoice"] = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
         }
     )
     

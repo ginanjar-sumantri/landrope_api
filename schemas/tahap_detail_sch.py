@@ -1,4 +1,5 @@
 from models.tahap_model import TahapDetailBase, TahapDetailFullBase
+from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from common.partial import optional
@@ -15,6 +16,7 @@ class TahapDetailCreateExtSch(SQLModel):
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
     luas_bayar:Optional[Decimal]
+    overlaps:list[BidangOverlapUpdateExtSch] | None
 
 class TahapDetailSch(TahapDetailFullBase):
     id_bidang:Optional[str] = Field(alias="id_bidang")
@@ -62,10 +64,12 @@ class TahapDetailExtSch(SQLModel):
     planing_id:Optional[UUID]
     ptsk_id:Optional[UUID]
     ptsk_name:Optional[str] 
-    total_harga:Optional[Decimal] 
+    total_harga:Optional[Decimal]
+    total_harga_akta:Optional[Decimal]
     total_beban:Optional[Decimal]
     total_invoice:Optional[Decimal]
     sisa_pelunasan:Optional[Decimal]
+    overlaps:list[BidangOverlapForTahap] | None
 
 @optional
 class TahapDetailUpdateSch(TahapDetailBase):
@@ -78,3 +82,4 @@ class TahapDetailUpdateExtSch(SQLModel):
     harga_transaksi:Optional[Decimal]
     luas_bayar:Optional[Decimal]
     is_void:Optional[bool] = Field(default=False)
+    overlaps:list[BidangOverlapUpdateExtSch] | None
