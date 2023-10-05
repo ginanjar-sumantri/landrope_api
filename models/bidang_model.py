@@ -111,13 +111,13 @@ class Bidang(BidangFullBase, table=True):
         }
     )
 
-    overlaps:list["BidangOverlap"] = Relationship(
-        back_populates="bidang",
-        sa_relationship_kwargs=
-        {
-            "lazy":"select"
-        }
-    )
+    # overlaps:list["BidangOverlap"] = Relationship(
+    #     back_populates="bidang",
+    #     sa_relationship_kwargs=
+    #     {
+    #         "lazy":"select"
+    #     }
+    # )
 
     invoices:list["Invoice"] = Relationship(
         back_populates="bidang",
