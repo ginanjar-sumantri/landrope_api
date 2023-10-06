@@ -59,7 +59,7 @@ class SubProject(SubProjectFullBase, table=True):
 
 class MainProjectBase(SQLModel):
     code:str
-    last_tahap:int = Field(nullable=False)
+    last_tahap:Optional[int] = Field(nullable=True)
 
 class MainProjectFullBase(BaseUUIDModel, MainProjectBase):
     pass

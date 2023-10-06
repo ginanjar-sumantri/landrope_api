@@ -32,5 +32,21 @@ class CRUDSubProject(CRUDBase[SubProject, SubProjectCreateSch, SubProjectUpdateS
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_by_project_id(self, 
+                  *, 
+                  project_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> SubProject | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(SubProject).where(SubProject.project_id == project_id
+                                        ).options(selectinload(SubProject.project)
+                                        ).options(selectinload(SubProject.main_project))
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 sub_project = CRUDSubProject(SubProject)

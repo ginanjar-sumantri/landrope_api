@@ -9,15 +9,15 @@ from models.worker_model import Worker
 from models.planing_model import Planing
 from models.skpt_model import Skpt
 from models.ptsk_model import Ptsk
-from models import Project, Desa, Section
+from models import Project, Desa, Section, SubProject
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
-from schemas.section_sch import SectionUpdateSch
+from schemas.main_project_sch import MainProjectUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangByIdForTahapSch, BidangUpdateSch
 from schemas.bidang_overlap_sch import BidangOverlapForTahap
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
 from shapely import wkb, wkt
 import crud
@@ -33,13 +33,25 @@ async def create(
     """Create a new object"""
     db_session = db.session
 
-    obj_planing = await crud.planing.get(id=sch.planing_id)
-    obj_section = obj_planing.project.section
+    obj_planing = await crud.planing.get_by_id(id=sch.planing_id)
+    if not obj_planing:
+        raise IdNotFoundException(Planing, sch.planing_id)
+    
+    new_last_tahap = 0
+    mainproject_current = None
+    if obj_planing.project.main_project:
+        mainproject_current = obj_planing.project.main_project
+        new_last_tahap = (mainproject_current.last_tahap or 0) + 1
+    else:
+        obj_sub_project = await crud.sub_project.get_by_project_id(project_id=obj_planing.project_id)
+        if not obj_sub_project:
+            raise ContentNoChangeException(detail="Sub Project tidak ditemukan")
+        mainproject_current = obj_sub_project.main_project
+        new_last_tahap = (mainproject_current.last_tahap or 0) + 1
 
-    new_last_tahap = (obj_section.last_tahap or 0) + 1
-
-    updated_section = SectionUpdateSch(last_tahap=new_last_tahap)
-    await crud.section.update(obj_current=obj_section, obj_new=updated_section, 
+    mainproject_updated = mainproject_current
+    mainproject_updated.last_tahap = new_last_tahap
+    await crud.section.update(obj_current=mainproject_current, obj_new=mainproject_updated, 
                               db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
     sch.nomor_tahap = new_last_tahap
@@ -209,6 +221,7 @@ async def update(
 async def get_list(
                 planing_id:UUID,
                 ptsk_id:UUID,
+                sub_project_id:UUID|None = None,
                 keyword:str = None,
                 params: Params=Depends(),
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -223,7 +236,8 @@ async def get_list(
                                 Bidang.status.in_(status_),
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
                                 Bidang.hasil_peta_lokasi != None,
-                                Bidang.planing_id == planing_id,
+                                or_(Bidang.planing_id == planing_id,
+                                    Bidang.sub_project_id == sub_project_id),
                                 or_(
                                     TahapDetail.bidang == None,
                                     TahapDetail.is_void == True),

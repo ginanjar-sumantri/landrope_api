@@ -25,6 +25,7 @@ class CRUDProject(CRUDBase[Project, ProjectCreateSch, ProjectUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
     async def get_all_project_tree_report_map(
             self, 
             *,

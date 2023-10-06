@@ -11,7 +11,7 @@ from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, St
 import numpy
 
 if TYPE_CHECKING:
-    from models import (Planing, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
+    from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
                         Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice)
     
 class BidangBase(SQLModel):
@@ -22,6 +22,7 @@ class BidangBase(SQLModel):
     jenis_bidang:JenisBidangEnum | None = Field(nullable=True)
     status:StatusBidangEnum | None = Field(nullable=False)
     planing_id:Optional[UUID] = Field(nullable=True, foreign_key="planing.id")
+    sub_project_id:Optional[UUID] = Field(nullable=True, foreign_key="sub_project.id")
     group:Optional[str] = Field(nullable=True)
     jenis_alashak:Optional[JenisAlashakEnum] = Field(nullable=True)
     jenis_surat_id:Optional[UUID] = Field(nullable=True, foreign_key="jenis_surat.id")
@@ -64,6 +65,13 @@ class Bidang(BidangFullBase, table=True):
     
     planing:"Planing" = Relationship(
         sa_relationship_kwargs = {'lazy':'select'})
+    
+    sub_project:"SubProject" = Relationship(
+        sa_relationship_kwargs=
+        {
+            'lazy' : 'select'
+        }
+    )
     
     jenis_surat:"JenisSurat" = Relationship(
         sa_relationship_kwargs = {'lazy':'select'})
@@ -164,6 +172,14 @@ class Bidang(BidangFullBase, table=True):
     @property
     def desa_code(self) -> str | None:
         return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'code', None)
+
+    @property
+    def sub_project_name(self) -> str | None:
+        return getattr(getattr(self, 'sub_project', None), 'name', None)
+    
+    @property
+    def sub_project_name(self) -> str | None:
+        return getattr(getattr(self, 'sub_project', None), 'code', None)
     
     @property
     def planing_name(self) -> str:

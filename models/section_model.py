@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 class SectionBase(SQLModel):
     name:Optional[str] = Field(nullable=False, max_length=100)
     code:Optional[str] = Field(nullable=False, max_length=50)
-    last_tahap:Optional[int] = Field(nullable=True)
 
 class SectionFullBase(BaseUUIDModel, SectionBase):
     pass
