@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models.tahap_model import Tahap
-from models import Planing, Project, Desa, Ptsk
+from models import Planing, Project, Desa, Ptsk, TahapDetail, Bidang, Skpt, BidangKomponenBiaya, BidangOverlap
 from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch, TahapForTerminByIdSch, TahapByIdSch
 from uuid import UUID
 
@@ -26,7 +26,21 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
                                                                                 ).options(selectinload(Project.section))
                                                             ).options(selectinload(Planing.desa))
                                         ).options(selectinload(Tahap.ptsk)
-                                        ).options(selectinload(Tahap.details))
+                                        ).options(selectinload(Tahap.details
+                                                            ).options(selectinload(TahapDetail.bidang
+                                                                                ).options(selectinload(Bidang.planing
+                                                                                                    ).options(selectinload(Planing.project)
+                                                                                                    ).options(selectinload(Planing.desa))
+                                                                                ).options(selectinload(Bidang.skpt
+                                                                                                    ).options(selectinload(Skpt.ptsk))
+                                                                                ).options(selectinload(Bidang.penampung)
+                                                                                ).options(selectinload(Bidang.komponen_biayas
+                                                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                                                ).options(selectinload(Bidang.overlaps
+                                                                                                    ).options(selectinload(BidangOverlap.bidang_intersect))
+                                                                                ).options(selectinload(Bidang.invoices))
+                                                            )
+                                        )
 
         response = await db_session.execute(query)
 

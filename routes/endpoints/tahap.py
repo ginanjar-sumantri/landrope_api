@@ -13,7 +13,7 @@ from models import Project, Desa, Section
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.section_sch import SectionUpdateSch
-from schemas.bidang_sch import BidangSrcSch, BidangForTahapByIdSch, BidangUpdateSch
+from schemas.bidang_sch import BidangSrcSch, BidangByIdForTahapSch, BidangUpdateSch
 from schemas.bidang_overlap_sch import BidangOverlapForTahap
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -124,45 +124,11 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.tahap.fetch_one_by_id(id=id)
+    obj = await crud.tahap.get_by_id(id=id)
     if obj is None:
         raise IdNotFoundException(Tahap, id)
-    
-    tahap_details = await crud.tahap_detail.get_multi_by_tahap_id(tahap_id=id)
-    
-    obj_return = TahapByIdSch(**dict(obj))
 
-    details = [TahapDetailExtSch(**dict(dt)) for dt in tahap_details]
-
-    details = []
-    for dt in tahap_details:
-        detail = TahapDetailExtSch(**dict(dt))
-        total_beban_penjual = await crud.bidang.get_total_beban_penjual_by_bidang_id(bidang_id=detail.bidang_id)
-        total_invoice = await crud.bidang.get_total_invoice_by_bidang_id(bidang_id=detail.bidang_id)
-
-        detail.total_beban = total_beban_penjual.total_beban_penjual if total_beban_penjual != None else 0
-        detail.total_invoice = total_invoice.total_invoice if total_invoice != None else 0
-        detail.sisa_pelunasan = detail.total_harga - (detail.total_beban + detail.total_invoice)
-
-        obj_overlaps = await crud.bidangoverlap.get_multi_by_override_bidang_id(bidang_id=dt.bidang_id)
-        overlaps = []
-        for ov in obj_overlaps:
-            overlap = BidangOverlapForTahap(bidang_overlap_id=ov.id,
-                                            bidang_id=ov.parent_bidang_intersect_id,
-                                            id_bidang=ov.id_bidang_intersect,
-                                            luas_intersect=ov.luas,
-                                            luas_surat=ov.luas_surat_intersect,
-                                            kategori=ov.kategori,
-                                            harga_transaksi=ov.harga_transaksi
-                                            )
-            overlaps.append(overlap)
-        
-        detail.overlaps = overlaps
-        details.append(detail)
-    
-    obj_return.details = details
-
-    return create_response(data=obj_return)
+    return create_response(data=obj)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[TahapSch])
 async def update(
@@ -271,38 +237,16 @@ async def get_list(
 
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
-
-@router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForTahapByIdSch])
+    
+@router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangByIdForTahapSch])
 async def get_by_id(id:UUID,
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get_by_id(id=id)
-    obj_overlaps = await crud.bidangoverlap.get_multi_by_override_bidang_id(bidang_id=id)
+    obj = await crud.bidang.get_by_id_for_tahap(id=id)
 
-    obj_return = BidangForTahapByIdSch(**obj.dict())
-    obj_return.project_name, obj_return.desa_name, obj_return.planing_name, obj_return.planing_id, obj_return.ptsk_name, obj_return.ptsk_id = [obj.project_name, 
-                                                                                                    obj.desa_name, 
-                                                                                                    obj.planing_name,
-                                                                                                    obj.planing_id,
-                                                                                                    obj.ptsk_name or (f'{obj.penampung_name} (PENAMPUNG)'),
-                                                                                                    (obj.skpt.ptsk_id if obj.skpt is not None else obj.penampung_id)]
-    overlaps = []
-    for ov in obj_overlaps:
-        overlap = BidangOverlapForTahap(bidang_overlap_id=ov.id,
-                                        bidang_id=ov.parent_bidang_intersect_id,
-                                        id_bidang=ov.id_bidang_intersect,
-                                        luas_intersect=ov.luas,
-                                        luas_surat=ov.luas_surat_intersect,
-                                        kategori=ov.kategori,
-                                        harga_transaksi=ov.harga_transaksi
-                                        )
-        overlaps.append(overlap)
-
-    obj_return.overlaps = overlaps
-
-    if obj_return:
-        return create_response(data=obj_return)
+    if obj:
+        return create_response(data=obj)
     else:
         raise IdNotFoundException(Bidang, id)

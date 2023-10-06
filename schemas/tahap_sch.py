@@ -35,17 +35,13 @@ class TahapSch(TahapFullBase):
 #     jumlah_bidang:Optional[int]
     
 
-class TahapByIdSch(SQLModel):
-    id:UUID
-    nomor_tahap:Optional[int] 
-    planing_id:Optional[UUID] 
-    ptsk_id:Optional[UUID] 
-    group:Optional[str] 
-    planing_name:Optional[str]
-    project_name:Optional[str]
-    desa_name:Optional[str]
-    ptsk_name:Optional[str]
-    details:list[TahapDetailExtSch] | None
+class TahapByIdSch(TahapFullBase):
+    planing_name:Optional[str] = Field(alias="planing_name")
+    project_name:Optional[str] = Field(alias="project_name")
+    section_name:Optional[str] = Field(alias="section_name")
+    desa_name:Optional[str] = Field(alias="desa_name")
+    ptsk_name:Optional[str] = Field(alias="ptsk_name")
+    details:list[TahapDetailSch] | None
 
 class TahapForTerminByIdSch(SQLModel):
     id:UUID

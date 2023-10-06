@@ -1,5 +1,5 @@
 from models.tahap_model import TahapDetailBase, TahapDetailFullBase
-from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap
+from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap, BidangOverlapRawSch
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from common.partial import optional
@@ -37,8 +37,10 @@ class TahapDetailSch(TahapDetailFullBase):
     desa_name:Optional[str] = Field(alias="desa_name")
     planing_name:Optional[str] = Field(alias="planing_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
-    harga_total:Optional[Decimal] = Field(alias="harga_total")
-    sisa_pelunasan:Optional[Decimal]
+    total_harga_transaksi:Optional[Decimal] = Field(alias="total_harga_transaksi")
+    total_harga_akta:Optional[Decimal] = Field(alias="total_harga_akta")
+    sisa_pelunasan:Optional[Decimal] = Field(alias="sisa_pelunasan")
+    overlaps:Optional[list[BidangOverlapRawSch]] = Field(alias="overlaps")
 
 class TahapDetailExtSch(SQLModel):
     id:UUID

@@ -6,7 +6,9 @@ from uuid import UUID
 from decimal import Decimal
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
-                         StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum)
+                         StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
+                         SatuanBayarEnum, SatuanHargaEnum)
+import numpy
 
 if TYPE_CHECKING:
     from models import (Planing, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
@@ -111,13 +113,14 @@ class Bidang(BidangFullBase, table=True):
         }
     )
 
-    # overlaps:list["BidangOverlap"] = Relationship(
-    #     back_populates="bidang",
-    #     sa_relationship_kwargs=
-    #     {
-    #         "lazy":"select"
-    #     }
-    # )
+    overlaps:list["BidangOverlap"] = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select",
+            "primaryjoin": "Bidang.id==BidangOverlap.parent_bidang_id"
+        }
+    )
 
     invoices:list["Invoice"] = Relationship(
         back_populates="bidang",
@@ -260,5 +263,64 @@ class Bidang(BidangFullBase, table=True):
             return ProsesBPNOrderGambarUkurEnum.PBT_PT
         
         return None
+    
+    @property
+    def total_harga_transaksi(self) -> Decimal | None:
+        total_harga_overlap = 0
+        total_luas_overlap = 0
+        if len(self.overlaps) > 0:
+            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_harga_overlap = numpy.sum(array_total_harga_overlap)
+
+            array_total_luas_overlap = numpy.array([(ov.luas or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_luas_overlap = numpy.sum(array_total_luas_overlap)
+
+        return ((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - total_luas_overlap)) + total_harga_overlap
+    
+    @property
+    def total_harga_akta(self) -> Decimal | None:
+        total_harga_overlap = 0
+        total_luas_overlap = 0
+        if len(self.overlaps) > 0:
+            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_harga_overlap = numpy.sum(array_total_harga_overlap)
+
+            array_total_luas_overlap = numpy.array([(ov.luas or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_luas_overlap = numpy.sum(array_total_luas_overlap)
+
+        return ((self.harga_akta or 0) * ((self.luas_bayar or 0) - total_luas_overlap)) + total_harga_overlap
+    
+    @property
+    def total_beban_penjual(self) -> Decimal | None:
+        total_beban_penjual = 0
+        if len(self.komponen_biayas) > 0:
+            calculate = []
+            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True]
+            for beban in komponen_biaya_beban_penjual:
+                if beban.beban_biaya.satuan_bayar == SatuanBayarEnum.Percentage and beban.beban_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                    amount = beban.beban_biaya.amount * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
+                elif beban.beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and beban.beban_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                    amount = beban.beban_biaya.amount * (self.luas_bayar or self.luas_surat)
+                else:
+                    amount = beban.beban_biaya.amount
+                
+                calculate.append(amount)
+            
+            total_beban_penjual = sum(calculate) or 0
+        
+        return total_beban_penjual
+            
+    @property
+    def total_invoice(self) -> Decimal | None:
+        total_invoice = 0
+        if len(self.invoices) > 0:
+            list_invoices = [inv.amount for inv in self.invoices if inv.is_void != True]
+            total_invoice = sum(list_invoices)
+        
+        return total_invoice
+    
+    @property
+    def sisa_pelunasan(self) -> Decimal | None:
+        return self.total_harga_transaksi - (self.total_invoice + self.total_beban_penjual)
 
 

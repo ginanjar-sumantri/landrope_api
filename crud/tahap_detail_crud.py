@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import TahapDetail, Bidang, Planing, Skpt
+from models import TahapDetail, Bidang, Planing, Skpt, BidangKomponenBiaya
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from typing import List
 from uuid import UUID
@@ -108,7 +108,7 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                                     tahap_id:UUID | str,
                                     db_session : AsyncSession | None = None, 
                                     query : TahapDetail | Select[TahapDetail]| None = None
-                                    ) -> List[TahapDetailExtSch] | None:
+                                    ) -> List[TahapDetail] | None:
         
         db_session = db_session or db.session
         
@@ -121,9 +121,10 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                                                             ).options(selectinload(Bidang.skpt
                                                                                 ).options(selectinload(Skpt.ptsk))
                                                             ).options(selectinload(Bidang.penampung)
-                                                            ).options(selectinload(Bidang.komponen_biayas)
+                                                            ).options(selectinload(Bidang.komponen_biayas
+                                                                                ).options(selectinload(BidangKomponenBiaya.beban_biaya))
                                                             ).options(selectinload(Bidang.invoices)
-                                                            ).options(selectinload)
+                                                            )
                                         )
             
         response =  await db_session.execute(query)

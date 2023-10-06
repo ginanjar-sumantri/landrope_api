@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
+from models import BidangOverlap
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
@@ -187,8 +188,19 @@ class TahapDetail(TahapDetailFullBase, table=True):
             return self.bidang.penampung_id
     
     @property
-    def harga_total(self) -> Decimal | None:
-        return (self.bidang.harga_transaksi or 0) * (self.bidang.luas_bayar or 0)
-
+    def total_harga_transaksi(self) -> Decimal | None:
+        return self.bidang.total_harga_transaksi
+    
+    @property
+    def total_harga_akta(self) -> Decimal | None:
+        return self.bidang.total_harga_akta
+    
+    @property
+    def sisa_pelunasan(self) -> Decimal | None:
+        return self.bidang.sisa_pelunasan
+    
+    @property
+    def overlaps(self) -> list[BidangOverlap] | None:
+        return self.bidang.overlaps
         
     

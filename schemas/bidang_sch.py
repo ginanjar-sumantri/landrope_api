@@ -3,7 +3,7 @@ from models.base_model import BaseGeoModel
 from schemas.kjb_termin_sch import KjbTerminSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
-from schemas.bidang_overlap_sch import BidangOverlapForTahap
+from schemas.bidang_overlap_sch import BidangOverlapForTahap, BidangOverlapRawSch
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
@@ -86,30 +86,12 @@ class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
     beban_biayas:list[KjbBebanBiayaSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 
-class BidangForTahapByIdSch(SQLModel):
-    id:Optional[UUID]
-    id_bidang:Optional[str]
-    project_name:Optional[str]
-    desa_name:Optional[str]
-    planing_name:Optional[str]
-    planing_id:Optional[UUID]
-    ptsk_name:Optional[str]
-    ptsk_id:Optional[UUID]
-    luas_surat:Optional[Decimal]
-    luas_ukur:Optional[Decimal]
-    luas_gu_perorangan:Optional[Decimal]
-    luas_gu_pt:Optional[Decimal]
-    luas_nett:Optional[Decimal]
-    luas_clear:Optional[Decimal]
-    luas_pbt_perorangan:Optional[Decimal]
-    luas_pbt_pt:Optional[Decimal]
-    luas_bayar:Optional[Decimal]
-    harga_akta:Optional[Decimal]
-    harga_transaksi:Optional[Decimal]
-    alashak:Optional[str]
-    no_peta:Optional[str]
-    group:Optional[str]
-    overlaps:list[BidangOverlapForTahap] | None
+class BidangByIdForTahapSch(BidangRawBase):
+    project_name:Optional[str] = Field(alias="project_name")
+    desa_name:Optional[str] = Field(alias="desa_name")
+    planing_name:Optional[str] = Field(alias="planing_name")
+    ptsk_name:Optional[str] = Field(alias="ptsk_name")
+    overlaps:Optional[list[BidangOverlapRawSch]]
 
 class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None
