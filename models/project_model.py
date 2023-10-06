@@ -20,3 +20,8 @@ class ProjectFullBase(BaseUUIDModel, ProjectBase):
 class Project(ProjectFullBase, table=True):
     section: "Section" = Relationship(back_populates="projects", sa_relationship_kwargs={'lazy':'select'})
     project_planings: list["Planing"] = Relationship(back_populates="project", sa_relationship_kwargs={'lazy':'select'})
+
+
+
+# class SubProject(SQLModel):
+#     name:str = Field()
