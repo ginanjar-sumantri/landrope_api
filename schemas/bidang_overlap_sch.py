@@ -27,6 +27,7 @@ class BidangOverlapUpdateExtSch(SQLModel):
     id:UUID
     kategori:KategoriOverlapEnum|None
     harga_transaksi:Decimal|None
+    luas_bayar:Decimal|None
 
 
 class BidangOverlapForTahap(SQLModel):

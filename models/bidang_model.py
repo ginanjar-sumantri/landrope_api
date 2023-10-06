@@ -267,28 +267,28 @@ class Bidang(BidangFullBase, table=True):
     @property
     def total_harga_transaksi(self) -> Decimal | None:
         total_harga_overlap = 0
-        total_luas_overlap = 0
+        total_luas_bayar_overlap = 0
         if len(self.overlaps) > 0:
-            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
             total_harga_overlap = numpy.sum(array_total_harga_overlap)
 
-            array_total_luas_overlap = numpy.array([(ov.luas or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_overlap = numpy.sum(array_total_luas_overlap)
+            array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
 
-        return ((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - total_luas_overlap)) + total_harga_overlap
+        return ((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap
     
     @property
     def total_harga_akta(self) -> Decimal | None:
         total_harga_overlap = 0
-        total_luas_overlap = 0
+        total_luas_bayar_overlap = 0
         if len(self.overlaps) > 0:
-            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
             total_harga_overlap = numpy.sum(array_total_harga_overlap)
 
-            array_total_luas_overlap = numpy.array([(ov.luas or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_overlap = numpy.sum(array_total_luas_overlap)
+            array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
+            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
 
-        return ((self.harga_akta or 0) * ((self.luas_bayar or 0) - total_luas_overlap)) + total_harga_overlap
+        return ((self.harga_akta or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap
     
     @property
     def total_beban_penjual(self) -> Decimal | None:

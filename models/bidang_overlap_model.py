@@ -13,6 +13,7 @@ class BidangOverlapBase(SQLModel):
     parent_bidang_id:UUID = Field(foreign_key="bidang.id")
     parent_bidang_intersect_id:UUID = Field(foreign_key="bidang.id")
     luas:Decimal
+    luas_bayar:Decimal | None = Field(nullable=True)
     status_luas:StatusLuasOverlapEnum | None = Field(nullable=True)
     kategori:KategoriOverlapEnum | None = Field(nullable=True)
     harga_transaksi:Decimal | None = Field(nullable=True)

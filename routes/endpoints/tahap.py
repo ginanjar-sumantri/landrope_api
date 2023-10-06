@@ -69,7 +69,8 @@ async def create(
             
             bidang_overlap_updated = bidang_overlap_current
             bidang_overlap_updated.kategori = ov.kategori
-            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi
+            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi or 0
+            bidang_overlap_updated.luas_bayar = ov.luas_bayar or 0
 
             await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
                                             with_commit=False, db_session=db_session,
@@ -189,7 +190,8 @@ async def update(
             
             bidang_overlap_updated = bidang_overlap_current
             bidang_overlap_updated.kategori = ov.kategori
-            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi
+            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi or 0
+            bidang_overlap_updated.luas_bayar = ov.luas_bayar or 0
 
             await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
                                             with_commit=False, db_session=db_session,
