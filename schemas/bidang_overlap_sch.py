@@ -24,7 +24,7 @@ class BidangOverlapUpdateSch(BidangOverlapBase):
     pass
 
 class BidangOverlapUpdateExtSch(SQLModel):
-    bidang_overlap_id:UUID
+    id:UUID
     kategori:KategoriOverlapEnum|None
     harga_transaksi:Decimal|None
 

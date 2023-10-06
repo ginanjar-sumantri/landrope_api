@@ -63,7 +63,7 @@ async def create(
                                   updated_by_id=current_worker.id)
         
         for ov in dt.overlaps:
-            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.bidang_overlap_id)
+            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
             if bidang_overlap_current.geom :
                 bidang_overlap_current.geom = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
             
@@ -183,7 +183,7 @@ async def update(
                                   updated_by_id=current_worker.id)
         
         for ov in dt.overlaps:
-            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.bidang_overlap_id)
+            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
             if bidang_overlap_current.geom :
                 bidang_overlap_current.geom = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
             
