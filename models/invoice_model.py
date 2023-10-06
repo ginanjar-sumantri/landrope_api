@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum
 from decimal import Decimal
 from pydantic import condecimal
+import numpy
 
 if TYPE_CHECKING:
-    from models.worker_model import Worker
-    from models.termin_model import Termin
-    from models.spk_model import Spk
-    from models.bidang_model import Bidang
+    from models import Worker, Termin, Spk, Bidang, BidangKomponenBiaya, PaymentDetail
+    
 
 class InvoiceBase(SQLModel):
     termin_id:Optional[UUID] = Field(foreign_key="termin.id", nullable=False)
@@ -32,6 +31,20 @@ class Invoice(InvoiceFullBase, table=True):
         }
     )
 
+    spk:"Spk" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    bidang:"Bidang" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
     details:list["InvoiceDetail"] = Relationship(
         back_populates="invoice",
         sa_relationship_kwargs=
@@ -42,14 +55,8 @@ class Invoice(InvoiceFullBase, table=True):
         }
     )
 
-    spk:"Spk" = Relationship(
-        sa_relationship_kwargs=
-        {
-            "lazy" : "select"
-        }
-    )
-
-    bidang:"Bidang" = Relationship(
+    payment_details:list["PaymentDetail"] = Relationship(
+        back_populates="invoice",
         sa_relationship_kwargs=
         {
             "lazy" : "select"
@@ -65,6 +72,24 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
+    
+    @property
+    def jenis_bayar(self) -> JenisBayarEnum | None:
+        return getattr(getattr(self, "termin", None), "jenis_bayar", None)
+    
+    @property
+    def nomor_tahap(self) -> int | None:
+        return getattr(getattr(self, "termin", None), "nomor_tahap", None)
+    
+    @property
+    def outstanding_invoice(self) -> Decimal | None:
+        total_payment = 0
+        if len(self.payment_details) > 0:
+            array_payment = numpy.array([payment_dtl for payment_dtl in self.payment_details if payment_dtl.is_void != True])
+            total_payment = numpy.sum(array_payment)
+        
+        return self.amount - total_payment
+
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
@@ -80,5 +105,12 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         sa_relationship_kwargs=
         {
             "lazy":"select"
+        }
+    )
+
+    bidang_komponen_biaya:"BidangKomponenBiaya" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
         }
     )

@@ -4,14 +4,42 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.invoice_model import Invoice
+from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj
 from typing import List
 from uuid import UUID
 
 class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Invoice | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Invoice).where(Invoice.id == id
+                                    ).options(selectinload(Invoice.termin
+                                                        ).options(selectinload(Termin.tahap))
+                                    ).options(selectinload(Invoice.spk)
+                                    ).options(selectinload(Invoice.bidang)
+                                    ).options(selectinload(Invoice.details
+                                                        ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                            ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                        )
+                                    ).options(selectinload(Invoice.payment_details
+                                                        ).options(selectinload(PaymentDetail.payment
+                                                                            ).options(selectinload(Payment.giro))
+                                                        )
+                                    )
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_invoice_by_termin_id_for_printout_utj(self, 
                                             *, 
                                             termin_id: UUID | str, 

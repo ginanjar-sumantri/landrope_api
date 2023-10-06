@@ -1,6 +1,8 @@
 from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
 from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
+from schemas.payment_detail_sch import PaymentDetailSch
 from common.partial import optional
+from common.enum import JenisBayarEnum
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
@@ -17,6 +19,11 @@ class InvoiceExtSch(SQLModel):
     details:list[InvoiceDetailExtSch]
 
 class InvoiceSch(InvoiceFullBase):
+    jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
+    nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
+    outstanding_invoice:Optional[Decimal] = Field(alias="outstanding_invoice")
+
+    payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
 
