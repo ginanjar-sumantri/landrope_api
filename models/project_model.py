@@ -13,6 +13,7 @@ class ProjectBase(SQLModel):
     section_id: UUID = Field(default=None, foreign_key="section.id", nullable=True)
     name:str = Field(nullable=False, max_length=100)
     code:str = Field(nullable=False, max_length=50)
+    main_project_id:Optional[UUID] = Field(nullable=True)
 
 class ProjectFullBase(BaseUUIDModel, ProjectBase):
     pass
@@ -20,6 +21,7 @@ class ProjectFullBase(BaseUUIDModel, ProjectBase):
 class Project(ProjectFullBase, table=True):
     section: "Section" = Relationship(back_populates="projects", sa_relationship_kwargs={'lazy':'select'})
     project_planings: list["Planing"] = Relationship(back_populates="project", sa_relationship_kwargs={'lazy':'select'})
+    main_project:"MainProject" = Relationship(sa_relationship_kwargs={'lazy':'select'})
 
 
 class SubProjectBase(SQLModel):

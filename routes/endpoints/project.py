@@ -27,10 +27,7 @@ async def create(
     
     new_obj = await crud.project.create(obj_in=sch, created_by_id=current_worker.id)
     
-    query = select(Project).where(Project.id == new_obj.id).options(selectinload(Project.section))
-    section = await crud.section.get(query=query)
-
-    new_obj.section = section
+    new_obj = await crud.project.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
 
@@ -52,10 +49,8 @@ async def get_list(
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
-
-    query = select(Project).where(Project.id == id).options(selectinload(Project.section))
     
-    obj = await crud.project.get(query=query)
+    obj = await crud.project.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -74,11 +69,7 @@ async def update(
         raise IdNotFoundException(Project, id)
     
     obj_updated = await crud.project.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
-
-    query = select(Section).where(Section.id == obj_updated.section_id)
-    section = await crud.section.get(query=query)
-
-    obj_updated.section = section
+    obj_updated = await crud.project.get_by_id(id=id)
 
     return create_response(data=obj_updated)
 
