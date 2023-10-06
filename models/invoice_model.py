@@ -78,6 +78,10 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "termin", None), "jenis_bayar", None)
     
     @property
+    def nomor_memo(self) -> int | None:
+        return getattr(getattr(self, "termin", None), "code", None)
+    
+    @property
     def nomor_tahap(self) -> int | None:
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
     

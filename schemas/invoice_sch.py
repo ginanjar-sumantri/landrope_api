@@ -21,7 +21,9 @@ class InvoiceExtSch(SQLModel):
 class InvoiceSch(InvoiceFullBase):
     jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
+    nomor_memo:Optional[str] = Field(alias="nomor_memo")
     outstanding_invoice:Optional[Decimal] = Field(alias="outstanding_invoice")
+
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]
