@@ -4,7 +4,7 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
-from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya
+from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
@@ -41,16 +41,21 @@ async def get_list(
 
     query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
                             ).outerjoin(Termin, Termin.id == Invoice.termin_id
-                            ).options(selectinload(Invoice.details
-                                                        ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                                            ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                            ).options(selectinload(Invoice.bidang
+                                                        ).options(selectinload(Bidang.skpt
+                                                                        ).options(selectinload(Skpt.ptsk))
+                                                        ).options(selectinload(Bidang.penampung)
                                                         )
+                            ).options(selectinload(Invoice.details
+                                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                )
                             ).options(selectinload(Invoice.payment_details
                                                 ).options(selectinload(PaymentDetail.payment
                                                                     ).options(selectinload(Payment.giro))
                                                 )
                             )
-                            
+        
     
     if keyword:
         query = query.filter(

@@ -19,11 +19,14 @@ class InvoiceExtSch(SQLModel):
     details:list[InvoiceDetailExtSch]
 
 class InvoiceSch(InvoiceFullBase):
+    id_bidang:str|None = Field(alias="id_bidang")
+    alashak:str|None = Field(alias="alashak")
+    ptsk_name:str|None = Field(alias="ptsk_name")
+    planing_name:str|None = Field(alias="planing_name")
     jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     nomor_memo:Optional[str] = Field(alias="nomor_memo")
     outstanding_invoice:Optional[Decimal] = Field(alias="outstanding_invoice")
-
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]

@@ -69,16 +69,33 @@ class Invoice(InvoiceFullBase, table=True):
             "primaryjoin": "Invoice.updated_by_id==Worker.id",
         }
     )
+
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
+    
+    @property
+    def id_bidang(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "id_bidang", None)
+    
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "alashak", None)
+    
+    @property
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "ptsk_name", None)
+    
+    @property
+    def planing_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "planing_name", None)
     
     @property
     def jenis_bayar(self) -> JenisBayarEnum | None:
         return getattr(getattr(self, "termin", None), "jenis_bayar", None)
     
     @property
-    def nomor_memo(self) -> int | None:
+    def nomor_memo(self) -> str | None:
         return getattr(getattr(self, "termin", None), "code", None)
     
     @property
