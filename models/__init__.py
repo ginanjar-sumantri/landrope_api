@@ -1,5 +1,5 @@
 from .section_model import Section
-from .project_model import Project
+from .project_model import Project, SubProject, MainProject
 from .planing_model import Planing
 from .desa_model import Desa
 from .ptsk_model import Ptsk

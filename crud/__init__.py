@@ -1,5 +1,7 @@
 from .section_crud import section
 from .project_crud import project
+from .sub_project_crud import sub_project
+from .main_project_crud import main_project
 from .planing_crud import planing
 from .ptsk_crud import ptsk
 from .desa_crud import desa

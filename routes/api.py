@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, desa, kjb_termin, planing, project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
+from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, desa, kjb_termin, planing, project, main_project, sub_project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, draft_detail, draft_report_map, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, marketing, pemilik, beban_biaya,
                               kategori, kategori_sub, kategori_proyek, giro, spk, tahap, termin,
@@ -16,6 +16,8 @@ api_router.include_router(bidang_komponen_biaya.router, prefix="/bidang_komponen
 api_router.include_router(desa.router, prefix="/desa", tags=["desa"])
 api_router.include_router(planing.router, prefix="/planing", tags=["planing"])
 api_router.include_router(project.router, prefix="/project", tags=["project"])
+api_router.include_router(main_project.router, prefix="/main_project", tags=["main_project"])
+api_router.include_router(sub_project.router, prefix="/sub_project", tags=["sub_project"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
 api_router.include_router(draft_detail.router, prefix="/draft_detail", tags=["draft_detail"])
 api_router.include_router(draft_report_map.router, prefix="/draft_report_map", tags=["draft_report_map"])
