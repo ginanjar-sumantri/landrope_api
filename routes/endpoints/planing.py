@@ -87,12 +87,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
     
-    query = select(Planing).where(Planing.id == id
-                                ).options(selectinload(Planing.project
-                                ).options(selectinload(Project.section))
-                                ).options(selectinload(Planing.desa))
-    
-    obj = await crud.planing.get(query=query)
+    obj = await crud.planing.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:

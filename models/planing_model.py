@@ -53,3 +53,7 @@ class Planing(PlaningFullBase, table=True):
         if self.project.section is None:
             return ""
         return self.project.section.name
+    
+    @property
+    def sub_project_exists(self)-> bool | None:
+        return getattr(getattr(self, 'project', False), 'sub_project_exists', False)

@@ -22,7 +22,8 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         query = select(Planing).where(Planing.id == id
                                         ).options(selectinload(Planing.project
                                                             ).options(selectinload(Project.section)
-                                                            ).options(selectinload(Project.main_project))
+                                                            ).options(selectinload(Project.main_project)
+                                                            ).options(selectinload(Project.sub_projects))
                                         ).options(selectinload(Planing.desa))
         
         response = await db_session.execute(query)
