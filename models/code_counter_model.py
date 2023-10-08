@@ -14,6 +14,8 @@ class CodeCounterEnum(str, Enum):
     OrderGambarUkur = "OrderGambarUkur"
     Spk = "Spk"
     Utj = "Utj"
+    Dp = "Dp"
+    Lunas = "Lunas"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

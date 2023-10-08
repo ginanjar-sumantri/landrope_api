@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin, Bidang, Skpt
+from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin, Bidang, Skpt, Planing
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj
 from typing import List
 from uuid import UUID
@@ -29,6 +29,9 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                                         ).options(selectinload(Bidang.skpt
                                                                         ).options(selectinload(Skpt.ptsk))
                                                         ).options(selectinload(Bidang.penampung)
+                                                        ).options(selectinload(Bidang.planing
+                                                                            ).options(selectinload(Planing.project)
+                                                                            ).options(selectinload(Planing.desa))
                                                         )
                                     ).options(selectinload(Invoice.details
                                                         ).options(selectinload(InvoiceDetail.bidang_komponen_biaya

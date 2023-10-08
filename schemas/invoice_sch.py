@@ -26,7 +26,23 @@ class InvoiceSch(InvoiceFullBase):
     jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     nomor_memo:Optional[str] = Field(alias="nomor_memo")
-    outstanding_invoice:Optional[Decimal] = Field(alias="outstanding_invoice")
+    code_termin:Optional[str] = Field(alias="code_termin")
+    invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
+
+    # payment_details:list[PaymentDetailSch]
+    # details:list[InvoiceDetailSch]
+    updated_by_name:str|None = Field(alias="updated_by_name")
+
+class InvoiceByIdSch(InvoiceFullBase):
+    id_bidang:str|None = Field(alias="id_bidang")
+    alashak:str|None = Field(alias="alashak")
+    ptsk_name:str|None = Field(alias="ptsk_name")
+    planing_name:str|None = Field(alias="planing_name")
+    jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
+    nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
+    nomor_memo:Optional[str] = Field(alias="nomor_memo")
+    code_termin:Optional[str] = Field(alias="code_termin")
+    invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]

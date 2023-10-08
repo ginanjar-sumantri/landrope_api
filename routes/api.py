@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, desa, kjb_termin, planing, project, main_project, sub_project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, draft_detail, draft_report_map, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, bundle_hd, bundle_dt,
                               checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, marketing, pemilik, beban_biaya,
-                              kategori, kategori_sub, kategori_proyek, giro, spk, tahap, termin, invoice,
+                              kategori, kategori_sub, kategori_proyek, giro, spk, tahap, termin, invoice, payment,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
                               hasil_peta_lokasi_detail, import_log, order_gambar_ukur,
@@ -54,6 +54,7 @@ api_router.include_router(spk.router, prefix="/spk", tags=["spk"])
 api_router.include_router(tahap.router, prefix="/tahap", tags=["tahap"])
 api_router.include_router(termin.router, prefix="/termin", tags=["termin"])
 api_router.include_router(invoice.router, prefix="/invoice", tags=["invoice"])
+api_router.include_router(payment.router, prefix="/payment", tags=["payment"])
 
 api_router.include_router(notaris.router, prefix="/notaris", tags=["notaris"])
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])

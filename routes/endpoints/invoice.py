@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
 from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
-from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch)
+from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
                                   PutResponseBaseSch, create_response)
@@ -76,7 +76,7 @@ async def get_list(
     return create_response(data=objs)
 
 
-@router.get("/{id}", response_model=GetResponseBaseSch[InvoiceSch])
+@router.get("/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""

@@ -54,14 +54,19 @@ async def create(
     db_session = db.session
     sch.is_void = False
 
+    today = date.today()
+    month = roman.toRoman(today.month)
+    year = today.year
+
     if sch.jenis_bayar == JenisBayarEnum.UTJ:
         last_number = await generate_code_month(entity=CodeCounterEnum.Utj, with_commit=False, db_session=db_session)
-
-        today = date.today()
-        month = roman.toRoman(today.month)
-        year = today.year
-
         sch.code = f"{last_number}/UTJ/LA/{month}/{year}"
+    else:
+        last_number = await generate_code_month(entity=CodeCounterEnum.Dp if sch.jenis_bayar == JenisBayarEnum.DP else CodeCounterEnum.Lunas,
+                                                with_commit=False, db_session=db_session)
+        
+        jns_byr = "DP" if sch.jenis_bayar == JenisBayarEnum.DP else "LUNAS"
+        sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 

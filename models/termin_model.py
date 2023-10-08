@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
+    nomor_memo:Optional[str] = Field(nullable=True)
     tahap_id:Optional[UUID] = Field(foreign_key="tahap.id", nullable=True)
     kjb_hd_id:Optional[UUID] = Field(foreign_key="kjb_hd.id", nullable=True)
     jenis_bayar:JenisBayarEnum = Field(nullable=True)

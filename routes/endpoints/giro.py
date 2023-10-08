@@ -2,7 +2,9 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
+from sqlmodel import select
 from sqlalchemy import exc
+from sqlalchemy.orm import selectinload
 from models.giro_model import Giro
 from models.worker_model import Worker
 from schemas.giro_sch import (GiroSch, GiroCreateSch, GiroUpdateSch)
@@ -11,6 +13,7 @@ from common.exceptions import (IdNotFoundException, NameExistException)
 from decimal import Decimal
 import crud
 import pandas
+import json
 
 
 router = APIRouter()
@@ -27,6 +30,7 @@ async def create(
         raise NameExistException(name=sch.code, model=Giro)
     
     new_obj = await crud.giro.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.giro.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -40,7 +44,17 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.giro.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(Giro).options(selectinload(Giro.payments))
+
+    if keyword:
+        query = query.filter(Giro.code.ilike(f"%{keyword}%"))
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(Giro, key) == value)
+
+    objs = await crud.giro.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[GiroSch])
@@ -48,7 +62,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.giro.get(id=id)
+    obj = await crud.giro.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:

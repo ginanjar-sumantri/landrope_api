@@ -96,6 +96,10 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def nomor_memo(self) -> str | None:
+        return getattr(getattr(self, "termin", None), "nomor_memo", None)
+    
+    @property
+    def code_termin(self) -> str | None:
         return getattr(getattr(self, "termin", None), "code", None)
     
     @property
@@ -103,10 +107,10 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
     
     @property
-    def outstanding_invoice(self) -> Decimal | None:
+    def invoice_outstanding(self) -> Decimal | None:
         total_payment = 0
         if len(self.payment_details) > 0:
-            array_payment = numpy.array([payment_dtl for payment_dtl in self.payment_details if payment_dtl.is_void != True])
+            array_payment = numpy.array([payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True])
             total_payment = numpy.sum(array_payment)
         
         return self.amount - total_payment

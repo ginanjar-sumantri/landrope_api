@@ -70,6 +70,7 @@ from .invoice_crud import invoice
 from .invoice_detail_crud import invoice_detail
 
 from .payment_crud import payment
+from .payment_detail_crud import payment_detail
 
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error

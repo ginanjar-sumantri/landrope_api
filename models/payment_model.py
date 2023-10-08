@@ -2,8 +2,9 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import PaymentMethodEnum
+from common.enum import PaymentMethodEnum, JenisBayarEnum
 from decimal import Decimal
+import numpy
 
 if TYPE_CHECKING:
     from models import Giro, Worker, Invoice
@@ -27,6 +28,7 @@ class Payment(PaymentFullBase, table=True):
     )
 
     giro:"Giro" = Relationship(
+        back_populates="payments",
         sa_relationship_kwargs=
         {
             "lazy" : "selectin"
@@ -43,6 +45,19 @@ class Payment(PaymentFullBase, table=True):
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
+    
+    @property
+    def giro_outstanding(self) -> Decimal | None:
+        return getattr(getattr(self, "giro", None), "giro_outstanding", None)
+    
+    @property
+    def payment_outstanding(self) -> Decimal | None:
+        total_payment = 0
+        if len(self.details) > 0:
+            array_payment = numpy.array([payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True])
+            total_payment = numpy.sum(array_payment)
+        
+        return self.amount - total_payment
 
 class PaymentDetailBase(SQLModel):
     payment_id:UUID = Field(foreign_key="payment.id")
@@ -94,7 +109,7 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
         return getattr(getattr(self, 'worker_do_void', None), 'name', None)
     
     @property
-    def code(self) -> str | None:
+    def code_giro(self) -> str | None:
         if self.payment.giro:
             return self.payment.giro.code
         
@@ -103,3 +118,31 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def payment_method(self) -> PaymentMethodEnum | None:
         return getattr(getattr(self, "payment", None), "payment_method", None)
+    
+    @property
+    def id_bidang(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "id_bidang", None)
+    
+    @property
+    def invoice_outstanding(self) -> Decimal | None:
+        return getattr(getattr(self, "invoice", None), "invoice_outstanding", None)
+    
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "alashak", None)
+    
+    @property
+    def jenis_bayar(self) -> JenisBayarEnum | None:
+        return getattr(getattr(self, "invoice", None), "jenis_bayar", None)
+    
+    @property
+    def nomor_memo(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "nomor_memo", None)
+    
+    @property
+    def code_memo(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "code_memo", None)
+    
+    @property
+    def nomor_tahap(self) -> int | None:
+        return getattr(getattr(self, "invoice", None), "nomor_tahap", None)
