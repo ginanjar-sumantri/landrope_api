@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from models import Giro, Worker, Invoice
 
 class PaymentBase(SQLModel):
-    payment_method:Optional[PaymentMethodEnum] = Field(nullable=False)
-    amount:Optional[Decimal] = Field(nullable=True)
+    payment_method:PaymentMethodEnum = Field(nullable=False)
+    amount:Decimal = Field(nullable=True)
     giro_id:Optional[UUID] = Field(foreign_key="giro.id")
     code:Optional[str] = Field(nullable=True)
 
@@ -62,7 +62,7 @@ class Payment(PaymentFullBase, table=True):
 class PaymentDetailBase(SQLModel):
     payment_id:UUID = Field(foreign_key="payment.id")
     invoice_id:UUID = Field(foreign_key="invoice.id")
-    amount:Optional[Decimal] = Field(default=0, nullable=True)
+    amount:Decimal = Field(default=0, nullable=True)
     is_void:Optional[bool] = Field(default=False, nullable=False)
     void_by:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
 
