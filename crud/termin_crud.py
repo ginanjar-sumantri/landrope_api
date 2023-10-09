@@ -10,6 +10,8 @@ from crud.base_crud import CRUDBase
 from models.termin_model import Termin
 from models.invoice_model import Invoice
 from models.tahap_model import Tahap
+from models.bidang_model import Bidang
+from models.skpt_model import Skpt
 from models.kjb_model import KjbHd
 from models.spk_model import Spk
 from models.bidang_model import Bidang
@@ -29,11 +31,14 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         
         db_session = db_session or db.session
         
-        query = select(Termin).where(Termin.id == id
-                                                    ).options(selectinload(Termin.tahap)
+        query = select(Termin).where(Termin.id == id).options(selectinload(Termin.tahap)
                                                     ).options(selectinload(Termin.kjb_hd)
-                                                    ).options(selectinload(Termin.invoices
-                                                                        ).options(selectinload(Invoice.details))
+                                                    ).options(selectinload(Termin.invoices)
+                                                                .options(selectinload(Invoice.details))
+                                                                .options(selectinload(Invoice.bidang)
+                                                                       .options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk)))
+                                                                       .options(selectinload(Bidang.planing)))
+                                                                .options(selectinload(Invoice.payment_details))
                                                     )
         
         response = await db_session.execute(query)
