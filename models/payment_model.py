@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import PaymentMethodEnum, JenisBayarEnum
 from decimal import Decimal
+from datetime import date
 import numpy
 
 if TYPE_CHECKING:
@@ -14,6 +15,9 @@ class PaymentBase(SQLModel):
     amount:Decimal = Field(nullable=True)
     giro_id:Optional[UUID] = Field(foreign_key="giro.id")
     code:Optional[str] = Field(nullable=True)
+    pay_to: str = Field(nullable=False)
+    remark:str | None = Field(nullable=True)
+    payment_date: date = Field(nullable=False)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
