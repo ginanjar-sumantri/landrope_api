@@ -20,6 +20,7 @@ class InvoiceExtSch(SQLModel):
 
 class InvoiceSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
+    group:str|None = Field(alias="group")
     alashak:str|None = Field(alias="alashak")
     ptsk_name:str|None = Field(alias="ptsk_name")
     planing_name:str|None = Field(alias="planing_name")

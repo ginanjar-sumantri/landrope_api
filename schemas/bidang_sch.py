@@ -91,6 +91,7 @@ class BidangByIdForTahapSch(BidangRawBase):
     desa_name:Optional[str] = Field(alias="desa_name")
     planing_name:Optional[str] = Field(alias="planing_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
+    ptsk_id:Optional[str] = Field(alias="ptsk_id")
     overlaps:Optional[list[BidangOverlapRawSch]]
 
 class BidangDraftChecklistDokumenSch(SQLModel):

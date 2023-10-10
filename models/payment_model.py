@@ -51,6 +51,10 @@ class Payment(PaymentFullBase, table=True):
         return getattr(getattr(self, 'worker', None), 'name', None)
     
     @property
+    def giro_code(self) -> Decimal | None:
+        return getattr(getattr(self, "giro", None), "code", None)
+    
+    @property
     def giro_outstanding(self) -> Decimal | None:
         return getattr(getattr(self, "giro", None), "giro_outstanding", None)
     

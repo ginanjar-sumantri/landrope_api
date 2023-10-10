@@ -219,8 +219,11 @@ class Bidang(BidangFullBase, table=True):
     @property
     def ptsk_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'name', None)
-       
     
+    @property
+    def ptsk_id(self) -> str | None:
+        return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'id', None)
+       
     @property
     def no_sk(self) -> str:
         if self.skpt is None:

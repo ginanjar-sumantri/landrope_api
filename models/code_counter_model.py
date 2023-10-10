@@ -16,6 +16,7 @@ class CodeCounterEnum(str, Enum):
     Utj = "Utj"
     Dp = "Dp"
     Lunas = "Lunas"
+    Invoice = "Invoice"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

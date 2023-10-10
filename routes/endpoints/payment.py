@@ -2,10 +2,12 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_
-from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin
+from sqlmodel import select, or_, func
+from sqlalchemy.orm import selectinload
+from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
+from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
@@ -22,6 +24,11 @@ async def create(
     
     """Create a new object"""
     db_session = db.session
+
+    if sch.giro_id:
+        giro_current = await crud.giro.get_by_id(id=sch.giro_id)
+        if (giro_current.giro_outstanding - sch.amount) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
     
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False, db_session=db_session)
 
@@ -148,3 +155,48 @@ async def update(payment_dtl_ids:list[UUID],
 
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
+
+
+@router.get("/search/invoice", response_model=GetResponseBaseSch[list[InvoiceSch]])
+async def get_list(
+                params: Params=Depends(), 
+                order_by:str = None, 
+                keyword:str = None, 
+                filter_query:str=None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
+                            ).outerjoin(PaymentDetail, PaymentDetail.invoice_id == Invoice.id
+                            ).group_by(Invoice.id).having(Invoice.amount - (func.sum(PaymentDetail.amount)) > 0)
+        
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Invoice.code.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Invoice, key) == value)
+
+
+    objs = await crud.invoice.get_multi_no_page(query=query)
+    return create_response(data=objs)
+
+@router.get("search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+async def get_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    obj = await crud.invoice.get_by_id(id=id)
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(Invoice, id)

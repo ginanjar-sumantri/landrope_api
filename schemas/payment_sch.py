@@ -9,10 +9,12 @@ class PaymentCreateSch(PaymentBase):
 
 class PaymentSch(PaymentFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
+    giro_code:str|None = Field(alias="giro_code")
     giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
 
 class PaymentByIdSch(PaymentFullBase):
+    giro_code:str|None = Field(alias="giro_code")
     giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
     details:list[PaymentDetailSch]

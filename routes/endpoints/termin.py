@@ -4,19 +4,12 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
 import crud
-from models.termin_model import Termin
-from models.worker_model import Worker
-from models.invoice_model import Invoice, InvoiceDetail
-from models.tahap_model import Tahap
-from models.kjb_model import KjbHd
-from models.spk_model import Spk
-from models.bidang_model import Bidang
+from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
-                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOut, TerminBidangForPrintOutExt,
-                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut, TerminHistoryForPrintOut,
-                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminInvoiceHistoryforPrintOutExt,
+                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOutExt,
+                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
@@ -57,22 +50,27 @@ async def create(
     today = date.today()
     month = roman.toRoman(today.month)
     year = today.year
+    jns_byr:str = ""
 
     if sch.jenis_bayar == JenisBayarEnum.UTJ:
+        jns_byr = JenisBayarEnum.UTJ.value
         last_number = await generate_code_month(entity=CodeCounterEnum.Utj, with_commit=False, db_session=db_session)
-        sch.code = f"{last_number}/UTJ/LA/{month}/{year}"
+        sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
     else:
         last_number = await generate_code_month(entity=CodeCounterEnum.Dp if sch.jenis_bayar == JenisBayarEnum.DP else CodeCounterEnum.Lunas,
                                                 with_commit=False, db_session=db_session)
         
-        jns_byr = "DP" if sch.jenis_bayar == JenisBayarEnum.DP else "LUNAS"
+        jns_byr = JenisBayarEnum.DP.value if sch.jenis_bayar == JenisBayarEnum.DP else JenisBayarEnum.LUNAS.value
         sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
     #add invoice
     for invoice in sch.invoices:
+
+        last_number = await generate_code_month(entity=CodeCounterEnum.Invoice, with_commit=False, db_session=db_session)
         invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id)
+        invoice_sch.code = f"INV/{last_number}/{jns_byr}/LA/{month}/{year}"
         invoice_sch.is_void = False
         new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         

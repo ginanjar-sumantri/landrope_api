@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     
 
 class InvoiceBase(SQLModel):
+    code:Optional[str] = Field(nullable=True)
     termin_id:Optional[UUID] = Field(foreign_key="termin.id", nullable=False)
     spk_id:Optional[UUID] = Field(foreign_key="spk.id", nullable=True)
     bidang_id:Optional[UUID] = Field(foreign_key="bidang.id", nullable=True)
@@ -65,7 +66,7 @@ class Invoice(InvoiceFullBase, table=True):
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
-            "lazy": "joined",
+            "lazy": "select",
             "primaryjoin": "Invoice.updated_by_id==Worker.id",
         }
     )
@@ -77,6 +78,10 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def id_bidang(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "id_bidang", None)
+    
+    @property
+    def group(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "group", None)
     
     @property
     def alashak(self) -> str | None:

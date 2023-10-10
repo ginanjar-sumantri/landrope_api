@@ -5,15 +5,17 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
 from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
+from models.code_counter_model import CodeCounterEnum
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
                                   PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from shapely.geometry import shape
-from shapely import wkt, wkb
+from common.generator import generate_code_month
+from datetime import date
 import crud
 import json
+import roman
 
 
 router = APIRouter()
@@ -24,8 +26,9 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
+    db_session = db.session
         
-    new_obj = await crud.invoice.create(obj_in=sch, created_by_id=current_worker.id)
+    new_obj = await crud.invoice.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     
     return create_response(data=new_obj)
 
@@ -62,7 +65,8 @@ async def get_list(
             or_(
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
-                Termin.code.ilike(f'%{keyword}%')
+                Termin.code.ilike(f'%{keyword}%'),
+                Invoice.code.ilike(f'%{keyword}%')
             )
         )
     
