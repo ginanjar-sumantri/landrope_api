@@ -27,6 +27,9 @@ class PaymentDetailVoidSch(SQLModel):
     id:UUID
     remark:str
 
+class PaymentVoidExtSch(SQLModel):
+    details:list[PaymentDetailVoidSch]
+
 @optional
 class PaymentUpdateSch(PaymentBase):
     details:list[PaymentDetailExtSch]|None

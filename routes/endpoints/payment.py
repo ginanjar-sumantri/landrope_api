@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func
 from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
-from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentDetailVoidSch)
+from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -166,7 +166,7 @@ async def void(sch:PaymentVoidSch,
     return create_response(data=obj_updated) 
 
 @router.put("/void/detail/{id}", response_model=PutResponseBaseSch[PaymentSch])
-async def void_detail(sch:list[PaymentDetailVoidSch],
+async def void_detail(sch:PaymentVoidExtSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
@@ -177,7 +177,7 @@ async def void_detail(sch:list[PaymentDetailVoidSch],
     if not obj_current:
         raise IdNotFoundException(Payment, id)
 
-    for dt in sch:
+    for dt in sch.details:
         payment_dtl_current = await crud.payment_detail.get(id=dt.id)
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
