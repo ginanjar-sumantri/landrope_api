@@ -279,7 +279,7 @@ async def get_by_id(id:UUID):
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
-    beban = await crud.kjb_bebanbiaya.get_beban_pembeli_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
+    beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
     
     ktp_value:str = ""
     ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=obj.id)

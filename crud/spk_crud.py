@@ -1,12 +1,12 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, case, text, and_
+from sqlmodel import select, case, text, and_, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt
+from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, TahapDetail, Tahap, Invoice
 from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, 
                              SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
@@ -103,6 +103,32 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         response =  await db_session.execute(query)
         return response.fetchall()
+    
+    # async def get_multi_by_tahap_id(self, 
+    #                             *,
+    #                             tahap_id:UUID,
+    #                             jenis_bayar:JenisBayarEnum,
+    #                            db_session : AsyncSession | None = None
+    #                     ) -> List[Spk] | None:
+    #     db_session = db_session or db.session
+        
+    #     query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
+    #                         ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
+    #                         ).outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id
+    #                         ).outerjoin(Invoice, Invoice.spk_id == Spk.id
+    #                         ).where(
+    #                              and_(
+    #                                     Spk.jenis_bayar == jenis_bayar,
+    #                                     Tahap.id == tahap_id,
+    #                                     or_(
+    #                                          Invoice.spk_id == None,
+    #                                          Invoice.is_void == True
+    #                                     )
+    #                                   )
+    #                         )
+
+    #     response =  await db_session.execute(query)
+    #     return response.scalars().all()
     
     async def get_multi_by_tahap_id_and_termin_id(self, 
                                 *,

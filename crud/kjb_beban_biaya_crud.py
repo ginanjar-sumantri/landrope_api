@@ -27,5 +27,16 @@ class CRUDKjbBebanBiaya(CRUDBase[KjbBebanBiaya, KjbBebanBiayaCreateSch, KjbBeban
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    async def get_kjb_beban_by_kjb_hd_id(self, *, 
+                  kjb_hd_id: UUID | str,
+                  db_session: AsyncSession | None = None) -> List[KjbBebanBiayaSch] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.kjb_hd_id == kjb_hd_id
+                                        ).options(selectinload(KjbBebanBiaya.beban_biaya))
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 kjb_bebanbiaya = CRUDKjbBebanBiaya(KjbBebanBiaya)

@@ -190,7 +190,7 @@ async def get_list(
     objs = await crud.invoice.get_multi_no_page(query=query)
     return create_response(data=objs)
 
-@router.get("search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+@router.get("/search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
