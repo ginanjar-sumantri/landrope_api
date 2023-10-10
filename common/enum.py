@@ -66,6 +66,7 @@ class KategoriPenjualEnum(str, Enum):
 
 class JenisBayarEnum(str, Enum):
     UTJ = "UTJ"
+    UTJ_Khusus = "UTJ_Khusus"
     DP = "DP"
     LUNAS = "LUNAS"
     PAJAK = "PAJAK"

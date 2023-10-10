@@ -52,7 +52,7 @@ async def create(
     year = today.year
     jns_byr:str = ""
 
-    if sch.jenis_bayar == JenisBayarEnum.UTJ:
+    if sch.jenis_bayar == JenisBayarEnum.UTJ or sch.jenis_bayar == JenisBayarEnum.UTJ_Khusus:
         jns_byr = JenisBayarEnum.UTJ.value
         last_number = await generate_code_month(entity=CodeCounterEnum.Utj, with_commit=False, db_session=db_session)
         sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"

@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
-from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch
+from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
@@ -157,10 +157,8 @@ async def update(payment_dtl_ids:list[UUID],
     return create_response(data=obj_updated) 
 
 
-@router.get("/search/invoice", response_model=GetResponseBaseSch[list[InvoiceSch]])
+@router.get("/search/invoice", response_model=GetResponseBaseSch[list[InvoiceSearchSch]])
 async def get_list(
-                params: Params=Depends(), 
-                order_by:str = None, 
                 keyword:str = None, 
                 filter_query:str=None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -169,8 +167,13 @@ async def get_list(
 
     query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
                             ).outerjoin(PaymentDetail, PaymentDetail.invoice_id == Invoice.id
-                            ).group_by(Invoice.id).having(Invoice.amount - (func.sum(PaymentDetail.amount)) > 0)
-        
+                            ).outerjoin(Termin, Termin.id == Invoice.termin_id
+                            ).where(Invoice.is_void != True
+                            ).group_by(Invoice.id).having(Invoice.amount - (func.sum(PaymentDetail.amount)) > 0
+                            ).options(selectinload(Invoice.bidang)
+                            ).options(selectinload(Invoice.termin
+                                                ).options(selectinload(Termin.tahap))
+                            )     
     
     if keyword:
         query = query.filter(
