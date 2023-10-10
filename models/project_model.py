@@ -30,6 +30,10 @@ class Project(ProjectFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def main_project_code(self) -> str|None:
+        return getattr(getattr(self, 'main_project', None), 'code', None)
 
 
 class SubProjectBase(SQLModel):
@@ -61,10 +65,13 @@ class SubProject(SubProjectFullBase, table=True):
     def project_name(self) -> str|None:
         return getattr(getattr(self, 'project', None), 'name', None)
     
-
     @property
     def last_tahap(self) -> int|None:
         return getattr(getattr(self, 'main_project', None), 'last_tahap', None)
+    
+    @property
+    def main_project_code(self) -> str|None:
+        return getattr(getattr(self, 'main_project', None), 'code', None)
 
 class MainProjectBase(SQLModel):
     code:str

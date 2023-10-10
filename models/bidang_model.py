@@ -178,7 +178,7 @@ class Bidang(BidangFullBase, table=True):
         return getattr(getattr(self, 'sub_project', None), 'name', None)
     
     @property
-    def sub_project_name(self) -> str | None:
+    def sub_project_code(self) -> str | None:
         return getattr(getattr(self, 'sub_project', None), 'code', None)
     
     @property

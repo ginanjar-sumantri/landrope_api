@@ -25,6 +25,11 @@ class PaymentDetailSch(PaymentDetailFullBase):
     nomor_tahap:int|None = Field(alias="nomor_tahap")
     nomor_memo:str|None = Field(alias="nomor_memo")
     code_termin:str|None = Field(alias="code_termin")
+    invoice_code:str|None = Field(alias="invoice_code")
+    planing_name:str|None = Field(alias="planing_name")
+    ptsk_name:str|None = Field(alias="ptsk_name")
+    invoice_amount:Decimal|None = Field(alias="invoice_amount")
+    luas_bayar:Decimal|None = Field(alias="luas_bayar")
 
 @optional
 class PaymentDetailUpdateSch(PaymentDetailBase):

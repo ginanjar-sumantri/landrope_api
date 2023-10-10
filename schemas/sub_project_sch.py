@@ -10,6 +10,7 @@ class SubProjectCreateSch(SubProjectBase):
 class SubProjectSch(SubProjectFullBase):
     project_name:str|None = Field(alias="project_name")
     last_tahap:int|None = Field(alias="last_tahap")
+    main_project_code:str|None = Field(alias="main_project_code")
 
 
 @optional

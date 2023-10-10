@@ -26,6 +26,8 @@ class BidangRawSch(BidangRawBase):
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')
+    sub_project_name:str|None = Field(alias='sub_project_name')
+    sub_project_code:str|None = Field(alias="sub_project_code")
     desa_name:str|None = Field(alias='desa_name')
     planing_name:str|None = Field(alias='planing_name')
     jenis_surat_name:str|None = Field(alias='jenis_surat_name')

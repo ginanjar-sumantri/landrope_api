@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Payment, PaymentDetail, Invoice, Termin, Giro
+from models import Payment, PaymentDetail, Invoice, Termin, Giro, Bidang, Skpt
 from schemas.payment_sch import PaymentCreateSch, PaymentUpdateSch
 from uuid import UUID
 
@@ -21,7 +21,12 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                     ).options(selectinload(Giro.payments))
                                 ).options(selectinload(Payment.details
                                                     ).options(selectinload(PaymentDetail.invoice
-                                                                        ).options(selectinload(Invoice.bidang)
+                                                                        ).options(selectinload(Invoice.bidang
+                                                                                            ).options(selectinload(Bidang.planing)
+                                                                                            ).options(selectinload(Bidang.skpt
+                                                                                                                ).options(selectinload(Skpt.ptsk))
+                                                                                            ).options(selectinload(Bidang.penampung)
+                                                                                            )
                                                                         ).options(selectinload(Invoice.termin
                                                                                             ).options(selectinload(Termin.tahap))
                                                                         )

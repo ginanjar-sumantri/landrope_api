@@ -132,8 +132,20 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
         return getattr(getattr(self, "invoice", None), "id_bidang", None)
     
     @property
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "ptsk_name", None)
+    
+    @property
+    def planing_name(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "planing_name", None)
+    
+    @property
     def invoice_outstanding(self) -> Decimal | None:
         return getattr(getattr(self, "invoice", None), "invoice_outstanding", None)
+    
+    @property
+    def invoice_code(self) -> str | None:
+        return getattr(getattr(self, "invoice", None), "code", None)
     
     @property
     def alashak(self) -> str | None:
@@ -154,3 +166,13 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def nomor_tahap(self) -> int | None:
         return getattr(getattr(self, "invoice", None), "nomor_tahap", None)
+    
+    @property
+    def invoice_amount(self) -> Decimal | None:
+        return getattr(getattr(self, "invoice", None), "amount", None)
+    
+    @property
+    def luas_bayar(self) -> Decimal | None:
+        return getattr(getattr(getattr(self, "invoice", None), "bidang", None), "luas_bayar")
+    
+    
