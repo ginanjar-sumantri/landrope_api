@@ -18,6 +18,8 @@ class PaymentBase(SQLModel):
     pay_to: str = Field(nullable=False)
     remark:str | None = Field(nullable=True)
     payment_date: date = Field(nullable=False)
+    reference:str|None = Field(nullable=True)
+    is_void:Optional[bool] = Field(nullable=True, default=False)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -72,7 +74,8 @@ class PaymentDetailBase(SQLModel):
     invoice_id:UUID = Field(foreign_key="invoice.id")
     amount:Decimal = Field(default=0, nullable=True)
     is_void:Optional[bool] = Field(default=False, nullable=False)
-    void_by:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    remark:Optional[str] = Field(nullable=True)
 
 class PaymentDetailFullBase(BaseUUIDModel, PaymentDetailBase):
     pass

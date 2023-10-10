@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, TahapDetail, Tahap, Invoice
+from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya
 from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, 
                              SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
@@ -64,71 +64,119 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         return response.fetchone()
     
-    async def get_multi_by_tahap_id(self, 
-                                *,
-                                tahap_id:UUID,
-                                jenis_bayar:JenisBayarEnum,
-                               db_session : AsyncSession | None = None
-                        ) -> List[SpkForTerminSch]:
-        db_session = db_session or db.session
-        
-        query = text(f"""
-                    SELECT 
-                    s.id as spk_id,
-                    s.code as spk_code,
-                    s.satuan_bayar as spk_satuan_bayar,
-                    s.nilai as spk_nilai,
-                    b.id as bidang_id,
-                    b.id_bidang,
-                    b.alashak,
-                    b.group,
-                    b.luas_bayar,
-                    b.harga_transaksi,
-                    b.harga_akta,
-                    (b.luas_bayar * b.harga_transaksi) as total_harga,
-                    CASE
-                        WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                        ELSE s.nilai
-                    END As amount
-                    FROM spk s
-                    LEFT OUTER JOIN bidang b ON s.bidang_id = b.id
-                    LEFT OUTER JOIN tahap_detail td ON td.bidang_id = b.id
-                    LEFT OUTER JOIN tahap t ON t.id = td.tahap_id
-                    LEFT OUTER JOIN invoice i on i.spk_id = s.id
-                    WHERE 
-                    s.jenis_bayar = '{jenis_bayar.value}' 
-                    and (i.spk_id is null or i.is_void = true)
-                    and t.id = '{str(tahap_id)}'
-                """)
-
-        response =  await db_session.execute(query)
-        return response.fetchall()
-    
     # async def get_multi_by_tahap_id(self, 
     #                             *,
     #                             tahap_id:UUID,
     #                             jenis_bayar:JenisBayarEnum,
     #                            db_session : AsyncSession | None = None
-    #                     ) -> List[Spk] | None:
+    #                     ) -> List[SpkForTerminSch]:
     #     db_session = db_session or db.session
         
-    #     query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
-    #                         ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
-    #                         ).outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id
-    #                         ).outerjoin(Invoice, Invoice.spk_id == Spk.id
-    #                         ).where(
-    #                              and_(
-    #                                     Spk.jenis_bayar == jenis_bayar,
-    #                                     Tahap.id == tahap_id,
-    #                                     or_(
-    #                                          Invoice.spk_id == None,
-    #                                          Invoice.is_void == True
-    #                                     )
-    #                                   )
-    #                         )
+    #     query = text(f"""
+    #                 SELECT 
+    #                 s.id as spk_id,
+    #                 s.code as spk_code,
+    #                 s.satuan_bayar as spk_satuan_bayar,
+    #                 s.nilai as spk_nilai,
+    #                 b.id as bidang_id,
+    #                 b.id_bidang,
+    #                 b.alashak,
+    #                 b.group,
+    #                 b.luas_bayar,
+    #                 b.harga_transaksi,
+    #                 b.harga_akta,
+    #                 (b.luas_bayar * b.harga_transaksi) as total_harga,
+    #                 CASE
+    #                     WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
+    #                     ELSE s.nilai
+    #                 END As amount
+    #                 FROM spk s
+    #                 LEFT OUTER JOIN bidang b ON s.bidang_id = b.id
+    #                 LEFT OUTER JOIN tahap_detail td ON td.bidang_id = b.id
+    #                 LEFT OUTER JOIN tahap t ON t.id = td.tahap_id
+    #                 LEFT OUTER JOIN invoice i on i.spk_id = s.id
+    #                 WHERE 
+    #                 s.jenis_bayar = '{jenis_bayar.value}' 
+    #                 and (i.spk_id is null or i.is_void = true)
+    #                 and t.id = '{str(tahap_id)}'
+    #             """)
 
     #     response =  await db_session.execute(query)
-    #     return response.scalars().all()
+    #     return response.fetchall()
+    
+    async def get_multi_by_tahap_id(self, 
+                                *,
+                                tahap_id:UUID,
+                                jenis_bayar:JenisBayarEnum,
+                               db_session : AsyncSession | None = None
+                        ) -> List[Spk] | None:
+        db_session = db_session or db.session
+        
+        query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
+                            ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
+                            ).outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id
+                            ).outerjoin(Invoice, Invoice.spk_id == Spk.id
+                            ).where(
+                                 and_(
+                                        Spk.jenis_bayar == jenis_bayar,
+                                        Tahap.id == tahap_id,
+                                        or_(
+                                             Invoice.spk_id == None,
+                                             Invoice.is_void == True
+                                        )
+                                      )
+                            ).options(selectinload(Spk.bidang
+                                                ).options(selectinload(Bidang.overlaps)
+                                                ).options(selectinload(Bidang.komponen_biayas
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+                                                                    )
+                                                ).options(selectinload(Bidang.invoices))
+                            )
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    # async def get_multi_by_tahap_id_and_termin_id(self, 
+    #                             *,
+    #                             tahap_id:UUID,
+    #                             jenis_bayar:JenisBayarEnum,
+    #                             termin_id:UUID,
+    #                            db_session : AsyncSession | None = None
+    #                     ) -> List[SpkForTerminSch]:
+    #     db_session = db_session or db.session
+        
+    #     query = text(f"""
+    #                 SELECT 
+    #                 s.id as spk_id,
+    #                 s.code as spk_code,
+    #                 s.satuan_bayar as spk_satuan_bayar,
+    #                 s.nilai as spk_nilai,
+    #                 b.id as bidang_id,
+    #                 b.id_bidang,
+    #                 b.alashak,
+    #                 b.group,
+    #                 b.luas_bayar,
+    #                 b.harga_transaksi,
+    #                 b.harga_akta,
+    #                 (b.luas_bayar * b.harga_transaksi) as total_harga,
+    #                 CASE
+    #                     WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
+    #                     ELSE s.nilai
+    #                 END As amount
+    #                 FROM spk s
+    #                 LEFT OUTER JOIN invoice i ON i.spk_id = s.id
+    #                 LEFT OUTER JOIN termin tr ON tr.id = i.termin_id
+    #                 LEFT OUTER JOIN tahap t ON t.id = tr.tahap_id
+    #                 LEFT OUTER JOIN tahap_detail td ON td.tahap_id = t.id
+    #                 LEFT OUTER JOIN bidang b ON b.id = td.bidang_id
+    #                 WHERE s.jenis_bayar = '{jenis_bayar.value}'  
+    #                 and t.id = '{str(tahap_id)}'
+    #                 and tr.id = '{str(termin_id)}'
+    #                 and i.is_void != true
+    #             """)
+
+    #     response =  await db_session.execute(query)
+    #     return response.fetchall()
     
     async def get_multi_by_tahap_id_and_termin_id(self, 
                                 *,
@@ -136,41 +184,31 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                 jenis_bayar:JenisBayarEnum,
                                 termin_id:UUID,
                                db_session : AsyncSession | None = None
-                        ) -> List[SpkForTerminSch]:
+                        ) -> List[Spk]:
         db_session = db_session or db.session
         
-        query = text(f"""
-                    SELECT 
-                    s.id as spk_id,
-                    s.code as spk_code,
-                    s.satuan_bayar as spk_satuan_bayar,
-                    s.nilai as spk_nilai,
-                    b.id as bidang_id,
-                    b.id_bidang,
-                    b.alashak,
-                    b.group,
-                    b.luas_bayar,
-                    b.harga_transaksi,
-                    b.harga_akta,
-                    (b.luas_bayar * b.harga_transaksi) as total_harga,
-                    CASE
-                        WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                        ELSE s.nilai
-                    END As amount
-                    FROM spk s
-                    LEFT OUTER JOIN invoice i ON i.spk_id = s.id
-                    LEFT OUTER JOIN termin tr ON tr.id = i.termin_id
-                    LEFT OUTER JOIN tahap t ON t.id = tr.tahap_id
-                    LEFT OUTER JOIN tahap_detail td ON td.tahap_id = t.id
-                    LEFT OUTER JOIN bidang b ON b.id = td.bidang_id
-                    WHERE s.jenis_bayar = '{jenis_bayar.value}'  
-                    and t.id = '{str(tahap_id)}'
-                    and tr.id = '{str(termin_id)}'
-                    and i.is_void != true
-                """)
+        query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
+                            ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
+                            ).outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id
+                            ).outerjoin(Invoice, Invoice.spk_id == Spk.id
+                            ).outerjoin(Termin, Termin.id == Invoice.termin_id
+                            ).where(
+                                 and_(
+                                        Spk.jenis_bayar == jenis_bayar,
+                                        Tahap.id == tahap_id,
+                                        Termin.id == termin_id,
+                                        Invoice != True
+                                      )
+                            ).options(selectinload(Spk.bidang
+                                                ).options(selectinload(Bidang.overlaps)
+                                                ).options(selectinload(Bidang.komponen_biayas
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+                                                                    )
+                                                ).options(selectinload(Bidang.invoices))
+                            )
 
         response =  await db_session.execute(query)
-        return response.fetchall()
+        return response.scalars().all()
 
     async def get_by_id_for_printout(self, 
                                      *, 

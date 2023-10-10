@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func
 from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
-from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch)
+from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentDetailVoidSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -105,6 +105,8 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
+    sch.is_void = obj_current.is_void
+    
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
     for dt in sch.details:
@@ -131,9 +133,38 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
-
 @router.put("/void/{id}", response_model=PutResponseBaseSch[PaymentSch])
-async def update(payment_dtl_ids:list[UUID],
+async def void(sch:PaymentVoidSch,
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """void a obj by its ids"""
+    db_session = db.session
+
+    obj_current = await crud.payment.get_by_id(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(Payment, id)
+    
+    obj_updated = obj_current
+    obj_updated.is_void = True
+    obj_updated.remark = sch.remark
+
+    obj_updated = await crud.payment.update(obj_current=obj_current, obj_updated=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    for dt in obj_current.details:
+        payment_dtl_updated = dt
+        payment_dtl_updated.is_void = True
+        payment_dtl_updated.remark = sch.remark
+
+        await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
+
+    obj_updated = await crud.payment.get_by_id(id=obj_current.id)
+    return create_response(data=obj_updated) 
+
+@router.put("/void/detail/{id}", response_model=PutResponseBaseSch[PaymentSch])
+async def void_detail(sch:list[PaymentDetailVoidSch],
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
@@ -144,10 +175,11 @@ async def update(payment_dtl_ids:list[UUID],
     if not obj_current:
         raise IdNotFoundException(Payment, id)
 
-    for id in payment_dtl_ids:
-        payment_dtl_current = await crud.payment_detail.get(id=id)
+    for dt in sch:
+        payment_dtl_current = await crud.payment_detail.get(id=dt.id)
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
+        payment_dtl_updated.remark = dt.remark
 
         await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -155,7 +187,6 @@ async def update(payment_dtl_ids:list[UUID],
 
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
-
 
 @router.get("/search/invoice", response_model=GetResponseBaseSch[list[InvoiceSearchSch]])
 async def get_list(
@@ -173,7 +204,7 @@ async def get_list(
                             ).options(selectinload(Invoice.bidang)
                             ).options(selectinload(Invoice.termin
                                                 ).options(selectinload(Termin.tahap))
-                            )     
+                            ).options(selectinload(Invoice.payment_details))    
     
     if keyword:
         query = query.filter(

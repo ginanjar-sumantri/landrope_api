@@ -5,6 +5,7 @@ from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarE
 from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING, Optional
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.bidang_model import Bidang
@@ -62,6 +63,14 @@ class Spk(SpkFullBase, table=True):
     @property
     def kjb_hd_code(self) -> str | None:
         return self.bidang.hasil_peta_lokasi.kjb_dt.kjb_code
+    
+    @property
+    def spk_amount(self) -> Decimal | None:
+        total_amount = self.nilai
+        if self.satuan_bayar == SatuanBayarEnum.Percentage:
+            total_amount = ((self.nilai or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
+
+        return total_amount
 
 
 # class SpkBebanBiayaBase(SQLModel):
