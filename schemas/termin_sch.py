@@ -38,32 +38,6 @@ class TerminByIdForPrintOut(SQLModel):
     tanggal_transaksi:Optional[date]
     jenis_bayar:Optional[str]
 
-class TerminBidangForPrintOut(SQLModel):
-    bidang_id:Optional[UUID]
-    id_bidang:Optional[str]
-    group:Optional[str]
-    lokasi:Optional[str]
-    ptsk_name:Optional[str]
-    status_il:Optional[str]
-    project_name:Optional[str]
-    desa_name:Optional[str]
-    pemilik_name:Optional[str]
-    alashak:Optional[str]
-    luas_surat:Optional[Decimal]
-    luas_ukur:Optional[Decimal]
-    luas_gu_perorangan:Optional[Decimal]
-    luas_nett:Optional[Decimal]
-    luas_pbt_perorangan:Optional[Decimal]
-    luas_bayar:Optional[Decimal]
-    no_peta:Optional[str]
-    harga_transaksi:Optional[Decimal]
-    total_harga:Optional[Decimal]
-
-class TerminBidangForPrintOutExt(TerminBidangForPrintOut):
-    no:Optional[int]
-    harga_transaksiExt:Optional[str]
-    total_hargaExt:Optional[str]
-
 class TerminInvoiceforPrintOut(SQLModel):
     id_bidang:Optional[UUID]
     bidang_id:Optional[UUID]

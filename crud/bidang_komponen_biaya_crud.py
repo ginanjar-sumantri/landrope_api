@@ -90,6 +90,52 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
     
+    async def get_multi_beban_by_bidang_id(
+            self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BidangKomponenBiayaBebanPenjualSch] | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                        select
+                        b.id As bidang_id,
+                        b.id_bidang,
+                        b.alashak,
+                        b.luas_surat,
+                        b.luas_bayar,
+                        b.harga_transaksi,
+                        kb.id As komponen_id,
+                        bb.name,
+                        bb.satuan_harga,
+                        bb.satuan_bayar,
+                        bb.amount as beban_biaya_amount,
+                        CASE
+                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                End
+                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
+                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
+                                End
+                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
+                        END As total_beban
+                        from bidang_komponen_biaya kb
+                        inner join bidang b on kb.bidang_id = b.id
+                        inner join beban_biaya bb on kb.beban_biaya_id = bb.id
+                        where kb.is_void != true
+                        and b.id = '{str(bidang_id)}'
+                        and kb.is_use != true
+                """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+    
     async def get_multi_beban_penjual_by_invoice_id(
             self, 
             *, 
@@ -138,6 +184,51 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
 
-    
+    async def get_multi_beban_by_invoice_id(
+            self, 
+            *, 
+            invoice_id:UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BidangKomponenBiayaBebanPenjualSch] | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                        select
+                        b.id As bidang_id,
+                        b.id_bidang,
+                        b.alashak,
+                        b.luas_surat,
+                        b.luas_bayar,
+                        b.harga_transaksi,
+                        kb.id As komponen_id,
+                        bb.name,
+                        bb.satuan_harga,
+                        bb.satuan_bayar,
+                        bb.amount as beban_biaya_amount,
+                        CASE
+                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                End
+                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
+                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
+                                End
+                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
+                        END As total_beban
+                        from bidang_komponen_biaya kb
+                        inner join invoice_detail idt on kb.id = idt.bidang_komponen_biaya_id
+                        inner join invoice i on idt.invoice_id = i.id
+                        inner join bidang b on b.id = i.bidang_id
+                        inner join beban_biaya bb on bb.id = kb.beban_biaya_id
+                        where kb.is_void != true
+                        and i.id = '{str(invoice_id)}'
+                """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
     
 bidang_komponen_biaya = CRUDBidangKomponenBiaya(BidangKomponenBiaya)

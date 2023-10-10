@@ -20,6 +20,7 @@ class PaymentBase(SQLModel):
     payment_date: date = Field(nullable=False)
     reference:str|None = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=True, default=False)
+    void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -45,6 +46,13 @@ class Payment(PaymentFullBase, table=True):
         sa_relationship_kwargs={
             "lazy": "joined",
             "primaryjoin": "Payment.updated_by_id==Worker.id",
+        }
+    )
+
+    worker_do_void: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Payment.void_by_id==Worker.id",
         }
     )
 
@@ -100,7 +108,7 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     worker_do_void: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
-            "primaryjoin": "PaymentDetail.void_by==Worker.id",
+            "primaryjoin": "PaymentDetail.void_by_id==Worker.id",
         }
     )
 

@@ -8,10 +8,10 @@ from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bi
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
-                                TerminByIdSch, TerminByIdForPrintOut, TerminBidangForPrintOutExt,
+                                TerminByIdSch, TerminByIdForPrintOut,
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj
+from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
@@ -287,9 +287,9 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
     
     """Gets a paginated list objects"""
     
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_invoice_id(invoice_id=invoice_id)
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id)
     if bidang_id:
-        objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id(bidang_id=bidang_id)
+        objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
         objs = objs + objs_2
 
     return create_response(data=objs)
@@ -301,7 +301,7 @@ async def get_list_komponen_biaya_by_bidang_id(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_penjual_by_bidang_id(bidang_id=id)
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=id)
 
     return create_response(data=objs)
 
@@ -377,9 +377,9 @@ async def printout(id:UUID | str,
     
     bidangs = []
     no = 1
-    obj_bidangs_on_tahap = await crud.termin.get_bidang_tahap_by_id_for_printout(id=id)
+    obj_bidangs_on_tahap = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
     for bd in obj_bidangs_on_tahap:
-        bidang = TerminBidangForPrintOutExt(**dict(bd))
+        bidang = InvoiceForPrintOutExt(**dict(bd))
         bidang.total_hargaExt = "{:,.2f}".format(bidang.total_harga)
         bidang.harga_transaksiExt = "{:,.2f}".format(bidang.harga_transaksi)
         bidang.no = no

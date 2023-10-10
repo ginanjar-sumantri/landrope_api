@@ -148,6 +148,7 @@ async def void(sch:PaymentVoidSch,
     obj_updated = obj_current
     obj_updated.is_void = True
     obj_updated.remark = sch.remark
+    obj_updated.void_by_id = current_worker.id
 
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_updated=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -155,6 +156,7 @@ async def void(sch:PaymentVoidSch,
         payment_dtl_updated = dt
         payment_dtl_updated.is_void = True
         payment_dtl_updated.remark = sch.remark
+        payment_dtl_updated.void_by_id = current_worker.id
 
         await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -180,6 +182,7 @@ async def void_detail(sch:list[PaymentDetailVoidSch],
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
         payment_dtl_updated.remark = dt.remark
+        payment_dtl_updated.void_by_id = current_worker.id
 
         await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 

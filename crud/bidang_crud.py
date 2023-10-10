@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from typing import List
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, 
-                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi)
+                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, BidangPercentageLunasForSpk,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
@@ -158,22 +158,18 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                         ) -> List[BidangForUtjSch]:
         db_session = db_session or db.session
         
-        query = text(f"""
-                    select 
-                    b.id as bidang_id,
-                    b.id_bidang,
-                    b.luas_surat,
-                    pr.name as project_name,
-                    ds.name as desa_name
-                    from bidang b
-                    inner join hasil_peta_lokasi hpl on hpl.bidang_id = b.id
-                    inner join kjb_dt kdt on hpl.kjb_dt_id = kdt.id
-                    inner join kjb_hd khd on khd.id = kdt.kjb_hd_id
-                    left outer join planing pl on pl.id = b.planing_id
-                    left outer join project pr on pr.id = pl.project_id
-                    left outer join desa ds on ds.id = pl.desa_id
-                    Where khd.id = '{str(kjb_hd_id)}'
-                """)
+        query = select(Bidang.id.label("bidang_id"),
+                       Bidang.id_bidang,
+                       Bidang.luas_surat,
+                       Project.name.label("project_name"),
+                       Desa.name.label("desa_name")
+                       ).join(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
+                            ).join(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
+                            ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                            ).outerjoin(Planing, Planing.id == Bidang.planing_id
+                            ).outerjoin(Project, Project.id == Planing.project_id
+                            ).outerjoin(Desa, Desa.id == Planing.desa_id
+                            ).where(KjbHd.id == kjb_hd_id)
 
         response =  await db_session.execute(query)
         return response.fetchall()
