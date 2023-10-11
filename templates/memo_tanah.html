@@ -119,9 +119,7 @@
           <th>SURAT ASAL</th>
           <th>L SURAT</th>
           <th>L UKUR</th>
-          <th>L GU</th>
           <th>L NETT</th>
-          <th>L PBT</th>
           <th>L BAYAR</th>
           <th>NO PETA</th>
           <th>HARGA</th>
@@ -137,9 +135,7 @@
           <td align="center">{{ item.alashak }}</td>
           <td align="right">{{ item.luas_surat }}</td>
           <td align="right">{{ item.luas_ukur }}</td>
-          <td align="right">{{ item.luas_gu_perorangan }}</td>
           <td align="right">{{ item.luas_nett }}</td>
-          <td align="right">{{ item.luas_pbt_perorangan }}</td>
           <td align="right">{{ item.luas_bayar }}</td>
           <td align="center">{{ item.no_peta }}</td>
           <td align="right">{{ item.harga_transaksiExt }}</td>
@@ -151,9 +147,7 @@
           <td colspan="6"></td>
           <td align="center">{{total_luas_surat}}</td>
           <td align="center">{{total_luas_ukur}}</td>
-          <td align="center">{{total_luas_gu_perorangan}}</td>
           <td align="center">{{total_luas_nett}}</td>
-          <td align="center">{{total_luas_pbt_perorangan}}</td>
           <td align="center">{{total_luas_bayar}}</td>
           <td>&nbsp;</td>
           <td>&nbsp;</td>
@@ -165,7 +159,7 @@
           <th>ID Bidang</th>
           <th>Jenis Pembayaran</th>
           <th>Tanggal</th>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="8">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item2 in data_invoice_history %}
@@ -174,19 +168,19 @@
           <td>{{item2.id_bidang}}</td>
           <td>{{item2.str_jenis_bayar}}</td>
           <td>{{item2.tanggal_transaksi}}</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="8">&nbsp;</td>
           <td align="right">{{item2.amountExt}}</td>
         </tr>
         {% endfor %}
         <tr>
-          <td colspan="16">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         <tr>
           <td>&nbsp;</td>
           <th>ID Bidang</th>
           <th>Beban Biaya</th>
           <td>&nbsp;</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="8">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item3 in data_beban_biaya %}
@@ -195,23 +189,75 @@
           <td>{{item3.id_bidang}}</td>
           <td>{{item3.beban_biaya_name}}</td>
           <td>&nbsp;</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="8">&nbsp;</td>
           <td align="right">{{item3.amountExt}}</td>
         </tr>
         {% endfor %}
         <tr>
-          <td colspan="16">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         <tr>
           <td>&nbsp;</td>
           <td style="font-weight: bold">{{tanggal_transaksi}}</td>
           <td style="font-weight: bold">{{jenis_bayar}}</td>
           <td>&nbsp;</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="8">&nbsp;</td>
           <td align="right" style="font-weight: bold">{{amount}}</td>
         </tr>
       </table>
     </div>
-    <div class="footer"></div>
+    <div class="footer">
+      <table>
+        <tr>
+          <td>Note :</td>
+        </tr>
+        <tr>
+          <td>> KESEPAKATAN ADA TTD PAK ALI</td>
+        </tr>
+        {% for item4 in data_harga_akta %}
+        <tr>
+          <td>Nilai akte Rp {{item4.harga_aktaExt}}, -m2</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td>
+            Rencana transaksi hari {{tanggal_transaksi}} di Kantor
+            {{notaris_name}}
+          </td>
+        </tr>
+        <tr>
+          <td>Tolong disiapkan :</td>
+        </tr>
+        {% for item5 in data_payment %}
+        <tr>
+          <td>{{item5.payment_description}}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td>
+            Bilamana BG dan CEK sudah disiapkan, tolong agar dapat menghubungi
+            Lena di 566 7272
+          </td>
+        </tr>
+        <tr>
+          <td>Terima kasih atas kerjasamanya</td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>Hormat Kami,</td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>Merry</td>
+        </tr>
+        <tr>
+          <td>Cc : Bapak Denny, Ibu Lia, Ibu Lily</td>
+        </tr>
+      </table>
+    </div>
   </body>
 </html>

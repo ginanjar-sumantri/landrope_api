@@ -33,3 +33,7 @@ class KjbHargaForCloud(SQLModel):
     id:UUID
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
+
+class KjbHargaAktaSch(SQLModel):
+    harga_akta:Optional[Decimal]
+    harga_aktaExt:Optional[str]

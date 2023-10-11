@@ -134,7 +134,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     return create_response(data=obj_updated)
 
 @router.put("/void/{id}", response_model=PutResponseBaseSch[PaymentSch])
-async def void(sch:PaymentVoidSch,
+async def void(id:UUID, sch:PaymentVoidSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
@@ -166,7 +166,9 @@ async def void(sch:PaymentVoidSch,
     return create_response(data=obj_updated) 
 
 @router.put("/void/detail/{id}", response_model=PutResponseBaseSch[PaymentSch])
-async def void_detail(sch:PaymentVoidExtSch,
+async def void_detail(
+                id:UUID,
+                sch:PaymentVoidExtSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""

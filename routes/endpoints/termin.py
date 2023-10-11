@@ -18,6 +18,7 @@ from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
 from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
+from schemas.kjb_harga_sch import KjbHargaAktaSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -376,6 +377,7 @@ async def printout(id:UUID | str,
     termin_header = TerminByIdForPrintOut(**dict(obj))
     
     bidangs = []
+    list_bidang_id = []
     no = 1
     obj_bidangs_on_tahap = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
     for bd in obj_bidangs_on_tahap:
@@ -384,6 +386,7 @@ async def printout(id:UUID | str,
         bidang.harga_transaksiExt = "{:,.2f}".format(bidang.harga_transaksi)
         bidang.no = no
         bidangs.append(bidang)
+        list_bidang_id.append(bidang.bidang_id)
         no = no + 1
     
     array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs_on_tahap])
@@ -414,13 +417,13 @@ async def printout(id:UUID | str,
     total_harga = numpy.sum(array_total_harga)
     total_harga = "{:,.2f}".format(total_harga)
 
-    invoices = []
-    list_bidang_id = []
-    obj_invoices_on_termin = await crud.termin.get_invoice_by_id_for_printout(id=id)
-    for inv in obj_invoices_on_termin:
-        invoice = TerminInvoiceforPrintOut(**dict(inv))
-        invoices.append(invoice)
-        list_bidang_id.append(str(invoice.bidang_id))
+    # invoices = []
+    # list_bidang_id = []
+    # obj_invoices_on_termin = await crud.termin.get_invoice_by_id_for_printout(id=id)
+    # for inv in obj_invoices_on_termin:
+    #     invoice = TerminInvoiceforPrintOut(**dict(inv))
+    #     invoices.append(invoice)
+    #     list_bidang_id.append(str(invoice.bidang_id))
 
     invoices_history = []
     obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
@@ -452,6 +455,13 @@ async def printout(id:UUID | str,
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
         beban_biaya.amountExt = "{:,.2f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
+
+    harga_aktas = []
+    obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
+    for hg in obj_kjb_hargas:
+        harga_akta = KjbHargaAktaSch(**dict(hg))
+        harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
+        harga_aktas.append(harga_akta)
     
     # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
     
@@ -472,6 +482,7 @@ async def printout(id:UUID | str,
                                       total_harga=total_harga,
                                       data_invoice_history=invoices_history,
                                       data_beban_biaya=komponen_biayas,
+                                      data_harga_akta=harga_aktas,
                                       tanggal_transaksi=termin_header.tanggal_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
                                       amount="{:,.2f}".format(termin_header.amount)

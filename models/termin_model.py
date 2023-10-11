@@ -21,7 +21,10 @@ class TerminBase(SQLModel):
     jenis_bayar:JenisBayarEnum = Field(nullable=True)
     amount:Optional[Decimal] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=False)
+    tanggal_rencana_transaksi:Optional[date] = Field(nullable=True) #tanggal rencana transaksi
     tanggal_transaksi:Optional[date] = Field(nullable=True)
+    notaris_id:Optional[UUID] = Field(nullable=True)
+
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass
