@@ -20,7 +20,7 @@ class TerminBase(SQLModel):
     is_void:Optional[bool] = Field(nullable=False)
     tanggal_rencana_transaksi:Optional[date] = Field(nullable=True) #tanggal rencana transaksi
     tanggal_transaksi:Optional[date] = Field(nullable=True)
-    notaris_id:Optional[UUID] = Field(nullable=True)
+    notaris_id:Optional[UUID] = Field(nullable=True, foreign_key="notaris.id")
     remark:Optional[str] = Field(nullable=True)
 
 
