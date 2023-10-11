@@ -133,10 +133,10 @@
           <td align="center">{{ item.lokasi }}</td>
           <td align="center">{{ item.pemilik_name }}</td>
           <td align="center">{{ item.alashak }}</td>
-          <td align="right">{{ item.luas_surat }}</td>
-          <td align="right">{{ item.luas_ukur }}</td>
-          <td align="right">{{ item.luas_nett }}</td>
-          <td align="right">{{ item.luas_bayar }}</td>
+          <td align="right">{{ item.luas_suratExt }}</td>
+          <td align="right">{{ item.luas_ukurExt }}</td>
+          <td align="right">{{ item.luas_nettExt }}</td>
+          <td align="right">{{ item.luas_bayarExt }}</td>
           <td align="center">{{ item.no_peta }}</td>
           <td align="right">{{ item.harga_transaksiExt }}</td>
           <td align="right">{{ item.total_hargaExt }}</td>
@@ -231,8 +231,8 @@
         {% for item5 in data_payment %}
         <tr>
           <td>
-            {{item5.no}}. {{item5.payment_method}} Senilai Rp {{item5.amount}},-
-            a.n {{item5.pay_to}}
+            {{item5.no}}. {{item5.payment_method}} Senilai Rp
+            {{item5.amountExt}},- a.n {{item5.pay_to}}
           </td>
         </tr>
         {% endfor %}

@@ -111,6 +111,14 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             query = select(self.model).order_by(self.model.id)
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_fetchall_no_page(self, *, query : T | Select[T] | None = None, db_session : AsyncSession | None = None
+                        ) -> List[ModelType]:
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model).order_by(self.model.id)
+        response =  await db_session.execute(query)
+        return response.fetchall()
 
     async def get_multi_by_dict(self, *, db_session : AsyncSession | None = None, filter_query: str | None = None) -> List[ModelType] | None:
         db_session = db_session or db.session

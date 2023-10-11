@@ -113,7 +113,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         ds.name as desa_name,
                         pm.name as pemilik_name,
                         b.alashak,
-                        COALESCE(b.luas_surat, 0) as luas_surat,
+                        COALESCE(b.luas_surat,0) as luas_surat,
                         COALESCE(b.luas_ukur,0) as luas_ukur,
                         COALESCE(b.luas_gu_perorangan,0) as luas_gu_perorangan,
                         COALESCE(b.luas_nett,0) as luas_nett,

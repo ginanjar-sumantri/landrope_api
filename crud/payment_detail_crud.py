@@ -1,5 +1,5 @@
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_
+from sqlmodel import select, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
 from models import PaymentDetail, Payment, Invoice, Termin, Giro
@@ -13,7 +13,10 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
                   ) -> list[PaymentDetailForPrintout] | None:
         
         db_session = db_session or db.session
-        query = select(PaymentDetail).join(Invoice, Invoice.id == PaymentDetail.invoice_id
+        query = select(func.sum(PaymentDetail.amount).label("amount"),
+                       Payment.payment_method,
+                       Payment.pay_to,
+                       Giro.code).join(Invoice, Invoice.id == PaymentDetail.invoice_id
                                 ).join(Termin, Termin.id == Invoice.termin_id
                                 ).join(Payment, Payment.id == PaymentDetail.payment_id
                                 ).outerjoin(Giro, Giro.id == Payment.giro_id
@@ -24,7 +27,7 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
                                         PaymentDetail.is_void != True,
                                         Payment.is_void != True
                                         )
-                                    )
+                                    ).group_by(Invoice.id, Payment.id, Giro.id)
         
         response = await db_session.execute(query)
 

@@ -32,6 +32,8 @@ class PaymentDetailSch(PaymentDetailFullBase):
     luas_bayar:Decimal|None = Field(alias="luas_bayar")
 
 class PaymentDetailForPrintout(SQLModel):
+    no:int|None
+    payment_method:str|None
     amount:Decimal|None
     pay_to:str|None
     code:str|None

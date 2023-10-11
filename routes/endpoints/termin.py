@@ -19,6 +19,7 @@ from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.kjb_harga_sch import KjbHargaAktaSch
+from schemas.payment_detail_sch import PaymentDetailForPrintout
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -382,8 +383,12 @@ async def printout(id:UUID | str,
     obj_bidangs_on_tahap = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
     for bd in obj_bidangs_on_tahap:
         bidang = InvoiceForPrintOutExt(**dict(bd))
-        bidang.total_hargaExt = "{:,.2f}".format(bidang.total_harga)
-        bidang.harga_transaksiExt = "{:,.2f}".format(bidang.harga_transaksi)
+        bidang.total_hargaExt = "{:,.0f}".format(bidang.total_harga)
+        bidang.harga_transaksiExt = "{:,.0f}".format(bidang.harga_transaksi)
+        bidang.luas_suratExt = "{:,.0f}".format(bidang.luas_surat)
+        bidang.luas_nettExt = "{:,.0f}".format(bidang.luas_nett)
+        bidang.luas_ukurExt = "{:,.0f}".format(bidang.luas_ukur)
+        bidang.luas_bayarExt = "{:,.0f}".format(bidang.luas_bayar)
         bidang.no = no
         bidangs.append(bidang)
         list_bidang_id.append(bidang.bidang_id)
@@ -415,7 +420,7 @@ async def printout(id:UUID | str,
 
     array_total_harga = numpy.array([b.total_harga for b in obj_bidangs_on_tahap])
     total_harga = numpy.sum(array_total_harga)
-    total_harga = "{:,.2f}".format(total_harga)
+    total_harga = "{:,.0f}".format(total_harga)
 
     # invoices = []
     # list_bidang_id = []
@@ -429,7 +434,7 @@ async def printout(id:UUID | str,
     obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
     for his in obj_invoices_history:
         history = TerminInvoiceHistoryforPrintOutExt(**dict(his))
-        history.amountExt = "{:,.2f}".format(history.amount)
+        history.amountExt = "{:,.0f}".format(history.amount)
         invoices_history.append(history)
     
     # utj_history = []
@@ -453,7 +458,7 @@ async def printout(id:UUID | str,
     for bb in obj_komponen_biayas:
         beban_biaya = TerminBebanBiayaForPrintOutExt(**dict(bb))
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
-        beban_biaya.amountExt = "{:,.2f}".format(beban_biaya.amount)
+        beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
 
     harga_aktas = []
@@ -462,7 +467,17 @@ async def printout(id:UUID | str,
         harga_akta = KjbHargaAktaSch(**dict(hg))
         harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
         harga_aktas.append(harga_akta)
-    
+
+    payments = []
+    no = 1
+    obj_payments = await crud.payment_detail.get_by_termin_id_for_printout(termin_id=id)
+    for py in obj_payments:
+        payment = PaymentDetailForPrintout(**dict(py))
+        payment.amountExt = "{:,.0f}".format(py.amount)
+        payment.no = no
+        payments.append(payment)
+        no = no + 1
+
     # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
     
     env = Environment(loader=FileSystemLoader("templates"))
@@ -483,6 +498,7 @@ async def printout(id:UUID | str,
                                       data_invoice_history=invoices_history,
                                       data_beban_biaya=komponen_biayas,
                                       data_harga_akta=harga_aktas,
+                                      data_payment=payments,
                                       tanggal_transaksi=termin_header.tanggal_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
                                       amount="{:,.2f}".format(termin_header.amount)

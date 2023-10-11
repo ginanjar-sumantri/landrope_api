@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, func
+from sqlmodel import select, or_, func, and_
 from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
@@ -201,16 +201,24 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
-                            ).outerjoin(PaymentDetail, PaymentDetail.invoice_id == Invoice.id
-                            ).outerjoin(Termin, Termin.id == Invoice.termin_id
-                            ).where(Invoice.is_void != True
-                            ).group_by(Invoice.id).having(Invoice.amount - (func.sum(PaymentDetail.amount)) > 0
-                            ).options(selectinload(Invoice.bidang)
+    query = select(Invoice)
+    query = query.outerjoin(Invoice.bidang)
+    query = query.outerjoin(Invoice.termin)
+    query = query.filter(Invoice.is_void != True)
+
+    subquery = (
+    select(func.coalesce(func.sum(PaymentDetail.amount), 0))
+    .filter(and_(PaymentDetail.invoice_id == Invoice.id, PaymentDetail.is_void != True))
+    .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
+    )
+
+    query = query.filter(Invoice.amount - subquery != 0)  
+    
+    query = query.options(selectinload(Invoice.bidang)
                             ).options(selectinload(Invoice.termin
                                                 ).options(selectinload(Termin.tahap))
-                            ).options(selectinload(Invoice.payment_details))    
-    
+                            ).options(selectinload(Invoice.payment_details))  
+
     if keyword:
         query = query.filter(
             or_(
