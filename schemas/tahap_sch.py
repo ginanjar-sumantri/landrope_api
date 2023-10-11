@@ -9,7 +9,6 @@ from uuid import UUID
 
 
 class TahapCreateSch(TahapBase):
-    sub_project_id:Optional[UUID]
     details:list[TahapDetailCreateExtSch]
 
 class TahapSch(TahapFullBase):
@@ -18,6 +17,8 @@ class TahapSch(TahapFullBase):
     section_name:Optional[str] = Field(alias="section_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
+    sub_project_name:Optional[str] = Field(alias="sub_project_name")
+    sub_project_code:Optional[str] = Field(alias="sub_project_code")
     updated_by_name:Optional[str] = Field(alias="updated_by_name")
     jumlah_bidang:Optional[int] = Field(alias="jumlah_bidang")
     
@@ -28,6 +29,8 @@ class TahapByIdSch(TahapFullBase):
     section_name:Optional[str] = Field(alias="section_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
+    sub_project_name:Optional[str] = Field(alias="sub_project_name")
+    sub_project_code:Optional[str] = Field(alias="sub_project_code")
     details:list[TahapDetailSch] | None
 
 class TahapForTerminByIdSch(SQLModel):

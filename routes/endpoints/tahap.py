@@ -112,7 +112,8 @@ async def get_list(
                                     ).outerjoin(Desa, Desa.id == Planing.desa_id
                                     ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
                                     ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
-                                    ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id)
+                                    ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id
+                                    ).outerjoin(Tahap.sub_project)
     
     if keyword:
         query = query.filter(

@@ -99,6 +99,8 @@ class InvoiceForPrintOut(SQLModel):
     harga_transaksi:Optional[Decimal]
     total_harga:Optional[Decimal]
 
+    #overlaps:Optional[list[]]
+
 class InvoiceForPrintOutExt(InvoiceForPrintOut):
     no:Optional[int]
     harga_transaksiExt:Optional[str]

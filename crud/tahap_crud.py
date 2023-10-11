@@ -40,7 +40,7 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
                                                                                                     ).options(selectinload(BidangOverlap.bidang_intersect))
                                                                                 ).options(selectinload(Bidang.invoices))
                                                             )
-                                        )
+                                        ).options(selectinload(Tahap.sub_project))
 
         response = await db_session.execute(query)
 

@@ -6,15 +6,13 @@ from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from planing_model import Planing
-    from ptsk_model import Ptsk
-    from bidang_model import Bidang
-    from worker_model import Worker
+    from models import Planing, Ptsk, Bidang, Worker, SubProject
 
 class TahapBase(SQLModel):
     nomor_tahap:Optional[int] = Field(nullable=False)
     planing_id:UUID = Field(foreign_key="planing.id", nullable=False)
     ptsk_id:Optional[UUID] = Field(foreign_key="ptsk.id", nullable=True)
+    sub_project_id:Optional[UUID] = Field(foreign_key="sub_project.id")
     group:Optional[str] = Field(nullable=True)
 
 class TahapFullBase(BaseUUIDModel, TahapBase):
@@ -32,6 +30,11 @@ class Tahap(TahapFullBase, table=True):
                                         "lazy" : "select"
                                      })
     ptsk:"Ptsk" = Relationship(sa_relationship_kwargs=
+                                     {
+                                        "lazy" : "select"
+                                     })
+    
+    sub_project:"SubProject" = Relationship(sa_relationship_kwargs=
                                      {
                                         "lazy" : "select"
                                      })
@@ -66,6 +69,14 @@ class Tahap(TahapFullBase, table=True):
     @property
     def planing_name(self) -> str | None:
         return getattr(getattr(self, 'planing', None), 'name', None)
+    
+    @property
+    def sub_project_name(self) -> str | None:
+        return getattr(getattr(self, 'sub_project', None), 'name', None)
+    
+    @property
+    def sub_project_code(self) -> str | None:
+        return getattr(getattr(self, 'sub_project', None), 'code', None)
     
     @property
     def jumlah_bidang(self) -> int | None:
