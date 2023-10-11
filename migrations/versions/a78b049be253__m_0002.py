@@ -1,8 +1,8 @@
-"""_m_0001
+"""_m_0002
 
-Revision ID: 871ee5a9c2a4
+Revision ID: a78b049be253
 Revises: 
-Create Date: 2023-10-11 19:48:48.420363
+Create Date: 2023-10-11 20:12:30.069369
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import geoalchemy2
 
 
 # revision identifiers, used by Alembic.
-revision = '871ee5a9c2a4'
+revision = 'a78b049be253'
 down_revision = None
 branch_labels = None
 depends_on = None

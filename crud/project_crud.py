@@ -25,6 +25,17 @@ class CRUDProject(CRUDBase[Project, ProjectCreateSch, ProjectUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+
+    async def get_by_name(
+        self, *, name: str, db_session: AsyncSession | None = None
+    ) -> Project | None:
+        db_session = db_session or db.session
+        query = select(self.model).options(selectinload(Project.section)
+                                ).options(selectinload(Project.main_project)
+                                ).where(func.lower(func.trim(func.replace(self.model.name, ' ', ''))) == name.strip().lower().replace(' ', ''))
+        
+        obj = await db_session.execute(query)
+        return obj.scalar_one_or_none()
     
     async def get_all_project_tree_report_map(
             self, 
