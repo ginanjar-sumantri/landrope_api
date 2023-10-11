@@ -437,22 +437,6 @@ async def printout(id:UUID | str,
         history = TerminInvoiceHistoryforPrintOutExt(**dict(his))
         history.amountExt = "{:,.0f}".format(history.amount)
         invoices_history.append(history)
-    
-    # utj_history = []
-    # bidang_ids:str = ""
-    # for bidang_id in list_bidang_id:
-    #     bidang_ids += f"'{bidang_id}',"
-    # bidang_ids = bidang_ids[0:-1]
-    # obj_utj_history = await crud.termin.get_history_utj_by_bidang_ids_for_printout(ids=bidang_ids)
-    # if obj_utj_history:
-    #     utj_history = TerminUtjHistoryForPrintOut(**dict(obj_utj_history))
-
-
-    # termins_history = []
-    # obj_termins_history = await crud.termin.get_history_termin_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id, termin_id=termin_header.id)
-    # for t_his in obj_termins_history:
-    #     termin_history = TerminHistoryForPrintOut(**dict(t_his))
-    #     termins_history.append(termin_history)
 
     komponen_biayas = []
     obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id)

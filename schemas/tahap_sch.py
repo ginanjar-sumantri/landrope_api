@@ -9,6 +9,7 @@ from uuid import UUID
 
 
 class TahapCreateSch(TahapBase):
+    sub_project_id:Optional[UUID]
     details:list[TahapDetailCreateExtSch]
 
 class TahapSch(TahapFullBase):

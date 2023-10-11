@@ -43,7 +43,7 @@ async def create(
         mainproject_current = obj_planing.project.main_project
         new_last_tahap = (mainproject_current.last_tahap or 0) + 1
     else:
-        obj_sub_project = await crud.sub_project.get_by_project_id(project_id=obj_planing.project_id)
+        obj_sub_project = await crud.sub_project.get_by_id(id=sch.sub_project_id)
         if not obj_sub_project:
             raise ContentNoChangeException(detail="Sub Project tidak ditemukan")
         mainproject_current = obj_sub_project.main_project

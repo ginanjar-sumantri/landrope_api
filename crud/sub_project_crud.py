@@ -47,6 +47,6 @@ class CRUDSubProject(CRUDBase[SubProject, SubProjectCreateSch, SubProjectUpdateS
         
         response = await db_session.execute(query)
 
-        return response.scalar_one_or_none()
+        return response.fetchone()
 
 sub_project = CRUDSubProject(SubProject)
