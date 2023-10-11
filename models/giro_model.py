@@ -29,9 +29,9 @@ class Giro(GiroFullBase, table=True):
 
     @property
     def giro_outstanding(self) -> Decimal | None:
-        total_payment = 0
+        total_payment:Decimal = 0
         if len(self.payments) > 0:
             array_payment = numpy.array([payment.amount for payment in self.payments if payment.is_void != True])
-            total_payment = numpy.sum(array_payment)
+            total_payment = Decimal(numpy.sum(array_payment))
         
         return self.amount - total_payment

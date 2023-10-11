@@ -133,7 +133,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
-@router.put("/void/{id}", response_model=PutResponseBaseSch[PaymentSch])
+@router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
 async def void(id:UUID, sch:PaymentVoidSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -165,7 +165,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
 
-@router.put("/void/detail/{id}", response_model=PutResponseBaseSch[PaymentSch])
+@router.put("/void/detail/{id}", response_model=GetResponseBaseSch[PaymentSch])
 async def void_detail(
                 id:UUID,
                 sch:PaymentVoidExtSch,
