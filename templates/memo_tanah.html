@@ -230,7 +230,10 @@
         </tr>
         {% for item5 in data_payment %}
         <tr>
-          <td>{{item5.payment_description}}</td>
+          <td>
+            {{item5.no}}. {{item5.payment_method}} Senilai Rp {{item5.amount}},-
+            a.n {{item5.pay_to}}
+          </td>
         </tr>
         {% endfor %}
         <tr>

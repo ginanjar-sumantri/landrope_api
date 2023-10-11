@@ -63,6 +63,7 @@ async def create(
 
             bundle_sch = BundleHdCreateSch(planing_id=planing_id)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
+            bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         
         kjb_dt_update.bundle_hd_id = bundle.id
         
