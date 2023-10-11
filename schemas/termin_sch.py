@@ -16,11 +16,13 @@ class TerminSch(TerminFullBase):
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     total_amount:Optional[Decimal] = Field(alias="total_amount")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    notaris_name:str|None = Field(alias="notaris_name")
 
 class TerminByIdSch(TerminFullBase):
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
+    notaris_name:str|None = Field(alias="notaris_name")
     invoices:list[InvoiceSch]
 
 @optional

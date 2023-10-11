@@ -8,10 +8,7 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models.tahap_model import Tahap
-    from models.kjb_model import KjbHd
-    from models.worker_model import Worker
-    from models.invoice_model import Invoice
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -24,6 +21,7 @@ class TerminBase(SQLModel):
     tanggal_rencana_transaksi:Optional[date] = Field(nullable=True) #tanggal rencana transaksi
     tanggal_transaksi:Optional[date] = Field(nullable=True)
     notaris_id:Optional[UUID] = Field(nullable=True)
+    remark:Optional[str] = Field(nullable=True)
 
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
@@ -52,6 +50,13 @@ class Termin(TerminFullBase, table=True):
         }
     )
 
+    notaris:"Notaris" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -74,6 +79,10 @@ class Termin(TerminFullBase, table=True):
     @property
     def utj_amount(self) -> str | None:
         return getattr(getattr(self, 'kjb_hd', None), 'utj_amount', None)
+    
+    @property
+    def notaris_name(self) -> str | None:
+        return getattr(getattr(self, 'notaris', None), 'name', None)
     
     @property
     def total_amount(self) -> Optional[Decimal]:

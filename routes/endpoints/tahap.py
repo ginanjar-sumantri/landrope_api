@@ -101,6 +101,8 @@ async def get_list(
             order_by:str = None, 
             keyword:str = None, 
             filter_query:str = None,
+            project_id:UUID|None = None,
+            ptsk_id:UUID|None = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -126,6 +128,12 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(Tahap, key) == value)
+
+    if project_id:
+        query = query.filter(Project.id == project_id)
+    
+    if ptsk_id:
+        query = query.filter(Ptsk.id == ptsk_id)
 
 
     objs = await crud.tahap.get_multi_paginated(params=params, query=query)

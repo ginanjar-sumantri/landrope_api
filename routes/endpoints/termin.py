@@ -106,6 +106,7 @@ async def get_list(
     jenis_bayars = []
     if is_utj:
         jenis_bayars.append("UTJ")
+        jenis_bayars.append("UTJ_KHUSUS")
     else:
         jenis_bayars.append("DP")
         jenis_bayars.append("LUNAS")

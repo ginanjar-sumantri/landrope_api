@@ -39,6 +39,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                                        .options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk)))
                                                                        .options(selectinload(Bidang.planing)))
                                                                 .options(selectinload(Invoice.payment_details))
+                                                    ).options(selectinload(Termin.notaris)
                                                     )
         
         response = await db_session.execute(query)
