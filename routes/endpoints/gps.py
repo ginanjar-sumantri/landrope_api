@@ -51,9 +51,7 @@ async def create(
         
     new_obj = await crud.gps.create(obj_in=sch, created_by_id=current_worker.id)
 
-    query = select(Gps).where(Gps.id == new_obj.id).options(selectinload(Gps.skpt))
-    new_obj = await crud.gps.get(query=query)
-
+    new_obj = await crud.gps.get_by_id(id=new_obj.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
@@ -115,6 +113,5 @@ async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:U
         )
     
     obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
-    query = select(Gps).where(Gps.id == obj_updated.id).options(selectinload(Gps.skpt))
-    obj_updated = await crud.gps.get(query=query)
+    obj_updated = await crud.gps.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)

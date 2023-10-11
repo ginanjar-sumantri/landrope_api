@@ -1,5 +1,5 @@
 from crud.base_crud import CRUDBase
-from models.gps_model import Gps
+from models import Gps, Skpt
 from schemas.gps_sch import GpsCreateSch, GpsUpdateSch
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
@@ -9,12 +9,30 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from geoalchemy2 import functions
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, selectinload
 from shapely.geometry import shape
 from geoalchemy2.shape import from_shape
 from typing import List
+from uuid import UUID
 
 class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Gps | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Gps).where(Gps.id == id
+                                        ).options(selectinload(Gps.skpt
+                                                            ).options(selectinload(Skpt.ptsk))
+                                        )
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_gps_geometry(self, *, db_session : AsyncSession | None = None) -> List[Gps] | None:
         db_session = db_session or db.session
         query = select(self.model).options(load_only(self.model.id, self.model.geom))
