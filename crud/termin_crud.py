@@ -7,15 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.termin_model import Termin
-from models.invoice_model import Invoice
-from models.tahap_model import Tahap
-from models.bidang_model import Bidang
-from models.skpt_model import Skpt
-from models.kjb_model import KjbHd
-from models.spk_model import Spk
-from models.bidang_model import Bidang
-from models import Planing, Project, Worker
+from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
@@ -33,13 +25,19 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         
         query = select(Termin).where(Termin.id == id).options(selectinload(Termin.tahap)
                                                     ).options(selectinload(Termin.kjb_hd)
-                                                    ).options(selectinload(Termin.invoices)
-                                                                .options(selectinload(Invoice.details))
-                                                                .options(selectinload(Invoice.bidang)
-                                                                       .options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk)))
-                                                                       .options(selectinload(Bidang.planing)))
-                                                                .options(selectinload(Invoice.payment_details))
+                                                    ).options(selectinload(Termin.invoices
+                                                                ).options(selectinload(Invoice.details)
+                                                                ).options(selectinload(Invoice.bidang
+                                                                        ).options(selectinload(Bidang.skpt
+                                                                                            ).options(selectinload(Skpt.ptsk)
+                                                                                            )
+                                                                        ).options(selectinload(Bidang.planing)
+                                                                        )
+                                                                ).options(selectinload(Invoice.payment_details))
                                                     ).options(selectinload(Termin.notaris)
+                                                    ).options(selectinload(Termin.termin_bayars
+                                                                ).options(selectinload(TerminBayar.rekening)
+                                                                        )
                                                     )
         
         response = await db_session.execute(query)

@@ -11,6 +11,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
                                 TerminByIdSch, TerminByIdForPrintOut,
                                 TerminBidangIDSch, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
+from schemas.termin_bayar_sch import TerminBayarCreateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -87,6 +88,11 @@ async def create(
             payload = {"id" : dt.bidang_komponen_biaya_id}
             url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
             GCloudTaskService().create_task(payload=payload, base_url=url)
+    
+    #add termin bayar
+    for termin_bayar in sch.termin_bayars:
+        termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=new_obj.id)
+        await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
     
     await db_session.commit()
     await db_session.refresh(new_obj)

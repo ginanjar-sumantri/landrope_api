@@ -114,53 +114,53 @@ async def bulk(file:UploadFile=File(),
                current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Create bulk or import data"""
-    try:
-        datas = []
-        current_datetime = datetime.now()
-        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+    # try:
+    datas = []
+    current_datetime = datetime.now()
+    geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+    
+    
+    for i, geo_data in geo_dataframe.iterrows():
+        code:str = geo_data['code']
+        name:str = geo_data['name']
+        kota:str = geo_data['kota']
+        kecamatan:str = geo_data['kecamatan']
+        luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
+
+        obj_current = await crud.desa.get_by_name(name=name)
         
+        if obj_current:
+            obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+            sch_update = DesaSch(name=obj_current.name, 
+                    code=obj_current.code,
+                    kecamatan=kecamatan,
+                    kota=kota, 
+                    luas=luas, 
+                    geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
+            
+            await crud.desa.update(obj_current=obj_current, obj_new=sch_update, updated_by_id=current_worker.id)
+            continue
+
+        db_session = db.session
+        code = await generate_code(entity=CodeCounterEnum.Desa, db_session=db_session, with_commit=False)
+
+        sch = Desa(
+                    name=name,
+                    code=code,
+                    kecamatan=kecamatan,
+                    kota=kota, 
+                    luas=luas,
+                    geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
         
-        for i, geo_data in geo_dataframe.iterrows():
-            code:str = geo_data['code']
-            name:str = geo_data['name']
-            kota:str = geo_data['kota']
-            kecamatan:str = geo_data['kecamatan']
-            luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
-
-            obj_current = await crud.desa.get_by_name(name=name)
-            
-            if obj_current:
-                obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-                sch_update = DesaSch(name=obj_current.name, 
-                      code=obj_current.code,
-                      kecamatan=kecamatan,
-                      kota=kota, 
-                      luas=luas, 
-                      geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-                
-                await crud.desa.update(obj_current=obj_current, obj_new=sch_update, updated_by_id=current_worker.id)
-                continue
-
-            db_session = db.session
-            code = await generate_code(entity=CodeCounterEnum.Desa, db_session=db_session, with_commit=False)
-
-            sch = Desa(
-                        name=name,
-                        code=code,
-                        kecamatan=kecamatan,
-                        kota=kota, 
-                        luas=luas,
-                        geom=GeomService.single_geometry_to_wkt(geo_data.geometry))
-            
-            await crud.desa.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
+        await crud.desa.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
             
             # datas.append(sch)
 
         # if len(datas) > 0:    
         #     await crud.desa.create_all(obj_ins=datas)
 
-    except:
-        raise HTTPException(status_code=422, detail="Failed import data")
+    # except:
+    #     raise HTTPException(status_code=422, detail="Failed import data")
     
     return {"result" : status.HTTP_200_OK, "message" : "Successfully upload"}
 

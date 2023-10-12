@@ -13,6 +13,9 @@ import pandas as pd
 import geopandas
 import fiona as fio
 import math
+import shapely
+from shapely import wkb
+import pygeos
 
 T = TypeVar('T')
 
@@ -39,10 +42,16 @@ class GeomService(Generic[T]):
         """Convert buffer file data to geodataframe"""
        
         geo_dataframe = geopandas.GeoDataFrame.from_file(file)
-        newgeo = GeomService.convert_3D_2D(geo_dataframe.geometry)
 
-        if newgeo.__len__() > 0:
-            geo_dataframe.geometry = newgeo
+        # if "3D" in geo_dataframe.geom_type.unique():
+        #     geo_dataframe["geometry"] = geo_dataframe['geometry'].apply(lambda geom: geom.to_2D())
+
+        # newgeo = GeomService.convert_3D_2D(geo_dataframe.geometry)
+
+        # if newgeo.__len__() > 0:
+
+        newgeo = GeomService.drop_z_pygeos(geo_dataframe.geometry)
+        geo_dataframe.geometry = newgeo
 
         return geo_dataframe
     
@@ -67,6 +76,12 @@ class GeomService(Generic[T]):
 
         return polygon
     
+    def drop_z_pygeos(ds):
+        ''' Drop Z coordinates from GeoSeries, returns GeoSeries
+        Requires pygeos to be installed, and such I've added `import pygeos` to check.
+        '''
+        return geopandas.GeoSeries.from_wkb(ds.to_wkb(output_dimension=2))
+    
     def convert_3D_2D(geometry):
         """Takes a GeoSeries of 3D Multi/Polygons (has_z) and returns a list of 2D Multi/Polygons"""
         new_geo = []
@@ -87,6 +102,7 @@ class GeomService(Generic[T]):
                         new_p = Polygon(lines)
                         new_multi_p.append(new_p)
                     new_geo.append(MultiPolygon(new_multi_p))
+
         return new_geo
 
 

@@ -2,13 +2,13 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, PaymentMethodEnum
 from decimal import Decimal
 from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -74,6 +74,13 @@ class Termin(TerminFullBase, table=True):
         }
     )
 
+    termin_bayars:list["TerminBayar"] = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -114,3 +121,41 @@ class Termin(TerminFullBase, table=True):
         array_total = numpy.array([invoice.amount for invoice in self.invoices])
         total = numpy.sum(array_total)
         return total or 0
+    
+class TerminBayarBase(SQLModel):
+    termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
+    payment_method:PaymentMethodEnum = Field(nullable=False)
+    rekening_id:UUID = Field(nullable=False, foreign_key="rekening.id")
+    amount:Decimal = Field(nullable=False, default=0)
+
+class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
+    pass
+
+class TerminBayar(TerminBayarFullBase, table=True):
+    termin:"Termin" = Relationship(
+        back_populates="termin_bayars",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    rekening:"Rekening" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    @property
+    def nama_pemilik_rekening(self) -> str|None:
+        return getattr(getattr(self, "rekening", None), "nama_pemilik_rekening", None)
+    
+    @property
+    def bank_rekening(self) -> str|None:
+        return getattr(getattr(self, "rekening", None), "bank_rekening", None)
+    
+    @property
+    def nomor_rekening(self) -> str|None:
+        return getattr(getattr(self, "rekening", None), "nomor_rekening", None)
+
