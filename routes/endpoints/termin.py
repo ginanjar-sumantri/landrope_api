@@ -32,10 +32,11 @@ from common.enum import JenisBayarEnum, StatusHasilPetaLokasiEnum, SatuanBayarEn
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
+from services.helper_service import HelperService
 from decimal import Decimal
 from services.pdf_service import PdfService
 from jinja2 import Environment, FileSystemLoader
-from datetime import date
+from datetime import date, datetime
 import json
 import numpy
 import roman
@@ -455,6 +456,9 @@ async def printout(id:UUID | str,
         raise IdNotFoundException(Termin, id)
     
     termin_header = TerminByIdForPrintOut(**dict(obj))
+    date_obj = datetime.strptime(str(termin_header.tanggal_transaksi), "%Y-%m-%d")
+    day_of_week = date_obj.strftime("%A")
+    hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
     
     bidangs = []
     list_bidang_id = []
@@ -531,15 +535,9 @@ async def printout(id:UUID | str,
         harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
         harga_aktas.append(harga_akta)
 
-    payments = []
+    termin_bayars = []
     no = 1
-    obj_payments = await crud.payment_detail.get_by_termin_id_for_printout(termin_id=id)
-    for py in obj_payments:
-        payment = PaymentDetailForPrintout(**dict(py))
-        payment.amountExt = "{:,.0f}".format(py.amount)
-        payment.no = no
-        payments.append(payment)
-        no = no + 1
+    obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
 
     # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
     
@@ -551,6 +549,9 @@ async def printout(id:UUID | str,
                                       nomor_tahap=termin_header.nomor_tahap,
                                       project_name=termin_header.project_name,
                                       notaris_name=termin_header.notaris_name,
+                                      manager_name=termin_header.manager_name.upper(),
+                                      sales_name=termin_header.sales_name.upper(),
+                                      mediator=termin_header.mediator.upper(),
                                       data=bidangs,
                                       total_luas_surat=total_luas_surat,
                                       total_luas_ukur=total_luas_ukur,
@@ -562,8 +563,9 @@ async def printout(id:UUID | str,
                                       data_invoice_history=invoices_history,
                                       data_beban_biaya=komponen_biayas,
                                       data_harga_akta=harga_aktas,
-                                      data_payment=payments,
+                                      data_payment=obj_termin_bayar,
                                       tanggal_transaksi=termin_header.tanggal_transaksi,
+                                      hari_transaksi=hari_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
                                       amount="{:,.2f}".format(termin_header.amount)
                                     )

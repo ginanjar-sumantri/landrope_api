@@ -158,4 +158,7 @@ class TerminBayar(TerminBayarFullBase, table=True):
     @property
     def nomor_rekening(self) -> str|None:
         return getattr(getattr(self, "rekening", None), "nomor_rekening", None)
-
+    
+    @property
+    def amountExt(self) -> str|None:
+        return "{:,.0f}".format(self.amount or 0)

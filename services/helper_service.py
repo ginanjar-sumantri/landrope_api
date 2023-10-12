@@ -275,3 +275,21 @@ class HelperService:
             return "Desember"
         else:
             return ""
+        
+    def ToDayName(self, day:str = None) -> str | None:
+        if day == "Monday":
+            return "SENIN"
+        elif day == "Tuesday":
+            return "SELASA"
+        elif day == "Wednesday":
+            return "RABU"
+        elif day == "Thursday":
+            return "KAMIS"
+        elif day == "Friday":
+            return "JUMAT"
+        elif day == "Saturday":
+            return "SABTU"
+        elif day == "Sunday":
+            return "MINGGU"
+        else:
+            return ""

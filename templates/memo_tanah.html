@@ -28,7 +28,7 @@
       }
 
       .sub-header td {
-        font-size: 12px;
+        font-size: 15px;
       }
 
       /* CSS untuk content */
@@ -40,31 +40,31 @@
       }
 
       .content p {
-        font-size: 12px;
+        font-size: 15px;
       }
 
       .content th {
         border: 1px solid;
-        font-size: 12px;
+        font-size: 15px;
         background-color: #b0b0b0;
       }
 
       .content td {
         border: 1px solid;
-        font-size: 11px;
+        font-size: 14px;
       }
 
       /* CSS untuk footer */
       .footer {
         align-self: center;
         padding-top: 50px;
-        font-size: 12px;
+        font-size: 16px;
         margin: 0 auto;
         width: 100%;
       }
 
       .footer td {
-        font-size: 11px;
+        font-size: 16px;
       }
 
       .spasi-banyak {
@@ -76,10 +76,10 @@
   <body>
     <div class="header">
       <div class="sub-header">
-        <table widht="100%">
+        <table width="100%">
           <tr>
             <td valign="top" align="left">
-              <table widht="50%">
+              <table width="50%">
                 <tr>
                   <td>No.</td>
                   <td>&emsp;&emsp;&emsp;&emsp;</td>
@@ -92,7 +92,7 @@
               </table>
             </td>
             <td valign="top" align="right">
-              <table widht="50%">
+              <table width="50%">
                 <tr>
                   <td>Jakarta, {{created_at}}</td>
                 </tr>
@@ -175,6 +175,7 @@
         <tr>
           <td colspan="14">&nbsp;</td>
         </tr>
+        {% if data_beban_biaya|length > 0 %}
         <tr>
           <td>&nbsp;</td>
           <th>ID Bidang</th>
@@ -183,7 +184,7 @@
           <td colspan="8">&nbsp;</td>
           <th>Nominal</th>
         </tr>
-        {% if data_beban_biaya|length > 0 %} {% for item3 in data_beban_biaya %}
+        {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
           <td>{{item3.id_bidang}}</td>
@@ -207,58 +208,78 @@
       </table>
     </div>
     <div class="footer">
-      <table>
+      <table width="100%">
         <tr>
-          <td>Note :</td>
-        </tr>
-        <tr>
-          <td>> KESEPAKATAN ADA TTD PAK ALI</td>
-        </tr>
-        {% for item4 in data_harga_akta %}
-        <tr>
-          <td>Nilai akte Rp {{item4.harga_aktaExt}}, -m2</td>
-        </tr>
-        {% endfor %}
-        <tr>
-          <td>
-            Rencana transaksi hari {{tanggal_transaksi}} di Kantor
-            {{notaris_name}}
+          <td width="50%">
+            <table>
+              <tr>
+                <td>Note :</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold">> KESEPAKATAN ADA TTD PAK ALI</td>
+              </tr>
+              {% for item4 in data_harga_akta %}
+              <tr>
+                <td>Nilai akte Rp {{item4.harga_aktaExt}}, -m2</td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td>
+                  Rencana transaksi hari {{hari_transaksi}},
+                  {{tanggal_transaksi}} di Kantor {{notaris_name}}
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold">Tolong disiapkan :</td>
+              </tr>
+              {% for item5 in data_payment %}
+              <tr>
+                <td style="font-weight: bold; font-size: 19px">
+                  {{ loop.index }}. {{item5.payment_method}} Senilai Rp
+                  {{item5.amountExt}},- a.n {{item5.nama_pemilik_rekening}},
+                  {{item5.bank_rekening}} {{item5.nomor_rekening}}
+                </td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td>
+                  Bilamana BG dan CEK sudah disiapkan, tolong agar dapat
+                  menghubungi Lena di 566 7272
+                </td>
+              </tr>
+              <tr>
+                <td>Terima kasih atas kerjasamanya</td>
+              </tr>
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>Hormat Kami,</td>
+              </tr>
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>Merry</td>
+              </tr>
+              <tr>
+                <td>Cc : Bapak Denny, Ibu Lia, Ibu Lily</td>
+              </tr>
+            </table>
           </td>
-        </tr>
-        <tr>
-          <td>Tolong disiapkan :</td>
-        </tr>
-        {% for item5 in data_payment %}
-        <tr>
-          <td>
-            {{item5.no}}. {{item5.payment_method}} Senilai Rp
-            {{item5.amountExt}},- a.n {{item5.pay_to}}
+          <td valign="Top" align="right" width="50%">
+            <table>
+              <tr>
+                <td>MNG : {{manager_name}}</td>
+              </tr>
+              <tr>
+                <td>SALES : {{sales_name}}</td>
+              </tr>
+              <tr>
+                <td>MED : {{mediator}}</td>
+              </tr>
+            </table>
           </td>
-        </tr>
-        {% endfor %}
-        <tr>
-          <td>
-            Bilamana BG dan CEK sudah disiapkan, tolong agar dapat menghubungi
-            Lena di 566 7272
-          </td>
-        </tr>
-        <tr>
-          <td>Terima kasih atas kerjasamanya</td>
-        </tr>
-        <tr>
-          <td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td>Hormat Kami,</td>
-        </tr>
-        <tr>
-          <td>&nbsp;</td>
-        </tr>
-        <tr>
-          <td>Merry</td>
-        </tr>
-        <tr>
-          <td>Cc : Bapak Denny, Ibu Lia, Ibu Lily</td>
         </tr>
       </table>
     </div>
