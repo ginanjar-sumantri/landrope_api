@@ -42,6 +42,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                     ).options(selectinload(Termin.termin_bayars
                                                                 ).options(selectinload(TerminBayar.rekening)
                                                                         )
+                                                    ).options(selectinload(Termin.manager)
+                                                    ).options(selectinload(Termin.sales)
                                                     )
         
         response = await db_session.execute(query)

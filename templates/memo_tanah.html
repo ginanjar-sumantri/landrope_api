@@ -183,7 +183,7 @@
           <td colspan="8">&nbsp;</td>
           <th>Nominal</th>
         </tr>
-        {% if len(data_beban_biaya) > 0 %} {% for item3 in data_beban_biaya %}
+        {% if data_beban_biaya|length > 0 %} {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
           <td>{{item3.id_bidang}}</td>
