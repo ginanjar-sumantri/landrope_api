@@ -183,7 +183,7 @@
           <td colspan="8">&nbsp;</td>
           <th>Nominal</th>
         </tr>
-        {% for item3 in data_beban_biaya %}
+        {% if len(data_beban_biaya) > 0 %} {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
           <td>{{item3.id_bidang}}</td>
@@ -192,7 +192,7 @@
           <td colspan="8">&nbsp;</td>
           <td align="right">{{item3.amountExt}}</td>
         </tr>
-        {% endfor %}
+        {% endfor %} {% endif %}
         <tr>
           <td colspan="14">&nbsp;</td>
         </tr>

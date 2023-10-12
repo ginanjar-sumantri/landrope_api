@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar
+from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
                                 TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOut,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
@@ -33,7 +33,11 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                                                             )
                                                                         ).options(selectinload(Bidang.planing)
                                                                         )
-                                                                ).options(selectinload(Invoice.payment_details))
+                                                                ).options(selectinload(Invoice.payment_details
+                                                                        ).options(selectinload(PaymentDetail.payment
+                                                                                            ).options(selectinload(Payment.giro))
+                                                                        )
+                                                                )
                                                     ).options(selectinload(Termin.notaris)
                                                     ).options(selectinload(Termin.termin_bayars
                                                                 ).options(selectinload(TerminBayar.rekening)
@@ -62,15 +66,22 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
                     t.nomor_tahap,
                     SUM(i.amount) as amount,
-                    pr.name as project_name
+                    pr.name as project_name,
+                    Coalesce(tr.mediator, '') as mediator,
+                    Coalesce(mng.name, '') as manager_name,
+                    Coalesce(sls.name, '') as sales_name,
+                    Coalesce(nt.name, '') as notaris_name
                     from termin tr
                     inner join invoice i on i.termin_id = tr.id
                     inner join bidang b on b.id = i.bidang_id
                     left outer join tahap t on t.id = tr.tahap_id
                     left outer join planing pl on pl.id = t.planing_id
                     left outer join project pr on pr.id = pl.project_id
+                    left outer join manager mng on mng.id = tr.manager_id
+                    left outer join sales sls on sls.id = tr.sales_id
+                    left outer join notaris nt on nt.id = tr.notaris_id
                     where tr.id = '{str(id)}'
-                    group by tr.id, t.id, pr.id
+                    group by tr.id, t.id, pr.id, mng.id, sls.id, nt.id
                     """)
 
         response = await db_session.execute(query)

@@ -102,7 +102,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         b.group,
                         case
                             when b.skpt_id is Null then ds.name || '-' || pr.name || '-' || pn.name || ' (PENAMPUNG)'
-                            else ds.name || '-' || pr.name || '-' || pt.name || ' (' || sk.status || ')'
+                            else ds.name || '-' || pr.name || '-' || pt.name || ' (' || Replace(sk.status,  '_', ' ') || ')'
                         end as lokasi,
                         case
                             when b.skpt_id is Null then pn.name
@@ -111,7 +111,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         sk.status as status_il,
                         pr.name as project_name,
                         ds.name as desa_name,
-                        pm.name as pemilik_name,
+                        COALESCE(pm.name, '') as pemilik_name,
                         b.alashak,
                         COALESCE(b.luas_surat,0) as luas_surat,
                         COALESCE(b.luas_ukur,0) as luas_ukur,
@@ -119,7 +119,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         COALESCE(b.luas_nett,0) as luas_nett,
                         COALESCE(b.luas_pbt_perorangan,0) as luas_pbt_perorangan,
                         COALESCE(b.luas_bayar,0) as luas_bayar,
-                        b.no_peta,
+                        COALESCE(b.no_peta, '') as no_peta,
                         COALESCE(b.harga_transaksi,0) as harga_transaksi,
                         (b.harga_transaksi * b.luas_bayar) as total_harga
                         from invoice i
