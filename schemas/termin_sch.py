@@ -1,6 +1,6 @@
 from models.termin_model import Termin, TerminBase, TerminFullBase
 from schemas.invoice_sch import InvoiceExtSch, InvoiceSch
-from schemas.termin_bayar_sch import TerminBayarExtSch
+from schemas.termin_bayar_sch import TerminBayarExtSch, TerminBayarSch
 from common.partial import optional
 from common.enum import JenisBayarEnum, SatuanBayarEnum
 from sqlmodel import SQLModel, Field
@@ -25,6 +25,7 @@ class TerminByIdSch(TerminFullBase):
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     notaris_name:str|None = Field(alias="notaris_name")
+    termin_bayars:list[TerminBayarSch]
     invoices:list[InvoiceSch]
 
 @optional

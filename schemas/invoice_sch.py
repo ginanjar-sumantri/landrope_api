@@ -30,8 +30,8 @@ class InvoiceSch(InvoiceFullBase):
     code_termin:Optional[str] = Field(alias="code_termin")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
 
-    # payment_details:list[PaymentDetailSch]
-    # details:list[InvoiceDetailSch]
+    payment_details:list[PaymentDetailSch]
+    details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class InvoiceByIdSch(InvoiceFullBase):

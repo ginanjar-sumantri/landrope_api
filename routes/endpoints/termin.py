@@ -4,14 +4,14 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
 import crud
-from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang
+from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
                                 TerminBidangIDSch, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
-from schemas.termin_bayar_sch import TerminBayarCreateSch
+from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
@@ -150,7 +150,8 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[TerminByIdSch])
-async def get_by_id(id:UUID):
+async def get_by_id(id:UUID,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Get an object by id"""
     
@@ -180,8 +181,9 @@ async def update(
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
-    query_inv = Invoice.__table__.delete().where(and_(~Invoice.id.in_(list_id_invoice), Invoice.termin_id == obj_updated.id))
-    await crud.invoice.delete_multiple_where_not_in(query=query_inv, db_session=db_session, with_commit=False)
+    if len(list_id_invoice) > 0:
+        query_inv = Invoice.__table__.delete().where(and_(~Invoice.id.in_(list_id_invoice), Invoice.termin_id == obj_updated.id))
+        await crud.invoice.delete_multiple_where_not_in(query=query_inv, db_session=db_session, with_commit=False)
 
     for invoice in sch.invoices:
         if invoice.id:
@@ -230,6 +232,21 @@ async def update(
                 payload = {"id" : dt.bidang_komponen_biaya_id}
                 url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
                 GCloudTaskService().create_task(payload=payload, base_url=url)
+    
+    list_id_termin_bayar = [bayar.id for bayar in sch.termin_bayars if bayar.id != None]
+    if len(list_id_termin_bayar) > 0:
+        query_bayar = TerminBayar.__table__.delete().where(and_(~TerminBayar.id.in_(list_id_termin_bayar), TerminBayar.termin_id == obj_updated.id))
+        await crud.termin_bayar.delete_multiple_where_not_in(query=query_bayar, db_session=db_session, with_commit=False)
+
+    for termin_bayar in sch.termin_bayars:
+        if termin_bayar.id:
+            termin_bayar_current = await crud.termin_bayar.get(id=termin_bayar.id)
+            termin_bayar_updated = TerminBayarUpdateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
+            await crud.termin_bayar.update(obj_current=termin_bayar_current, obj_new=termin_bayar_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        else:
+            termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
+            await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
