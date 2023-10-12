@@ -19,12 +19,16 @@ class TerminSch(TerminFullBase):
     total_amount:Optional[Decimal] = Field(alias="total_amount")
     updated_by_name:str|None = Field(alias="updated_by_name")
     notaris_name:str|None = Field(alias="notaris_name")
+    manager_name:str|None = Field(alias="manager_name")
+    sales_name:str|None = Field(alias="sales_name")
 
 class TerminByIdSch(TerminFullBase):
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     notaris_name:str|None = Field(alias="notaris_name")
+    manager_name:str|None = Field(alias="manager_name")
+    sales_name:str|None = Field(alias="sales_name")
     termin_bayars:list[TerminBayarSch]
     invoices:list[InvoiceSch]
 
@@ -43,6 +47,9 @@ class TerminByIdForPrintOut(SQLModel):
     project_name:Optional[str]
     tanggal_transaksi:Optional[date]
     jenis_bayar:Optional[str]
+    notaris_name:str|None 
+    manager_name:str|None 
+    sales_name:str|None 
 
 class TerminInvoiceforPrintOut(SQLModel):
     id_bidang:Optional[UUID]
