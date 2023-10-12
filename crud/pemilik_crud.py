@@ -10,7 +10,7 @@ from sqlmodel.sql.expression import Select
 
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.pemilik_model import Pemilik, Kontak, Rekening
+from models import Pemilik, Kontak, Rekening, Bidang
 from schemas.pemilik_sch import PemilikCreateSch, PemilikUpdateSch
 from schemas.kontak_sch import KontakCreateSch, KontakUpdateSch
 from schemas.rekening_sch import RekeningCreateSch, RekeningUpdateSch
@@ -85,6 +85,23 @@ class CRUDRekening(CRUDBase[Rekening, RekeningCreateSch, RekeningUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+
+    
+    async def get_multi_by_bidang_ids(self, 
+                        list_ids: List[UUID | str], 
+                        db_session : AsyncSession | None = None
+                        ) -> List[Rekening]:
+        
+        db_session = db_session or db.session
+
+        query = select(Rekening)
+        query = query.join(Pemilik, Pemilik.id == Rekening.pemilik_id)
+        query = query.join(Bidang, Bidang.pemilik_id == Pemilik.id)
+        query = query.filter(Bidang.id.in_(list_ids))
+        query = query.distinct()
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 
 rekening = CRUDRekening(Rekening)
 

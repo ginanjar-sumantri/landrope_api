@@ -9,7 +9,7 @@ from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
-                                TerminInvoiceforPrintOut, TerminInvoiceHistoryforPrintOutExt,
+                                TerminBidangIDSch, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
@@ -20,6 +20,9 @@ from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.kjb_harga_sch import KjbHargaAktaSch
 from schemas.payment_detail_sch import PaymentDetailForPrintout
+from schemas.marketing_sch import ManagerSrcSch, SalesSrcSch
+from schemas.rekening_sch import RekeningSch
+from schemas.notaris_sch import NotarisSrcSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -305,6 +308,58 @@ async def get_list_komponen_biaya_by_bidang_id(
     """Gets a paginated list objects"""
 
     objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=id)
+
+    return create_response(data=objs)
+
+@router.post("/search/notaris", response_model=GetResponseBaseSch[list[NotarisSrcSch]])
+async def get_list_manager(
+                sch:TerminBidangIDSch,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    list_id = [id.bidang_id for id in sch.bidangs]
+
+    objs = await crud.notaris.get_multi_by_bidang_ids(list_ids=list_id)
+
+    return create_response(data=objs)
+
+@router.post("/search/manager", response_model=GetResponseBaseSch[list[ManagerSrcSch]])
+async def get_list_manager(
+                sch:TerminBidangIDSch,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    list_id = [id.bidang_id for id in sch.bidangs]
+
+    objs = await crud.manager.get_multi_by_bidang_ids(list_ids=list_id)
+
+    return create_response(data=objs)
+
+@router.post("/search/sales", response_model=GetResponseBaseSch[list[SalesSrcSch]])
+async def get_list_sales(
+                sch:TerminBidangIDSch,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    list_id = [id.bidang_id for id in sch.bidangs]
+
+    objs = await crud.sales.get_multi_by_bidang_ids(list_ids=list_id)
+
+    return create_response(data=objs)
+
+@router.post("/search/rekening", response_model=GetResponseBaseSch[list[RekeningSch]])
+async def get_list_rekening(
+                sch:TerminBidangIDSch,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    list_id = [id.bidang_id for id in sch.bidangs]
+
+    objs = await crud.rekening.get_multi_by_bidang_ids(list_ids=list_id)
 
     return create_response(data=objs)
 

@@ -74,3 +74,9 @@ class TerminBebanBiayaForPrintOut(SQLModel):
 class TerminBebanBiayaForPrintOutExt(TerminBebanBiayaForPrintOut):
     amountExt:Optional[str]
 
+class BidangIDOfTerminSch(SQLModel):
+    bidang_id:UUID
+
+class TerminBidangIDSch(SQLModel):
+    bidangs:list[BidangIDOfTerminSch]
+

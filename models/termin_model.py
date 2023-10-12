@@ -8,7 +8,7 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -21,6 +21,9 @@ class TerminBase(SQLModel):
     tanggal_rencana_transaksi:Optional[date] = Field(nullable=True) #tanggal rencana transaksi
     tanggal_transaksi:Optional[date] = Field(nullable=True)
     notaris_id:Optional[UUID] = Field(nullable=True, foreign_key="notaris.id")
+    manager_id:Optional[UUID] = Field(nullable=True, foreign_key="manager.id")
+    sales_id:Optional[UUID] = Field(nullable=True, foreign_key="sales.id")
+    mediator:Optional[str] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
 
 
@@ -57,6 +60,20 @@ class Termin(TerminFullBase, table=True):
         }
     )
 
+    manager:"Manager" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    sales:"Sales" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -83,6 +100,14 @@ class Termin(TerminFullBase, table=True):
     @property
     def notaris_name(self) -> str | None:
         return getattr(getattr(self, 'notaris', None), 'name', None)
+
+    @property
+    def manager_name(self) -> str | None:
+        return getattr(getattr(self, 'manager', None), 'name', None)
+    
+    @property
+    def sales_name(self) -> str | None:
+        return getattr(getattr(self, 'sales', None), 'name', None)
     
     @property
     def total_amount(self) -> Optional[Decimal]:
