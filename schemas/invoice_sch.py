@@ -108,6 +108,8 @@ class InvoiceForPrintOutExt(InvoiceForPrintOut):
     total_hargaExt:Optional[str]
     luas_suratExt:Optional[str]
     luas_ukurExt:Optional[str]
+    luas_gu_peroranganExt:Optional[str]
     luas_nettExt:Optional[str]
+    luas_pbt_peroranganExt:Optional[str]
     luas_bayarExt:Optional[str]
 

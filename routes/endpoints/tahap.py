@@ -245,8 +245,7 @@ async def get_list(
                                 Bidang.status.in_(status_),
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
                                 Bidang.hasil_peta_lokasi != None,
-                                or_(Bidang.planing_id == planing_id,
-                                    Bidang.sub_project_id == sub_project_id),
+                                Bidang.planing_id == planing_id,
                                 or_(
                                     TahapDetail.bidang == None,
                                     TahapDetail.is_void == True),
@@ -255,6 +254,9 @@ async def get_list(
                                     Bidang.penampung_id == ptsk_id
                                 )
                             ))  
+    
+    if sub_project_id:
+        query = query.filter(Bidang.sub_project_id == sub_project_id)
     
     if keyword:
         query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
