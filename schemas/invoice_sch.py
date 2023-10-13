@@ -2,7 +2,7 @@ from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
 from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
 from schemas.payment_detail_sch import PaymentDetailSch
 from common.partial import optional
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, JenisBidangEnum
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
@@ -83,6 +83,7 @@ class InvoiceForPrintOut(SQLModel):
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     group:Optional[str]
+    jenis_bidang:Optional[JenisBidangEnum]
     lokasi:Optional[str]
     ptsk_name:Optional[str]
     status_il:Optional[str]

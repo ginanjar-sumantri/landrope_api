@@ -582,7 +582,7 @@ async def printout(id:UUID | str,
 
     data =  []
     no:int = 1
-    invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id)
+    invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id, jenis_bayar=termin_header.jenis_bayar)
     for inv in invoices:
         invoice = InvoiceForPrintOutUtj(**dict(inv))
         invoice.amountExt = "{:,.2f}".format(invoice.amount)

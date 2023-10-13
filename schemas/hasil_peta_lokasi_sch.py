@@ -32,6 +32,7 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     planing_name:str|None = Field(alias="planing_name")
     project_id:UUID|None = Field(alias="project_id")
     project_name:str|None = Field(alias="project_name")
+    sub_project_name:str|None = Field(alias="sub_project_name")
     sub_project_exists:bool|None = Field(alias="sub_project_exists")
     desa_name:str|None = Field(alias="desa_name")
     ptsk_name:str|None = Field(alias="ptsk_name")

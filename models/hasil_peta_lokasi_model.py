@@ -116,6 +116,10 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
         return getattr(getattr(self, 'planing', None), 'name', None)
     
     @property
+    def sub_project_name(self) -> str | None:
+        return getattr(getattr(self, 'sub_project', None), 'name', None)
+    
+    @property
     def sub_project_exists(self) -> bool | None:
         if self.sub_project:
             return True

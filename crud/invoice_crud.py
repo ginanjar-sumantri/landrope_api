@@ -50,6 +50,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
     async def get_invoice_by_termin_id_for_printout_utj(self, 
                                             *, 
                                             termin_id: UUID | str, 
+                                            jenis_bayar:str,
                                             db_session: AsyncSession | None = None
                                             ) -> List[InvoiceForPrintOutUtj] | None:
             db_session = db_session or db.session
@@ -80,7 +81,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         left outer join ptsk pt on pt.id = sk.ptsk_id
                         left outer join ptsk pn on pn.id = b.penampung_id
                         left outer join pemilik pm on pm.id = b.pemilik_id
-                        where tr.jenis_bayar = 'UTJ'
+                        where tr.jenis_bayar = '{jenis_bayar}'
                         and i.is_void != true
                         and tr.id = '{str(termin_id)}'
                         """)
@@ -100,6 +101,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         b.id as bidang_id,
                         b.id_bidang,
                         b.group,
+                        b.jenis_bidang,
                         case
                             when b.skpt_id is Null then ds.name || '-' || pr.name || '-' || pn.name || ' (PENAMPUNG)'
                             else ds.name || '-' || pr.name || '-' || pt.name || ' (' || Replace(sk.status,  '_', ' ') || ')'
