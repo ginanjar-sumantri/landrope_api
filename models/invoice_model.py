@@ -112,6 +112,10 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
     
     @property
+    def spk_amount(self) -> Decimal | None:
+        return getattr(getattr(self, "spk", None), "spk_amount", None)
+    
+    @property
     def invoice_outstanding(self) -> Decimal | None:
         total_payment:Decimal = 0
         if len(self.payment_details) > 0:

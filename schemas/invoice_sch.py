@@ -29,6 +29,7 @@ class InvoiceSch(InvoiceFullBase):
     nomor_memo:Optional[str] = Field(alias="nomor_memo")
     code_termin:Optional[str] = Field(alias="code_termin")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
+    spk_amount:Optional[Decimal] = Field(alias="spk_amount")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]

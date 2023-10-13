@@ -33,6 +33,7 @@ class BidangKomponenBiayaBebanPenjualSch(SQLModel):
     luas_bayar:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
     komponen_id:Optional[UUID]
+    beban_pembeli:Optional[bool]
     name:Optional[str]
     satuan_harga:Optional[SatuanHargaEnum]
     satuan_bayar:Optional[SatuanBayarEnum]

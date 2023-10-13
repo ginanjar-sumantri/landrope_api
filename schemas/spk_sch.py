@@ -86,7 +86,6 @@ class SpkForTerminSch(SQLModel):
     spk_id:Optional[UUID]
     spk_code:Optional[str]
     spk_amount:Optional[Decimal]
-    spk_nilai:Optional[Decimal]
     spk_satuan_bayar:Optional[str]
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]

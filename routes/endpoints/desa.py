@@ -127,7 +127,7 @@ async def bulk(file:UploadFile=File(),
         kecamatan:str = geo_data['kecamatan']
         luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
-        obj_current = await crud.desa.get_by_name(name=name)
+        obj_current = await crud.desa.get_by_administrasi(name=name, kota=kota, kecamatan=kecamatan)
         
         if obj_current:
             obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))

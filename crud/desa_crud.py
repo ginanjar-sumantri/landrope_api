@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlalchemy import exc
-from sqlmodel import select, and_
+from sqlmodel import select, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
 from models.desa_model import Desa
@@ -35,6 +35,19 @@ class CRUDDesa(CRUDBase[Desa, DesaCreateSch, DesaUpdateSch]):
 
         response =  await db_session.execute(query)
         return response.fetchall()
+    
+    async def get_by_administrasi(
+        self, *, name: str, kota: str, kecamatan: str, db_session: AsyncSession | None = None
+    ) -> Desa:
+        db_session = db_session or db.session
+        query = select(self.model).where()
+        query = query.filter(func.lower(func.trim(func.replace(self.model.name, ' ', ''))) == name.strip().lower().replace(' ', ''))
+        query = query.filter(func.lower(func.trim(func.replace(self.model.kota, ' ', ''))) == kota.strip().lower().replace(' ', ''))
+        query = query.filter(func.lower(func.trim(func.replace(self.model.kecamatan, ' ', ''))) == kecamatan.strip().lower().replace(' ', ''))
+
+
+        obj = await db_session.execute(query)
+        return obj.scalar_one_or_none()
 
     
 desa = CRUDDesa(Desa)

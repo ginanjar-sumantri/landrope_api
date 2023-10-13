@@ -37,6 +37,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                                         ).options(selectinload(PaymentDetail.payment
                                                                                             ).options(selectinload(Payment.giro))
                                                                         )
+                                                                ).options(selectinload(Invoice.spk)
                                                                 )
                                                     ).options(selectinload(Termin.notaris)
                                                     ).options(selectinload(Termin.termin_bayars
