@@ -292,7 +292,7 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
     kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload.kjb_dt_id)
     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
-    kjb_harga_current = await crud.kjb_harga.get_harga_by_id_for_cloud(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=kjb_dt_current.jenis_alashak)
+    # kjb_harga_current = await crud.kjb_harga.get_harga_by_id_for_cloud(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=kjb_dt_current.jenis_alashak)
     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
     draft = await crud.draft.get(id=payload.draft_id)
 
@@ -315,6 +315,7 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
         pemilik_id=hasil_peta_lokasi.pemilik_id,
         luas_surat=hasil_peta_lokasi.luas_surat,
         planing_id=hasil_peta_lokasi.planing_id,
+        sub_project_id=hasil_peta_lokasi.sub_project_id,
         skpt_id=hasil_peta_lokasi.skpt_id,
         group=kjb_hd_current.nama_group,
         jenis_alashak=kjb_dt_current.jenis_alashak,
@@ -332,8 +333,8 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
         luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
         bundle_hd_id=kjb_dt_current.bundle_hd_id,
-        harga_akta=kjb_harga_current.harga_akta,
-        harga_transaksi=kjb_harga_current.harga_transaksi)
+        harga_akta=kjb_dt_current.harga_akta,
+        harga_transaksi=kjb_dt_current.harga_transaksi)
     
     await crud.bidang.update(obj_current=bidang_current, 
                             obj_new=bidang_updated, 

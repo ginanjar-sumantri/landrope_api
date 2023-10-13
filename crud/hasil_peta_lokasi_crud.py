@@ -35,7 +35,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                                                             ).options(selectinload(Planing.desa))
                                                     ).options(selectinload(HasilPetaLokasi.skpt
                                                                             ).options(selectinload(Skpt.ptsk))
-                                                    ).options(selectinload(HasilPetaLokasi.pemilik))
+                                                    ).options(selectinload(HasilPetaLokasi.pemilik)
+                                                    ).options(selectinload(HasilPetaLokasi.sub_project))
                                                     
 
         response = await db_session.execute(query)
@@ -86,6 +87,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                     pemilik_id,
                     luas_surat,
                     planing_id,
+                    sub_project_id,
                     skpt_id,
                     luas_ukur,
                     luas_nett,

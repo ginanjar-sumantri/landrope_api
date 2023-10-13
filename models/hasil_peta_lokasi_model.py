@@ -7,21 +7,14 @@ from decimal import Decimal
 from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum
 
 if TYPE_CHECKING:
-    from models.bidang_model import Bidang
-    from models.kjb_model import KjbDt
-    from models.request_peta_lokasi_model import RequestPetaLokasi
-    from models.planing_model import Planing
-    from models.ptsk_model import Ptsk
-    from models.skpt_model import Skpt
-    from models.pemilik_model import Pemilik
-    from models.worker_model import Worker
-    from models.bidang_overlap_model import BidangOverlap
+    from models import Bidang, KjbDt, Planing, RequestPetaLokasi, Skpt, Pemilik, Worker, BidangOverlap, SubProject
 
 class HasilPetaLokasiBase(SQLModel):
     bidang_id:UUID | None = Field(nullable=True, foreign_key="bidang.id")
     kjb_dt_id:UUID = Field(nullable=False, foreign_key="kjb_dt.id")
     request_peta_lokasi_id:UUID = Field(nullable=False, foreign_key="request_peta_lokasi.id")
     planing_id:UUID = Field(nullable=False, foreign_key="planing.id")
+    sub_project_id:UUID | None = Field(nullable=True, foreign_key="sub_project.id")
     skpt_id:UUID = Field(nullable=False, foreign_key="skpt.id")
     no_peta:str = Field(nullable=False)
     pemilik_id:UUID = Field(nullable=False, foreign_key="pemilik.id")
@@ -77,7 +70,12 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                                             {
                                                 "lazy" : "select"
                                             })
-    
+    sub_project: "SubProject" = Relationship(
+                        sa_relationship_kwargs=
+                                            {
+                                                "lazy" : "select"
+                                            })
+
     skpt: "Skpt" = Relationship(
                         sa_relationship_kwargs=
                                             {
@@ -118,6 +116,17 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
         return getattr(getattr(self, 'planing', None), 'name', None)
     
     @property
+    def sub_project_exists(self) -> bool | None:
+        if self.sub_project:
+            return True
+        
+        return False
+    
+    @property
+    def project_id(self) -> UUID | None:
+        return getattr(getattr(self, 'planing', None), 'project_id', None)
+    
+    @property
     def project_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'planing', None), 'project', None), 'name', None)
     
@@ -140,6 +149,8 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     @property
     def pemilik_name(self) -> str | None:
         return getattr(getattr(self, 'pemilik', None), 'name', None)
+    
+    
     
     ##########################################################
 

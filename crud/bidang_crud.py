@@ -59,10 +59,18 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
            
            db_session = db_session or db.session
 
-           query = select(Bidang).where(Bidang.id == id).options(selectinload(Bidang.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
-                                                        ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+           query = select(Bidang).where(Bidang.id == id).options(selectinload(Bidang.planing
+                                                                            ).options(selectinload(Planing.project)
+                                                                            ).options(selectinload(Planing.desa)
+                                                                            )
+                                                        ).options(selectinload(Bidang.skpt
+                                                                            ).options(selectinload(Skpt.ptsk))
                                                         ).options(selectinload(Bidang.overlaps)
-                                                        ).options(selectinload(Bidang.sub_project))
+                                                        ).options(selectinload(Bidang.sub_project)
+                                                        ).options(selectinload(Bidang.hasil_peta_lokasi
+                                                                            ).options(selectinload(HasilPetaLokasi.kjb_dt)
+                                                                            )
+                                                        )
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()

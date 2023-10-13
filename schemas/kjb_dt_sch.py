@@ -62,4 +62,6 @@ class KjbDtForCloud(SQLModel):
     jenis_alashak:Optional[JenisAlashakEnum]
     jenis_surat_id:Optional[UUID]
     alashak:Optional[str]
+    harga_akta:Optional[Decimal]
+    harga_transaksi:Optional[Decimal]
     bundle_hd_id:Optional[UUID]

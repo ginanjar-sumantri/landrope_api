@@ -48,8 +48,8 @@ class BidangBase(SQLModel):
     luas_pbt_perorangan:Optional[Decimal] = Field(nullable=True)
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
     luas_bayar:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
-    harga_akta:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
-    harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True, default=0)
+    harga_akta:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
 
@@ -262,6 +262,15 @@ class Bidang(BidangFullBase, table=True):
             return ""
         
         return self.notaris.name
+    
+    @property
+    def kjb_harga_akta(self) -> str:
+        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_akta", None)
+    
+    @property
+    def kjb_harga_transaksi(self) -> str:
+        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_transaksi", None)
+
     
     @property
     def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:

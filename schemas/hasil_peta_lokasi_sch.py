@@ -30,7 +30,9 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     alashak_bidang:str|None = Field(alias="alashak_bidang")
     alashak_kjb_dt:str|None = Field(alias="alashak_kjb_dt")
     planing_name:str|None = Field(alias="planing_name")
+    project_id:UUID|None = Field(alias="project_id")
     project_name:str|None = Field(alias="project_name")
+    sub_project_exists:bool|None = Field(alias="sub_project_exists")
     desa_name:str|None = Field(alias="desa_name")
     ptsk_name:str|None = Field(alias="ptsk_name")
     no_sk:str|None = Field(alias="no_sk")
@@ -62,6 +64,7 @@ class HasilPetaLokasiUpdateCloud(SQLModel):
     pemilik_id:Optional[UUID]
     luas_surat:Optional[Decimal]
     planing_id:Optional[UUID]
+    sub_project_id:Optional[UUID]
     skpt_id:Optional[UUID]
     luas_ukur:Optional[Decimal]
     luas_nett:Optional[Decimal]
