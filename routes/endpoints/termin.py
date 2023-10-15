@@ -461,16 +461,21 @@ async def printout(id:UUID | str,
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
     
     obj_bidangs = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
-    bidangs = [InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
+   
+    bidangs = []
+    for bd in obj_bidangs:
+        bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
                                     harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
                                     luas_suratExt = "{:,.0f}".format(bd.luas_surat),
                                     luas_nettExt = "{:,.0f}".format(bd.luas_nett),
                                     luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
                                     luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
                                     luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-                                    luas_bayarExt = "{:,.0f}".format(bd.luas_bayar)) 
-                                    for bd in obj_bidangs]
-    
+                                    luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
+        
+        bidang.overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+        bidangs.append(bidang)
+        
     list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
     
     array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs])
@@ -531,7 +536,7 @@ async def printout(id:UUID | str,
     # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
     
     env = Environment(loader=FileSystemLoader("templates"))
-    template = env.get_template("memo_tanah.html")
+    template = env.get_template("memo_tanah_overlap.html")
 
     render_template = template.render(code=termin_header.code or "",
                                       created_at=termin_header.created_at.date(),

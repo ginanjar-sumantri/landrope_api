@@ -135,33 +135,39 @@
           <th>HARGA</th>
           <th>JUMLAH</th>
         </tr>
-        {% for item in data %} {% for overlap in item.overlaps %}
+        {% for item in data %} {% set first_row = true %} {% set overlap_count =
+        item.overlaps|length %} {% set overlap_index = 0 %} {% for overlap in
+        item.overlaps %}
         <tr>
-          <td align="center">{{ loop.first ? item.no : '' }}</td>
-          <td align="center">{{ loop.first ? item.id_bidang : '' }}</td>
-          <td align="center">{{ loop.first ? item.group : '' }}</td>
-          <td align="center">{{ loop.first ? item.lokasi : '' }}</td>
-          <td align="center">{{ loop.first ? item.pemilik_name : '' }}</td>
-          <td align="center">{{ loop.first ? item.alashak : '' }}</td>
-          <td align="right">{{ loop.first ? item.luas_suratExt : '' }}</td>
-          <td align="right">{{ loop.first ? item.luas_ukurExt : '' }}</td>
-          <td align="right">{{ loop.first ? item.luas_nettExt : '' }}</td>
-          <td align="right">{{ loop.first ? item.luas_bayarExt : '' }}</td>
-          <td align="center">{{ loop.first ? item.no_peta : '' }}</td>
-          <td align="center">{{ overlap.keterangan }}</td>
+          <td align="center">{{ first_row and loop.index or '' }}</td>
+          <td align="center">{{ first_row and item.id_bidang or '' }}</td>
+          <td align="center">{{ first_row and item.group or '' }}</td>
+          <td align="center">{{ first_row and item.lokasi or '' }}</td>
+          <td align="center">{{ first_row and item.pemilik_name or '' }}</td>
+          <td align="center">{{ first_row and item.alashak or '' }}</td>
+          <td align="right">{{ first_row and item.luas_suratExt or '' }}</td>
+          <td align="right">{{ first_row and item.luas_ukurExt or '' }}</td>
+          <td align="right">{{ first_row and item.luas_nettExt or '' }}</td>
+          <td align="right">{{ first_row and item.luas_bayarExt or '' }}</td>
+          <td align="center">{{ first_row and item.no_peta or '' }}</td>
+          <td align="center">{{ overlap.ket }}</td>
           <td align="center">{{ overlap.nama }}</td>
           <td align="center">{{ overlap.alashak }}</td>
           <td align="center">{{ overlap.tahap }}</td>
-          <td align="center">{{ overlap.luas_surat }}</td>
-          <td align="right">{{ overlap.luas_overlap }}</td>
-          <td align="right">{{ overlap.kategori }}</td>
+          <td align="center">{{ overlap.luasExt }}</td>
+          <td align="right">{{ overlap.luas_overlapExt }}</td>
+          <td align="right">{{ overlap.kat }}</td>
           <td align="right">{{ overlap.no_nib }}</td>
           <td align="right">{{ overlap.id_bidang }}</td>
-          <td align="center">{{ overlap.status }}</td>
-          <td align="right">{{ loop.first ? item.harga_transaksiExt : '' }}</td>
-          <td align="right">{{ loop.first ? item.total_hargaExt : '' }}</td>
+          <td align="center">{{ overlap.status_overlap }}</td>
+          <td align="right">
+            {{ first_row and item.harga_transaksiExt or '' }}
+          </td>
+          <td align="right">{{ first_row and item.total_hargaExt or '' }}</td>
         </tr>
-        {% endfor %} {% endfor %}
+        {% set first_row = false %} {% set overlap_index = overlap_index + 1 %}
+        {% if overlap_index == overlap_count %} {% set first_row = true %} {%
+        endif %} {% endfor %} {% endfor %}
         <tr>
           <td colspan="6"></td>
           <td align="center">{{total_luas_surat}}</td>

@@ -1,6 +1,7 @@
 from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
 from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
 from schemas.payment_detail_sch import PaymentDetailSch
+from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from common.partial import optional
 from common.enum import JenisBayarEnum, JenisBidangEnum
 from sqlmodel import SQLModel, Field
@@ -101,7 +102,7 @@ class InvoiceForPrintOut(SQLModel):
     harga_transaksi:Optional[Decimal]
     total_harga:Optional[Decimal]
 
-    #overlaps:Optional[list[]]
+    overlaps:Optional[list[BidangOverlapForPrintout]]
 
 class InvoiceForPrintOutExt(InvoiceForPrintOut):
     no:Optional[int]
@@ -113,4 +114,5 @@ class InvoiceForPrintOutExt(InvoiceForPrintOut):
     luas_nettExt:Optional[str]
     luas_pbt_peroranganExt:Optional[str]
     luas_bayarExt:Optional[str]
+    
 

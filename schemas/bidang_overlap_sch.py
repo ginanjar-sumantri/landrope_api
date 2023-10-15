@@ -38,3 +38,17 @@ class BidangOverlapForTahap(SQLModel):
     luas_intersect:Decimal | None
     kategori:KategoriOverlapEnum | None
     harga_transaksi:Decimal | None
+
+class BidangOverlapForPrintout(SQLModel):
+    bidang_id:UUID|None
+    ket:str|None
+    nama:str|None
+    alashak:str|None
+    luas:Decimal|None
+    luasExt:str|None
+    luas_overlap:Decimal|None
+    luas_overlapExt:str|None
+    kat:str|None
+    id_bidang:str|None
+    status_overlap:str|None
+
