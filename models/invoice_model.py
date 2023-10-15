@@ -120,9 +120,9 @@ class Invoice(InvoiceFullBase, table=True):
         total_payment:Decimal = 0
         if len(self.payment_details) > 0:
             array_payment = numpy.array([payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True])
-            total_payment = Decimal(numpy.sum(array_payment))
+            total_payment = numpy.sum(array_payment)
         
-        return self.amount - total_payment
+        return Decimal(self.amount - total_payment)
 
 
 class InvoiceDetailBase(SQLModel):
