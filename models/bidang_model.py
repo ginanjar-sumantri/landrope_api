@@ -298,12 +298,12 @@ class Bidang(BidangFullBase, table=True):
         total_luas_bayar_overlap:Decimal = 0
         if len(self.overlaps) > 0:
             array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_harga_overlap = Decimal(numpy.sum(array_total_harga_overlap))
+            total_harga_overlap = numpy.sum(array_total_harga_overlap)
 
             array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_bayar_overlap = Decimal(numpy.sum(array_total_luas_bayar_overlap))
+            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
 
-        return ((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap
+        return Decimal(((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap)
     
     @property
     def total_harga_akta(self) -> Decimal | None:
@@ -311,12 +311,12 @@ class Bidang(BidangFullBase, table=True):
         total_luas_bayar_overlap:Decimal = 0
         if len(self.overlaps) > 0:
             array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_harga_overlap = Decimal(numpy.sum(array_total_harga_overlap))
+            total_harga_overlap = numpy.sum(array_total_harga_overlap)
 
             array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_bayar_overlap = Decimal(numpy.sum(array_total_luas_bayar_overlap))
+            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
 
-        return ((self.harga_akta or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap
+        return Decimal(((self.harga_akta or 0) * ((self.luas_bayar or 0) - total_luas_bayar_overlap)) + total_harga_overlap)
     
     @property
     def total_beban_penjual(self) -> Decimal | None:
@@ -336,7 +336,7 @@ class Bidang(BidangFullBase, table=True):
             
             total_beban_penjual = sum(calculate) or 0
         
-        return total_beban_penjual
+        return Decimal(total_beban_penjual)
             
     @property
     def total_invoice(self) -> Decimal | None:
@@ -345,10 +345,10 @@ class Bidang(BidangFullBase, table=True):
             list_invoices = [inv.amount for inv in self.invoices if inv.is_void != True]
             total_invoice = Decimal(sum(list_invoices))
         
-        return total_invoice
+        return Decimal(total_invoice)
     
     @property
     def sisa_pelunasan(self) -> Decimal | None:
-        return self.total_harga_transaksi - (self.total_invoice + self.total_beban_penjual)
+        return Decimal(self.total_harga_transaksi - (self.total_invoice + self.total_beban_penjual))
 
 
