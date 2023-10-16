@@ -155,8 +155,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
         return getattr(getattr(self, 'pemilik', None), 'name', None)
     
     
-    
-    ##########################################################
+##########################################################
 
 class HasilPetaLokasiDetailBase(SQLModel):
     tipe_overlap:TipeOverlapEnum
@@ -208,3 +207,7 @@ class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
     @property
     def pemilik_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'bidang', None), 'pemilik', None), 'name', None)
+
+
+##########################################################
+

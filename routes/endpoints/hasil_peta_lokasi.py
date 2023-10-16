@@ -12,7 +12,7 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiCreateSch, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
-                                           HasilPetaLokasiTaskUpdateBidang)
+                                           HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
@@ -22,11 +22,15 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.generator import generate_code, CodeCounterEnum
-from common.enum import TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBidangEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, 
+                         JenisBidangEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum, TipeOverlapEnum)
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
+from services.geom_service import GeomService
 from shapely import wkb, wkt
+from shapely.geometry import shape
 from geoalchemy2 import functions
+import geopandas as gpd
 
 router = APIRouter()
 
@@ -406,8 +410,6 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
 
     return {"message" : "successfully generate kelengkapan dokumen"}
 
-
-
 @router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
 async def remove_link_bidang_and_kelengkapan(bidang_id:UUID):
 
@@ -431,4 +433,68 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID):
 
     await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id)
 
-    return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 
+    return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
+
+@router.post("/cloud-task-update-geom")
+async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
+
+    """Task update data bidang from hasil peta lokasi"""
+    # try:
+    db_session = db.session
+
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
+    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+        return {"message" : "successfully update geom"}
+    
+    #bidang override
+    bidang_override_current = await crud.bidang.get(id=hasil_peta_lokasi.bidang_id)
+    draft_current = await crud.draft.get(id=payload.draft_id)
+    override_geom_current = wkt.dumps(wkb.loads(draft_current.geom.data, hex=True))
+    gs_1 = gpd.GeoSeries.from_wkt([override_geom_current])
+    gdf_1 = gpd.GeoDataFrame(geometry=gs_1)
+
+    hasil_peta_lokasi_detail = await crud.hasil_peta_lokasi_detail.get_multi_by_hasil_peta_lokasi_id(hasil_peta_lokasi_id=hasil_peta_lokasi.id)
+
+    for hasil_petlok_detail in hasil_peta_lokasi_detail:
+        if hasil_petlok_detail.tipe_overlap != TipeOverlapEnum.BintangBatal:
+            continue
+
+        status_luas = hasil_petlok_detail.status_luas
+        jenis_bidang_intersects = hasil_petlok_detail.bidang_overlap.bidang_intersect.jenis_bidang
+        bidang_intersects_id = hasil_petlok_detail.bidang_overlap.parent_bidang_intersect_id
+       
+        if status_luas == StatusLuasOverlapEnum.Menambah_Luas and jenis_bidang_intersects == JenisBidangEnum.Bintang:
+            #1. Langkah pertama copy geom ke geom_ori pada data kulit bintang
+            #jika kulit bintang sudah memiiki geom_ori maka lewati proses copy
+            
+            bidang_intersects_current = await crud.bidang.get(id=bidang_intersects_id)
+            if bidang_intersects_current.geom :
+                bidang_intersects_current.geom = wkt.dumps(wkb.loads(bidang_intersects_current.geom.data, hex=True))
+            if bidang_intersects_current.geom_ori :
+                bidang_intersects_current.geom_ori = wkt.dumps(wkb.loads(bidang_intersects_current.geom_ori.data, hex=True))
+
+            geom_ori = None
+            if bidang_intersects_current.geom_ori is None:
+                geom_ori = bidang_intersects_current.geom
+
+            #2. Langkah kedua bandingkan geom bidang hasil petlok dengan kulit bintang, kemudian jadikan hasil geom yang tidak tertiban menjadi geom baru
+            gs_2 = gpd.GeoSeries.from_wkt([bidang_intersects_current.geom])
+            gdf_2 = gpd.GeoDataFrame(geometry=gs_2)
+
+            clipped_gdf = gdf_2.difference(gdf_1)
+    
+            if not clipped_gdf.is_empty.all():
+                geom_new = GeomService.single_geometry_to_wkt(clipped_gdf[0])
+            
+            obj_new = BidangSch(geom_ori=geom_ori or bidang_intersects_current.geom_ori, geom=geom_new or bidang_intersects_current.geom)
+
+            await crud.bidang.update(obj_current=bidang_intersects_current,
+                                     obj_new=obj_new,
+                                     updated_by_id=hasil_peta_lokasi.updated_by_id,
+                                     db_session=db_session,
+                                     with_commit=False)
+        
+    
+    await db_session.commit()
+
+    return {"message" : "successfully update bidang and generate kelengkapan dokumen"}

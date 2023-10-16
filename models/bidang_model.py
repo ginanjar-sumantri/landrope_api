@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Column
 from models.base_model import BaseUUIDModel, BaseGeoModel
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
@@ -9,6 +9,7 @@ from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, St
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
                          SatuanBayarEnum, SatuanHargaEnum)
 import numpy
+from geoalchemy2 import Geometry
 
 if TYPE_CHECKING:
     from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
@@ -52,6 +53,7 @@ class BidangBase(SQLModel):
     harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
+    geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
 
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass

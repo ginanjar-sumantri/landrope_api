@@ -447,7 +447,7 @@ async def get_by_id(id:UUID,
 
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str,
-                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
+                   current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Print out DP Pelunasan"""
 
@@ -463,6 +463,7 @@ async def printout(id:UUID | str,
     obj_bidangs = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
    
     bidangs = []
+    overlap_exists = False
     for bd in obj_bidangs:
         bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
                                     harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
@@ -474,6 +475,9 @@ async def printout(id:UUID | str,
                                     luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
         
         bidang.overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+        if len(bidang.overlaps) > 0:
+            overlap_exists = True
+
         bidangs.append(bidang)
         
     list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
@@ -533,10 +537,9 @@ async def printout(id:UUID | str,
     no = 1
     obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
 
-    # filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
-    
+    filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
     env = Environment(loader=FileSystemLoader("templates"))
-    template = env.get_template("memo_tanah_overlap.html")
+    template = env.get_template(filename)
 
     render_template = template.render(code=termin_header.code or "",
                                       created_at=termin_header.created_at.date(),
@@ -561,7 +564,7 @@ async def printout(id:UUID | str,
                                       tanggal_transaksi=termin_header.tanggal_transaksi,
                                       hari_transaksi=hari_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
-                                      amount="{:,.2f}".format(termin_header.amount)
+                                      amount="{:,.0f}".format(termin_header.amount)
                                     )
     
     try:
@@ -590,7 +593,7 @@ async def printout(id:UUID | str,
     invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id, jenis_bayar=termin_header.jenis_bayar)
     for inv in invoices:
         invoice = InvoiceForPrintOutUtj(**dict(inv))
-        invoice.amountExt = "{:,.2f}".format(invoice.amount)
+        invoice.amountExt = "{:,.0f}".format(invoice.amount)
         keterangan:str = ""
         keterangans = await crud.hasil_peta_lokasi_detail.get_keterangan_by_bidang_id_for_printout_utj(bidang_id=inv.bidang_id)
         for k in keterangans:

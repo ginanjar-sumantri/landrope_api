@@ -57,7 +57,8 @@ class CRUDHasilPetaLokasiDetail(CRUDBase[HasilPetaLokasiDetail, HasilPetaLokasiD
         
         db_session = db_session or db.session
 
-        query = select(self.model).where(self.model.hasil_peta_lokasi_id == hasil_peta_lokasi_id)
+        query = select(self.model).where(self.model.hasil_peta_lokasi_id == hasil_peta_lokasi_id
+                                ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap))
 
         response =  await db_session.execute(query)
         return response.scalars().all()

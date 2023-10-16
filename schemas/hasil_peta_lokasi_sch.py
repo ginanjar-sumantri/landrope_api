@@ -58,8 +58,13 @@ class HasilPetaLokasiTaskUpdateBidang(SQLModel):
     kjb_dt_id:str
     draft_id:str
 
+class HasilPetaLokasiTaskUpdateKulitBintang(SQLModel):
+    hasil_peta_lokasi_id:str
+    draft_id:str
+
 class HasilPetaLokasiUpdateCloud(SQLModel):
     id:UUID
+    bidang_id:UUID
     status_hasil_peta_lokasi:Optional[StatusHasilPetaLokasiEnum]
     hasil_analisa_peta_lokasi:Optional[HasilAnalisaPetaLokasiEnum]
     pemilik_id:Optional[UUID]

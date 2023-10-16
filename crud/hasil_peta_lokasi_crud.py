@@ -82,6 +82,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
         query = text(f"""
                     select
                     id,
+                    bidang_id,
                     status_hasil_peta_lokasi,
                     hasil_analisa_peta_lokasi,
                     pemilik_id,
