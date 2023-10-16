@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
+from sqlalchemy.orm import selectinload
 from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
@@ -328,6 +329,12 @@ async def export_to_excel(
     if ptsk_id:
         query = query.filter(Ptsk.id == ptsk_id)
 
+    query = query.options(selectinload(Tahap.planing
+                                    ).options(selectinload(Planing.project)
+                                    ).options(selectinload(Planing.desa))
+                        ).options(selectinload(Tahap.termins)
+                        ).options(selectinload(Tahap.details)
+                        ).options(selectinload(Tahap.ptsk))
     
 
     objs = await crud.tahap.get_multi_no_page(query=query)
@@ -349,7 +356,7 @@ async def export_to_excel(
         workbook = writer.book
         worksheet = writer.sheets["Data"]
         worksheet.title = "Data"
-        worksheet.cell(row=1, column=1, value=f'Search by : {searchby}').font = Font(bold=True)
+        # worksheet.cell(row=1, column=1, value=f'Search by : {searchby}').font = Font(bold=True)
 
     output.seek(0)
 
