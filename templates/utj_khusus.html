@@ -99,7 +99,6 @@
           <th>NO. PETA</th>
           <th>PROYEK</th>
           <th>PT</th>
-          <th>NO. CEK</th>
           <th>NOMINAL UTJ</th>
         </tr>
         {% for item in data %}
@@ -115,7 +114,6 @@
           <td align="center">{{ item.no_peta }}</td>
           <td>{{ item.project_name }}</td>
           <td>{{ item.ptsk_name }}</td>
-          <td>&nbsp;</td>
           <td align="right">{{ item.amountExt }}</td>
           <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
@@ -123,7 +121,7 @@
         <tr>
           <td align="center" colspan="4">TOTAL</td>
           <td>{{total_luas_surat}}</td>
-          <td colspan="7">&nbsp;</td>
+          <td colspan="6">&nbsp;</td>
           <td>{{total_amount}}</td>
         </tr>
       </table>

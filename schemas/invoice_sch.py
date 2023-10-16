@@ -71,6 +71,7 @@ class InvoiceForPrintOutUtj(SQLModel):
     mediator:Optional[str]
     alashak:Optional[str]
     luas_surat:Optional[Decimal]
+    luas_suratExt:Optional[str]
     id_bidang:Optional[str]
     keterangan:Optional[str]
     desa_name:Optional[str]

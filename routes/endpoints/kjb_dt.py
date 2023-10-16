@@ -1,14 +1,17 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
 from models.kjb_model import KjbDt, KjbHd
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch)
+from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.enum import StatusPetaLokasiEnum
+from shapely import wkt, wkb
 import crud
 import json
 
@@ -116,8 +119,9 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
-        
-    obj_current = await crud.kjb_dt.get(id=id)
+    
+    db_session = db.session
+    obj_current = await crud.kjb_dt.get_by_id(id=id)
 
     alashak = await crud.kjb_dt.get_by_alashak_and_kjb_hd_id(alashak=sch.alashak, kjb_hd_id=sch.kjb_hd_id)
     if alashak :
@@ -126,7 +130,21 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)
     
-    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    if obj_current.hasil_peta_lokasi:
+        tahap_detail_current = await crud.tahap_detail.get_by_bidang_id(bidang_id=obj_current.hasil_peta_lokasi.bidang_id)
+        if obj_current.hasil_peta_lokasi.bidang and tahap_detail_current is None:
+            bidang_current = obj_current.hasil_peta_lokasi.bidang
+
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+            
+            bidang_updated = BidangUpdateSch(harga_akta=obj_updated.harga_akta, harga_transaksi=obj_updated.harga_transaksi)
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
+
     obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 

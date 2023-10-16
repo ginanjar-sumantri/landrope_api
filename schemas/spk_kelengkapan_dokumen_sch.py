@@ -14,6 +14,7 @@ class SpkKelengkapanDokumenCreateExtSch(SQLModel):
 class SpkKelengkapanDokumenSch(SpkKelengkapanDokumenFullBase):
     dokumen_name:str | None = Field(alias="dokumen_name")
     has_meta_data:bool | None = Field(alias="has_meta_data")
+    file_path:str | None = Field(alias="file_path")
 
 class SpkKelengkapanDokumenByIdSch(SpkKelengkapanDokumenFullBase):
     pass

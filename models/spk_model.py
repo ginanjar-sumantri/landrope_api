@@ -138,3 +138,7 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
     @property
     def has_meta_data(self) -> bool | None:
         return self.bundledt.file_exists or False
+    
+    @property
+    def file_path(self) -> bool | None:
+        return self.bundledt.file_path

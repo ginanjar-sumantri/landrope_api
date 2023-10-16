@@ -73,7 +73,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     Coalesce(tr.mediator, '') as mediator,
                     Coalesce(mng.name, '') as manager_name,
                     Coalesce(sls.name, '') as sales_name,
-                    Coalesce(nt.name, '') as notaris_name
+                    Coalesce(nt.name, '') as notaris_name,
+                    tr.jenis_bayar
                     from termin tr
                     inner join invoice i on i.termin_id = tr.id
                     inner join bidang b on b.id = i.bidang_id

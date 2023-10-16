@@ -12,6 +12,7 @@ from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, Bida
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum
+from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
@@ -40,7 +41,7 @@ async def create(
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.remark]
+            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.beban_pembeli, komponen_biaya.remark]
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
@@ -93,7 +94,7 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Spk, key) == value)
 
-    objs = await crud.spk.get_multi_paginated(params=params, query=query)
+    objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query, order=OrderEnumSch.descendent)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
@@ -193,7 +194,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.remark]
+            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.beban_pembeli, komponen_biaya.remark]
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)

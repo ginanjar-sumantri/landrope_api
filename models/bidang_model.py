@@ -53,13 +53,13 @@ class BidangBase(SQLModel):
     harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
-    geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
+    
 
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
 
 class BidangFullBase(BaseGeoModel, BidangRawBase):
-    pass
+    geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
 
 class Bidang(BidangFullBase, table=True):
     pemilik:"Pemilik" = Relationship(

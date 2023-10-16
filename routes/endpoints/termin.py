@@ -594,6 +594,7 @@ async def printout(id:UUID | str,
     for inv in invoices:
         invoice = InvoiceForPrintOutUtj(**dict(inv))
         invoice.amountExt = "{:,.0f}".format(invoice.amount)
+        invoice.luas_suratExt = "{:,.0f}".format(invoice.luas_surat)
         keterangan:str = ""
         keterangans = await crud.hasil_peta_lokasi_detail.get_keterangan_by_bidang_id_for_printout_utj(bidang_id=inv.bidang_id)
         for k in keterangans:
@@ -615,8 +616,9 @@ async def printout(id:UUID | str,
     total_amount = numpy.sum(array_total_amount)
     total_amount = "{:,.0f}".format(total_amount)
 
+    filename:str = "utj.html" if termin_header.jenis_bayar == "UTJ" else "utj_khusus.html"
     env = Environment(loader=FileSystemLoader("templates"))
-    template = env.get_template("utj.html")
+    template = env.get_template(filename)
 
     render_template = template.render(code=termin_header.code,
                                       data=data,

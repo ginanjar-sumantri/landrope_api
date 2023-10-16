@@ -44,6 +44,23 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_by_bidang_id(self, 
+                                    *, 
+                                    bidang_id:UUID | str,
+                                    db_session : AsyncSession | None = None, 
+                                    query : TahapDetail | Select[TahapDetail]| None = None
+                                    ) -> TahapDetail | None:
+        
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model.bidang_id).where(
+                            and_(
+                                    self.model.bidang_id == bidang_id,
+                                    self.model.is_void != True
+                                ))
+        response =  await db_session.execute(query)
+        return response.fetchone()
+    
 
     async def get_multi_by_tahap_id(self, 
                                     *, 
