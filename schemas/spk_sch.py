@@ -38,6 +38,7 @@ class SpkUpdateSch(SpkBase):
 
 
 class SpkPrintOut(SQLModel):
+    bidang_id:Optional[UUID]
     kjb_hd_code:Optional[str]
     id_bidang:Optional[str]
     jenis_bidang:Optional[JenisBidangEnum]

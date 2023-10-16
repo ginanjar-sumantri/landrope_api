@@ -340,12 +340,40 @@ async def printout(id:UUID | str,
     if obj is None:
         raise IdNotFoundException(Spk, id)
     
-    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
+    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_clear.html"
     
     spk_header = SpkPrintOut(**dict(obj))
     percentage_value:str = ""
     if spk_header.satuan_bayar == SatuanBayarEnum.Percentage:
         percentage_value = f" {spk_header.nilai}%"
+    
+    ktp_value:str = ""
+    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=spk_header.bidang_id)
+    if ktp_meta_data:
+        if ktp_meta_data.meta_data is not None and ktp_meta_data.meta_data != "":
+            metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
+            ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
+
+    npwp_value:str = ""
+    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=spk_header.bidang_id)
+    if npwp_meta_data:
+        if npwp_meta_data.meta_data is not None and npwp_meta_data.meta_data != "": 
+            metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
+            npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
+    
+    kk_value:str = ""
+    kk_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KARTU KELUARGA', bidang_id=spk_header.bidang_id)
+    if kk_meta_data:
+        if kk_meta_data.meta_data is not None and kk_meta_data.meta_data != "":
+            metadata_dict = json.loads(kk_meta_data.meta_data.replace("'", "\""))
+            kk_value = metadata_dict[f'{kk_meta_data.key_field}']
+
+    nop_value:str = ""
+    nop_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='SPPT PBB NOP', bidang_id=spk_header.bidang_id)
+    if nop_meta_data:
+        if nop_meta_data.meta_data is not None and nop_meta_data.meta_data != "":
+            metadata_dict = json.loads(nop_meta_data.meta_data.replace("'", "\""))
+            nop_value = metadata_dict[f'{nop_meta_data.key_field}']
     
     spk_details = []
     no = 1
@@ -374,8 +402,8 @@ async def printout(id:UUID | str,
         obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
         for ov in obj_overlaps:
             overlap = SpkOverlapPrintOutExt(**dict(ov))
-            overlap.luas_overlapExt = "{:,.2f}".format(overlap.luas_overlap)
-            overlap.luas_suratExt = "{:,.2f}".format(overlap.luas_surat)
+            overlap.luas_overlapExt = "{:,.0f}".format(overlap.luas_overlap)
+            overlap.luas_suratExt = "{:,.0f}".format(overlap.luas_surat)
             overlap.tipe_overlapExt = overlap.tipe_overlap.value.replace('_', ' ')
             overlap_details.append(overlap)
 
@@ -415,7 +443,11 @@ async def printout(id:UUID | str,
                                       manager_name=spk_header.manager_name,
                                       sales_name=spk_header.sales_name,
                                       akta_peralihan=akta_peralihan,
-                                      no_rekening=rekening)
+                                      no_rekening=rekening,
+                                      nop=nop_value,
+                                      npwp=npwp_value,
+                                      ktp=ktp_value,
+                                      kk=kk_value)
     
     try:
         doc = await PdfService().get_pdf(render_template)

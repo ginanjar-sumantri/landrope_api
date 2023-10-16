@@ -220,6 +220,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         query = text(f"""
                 select
+                s.bidang_id,
                 kh.code As kjb_hd_code,
                 b.jenis_bidang,
                 b.id_bidang,
