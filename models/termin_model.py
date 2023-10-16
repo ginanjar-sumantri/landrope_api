@@ -40,6 +40,7 @@ class Termin(TerminFullBase, table=True):
     )
 
     tahap:"Tahap" = Relationship(
+        back_populates="termins",
         sa_relationship_kwargs=
         {
             "lazy" : "select"

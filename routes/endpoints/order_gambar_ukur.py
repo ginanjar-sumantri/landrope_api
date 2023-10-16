@@ -168,7 +168,7 @@ async def print_out(id:UUID | str,
                                            alashak=bidang.alashak,
                                            mediator=bidang.mediator,
                                            sales_name=bidang.sales_name,
-                                           luas_surat="{:,.2f}".format(bidang.luas_surat or 0)
+                                           luas_surat="{:,.0f}".format(bidang.luas_surat or 0)
                                            )
         no = no + 1
         data_list.append(data)

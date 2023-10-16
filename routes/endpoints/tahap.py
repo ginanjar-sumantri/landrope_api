@@ -1,15 +1,10 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
+from fastapi.responses import FileResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
-from models.tahap_model import Tahap, TahapDetail
-from models.bidang_model import Bidang
-from models.worker_model import Worker
-from models.planing_model import Planing
-from models.skpt_model import Skpt
-from models.ptsk_model import Ptsk
-from models import Project, Desa, Section, SubProject
+from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.main_project_sch import MainProjectUpdateSch
@@ -20,8 +15,13 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
 from shapely import wkb, wkt
+from io import BytesIO
+from datetime import date
 import crud
 import json
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font
 
 router = APIRouter()
 
@@ -103,6 +103,7 @@ async def get_list(
             filter_query:str = None,
             project_id:UUID|None = None,
             ptsk_id:UUID|None = None,
+            filter_list:str = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -114,6 +115,12 @@ async def get_list(
                                     ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
                                     ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id
                                     ).outerjoin(Tahap.sub_project)
+    
+    if filter_list is not None and filter_list == "with_termin":
+        query = query.join(Tahap.termins)
+    
+    if filter_list is not None and filter_list == "without_termin":
+        query = query.outerjoin(Tahap.termins).where(Termin.id == None)
     
     if keyword:
         query = query.filter(
@@ -277,3 +284,77 @@ async def get_by_id(id:UUID,
         return create_response(data=obj)
     else:
         raise IdNotFoundException(Bidang, id)
+
+@router.get("/export_excel/")
+async def export_to_excel(
+            keyword:str = None,
+            project_id:UUID|None = None,
+            ptsk_id:UUID|None = None,
+            filter_list:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    searchby : str = 'All, '
+
+    query = select(Tahap).outerjoin(Planing, Planing.id == Tahap.planing_id,
+                                    ).outerjoin(Project, Project.id == Planing.project_id
+                                    ).outerjoin(Desa, Desa.id == Planing.desa_id
+                                    ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
+                                    ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
+                                    ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id
+                                    ).outerjoin(Tahap.sub_project)
+    
+    if filter_list is not None and filter_list == "with_termin":
+        searchby = "with_termin, "
+        query = query.join(Tahap.termins)
+    
+    if filter_list is not None and filter_list == "without_termin":
+        query = query.outerjoin(Tahap.termins).where(Termin.id == None)
+        searchby = "with_termin, "
+    
+    if keyword:
+        searchby += f'{keyword}, ' 
+        query = query.filter(
+            or_(
+                Tahap.nomor_tahap == int(keyword),
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Tahap.group.ilike(f'%{keyword}%')
+            )
+        )
+
+    if project_id:
+        query = query.filter(Project.id == project_id)
+    
+    if ptsk_id:
+        query = query.filter(Ptsk.id == ptsk_id)
+
+    
+
+    objs = await crud.tahap.get_multi_no_page(query=query)
+
+    data = [{"Nomor" : tahap.nomor_tahap, "Project" : tahap.project_name,
+             "Desa" : tahap.desa_name, "PTSK" : tahap.ptsk_name,
+             "Group" : tahap.group, "JumlahBidang" : tahap.jumlah_bidang,
+             "DP" : tahap.dp_count, "Lunas" : tahap.lunas_count} for tahap in objs]
+
+    
+    df = pd.DataFrame(data=data)
+
+    # Buat file Excel menggunakan openpyxl
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Data", index=False)
+        searchby = searchby[0:-2]
+        # Tambahkan judul ke cell pertama
+        workbook = writer.book
+        worksheet = writer.sheets["Data"]
+        worksheet.title = "Data"
+        worksheet.cell(row=1, column=1, value=f'Search by : {searchby}').font = Font(bold=True)
+
+    output.seek(0)
+
+    filename:str = f'Report Tahap {str(date.today())}'
+    # Simpan file sementara ke disk dan kirimkan sebagai FileResponse
+    with open("temp_excel.xlsx", "wb") as temp_file:
+        temp_file.write(output.read())
+    return FileResponse("temp_excel.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"})

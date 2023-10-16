@@ -19,6 +19,8 @@ class TahapSch(TahapFullBase):
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     sub_project_name:Optional[str] = Field(alias="sub_project_name")
     sub_project_code:Optional[str] = Field(alias="sub_project_code")
+    dp_count:Optional[int] = Field(alias="dp_count")
+    lunas_count:Optional[int] = Field(alias="lunas_count")
     updated_by_name:Optional[str] = Field(alias="updated_by_name")
     jumlah_bidang:Optional[int] = Field(alias="jumlah_bidang")
     

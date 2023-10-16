@@ -35,7 +35,7 @@ class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass
 
 class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
-    details: "HasilPetaLokasiDetail" = Relationship(
+    details: list["HasilPetaLokasiDetail"] = Relationship(
                         back_populates="hasil_peta_lokasi",
                         sa_relationship_kwargs=
                         {

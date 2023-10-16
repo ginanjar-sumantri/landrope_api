@@ -1,12 +1,13 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from models import BidangOverlap
+from common.enum import JenisBayarEnum
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models import Planing, Ptsk, Bidang, Worker, SubProject
+    from models import Planing, Ptsk, Bidang, Worker, SubProject, Termin
 
 class TahapBase(SQLModel):
     nomor_tahap:Optional[int] = Field(nullable=False)
@@ -19,11 +20,19 @@ class TahapFullBase(BaseUUIDModel, TahapBase):
     pass
 
 class Tahap(TahapFullBase, table=True):
-    details: "TahapDetail" = Relationship(back_populates="tahap",
+    details: list["TahapDetail"] = Relationship(back_populates="tahap",
                                            sa_relationship_kwargs=
                                            {
                                                "lazy" : "select"
                                            })
+    
+    termins: list["Termin"] = Relationship(
+        back_populates="tahap",
+        sa_relationship_kwargs=
+        {
+            'lazy' : 'select'
+        }
+    )
 
     planing:"Planing" = Relationship(sa_relationship_kwargs=
                                      {
@@ -84,6 +93,15 @@ class Tahap(TahapFullBase, table=True):
 
         return jumlah or 0
     
+    @property
+    def dp_count(self) -> int | None:
+        dp_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.DP]
+        return len(dp_termins) or 0    
+    
+    @property
+    def lunas_count(self) -> int | None:
+        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.LUNAS]
+        return len(lunas_termins) or 0    
     
     
 class TahapDetailBase(SQLModel):
