@@ -121,6 +121,10 @@ class ChecklistKelengkapanDokumenDt(ChecklistKelengkapanDokumenDtFullBase, table
         
         return self.bundle_dt.file_exists
     
+    @property
+    def file_path(self) -> str | None:
+        return getattr(getattr(self, "bundle_dt", None), "file_path", None)
+    
             
 
     

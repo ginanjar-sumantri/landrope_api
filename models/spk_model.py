@@ -141,4 +141,4 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
     
     @property
     def file_path(self) -> bool | None:
-        return self.bundledt.file_path
+        return getattr(getattr(self, "bundledt", None), "file_path", None)

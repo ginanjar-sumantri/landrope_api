@@ -94,7 +94,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Spk, key) == value)
 
-    objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query, order=OrderEnumSch.descendent, order_by="created_at")
+    query = query.order_by(text("created_at desc"))
+
+    objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query, order_by="created_at")
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
@@ -168,6 +170,7 @@ async def get_by_id(id:UUID):
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenSch(**kd.dict())
         kelengkapan_dokumen_sch.dokumen_name = kd.dokumen_name
         kelengkapan_dokumen_sch.has_meta_data = kd.has_meta_data
+        kelengkapan_dokumen_sch.file_path = kd.file_path
         list_kelengkapan_dokumen.append(kelengkapan_dokumen_sch)
 
     obj_return.spk_beban_biayas = list_komponen_biaya
