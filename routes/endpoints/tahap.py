@@ -286,7 +286,7 @@ async def get_by_id(id:UUID,
     else:
         raise IdNotFoundException(Bidang, id)
 
-@router.get("/export_excel")
+@router.get("/export/excel")
 async def export_to_excel(
             keyword:str = None,
             project_id:UUID|None = None,
