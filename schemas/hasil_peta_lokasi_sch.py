@@ -78,3 +78,4 @@ class HasilPetaLokasiUpdateCloud(SQLModel):
     luas_gu_pt:Optional[Decimal]
     luas_gu_perorangan:Optional[Decimal]
     updated_by_id:Optional[UUID]
+    no_peta:Optional[str]

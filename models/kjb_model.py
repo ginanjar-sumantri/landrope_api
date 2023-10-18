@@ -318,3 +318,7 @@ class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
             return ""
         
         return self.beban_biaya.name
+    
+    @property
+    def is_tax(self) -> bool | None :
+        return getattr(getattr(self, "beban_biaya", False), "is_tax", False)

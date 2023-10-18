@@ -21,6 +21,7 @@ class KjbBebanBiayaCreateExtSch(BaseModel):
 
 class KjbBebanBiayaSch(KjbBebanBiayaFullBase):
     beban_biaya_name:str | None = Field(alias="beban_biaya_name")
+    is_tax:bool |None = Field(alias="is_tax")
 
 @optional
 class KjbBebanBiayaUpdateSch(KjbBebanBiayaBase):

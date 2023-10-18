@@ -43,6 +43,10 @@ class KjbHdByIdSch(KjbHdFullBase):
     sales_name:str = Field(alias="sales_name")
     total_luas_surat:Decimal = Field(alias="total_luas_surat")
 
+class KjbHdSearchSch(SQLModel):
+    id:UUID
+    code:Optional[str]
+
 
 @optional
 class KjbHdUpdateSch(KjbHdBase):

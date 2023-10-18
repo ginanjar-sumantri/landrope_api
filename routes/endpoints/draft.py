@@ -9,6 +9,8 @@ from models.draft_model import Draft, DraftDetail
 from models.worker_model import Worker
 from schemas.draft_sch import (DraftSch, DraftCreateSch, DraftRawSch, DraftForAnalisaSch)
 from schemas.draft_detail_sch import DraftDetailSch
+from schemas.bidang_overlap_sch import BidangOverlapUpdateSch
+from schemas.bidang_sch import BidangIntersectionSch
 from schemas.response_sch import (PostResponseBaseSch, DeleteResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.rounder import RoundTwo
@@ -54,6 +56,7 @@ async def create(
 async def analisa(
                 sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
                 file:UploadFile | None = None,
+                hasil_peta_lokasi_id:UUID | None = None
                 ):
     
     """Create a new analisa bidang"""
@@ -82,6 +85,7 @@ async def analisa(
         geom_wkb = rincik.geom
         rincik_geom = wkt.dumps(wkb.loads(rincik.geom.data, hex=True))
     
+    #Check validity geom
     geom_ = wkt.loads(rincik_geom)
     geom_shape = shape(geom_)
     is_valid = geom_shape.is_valid
@@ -89,19 +93,27 @@ async def analisa(
     if is_valid is False:
         validity_reason = explain_validity(geom_shape)
         raise ContentNoChangeException(detail=f'Geometry rincik tidak valid! Validity Reason : {validity_reason}')
-    
-    rincik_dict = { "id" : sch.rincik_id, "geometry" : rincik_geom}
-    data_rincik = [rincik_dict]
+    #End Check validity geom
 
-    df_rincik = pd.DataFrame(data_rincik)
-    gs_rincik = gpd.GeoSeries.from_wkt(df_rincik['geometry'])
-    gdf1 = gpd.GeoDataFrame(df_rincik, geometry=gs_rincik)
+    gs_rincik = gpd.GeoSeries.from_wkt([rincik_geom])
+    gdf1 = gpd.GeoDataFrame(geometry=gs_rincik)
 
     draft_details = []
 
-    intersects_bidangs = await crud.bidang.get_intersect_bidang(geom=geom_wkb, id=sch.rincik_id)
+    #Apabila hasil_peta_lokasi_id not None, gabungkan dulu geom intersects di overlap dengan geom current bidang yang tertimpa. 
+    #Simpan di geom_temp bidang_overlap, untuk nanti dibandingkan kembali dengan geom rincik
+    if hasil_peta_lokasi_id:
+        await merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
 
-    for intersect_bidang in intersects_bidangs:
+    intersects_bidangs = await crud.bidang.get_intersect_bidang(geom=geom_wkb, id=sch.rincik_id)
+    bidang_intersection = [BidangIntersectionSch(id=b.id, geom=wkt.dumps(wkb.loads(b.geom.data, hex=True))) for b in intersects_bidangs]
+
+    if hasil_peta_lokasi_id:
+        intersects_ov_bidangs = await crud.bidangoverlap.get_intersect_bidang(geom=geom_wkb, hasil_peta_lokasi_id=hasil_peta_lokasi_id)
+        bidang_ov_intersection = [BidangIntersectionSch(id=b.id, geom=wkt.dumps(wkb.loads(b.geom_temp.data, hex=True))) for b in intersects_ov_bidangs]
+        bidang_intersection = bidang_intersection + bidang_ov_intersection
+
+    for intersect_bidang in bidang_intersection:
         bidang_geom = wkt.dumps(wkb.loads(intersect_bidang.geom.data, hex=True))
         bidang_dict = {"id" : intersect_bidang.id, "geometry" : bidang_geom}
         data_bidang = [bidang_dict]
@@ -143,6 +155,30 @@ async def analisa(
     new_obj = await crud.draft.create_for_analisa(obj_in=sch)
     
     return create_response(data=new_obj)
+
+async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID):
+    
+    bidang_overlaps = await crud.bidangoverlap.get_multi_kulit_bintang_batal_by_petlok_id(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
+
+    for overlap in bidang_overlaps:
+        if overlap.geom:
+            overlap.geom = wkt.dumps(wkb.loads(overlap.geom.data, hex=True))
+        
+        ov_series = gpd.GeoSeries.from_wkt([overlap.geom])
+        ov_gdf = gpd.GeoDataFrame(geometry=ov_series)
+
+        bidang_bintang = await crud.bidang.get(id=overlap.parent_bidang_intersect_id)
+        if bidang_bintang.geom:
+            bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
+        
+        bd_series = gpd.GeoSeries.from_wkt([bidang_bintang.geom])
+        bd_gdf = gpd.GeoDataFrame(geometry=bd_series)
+        
+        union_geom = bd_gdf.union(ov_gdf)
+        geom_temp = GeomService.single_geometry_to_wkt(union_geom[0])
+
+        bidang_overlap_updated = BidangOverlapUpdateSch(geom_temp=geom_temp)
+        await crud.bidangoverlap.update(obj_current=overlap, obj_new=bidang_overlap_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):

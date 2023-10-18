@@ -1,16 +1,18 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, text
+from sqlmodel import select, or_, text, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from typing import List
 from common.ordered import OrderEnumSch
+from common.enum import StatusLuasOverlapEnum, TipeOverlapEnum
 from crud.base_crud import CRUDBase
-from models.bidang_overlap_model import BidangOverlap
+from models import BidangOverlap, HasilPetaLokasiDetail, HasilPetaLokasi
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapUpdateSch, BidangOverlapRawSch, BidangOverlapForPrintout
 from uuid import UUID
+from geoalchemy2 import functions
 
 class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOverlapUpdateSch]):
     async def get_multi_by_override_bidang_id(
@@ -67,5 +69,48 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
                                         luasExt="{:,.0f}".format(ov["luas"]),
                                         luas_overlapExt="{:,.0f}".format(ov["luas_overlap"])) for ov in datas]
         return result
+    
+    async def get_multi_kulit_bintang_batal_by_petlok_id(
+                        self,
+                        *,
+                        hasil_peta_lokasi_id:UUID, 
+                        db_session : AsyncSession | None = None
+                        ) -> List[BidangOverlap]:
+        
+        db_session = db_session or db.session
+        
+        query = select(BidangOverlap)
+        query = query.join(HasilPetaLokasiDetail, BidangOverlap.id == HasilPetaLokasiDetail.bidang_overlap_id)
+        query = query.join(HasilPetaLokasi, HasilPetaLokasi.id == HasilPetaLokasiDetail.hasil_peta_lokasi_id)
+        query = query.filter(HasilPetaLokasi.id == hasil_peta_lokasi_id)
+        query = query.filter(BidangOverlap.status_luas == StatusLuasOverlapEnum.Menambah_Luas)
+        query = query.filter(HasilPetaLokasiDetail.tipe_overlap == TipeOverlapEnum.BintangBatal)
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_intersect_bidang(
+            self, 
+            *, 
+            hasil_peta_lokasi_id:UUID | str,
+            db_session : AsyncSession | None = None, 
+            geom) -> list[BidangOverlap] | None:
+        
+        # g = shape(geom)
+        # wkb = from_shape(g)
+
+        db_session = db_session or db.session
+        query = select(BidangOverlap)
+        query = query.join(HasilPetaLokasiDetail, BidangOverlap.id == HasilPetaLokasiDetail.bidang_overlap_id)
+        query = query.join(HasilPetaLokasi, HasilPetaLokasi.id == HasilPetaLokasiDetail.hasil_peta_lokasi_id)
+        query = query.filter(HasilPetaLokasi.id == hasil_peta_lokasi_id)
+        query = query.filter(BidangOverlap.status_luas == StatusLuasOverlapEnum.Menambah_Luas)
+        query = query.filter(HasilPetaLokasiDetail.tipe_overlap == TipeOverlapEnum.BintangBatal)
+        query = query.filter(functions.ST_IsValid(BidangOverlap.geom_temp) == True)
+        query = query.filter(functions.ST_Intersects(BidangOverlap.geom, geom))
+        
+        response =  await db_session.execute(query)
+        
+        return response.scalars().all()
 
 bidangoverlap = CRUDBidangOverlap(BidangOverlap)

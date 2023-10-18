@@ -136,47 +136,6 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
-    # async def get_multi_by_tahap_id_and_termin_id(self, 
-    #                             *,
-    #                             tahap_id:UUID,
-    #                             jenis_bayar:JenisBayarEnum,
-    #                             termin_id:UUID,
-    #                            db_session : AsyncSession | None = None
-    #                     ) -> List[SpkForTerminSch]:
-    #     db_session = db_session or db.session
-        
-    #     query = text(f"""
-    #                 SELECT 
-    #                 s.id as spk_id,
-    #                 s.code as spk_code,
-    #                 s.satuan_bayar as spk_satuan_bayar,
-    #                 s.nilai as spk_nilai,
-    #                 b.id as bidang_id,
-    #                 b.id_bidang,
-    #                 b.alashak,
-    #                 b.group,
-    #                 b.luas_bayar,
-    #                 b.harga_transaksi,
-    #                 b.harga_akta,
-    #                 (b.luas_bayar * b.harga_transaksi) as total_harga,
-    #                 CASE
-    #                     WHEN s.satuan_bayar = 'Percentage' Then ROUND((s.nilai * (b.luas_bayar * b.harga_transaksi))/100, 2)
-    #                     ELSE s.nilai
-    #                 END As amount
-    #                 FROM spk s
-    #                 LEFT OUTER JOIN invoice i ON i.spk_id = s.id
-    #                 LEFT OUTER JOIN termin tr ON tr.id = i.termin_id
-    #                 LEFT OUTER JOIN tahap t ON t.id = tr.tahap_id
-    #                 LEFT OUTER JOIN tahap_detail td ON td.tahap_id = t.id
-    #                 LEFT OUTER JOIN bidang b ON b.id = td.bidang_id
-    #                 WHERE s.jenis_bayar = '{jenis_bayar.value}'  
-    #                 and t.id = '{str(tahap_id)}'
-    #                 and tr.id = '{str(termin_id)}'
-    #                 and i.is_void != true
-    #             """)
-
-    #     response =  await db_session.execute(query)
-    #     return response.fetchall()
     
     async def get_multi_by_tahap_id_and_termin_id(self, 
                                 *,

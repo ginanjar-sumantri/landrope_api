@@ -47,7 +47,6 @@ class BidangByIdSch(BidangRawBase):
 class BidangUpdateSch(BidangBase):
     pass
 
-
 class BidangForOrderGUById(SQLModel):
     id:UUID | None
     id_bidang:str | None
@@ -162,10 +161,6 @@ class BidangSrcSch(SQLModel):
     id:UUID
     id_bidang:str
 
-class BidangGetAllSch(SQLModel):
-    id:UUID|None
-    id_bidang:str|None
-
 class BidangForTreeReportSch(SQLModel):
     id:UUID|None
     id_bidang:str|None
@@ -198,3 +193,7 @@ class BidangTotalInvoiceByIdSch(SQLModel):
 class BidangPercentageLunasForSpk(SQLModel):
     bidang_id:Optional[UUID]
     percentage_lunas:Optional[Decimal]
+
+class BidangIntersectionSch(SQLModel):
+    id:UUID
+    geom:str | None

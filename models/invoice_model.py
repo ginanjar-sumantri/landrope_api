@@ -123,6 +123,13 @@ class Invoice(InvoiceFullBase, table=True):
             total_payment = numpy.sum(array_payment)
         
         return Decimal(self.amount - total_payment)
+    
+    @property
+    def has_payment(self) -> bool | None:
+        if len(self.payment_details) > 0:
+            return True
+        
+        return False
 
 
 class InvoiceDetailBase(SQLModel):

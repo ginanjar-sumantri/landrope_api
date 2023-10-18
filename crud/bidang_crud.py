@@ -1,16 +1,16 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, and_
+from sqlmodel import select, and_, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
 from typing import List
 from crud.base_crud import CRUDBase
-from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, 
+from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd)
-from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangGetAllSch, BidangPercentageLunasForSpk,
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
@@ -21,6 +21,7 @@ from uuid import UUID
 from geoalchemy2 import functions
 from shapely.geometry import shape
 from geoalchemy2.shape import from_shape
+from shapely  import wkt, wkb
 
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
@@ -107,11 +108,11 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         # wkb = from_shape(g)
 
         db_session = db_session or db.session
-        query = select(self.model
-                       ).where(and_(self.model.id != id, 
-                                    functions.ST_IsValid(self.model.geom) == True,
-                                    self.model.status != StatusBidangEnum.Batal)
-                               ).filter(functions.ST_Intersects(self.model.geom, geom))
+        query = select(Bidang
+                       ).where(and_(Bidang.id != id, 
+                                    functions.ST_IsValid(Bidang.geom) == True,
+                                    Bidang.status != StatusBidangEnum.Batal)
+                               ).filter(functions.ST_Intersects(Bidang.geom, geom))
         
         response =  await db_session.execute(query)
         

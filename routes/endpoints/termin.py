@@ -15,9 +15,9 @@ from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
-from schemas.kjb_hd_sch import KjbHdForTerminByIdSch
+from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch, BidangKomponenBiayaUpdateSch
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.kjb_harga_sch import KjbHargaAktaSch
 from schemas.payment_detail_sch import PaymentDetailForPrintout
@@ -86,9 +86,10 @@ async def create(
             invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
             await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
             
-            payload = {"id" : dt.bidang_komponen_biaya_id}
-            url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
-            GCloudTaskService().create_task(payload=payload, base_url=url)
+            bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+            sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
+            sch_komponen_biaya.is_use = True
+            await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
     
     #add termin bayar
     for termin_bayar in sch.termin_bayars:
@@ -121,15 +122,14 @@ async def get_list(
         jenis_bayars.append("DP")
         jenis_bayars.append("LUNAS")
 
-    query = select(Termin).select_from(Termin
-                        ).outerjoin(Invoice, Invoice.termin_id == Termin.id
+    query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
                         ).outerjoin(KjbHd, KjbHd.id == Termin.kjb_hd_id
                         ).outerjoin(Spk, Spk.id == Invoice.spk_id
                         ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
-                        ).where(Termin.jenis_bayar.in_(jenis_bayars))
+                        ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
-    if keyword:
+    if keyword and keyword != '':
         query = query.filter_by(
             or_(
                 Termin.code.ilike(f'%{keyword}%'),
@@ -182,9 +182,9 @@ async def update(
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
-    if len(list_id_invoice) > 0:
-        query_inv = Invoice.__table__.delete().where(and_(~Invoice.id.in_(list_id_invoice), Invoice.termin_id == obj_updated.id))
-        await crud.invoice.delete_multiple_where_not_in(query=query_inv, db_session=db_session, with_commit=False)
+    removed_invoice = await crud.invoice.get_not_in_by_ids(list_ids=list_id_invoice)
+    if len(removed_invoice) > 0:
+        await crud.invoice.remove_multiple_data(list_obj=removed_invoice, db_session=db_session)
 
     for invoice in sch.invoices:
         if invoice.id:
@@ -199,9 +199,11 @@ async def update(
                 #get invoice detail not exists on update and update komponen is not use
                 list_invoice_detail = await crud.invoice_detail.get_multi_by_ids_not_in(list_ids=list_id_invoice_dt)
                 for inv_dt in list_invoice_detail:
-                    kb_payload = {"id" : inv_dt.bidang_komponen_biaya_id}
-                    url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-not-use'
-                    GCloudTaskService().create_task(payload=kb_payload, base_url=url)
+                    d_bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=inv_dt.bidang_komponen_biaya_id)
+                    d_sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**d_bidang_komponen_biaya_current.dict())
+                    d_sch_komponen_biaya.is_use = False
+                    await crud.bidang_komponen_biaya.update(obj_current=d_bidang_komponen_biaya_current, obj_new=d_sch_komponen_biaya, with_commit=False, db_session=db_session)
+            
 
                 #delete invoice_detail not exists
                 query_inv_dtl = InvoiceDetail.__table__.delete().where(and_(~InvoiceDetail.id.in_(list_id_invoice_dt), InvoiceDetail.invoice_id == invoice_current.id))
@@ -216,9 +218,11 @@ async def update(
                         invoice_dtl_updated_sch = InvoiceDetailUpdateSch(**dt.dict(), invoice_id=invoice_updated.id)
                         await crud.invoice_detail.update(obj_current=invoice_dtl_current, obj_new=invoice_dtl_updated_sch, db_session=db_session, with_commit=False)
                     
-                    payload = {"id" : dt.bidang_komponen_biaya_id}
-                    url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
-                    GCloudTaskService().create_task(payload=payload, base_url=url)
+                    bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+                    sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
+                    sch_komponen_biaya.is_use = True
+                    await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
+            
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
@@ -288,9 +292,28 @@ async def get_list_spk_by_tahap_id(
     obj_return.spkts = spkts
     return create_response(data=obj_return)
 
+@router.get("/search/kjb_hd", response_model=GetResponseBaseSch[list[KjbHdSearchSch]])
+async def get_list_kjb_hd(
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(KjbHd)
+    query = query.outerjoin(Termin, Termin.kjb_hd_id == KjbHd.id)
+    query = query.filter(Termin.kjb_hd_id == None)
+    
+    if keyword:
+        query = query.filter(KjbHd.code.ilike(f'%{keyword}%'))
+
+
+    objs = await crud.kjb_hd.get_multi_no_page(query=query)
+    return create_response(data=objs)
+
 @router.get("/search/kjb_hd/{id}", response_model=GetResponseBaseSch[KjbHdForTerminByIdSch])
 async def get_list_bidang_by_kjb_hd_id(
                 id:UUID,
+                termin_id:UUID | None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""

@@ -1,18 +1,19 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Column
 from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 from decimal import Decimal
 from common.enum import StatusLuasOverlapEnum, KategoriOverlapEnum
+from geoalchemy2 import Geometry
 
 if TYPE_CHECKING:
     from bidang_model import Bidang
 
 class BidangOverlapBase(SQLModel):
     code:str | None
-    parent_bidang_id:UUID = Field(foreign_key="bidang.id")
-    parent_bidang_intersect_id:UUID = Field(foreign_key="bidang.id")
-    luas:Decimal
+    parent_bidang_id:UUID | None = Field(foreign_key="bidang.id")
+    parent_bidang_intersect_id:UUID | None = Field(foreign_key="bidang.id")
+    luas:Decimal | None
     luas_bayar:Decimal | None = Field(nullable=True)
     status_luas:StatusLuasOverlapEnum | None = Field(nullable=True)
     kategori:KategoriOverlapEnum | None = Field(nullable=True)
@@ -22,7 +23,7 @@ class BidangOverlapRawBase(BaseUUIDModel, BidangOverlapBase):
     pass
 
 class BidangOverlapFullBase(BaseGeoModel, BidangOverlapRawBase):
-    pass
+    geom_temp:str | None = Field(sa_column=Column(Geometry))
 
 class BidangOverlap(BidangOverlapFullBase, table=True):
     bidang:"Bidang" = Relationship(

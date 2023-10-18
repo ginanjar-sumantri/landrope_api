@@ -95,7 +95,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                     luas_clear,
                     luas_gu_pt,
                     luas_gu_perorangan,
-                    updated_by_id
+                    updated_by_id,
+                    no_peta
                     from hasil_peta_lokasi
                     where id = '{str(id)}'
                     """)

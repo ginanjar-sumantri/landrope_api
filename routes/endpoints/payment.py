@@ -109,6 +109,12 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
+    #delete detail
+    id_dtls = [dt.id for dt in sch.details if dt.id is not None]
+    removed_dtls = await crud.payment_detail.get_not_in_by_ids(list_ids=id_dtls)
+    if len(removed_dtls) > 0:
+        await crud.payment_detail.remove_multiple_data(removed_dtls, db_session=db_session)
+
     for dt in sch.details:
         if dt.id is None:
             invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)

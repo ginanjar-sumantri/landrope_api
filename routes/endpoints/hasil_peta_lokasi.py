@@ -109,7 +109,6 @@ async def create(
 
     return create_response(data=new_obj)
 
-
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
 async def get_list(
             params: Params=Depends(), 
@@ -295,10 +294,9 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
     # try:
     db_session = db.session
 
-    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id(id=payload.hasil_peta_lokasi_id)
     kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload.kjb_dt_id)
     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
-    # kjb_harga_current = await crud.kjb_harga.get_harga_by_id_for_cloud(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=kjb_dt_current.jenis_alashak)
     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
     draft = await crud.draft.get(id=payload.draft_id)
 
@@ -337,6 +335,7 @@ async def update_bidang_and_generate_kelengkapan(payload:HasilPetaLokasiTaskUpda
         luas_clear=hasil_peta_lokasi.luas_clear,
         luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
         luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
+        no_peta=hasil_peta_lokasi.no_peta,
         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
         bundle_hd_id=kjb_dt_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
@@ -445,7 +444,7 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
     db_session = db.session
 
     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
-    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+    if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
         return {"message" : "successfully update geom"}
     
     #bidang override
@@ -514,9 +513,9 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 
 #     db_session = db.session
 
-#     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
-#     if obj_current:
-#         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
+#     # obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
+#     # if obj_current:
+#     #     raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
 
 #     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
@@ -524,6 +523,15 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
 #     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    
+#     bidang_current = await crud.bidang.get(id=sch.bidang_id)
+#     if bidang_current.geom :
+#         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+#     draft = await crud.draft.get(id=sch.draft_id)
+
+#     bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+#     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
 #     payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(new_obj.bidang_id),
 #                                               hasil_peta_lokasi_id=str(new_obj.id),
@@ -546,6 +554,13 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #                   worker_id:UUID):
     
 #     db_session = db.session
+#     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get(id=id)
+#     #bidang override
+#     bidang_override_current = await crud.bidang.get(id=hasil_peta_lokasi_current.bidang_id)
+#     override_geom_current = wkt.dumps(wkb.loads(bidang_override_current.geom.data, hex=True))
+#     gs_1 = gpd.GeoSeries.from_wkt([override_geom_current])
+#     gdf_1 = gpd.GeoDataFrame(geometry=gs_1)
+
 #     for dt in sch.hasilpetalokasidetails:
 #         bidang_overlap_id = None 
 #         if dt.draft_detail_id is not None:
@@ -554,7 +569,40 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #             if draft_detail is None:
 #                 raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
             
-#             # draft_header_id = draft_detail.draft_id
+#             #Memotong geom kulit bintang apabila beririsan dengan kulit bintang, dengan kondisi:
+#             #- status peta lokasi LANJUT
+#             #- hasil peta lokasi detail MENAMBAH LUAS
+#             #- bidang yg tertimpa adalah KULIT BINTANG
+#             bidang_intersects_current = await crud.bidang.get(id=dt.bidang_id)
+#             if bidang_intersects_current.geom :
+#                 bidang_intersects_current.geom = wkt.dumps(wkb.loads(bidang_intersects_current.geom.data, hex=True))
+#             if bidang_intersects_current.geom_ori :
+#                 bidang_intersects_current.geom_ori = wkt.dumps(wkb.loads(bidang_intersects_current.geom_ori.data, hex=True))
+
+#             if hasil_peta_lokasi_current.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Lanjut and dt.status_luas == StatusLuasOverlapEnum.Menambah_Luas and bidang_intersects_current.jenis_bidang == JenisBidangEnum.Bintang:
+#                 #1. Langkah pertama copy geom ke geom_ori pada data kulit bintang
+#                 #jika kulit bintang sudah memiiki geom_ori maka lewati proses copy
+#                 geom_ori = None
+#                 if bidang_intersects_current.geom_ori is None:
+#                     geom_ori = bidang_intersects_current.geom
+
+#                 #2. Langkah kedua bandingkan geom bidang hasil petlok dengan kulit bintang, kemudian jadikan hasil geom yang tidak tertiban menjadi geom baru
+#                 gs_2 = gpd.GeoSeries.from_wkt([bidang_intersects_current.geom])
+#                 gdf_2 = gpd.GeoDataFrame(geometry=gs_2)
+
+#                 clipped_gdf = gdf_2.difference(gdf_1)
+
+#                 geom_new = None
+#                 if not clipped_gdf.is_empty.all():
+#                     geom_new = GeomService.single_geometry_to_wkt(clipped_gdf[0])
+                
+#                 obj_new = BidangSch(geom_ori=geom_ori or bidang_intersects_current.geom_ori, geom=geom_new or bidang_intersects_current.geom)
+
+#                 await crud.bidang.update(obj_current=bidang_intersects_current,
+#                                         obj_new=obj_new,
+#                                         updated_by_id=hasil_peta_lokasi_current.updated_by_id,
+#                                         db_session=db_session,
+#                                         with_commit=False)
             
 #             code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
 #             bidang_overlap_sch = BidangOverlapSch(
@@ -588,9 +636,7 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
 #     kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload.kjb_dt_id)
 #     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
-#     # kjb_harga_current = await crud.kjb_harga.get_harga_by_id_for_cloud(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=kjb_dt_current.jenis_alashak)
 #     tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
-#     draft = await crud.draft.get(id=payload.draft_id)
 
 #     jenis_bidang = JenisBidangEnum.Standard
 #     status_bidang = StatusBidangEnum.Deal
@@ -608,11 +654,6 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #     bidang_updated = BidangSch(
 #         jenis_bidang=jenis_bidang,
 #         status=status_bidang,
-#         pemilik_id=hasil_peta_lokasi.pemilik_id,
-#         luas_surat=hasil_peta_lokasi.luas_surat,
-#         planing_id=hasil_peta_lokasi.planing_id,
-#         sub_project_id=hasil_peta_lokasi.sub_project_id,
-#         skpt_id=hasil_peta_lokasi.skpt_id,
 #         group=kjb_hd_current.nama_group,
 #         jenis_alashak=kjb_dt_current.jenis_alashak,
 #         jenis_surat_id=kjb_dt_current.jenis_surat_id,
@@ -622,12 +663,6 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #         mediator=kjb_hd_current.mediator,
 #         telepon_mediator=kjb_hd_current.telepon_mediator,
 #         notaris_id=tanda_terima_notaris_current.notaris_id,
-#         luas_ukur=hasil_peta_lokasi.luas_ukur,
-#         luas_nett=hasil_peta_lokasi.luas_nett,
-#         luas_clear=hasil_peta_lokasi.luas_clear,
-#         luas_gu_pt=hasil_peta_lokasi.luas_gu_pt,
-#         luas_gu_perorangan=hasil_peta_lokasi.luas_gu_perorangan,
-#         geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)),
 #         bundle_hd_id=kjb_dt_current.bundle_hd_id,
 #         harga_akta=kjb_dt_current.harga_akta,
 #         harga_transaksi=kjb_dt_current.harga_transaksi)
@@ -637,16 +672,13 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #                             updated_by_id=hasil_peta_lokasi.updated_by_id,
 #                             db_session=db_session,
 #                             with_commit=False)
-
-#     #remove draft
-#     # await crud.draft.remove(id=draft.id, db_session=db_session)
+   
 #     await db_session.commit()
-#     # except Exception as e:
-#     #     raise HTTPException(status_code=422, detail="error update bidang")
 
 # async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdateBidang):
 
 #     """Task generate checklist kelengkapan dokumen from hasil peta lokasi"""
+
 #     db_session = db.session
 
 #     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)

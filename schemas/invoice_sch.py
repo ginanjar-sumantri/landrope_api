@@ -31,6 +31,7 @@ class InvoiceSch(InvoiceFullBase):
     code_termin:Optional[str] = Field(alias="code_termin")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     spk_amount:Optional[Decimal] = Field(alias="spk_amount")
+    has_payment:Optional[bool] = Field(alias="has_payment")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]
