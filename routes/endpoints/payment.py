@@ -120,6 +120,11 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
+    if sch.giro_id:
+        giro_current = await crud.giro.get_by_id(id=sch.giro_id)
+        if (giro_current.giro_outstanding - sch.amount) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
+    
     amount_dtls = [dt.amount for dt in sch.details]
     if (sch.amount - sum(amount_dtls)) < 0:
         raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
