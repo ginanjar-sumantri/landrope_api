@@ -9,9 +9,11 @@ from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch,
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
 from schemas.giro_sch import GiroSch
+from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
+from common.enum import StatusBidangEnum
 from models.code_counter_model import CodeCounterEnum
 import crud
 import json
@@ -31,6 +33,10 @@ async def create(
         if (giro_current.giro_outstanding - sch.amount) < 0:
             raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
     
+    amount_dtls = [dt.amount for dt in sch.details]
+    if (sch.amount - sum(amount_dtls)) < 0:
+        raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False, db_session=db_session)
 
     for dt in sch.details:
@@ -104,7 +110,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     """Update a obj by its id"""
     db_session = db.session
 
-    obj_current = await crud.payment.get(id=id)
+    obj_current = await crud.payment.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Payment, id)
@@ -300,4 +306,16 @@ async def get_by_id(id:UUID):
         return create_response(data=obj)
     else:
         raise IdNotFoundException(Invoice, id)
+
+async def bidang_update_status(bidang_ids:list[UUID]):
+    for id in bidang_ids:
+        payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
+        if len(payment_details) > 0:
+            bidang_current = await crud.bidang.get(id=id)
+            bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
+        else:
+            bidang_current = await crud.bidang.get(id=id)
+            bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
 

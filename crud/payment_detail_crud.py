@@ -42,13 +42,20 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
-    # async def get_payment_not_in_by_ids(self, *, list_ids: List[UUID | str], payment_id:UUID, db_session : AsyncSession | None = None
-    #                             ) -> List[PaymentDetail] | None:
+    async def get_payment_detail_by_bidang_id(self, *, 
+                                    bidang_id:UUID, 
+                                    db_session : AsyncSession | None = None
+                                ) -> List[PaymentDetail] | None:
         
-    #     db_session = db_session or db.session
-    #     query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.payment_id == payment_id))
-    #     response =  await db_session.execute(query)
-    #     return response.scalars().all()
+        db_session = db_session or db.session
+        
+        query = select(PaymentDetail)
+        query = query.join(PaymentDetail.invoice)
+        query = query.filter(PaymentDetail.is_void != True)
+        query = query.filter(Invoice.bidang_id == bidang_id)
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
     # pass
 
 payment_detail = CRUDPaymentDetail(PaymentDetail)
