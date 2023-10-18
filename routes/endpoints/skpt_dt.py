@@ -168,11 +168,11 @@ async def bulk_skpt(file:UploadFile=File()):
                                 code_desa=geo_data['code_desa'],
                                 project=geo_data['project'],
                                 desa=geo_data['desa'])
-        tgl_sk = str(geo_data['tgl_sk'])
-        if tgl_sk != "nan" and tgl_sk != "None":
+        tgl_sk = str(geo_data['tgl_sk']).lower()
+        if tgl_sk != "nan" and tgl_sk != "none":
             shp_data.tgl_sk = date(geo_data['tgl_sk'])
-        jatuhtempo = str(geo_data['jatuhtempo'])    
-        if jatuhtempo != "nan" and jatuhtempo != "None":
+        jatuhtempo = str(geo_data['jatuhtempo']).lower()    
+        if jatuhtempo != "nan" and jatuhtempo != "none":
             shp_data.tgl_sk = date(geo_data['tgl_sk'])
         
         project = await crud.project.get_by_name(name=shp_data.project)
