@@ -114,7 +114,7 @@ async def analisa(
         bidang_intersection = bidang_intersection + bidang_ov_intersection
 
     for intersect_bidang in bidang_intersection:
-        bidang_geom = wkt.dumps(wkb.loads(intersect_bidang.geom.data, hex=True))
+        bidang_geom = intersect_bidang.geom
         bidang_dict = {"id" : intersect_bidang.id, "geometry" : bidang_geom}
         data_bidang = [bidang_dict]
 
