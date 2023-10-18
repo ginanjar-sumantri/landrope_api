@@ -178,6 +178,18 @@ async def update(
         raise IdNotFoundException(Termin, id)
     
     sch.is_void = obj_current.is_void
+
+    today = date.today()
+    month = roman.toRoman(today.month)
+    year = today.year
+    jns_byr:str = ""
+
+    if sch.jenis_bayar == JenisBayarEnum.UTJ or sch.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS:
+        jns_byr = JenisBayarEnum.UTJ.value
+        
+    else:
+        jns_byr = JenisBayarEnum.DP.value if sch.jenis_bayar == JenisBayarEnum.DP else JenisBayarEnum.LUNAS.value
+      
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -241,7 +253,10 @@ async def update(
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
+            last_number = await generate_code_month(entity=CodeCounterEnum.Invoice, with_commit=False, db_session=db_session)
             invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=obj_updated.id)
+            invoice_sch.code = f"INV/{last_number}/{jns_byr}/LA/{month}/{year}"
+            invoice_sch.is_void = False
             new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False)
 
             #add invoice_detail
