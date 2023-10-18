@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_
@@ -23,6 +23,7 @@ router = APIRouter()
 @router.post("/create", response_model=PostResponseBaseSch[PaymentSch], status_code=status.HTTP_201_CREATED)
 async def create(
             sch: PaymentCreateSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -38,19 +39,21 @@ async def create(
         raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
 
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False, db_session=db_session)
-
+    
+    bidang_ids = []
     for dt in sch.details:
         invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
         if (invoice_current.invoice_outstanding - dt.amount) < 0:
             raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
         
+        bidang_ids.append(invoice_current.bidang_id)
+
         detail = PaymentDetailCreateSch(payment_id=new_obj.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False)
         await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-        #bidang bebas
-        bidang_current = await crud.bidang.get(id=invoice_current.bidang_id)
-
     await db_session.commit()
+
+    background_task.add_task(bidang_update_status, bidang_ids)
 
     new_obj = await crud.payment.get_by_id(id=new_obj.id)
     
@@ -119,6 +122,8 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
+    bidang_ids = []
+
     #delete detail
     id_dtls = [dt.id for dt in sch.details if dt.id is not None]
     if len(id_dtls) > 0:

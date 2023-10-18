@@ -1,6 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import PaymentDetail, Payment, Invoice, Termin, Giro
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch, PaymentDetailForPrintout
@@ -38,8 +39,10 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
                                 ) -> List[PaymentDetail] | None:
         
         db_session = db_session or db.session
-        query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.payment_id == payment_id))
-        response =  await db_session.execute(query)
+        query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.payment_id == payment_id)
+                                ).options(selectinload(PaymentDetail.invoice))
+        
+        response = await db_session.execute(query)
         return response.scalars().all()
     
     async def get_payment_detail_by_bidang_id(self, *, 

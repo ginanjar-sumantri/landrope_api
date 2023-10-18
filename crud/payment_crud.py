@@ -29,7 +29,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                                             )
                                                                         ).options(selectinload(Invoice.termin
                                                                                             ).options(selectinload(Termin.tahap))
-                                                                        )
+                                                                        ).options(selectinload(Invoice.payment_details))
                                                     )
                                 )
                                     
