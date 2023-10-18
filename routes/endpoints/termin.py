@@ -173,7 +173,7 @@ async def update(
 
     db_session = db.session
 
-    obj_current = await crud.termin.get(id=id)
+    obj_current = await crud.termin.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
