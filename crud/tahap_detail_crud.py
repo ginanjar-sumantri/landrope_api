@@ -24,6 +24,10 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
             self.model.tahap_id == tahap_id,
             self.model.is_void == False
         ))
+
+        query = query.options(selectinload(TahapDetail.bidang
+                                        ).options(selectinload(Bidang.invoices))
+                    )
         response =  await db_session.execute(query)
         return response.scalars().all()
    

@@ -22,6 +22,9 @@ class BidangRawSch(BidangRawBase):
     project_name:str|None = Field(alias='project_name')
     desa_name:str|None = Field(alias='desa_name')
     updated_by_name:str|None = Field(alias='updated_by_name')
+    total_invoice:Decimal|None = Field(alias="total_invoice")
+    total_harga_transaksi:Decimal|None = Field(alias="total_harga_transaksi")
+    sisa_pelunasan:Decimal|None = Field(alias="sisa_pelunasan")
 
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')

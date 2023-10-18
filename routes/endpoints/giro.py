@@ -80,6 +80,8 @@ async def update(id:UUID, sch:GiroUpdateSch,
         raise IdNotFoundException(Giro, id)
     
     obj_updated = await crud.giro.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.giro.get_by_id(id=obj_updated.id)
+    
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[GiroSch], status_code=status.HTTP_200_OK)

@@ -8,6 +8,7 @@ from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
+from schemas.giro_sch import GiroSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
@@ -111,7 +112,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     
     #delete detail
     id_dtls = [dt.id for dt in sch.details if dt.id is not None]
-    removed_dtls = await crud.payment_detail.get_not_in_by_ids(list_ids=id_dtls)
+    removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
     if len(removed_dtls) > 0:
         await crud.payment_detail.remove_multiple_data(removed_dtls, db_session=db_session)
 
@@ -156,7 +157,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
     obj_updated.remark = sch.remark
     obj_updated.void_by_id = current_worker.id
 
-    obj_updated = await crud.payment.update(obj_current=obj_current, obj_updated=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     for dt in obj_current.details:
         payment_dtl_updated = dt
@@ -241,6 +242,45 @@ async def get_list(
 
 
     objs = await crud.invoice.get_multi_no_page(query=query)
+    return create_response(data=objs)
+
+@router.get("/search/giro", response_model=GetResponseBaseSch[list[GiroSch]])
+async def get_list(
+                keyword:str = None, 
+                filter_query:str=None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Giro)
+    # query = query.outerjoin(Payment, Payment.giro_id == Giro.id)
+    # query = query.filter(Payment.is_void != True)
+
+    subquery = (
+    select(func.coalesce(func.sum(Payment.amount), 0))
+    .filter(and_(Payment.giro_id == Giro.id, Payment.is_void != True))
+    .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
+    )
+
+    query = query.filter(Giro.amount - subquery != 0)  
+     
+    if keyword:
+        query = query.filter(
+            or_(
+                Giro.code.ilike(f'%{keyword}%'),
+                # Payment.code.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Invoice, key) == value)
+    
+    query = query.options(selectinload(Giro.payments))
+    query = query.distinct()
+
+    objs = await crud.giro.get_multi_no_page(query=query)
     return create_response(data=objs)
 
 @router.get("/search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])

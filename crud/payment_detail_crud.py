@@ -5,6 +5,7 @@ from crud.base_crud import CRUDBase
 from models import PaymentDetail, Payment, Invoice, Termin, Giro
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch, PaymentDetailForPrintout
 from uuid import UUID
+from typing import List
 
 class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentDetailUpdateSch]):
     async def get_by_termin_id_for_printout(self, *, 
@@ -32,6 +33,14 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         response = await db_session.execute(query)
 
         return response.fetchall()
+    
+    async def get_payment_not_in_by_ids(self, *, list_ids: List[UUID | str], payment_id:UUID, db_session : AsyncSession | None = None
+                                ) -> List[PaymentDetail] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.payment_id == payment_id))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
     # pass
 
 payment_detail = CRUDPaymentDetail(PaymentDetail)

@@ -7,7 +7,7 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
 from sqlalchemy import text
-from models.bidang_model import Bidang
+from models import Bidang, Planing, Project, Desa
 from models.worker_model import Worker
 from models.master_model import JenisSurat
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
@@ -84,7 +84,33 @@ async def get_list(
 
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(Bidang)
+    query = query.outerjoin(Bidang.planing)
+    query = query.outerjoin(Bidang.pemilik)
+    query = query.outerjoin(Bidang.invoices)
+
+    if keyword:
+        query = query.filter(
+            or_(
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Bidang.group.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Bidang, key) == value)
+
+    query = query.distinct()
+
+    objs = await crud.bidang.get_multi_paginated(query=query, params=params)
+
+
+    # objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
     return create_response(data=objs)
 
 @router.get("/order_gu", response_model=GetResponsePaginatedSch[BidangRawSch])

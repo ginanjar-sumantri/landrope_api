@@ -182,7 +182,10 @@ async def update(
     list_id = [dt.id for dt in sch.details if dt.id is not None]
     if len(list_id) > 0:
         list_detail = await crud.tahap_detail.get_multi_removed_detail(list_ids=list_id, tahap_id=id)
-        
+        for ls in list_detail:
+            if len(ls.bidang.invoices) > 0:
+                raise ContentNoChangeException(detail=f"bidang {ls.bidang.id_bidang} tidak dapat dihapus karena memiliki invoice")
+            
         if list_detail:
             await crud.tahap_detail.remove_multiple_data(list_obj=list_detail, db_session=db_session)
     
