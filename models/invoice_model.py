@@ -122,7 +122,7 @@ class Invoice(InvoiceFullBase, table=True):
             array_payment = numpy.array([payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True])
             total_payment = numpy.sum(array_payment)
         
-        return Decimal(self.amount - total_payment)
+        return Decimal(self.amount - Decimal(total_payment))
     
     @property
     def has_payment(self) -> bool | None:
@@ -130,6 +130,17 @@ class Invoice(InvoiceFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def payment_methods(self) -> str | None:
+        methods:str = ""
+        if len(self.payment_details) > 0:
+            for pay in self.payment_details:
+                methods += f'{pay.payment.payment_method.value}, ' 
+            
+            methods = methods[0:-2]
+        
+        return methods
 
 
 class InvoiceDetailBase(SQLModel):

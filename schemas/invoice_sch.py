@@ -32,6 +32,7 @@ class InvoiceSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     spk_amount:Optional[Decimal] = Field(alias="spk_amount")
     has_payment:Optional[bool] = Field(alias="has_payment")
+    # payment_methods:Optional[str] = Field(alias="payment_methods")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]

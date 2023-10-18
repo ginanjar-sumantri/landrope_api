@@ -70,7 +70,7 @@ class Spk(SpkFullBase, table=True):
         if self.satuan_bayar == SatuanBayarEnum.Percentage:
             total_amount = ((self.nilai or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
 
-        return total_amount
+        return Decimal(total_amount)
 
 
 # class SpkBebanBiayaBase(SQLModel):
