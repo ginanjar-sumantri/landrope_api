@@ -150,4 +150,13 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_by_ids_and_termin_id(self, *, 
+                                    list_ids: List[UUID | str], 
+                                    termin_id: UUID,
+                                    db_session : AsyncSession | None = None) -> List[Invoice] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.id.in_(list_ids), self.model.termin_id == termin_id))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
 invoice = CRUDInvoice(Invoice)
