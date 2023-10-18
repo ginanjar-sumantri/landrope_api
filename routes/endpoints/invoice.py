@@ -58,6 +58,10 @@ async def get_list(
                                                                     ).options(selectinload(Payment.giro))
                                                 )
                             )
+    
+    
+    
+    query = query.distinct()
         
     
     if keyword:

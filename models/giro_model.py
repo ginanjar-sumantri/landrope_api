@@ -34,4 +34,4 @@ class Giro(GiroFullBase, table=True):
             array_payment = numpy.array([payment.amount for payment in self.payments if payment.is_void != True])
             total_payment = numpy.sum(array_payment)
         
-        return Decimal(self.amount - total_payment)
+        return Decimal(self.amount - Decimal(total_payment))
