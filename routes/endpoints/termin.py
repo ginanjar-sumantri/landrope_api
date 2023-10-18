@@ -494,7 +494,7 @@ async def printout(id:UUID | str,
         raise IdNotFoundException(Termin, id)
     
     termin_header = TerminByIdForPrintOut(**dict(obj))
-    date_obj = datetime.strptime(str(termin_header.tanggal_transaksi), "%Y-%m-%d")
+    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
     day_of_week = date_obj.strftime("%A")
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
     
