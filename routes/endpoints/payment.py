@@ -15,6 +15,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException, Conte
 from common.generator import generate_code
 from common.enum import StatusBidangEnum
 from models.code_counter_model import CodeCounterEnum
+from shapely import wkt, wkb
 import crud
 import json
 
@@ -118,6 +119,10 @@ async def update(id:UUID, sch:PaymentUpdateSch,
 
     if not obj_current:
         raise IdNotFoundException(Payment, id)
+    
+    amount_dtls = [dt.amount for dt in sch.details]
+    if (sch.amount - sum(amount_dtls)) < 0:
+        raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
     
     sch.is_void = obj_current.is_void
     
@@ -327,10 +332,14 @@ async def bidang_update_status(bidang_ids:list[UUID]):
         payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
         if len(payment_details) > 0:
             bidang_current = await crud.bidang.get(id=id)
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
         else:
             bidang_current = await crud.bidang.get(id=id)
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
 
