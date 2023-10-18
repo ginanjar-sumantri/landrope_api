@@ -41,6 +41,9 @@ async def create(
         detail = PaymentDetailCreateSch(payment_id=new_obj.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False)
         await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
+        #bidang bebas
+        bidang_current = await crud.bidang.get(id=invoice_current.bidang_id)
+
     await db_session.commit()
 
     new_obj = await crud.payment.get_by_id(id=new_obj.id)
@@ -112,9 +115,13 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     
     #delete detail
     id_dtls = [dt.id for dt in sch.details if dt.id is not None]
-    removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
-    if len(removed_dtls) > 0:
-        await crud.payment_detail.remove_multiple_data(removed_dtls, db_session=db_session)
+    if len(id_dtls) > 0:
+        removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
+        if len(removed_dtls) > 0:
+            await crud.payment_detail.remove_multiple_data(list_obj=removed_dtls, db_session=db_session)
+    
+    if len(id_dtls) == 0 and len(obj_current.details) > 0:
+        await crud.payment_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
 
     for dt in sch.details:
         if dt.id is None:
@@ -293,3 +300,4 @@ async def get_by_id(id:UUID):
         return create_response(data=obj)
     else:
         raise IdNotFoundException(Invoice, id)
+

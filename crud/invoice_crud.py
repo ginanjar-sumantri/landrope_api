@@ -143,7 +143,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
             return response.fetchall()
     
     async def get_invoice_not_in_by_ids(self, *, list_ids: List[UUID | str], termin_id:UUID, db_session : AsyncSession | None = None
-                                ) -> List[PaymentDetail] | None:
+                                ) -> List[Invoice] | None:
         
         db_session = db_session or db.session
         query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.termin_id == termin_id))

@@ -182,9 +182,24 @@ async def update(
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
-    removed_invoice = await crud.invoice.get_invoice_not_in_by_ids(list_ids=list_id_invoice, termin_id=obj_updated.id)
-    if len(removed_invoice) > 0:
-        await crud.invoice.remove_multiple_data(list_obj=removed_invoice, db_session=db_session)
+    if len(list_id_invoice) > 0:
+        removed_invoice = await crud.invoice.get_invoice_not_in_by_ids(list_ids=list_id_invoice, termin_id=obj_updated.id)
+        for ls in removed_invoice:
+            if len(ls.payment_details) > 0:
+                raise ContentNoChangeException(detail=f"invoice {ls.code} tidak dapat dihapus karena memiliki payment")
+            
+        if len(removed_invoice) > 0:
+            await crud.invoice.remove_multiple_data(list_obj=removed_invoice, db_session=db_session)
+
+    if len(list_id_invoice) == 0 and len(obj_current.invoices) > 0:
+        list_id_invoice = [dt.id for dt in obj_current.invoices if dt.id is not None]
+        removed_invoice = await crud.invoice.get_invoice_not_in_by_ids(list_ids=list_id_invoice, termin_id=obj_updated.id)
+        for ls in removed_invoice:
+            if len(ls.payment_details) > 0:
+                raise ContentNoChangeException(detail=f"invoice {ls.code} tidak dapat dihapus karena memiliki payment")
+            
+        if len(removed_invoice) > 0:
+            await crud.invoice.remove_multiple_data(list_obj=removed_invoice, db_session=db_session)
 
     for invoice in sch.invoices:
         if invoice.id:
@@ -587,7 +602,8 @@ async def printout(id:UUID | str,
                                       tanggal_transaksi=termin_header.tanggal_transaksi,
                                       hari_transaksi=hari_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
-                                      amount="{:,.0f}".format(termin_header.amount)
+                                      amount="{:,.0f}".format(termin_header.amount),
+                                      remark=termin_header.remark
                                     )
     
     try:

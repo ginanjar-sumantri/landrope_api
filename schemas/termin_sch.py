@@ -55,6 +55,7 @@ class TerminByIdForPrintOut(SQLModel):
     manager_name:str|None 
     sales_name:str|None 
     mediator:str|None
+    remark:str|None
 
 class TerminInvoiceforPrintOut(SQLModel):
     id_bidang:Optional[UUID]
