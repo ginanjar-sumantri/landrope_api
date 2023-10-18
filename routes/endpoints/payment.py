@@ -108,6 +108,7 @@ async def get_by_id(id:UUID):
 
 @router.put("/{id}", response_model=PutResponseBaseSch[PaymentSch])
 async def update(id:UUID, sch:PaymentUpdateSch,
+                 background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -129,9 +130,14 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if len(id_dtls) > 0:
         removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
         if len(removed_dtls) > 0:
+            r_dtl = [rm.invoice.bidang_id for rm in removed_dtls]
+            bidang_ids = bidang_ids + r_dtl
             await crud.payment_detail.remove_multiple_data(list_obj=removed_dtls, db_session=db_session)
+            
     
     if len(id_dtls) == 0 and len(obj_current.details) > 0:
+        r_dtl = [rm.invoice.bidang_id for rm in obj_current.details]
+        bidang_ids = bidang_ids + r_dtl
         await crud.payment_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
 
     for dt in sch.details:
@@ -140,6 +146,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             if (invoice_current.invoice_outstanding - dt.amount) < 0:
                 raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
             
+            bidang_ids.append(invoice_current.bidang_id)
             detail = PaymentDetailCreateSch(payment_id=obj_current.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False)
             await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         else:
@@ -150,10 +157,13 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             elif (invoice_current.invoice_outstanding - dt.amount) < 0:
                 raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
             
+            bidang_ids.append(invoice_current.bidang_id)
             payment_dtl_updated = PaymentDetailUpdateSch(payment_id=obj_updated.id, invoice_id=dt.invoice_id, amount=dt.amount)
             await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
+
+    background_task.add_task(bidang_update_status, bidang_ids)
     
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
