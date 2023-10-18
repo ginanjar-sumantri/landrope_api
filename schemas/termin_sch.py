@@ -50,6 +50,7 @@ class TerminByIdForPrintOut(SQLModel):
     amount:Optional[Decimal]
     project_name:Optional[str]
     tanggal_transaksi:Optional[date]
+    tanggal_rencana_transaksi:Optional[date]
     jenis_bayar:Optional[str]
     notaris_name:str|None 
     manager_name:str|None 

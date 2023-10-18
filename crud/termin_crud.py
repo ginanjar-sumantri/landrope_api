@@ -69,6 +69,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                     t.id,
                     tr.created_at,
                     tr.tanggal_transaksi,
+                    tr.tanggal_rencana_transaksi,
                     (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
                     t.nomor_tahap,
                     SUM(i.amount) as amount,
@@ -158,10 +159,11 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                             end as str_jenis_bayar,
                             tr.tanggal_transaksi,
                             tr.jenis_bayar,
-                            Sum(i.amount) as amount
+                            Sum(pd.amount) as amount
                             from Invoice i
                             inner join Termin tr on tr.id = i.termin_id
                             inner join bidang b on b.id = i.bidang_id
+                            inner join payment_detail pd on i.id = pd.invoice_id
                             left outer join spk s on s.id = i.spk_id
                             where tr.is_void != true
                             and i.is_void != true

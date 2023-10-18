@@ -226,7 +226,7 @@
           <td colspan="12">&nbsp;</td>
           <td align="center">{{total_harga}}</td>
         </tr>
-
+        {% if data_invoice_history|length > 0 %}
         <tr>
           <td>&nbsp;</td>
           <th>ID Bidang</th>
@@ -244,7 +244,7 @@
           <td colspan="18">&nbsp;</td>
           <td align="right">{{item2.amountExt}}</td>
         </tr>
-        {% endfor %}
+        {% endfor %} {% endif %}
         <tr>
           <td colspan="23">&nbsp;</td>
         </tr>
@@ -302,7 +302,7 @@
               <tr>
                 <td>
                   Rencana transaksi hari {{hari_transaksi}},
-                  {{tanggal_transaksi}} di Kantor {{notaris_name}}
+                  {{tanggal_rencana_transaksi}} di Kantor {{notaris_name}}
                 </td>
               </tr>
               <tr>
