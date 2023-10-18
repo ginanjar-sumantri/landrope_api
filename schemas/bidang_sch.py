@@ -4,6 +4,7 @@ from schemas.kjb_termin_sch import KjbTerminSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.bidang_overlap_sch import BidangOverlapForTahap, BidangOverlapRawSch
+from schemas.beban_biaya_sch import BebanBiayaForSpkSch
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
@@ -87,7 +88,7 @@ class BidangForSPKByIdSch(SQLModel):
 
 class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
     
-    beban_biayas:list[KjbBebanBiayaSch] | None
+    beban_biayas:list[BebanBiayaForSpkSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 
 class BidangByIdForTahapSch(BidangRawBase):

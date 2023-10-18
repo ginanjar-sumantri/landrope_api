@@ -10,6 +10,7 @@ from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbBebanBiaya
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch, KjbBebanBiayaSch
+from schemas.beban_biaya_sch import BebanBiayaForSpkSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -30,7 +31,7 @@ class CRUDKjbBebanBiaya(CRUDBase[KjbBebanBiaya, KjbBebanBiayaCreateSch, KjbBeban
     
     async def get_kjb_beban_by_kjb_hd_id(self, *, 
                   kjb_hd_id: UUID | str,
-                  db_session: AsyncSession | None = None) -> List[KjbBebanBiayaSch] | None:
+                  db_session: AsyncSession | None = None) -> List[BebanBiayaForSpkSch] | None:
         
         db_session = db_session or db.session
         query = select(self.model).where(self.model.kjb_hd_id == kjb_hd_id

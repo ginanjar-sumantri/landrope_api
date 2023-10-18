@@ -1,7 +1,7 @@
 from models.kjb_model import KjbBebanBiaya, KjbBebanBiayaBase, KjbBebanBiayaFullBase
 from common.partial import optional
 from pydantic import BaseModel
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 from typing import List
 from uuid import UUID
 

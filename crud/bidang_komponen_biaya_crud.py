@@ -3,14 +3,14 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models.bidang_komponen_biaya_model import BidangKomponenBiaya
 from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, 
                                                BidangKomponenBiayaBebanPenjualSch)
+from schemas.beban_biaya_sch import BebanBiayaForSpkSch
 from typing import List
 from uuid import UUID
 
@@ -137,6 +137,21 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
     
+    async def get_multi_beban_by_bidang_id_for_spk(self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BebanBiayaForSpkSch] | None:
+        
+        db_session = db_session or db.session
+        query = select(BidangKomponenBiaya)
+        query = query.filter(BidangKomponenBiaya.bidang_id == bidang_id)
+        query = query.options(selectinload(BidangKomponenBiaya.beban_biaya))
+
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+
     async def get_multi_beban_penjual_by_invoice_id(
             self, 
             *, 
