@@ -24,6 +24,10 @@ class TerminSch(TerminFullBase):
 
 class TerminByIdSch(TerminFullBase):
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
+    project_id:Optional[UUID] = Field(alias="project_id")
+    project_name:Optional[str] = Field(alias="project_name")
+    ptsk_id:Optional[UUID] = Field(alias="ptsk_id")
+    ptsk_name:Optional[str] = Field(alias="ptsk_name")
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     notaris_name:str|None = Field(alias="notaris_name")

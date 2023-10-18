@@ -28,6 +28,7 @@ class TahapSch(TahapFullBase):
 class TahapByIdSch(TahapFullBase):
     planing_name:Optional[str] = Field(alias="planing_name")
     project_name:Optional[str] = Field(alias="project_name")
+    project_id:Optional[UUID] = Field(alias="project_id")
     section_name:Optional[str] = Field(alias="section_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")

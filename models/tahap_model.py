@@ -68,6 +68,10 @@ class Tahap(TahapFullBase, table=True):
         return getattr(getattr(getattr(self, 'planing', None), 'project', None), "name", None)
     
     @property
+    def project_id(self) -> str | None:
+        return getattr(getattr(self, 'planing', None), 'project_id', None)
+    
+    @property
     def section_name(self) -> str | None:
         return getattr(getattr(getattr(getattr(self, 'planing', None), 'project', None), "section", None), "name", None)
     

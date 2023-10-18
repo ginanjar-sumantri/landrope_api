@@ -98,6 +98,22 @@ class Termin(TerminFullBase, table=True):
         return getattr(getattr(self, 'tahap', None), 'nomor_tahap', None)
     
     @property
+    def project_id(self) -> UUID | None:
+        return getattr(getattr(self, 'tahap', None), 'project_id', None)
+    
+    @property
+    def project_name(self) -> str | None:
+        return getattr(getattr(self, 'tahap', None), 'project_name', None)
+    
+    @property
+    def ptsk_id(self) -> UUID | None:
+        return getattr(getattr(self, 'tahap', None), 'ptsk_id', None)
+    
+    @property
+    def ptsk_name(self) -> str | None:
+        return getattr(getattr(self, 'tahap', None), 'ptsk_name', None)
+    
+    @property
     def kjb_hd_code(self) -> str | None:
         return getattr(getattr(self, 'kjb_hd', None), 'code', None)
     

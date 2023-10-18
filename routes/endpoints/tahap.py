@@ -182,6 +182,7 @@ async def update(
     list_id = [dt.id for dt in sch.details if dt.id is not None]
     if len(list_id) > 0:
         list_detail = await crud.tahap_detail.get_multi_removed_detail(list_ids=list_id, tahap_id=id)
+        
         if list_detail:
             await crud.tahap_detail.remove_multiple_data(list_obj=list_detail, db_session=db_session)
     
