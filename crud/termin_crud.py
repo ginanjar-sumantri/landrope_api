@@ -157,7 +157,10 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                     end
                                 else tr.jenis_bayar
                             end as str_jenis_bayar,
-                            tr.tanggal_transaksi,
+                            case
+                                when tr.jenis_bayar = 'UTJ' then DATE(i.created_at)
+                                else tr.tanggal_transaksi
+                            end tanggal_transaksi,
                             tr.jenis_bayar,
                             Sum(pd.amount) as amount
                             from Invoice i
@@ -168,7 +171,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                             where tr.is_void != true
                             and i.is_void != true
                             and i.bidang_id in ({ids})
-                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, s.satuan_bayar, s.nilai
+                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.nilai
                          """)
             
 
