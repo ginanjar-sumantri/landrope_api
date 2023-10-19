@@ -12,7 +12,7 @@ async def generate_id_bidang(planing_id:UUID | str,
                              db_session : AsyncSession | None = None,
                              with_commit : bool | None = True) -> str:
 
-    planing = await crud.planing.get(id=planing_id)
+    planing = await crud.planing.get_by_id(id=planing_id)
 
     desa = await crud.desa.get(id=planing.desa_id)
     if desa.geom:
