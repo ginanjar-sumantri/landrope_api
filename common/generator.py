@@ -45,7 +45,7 @@ async def generate_id_bidang(planing_id:UUID | str,
 
 async def generate_code_bundle(planing_id:UUID | None) -> str:
     if planing_id is not None:
-        planing = await crud.planing.get(id=planing_id)
+        planing = await crud.planing.get_by_id(id=planing_id)
         bundle_code = await generate_code(entity=CodeCounterEnum.Bundle)
         project_code = planing.project.code
         desa_code = planing.desa.code

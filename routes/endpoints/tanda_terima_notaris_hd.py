@@ -29,7 +29,7 @@ async def create(
     
     """Create a new object"""
 
-    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+    kjb_dt = await crud.kjb_dt.get_by_id(id=sch.kjb_dt_id)
 
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
@@ -144,7 +144,7 @@ async def update(id:UUID,
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
+    kjb_dt = await crud.kjb_dt.get_by_id(id=sch.kjb_dt_id)
 
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
@@ -152,6 +152,8 @@ async def update(id:UUID,
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}')
         sch.file_path = file_path
+    else:
+        sch.file_path = obj_current.file_path
     
     db_session = db.session
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
