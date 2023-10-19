@@ -30,7 +30,10 @@ class CRUDOrderGambarUkur(CRUDBase[OrderGambarUkur, OrderGambarUkurCreateSch, Or
                                                                                                                                     ).options(selectinload(Bidang.hasil_peta_lokasi)
                                                                                                                                     ).options(selectinload(Bidang.skpt
                                                                                                                                                            ).options(selectinload(Skpt.ptsk))
-                                                                                                                                    ).options(selectinload(Bidang.jenis_surat))
+                                                                                                                                    ).options(selectinload(Bidang.jenis_surat)
+                                                                                                                                    ).options(selectinload(Bidang.pemilik)
+                                                                                                                                    )
+                                                                                                                ).options(selectinload(HasilPetaLokasi.pemilik)
                                                                                                                 )
                                                                                             ).options(selectinload(KjbDt.jenis_surat)
                                                                                             ).options(selectinload(KjbDt.kjb_hd
