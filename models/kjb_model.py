@@ -34,7 +34,7 @@ class KjbHdBase(SQLModel):
     desa_id:UUID = Field(foreign_key="desa.id", nullable=False)
     luas_kjb:Decimal
     tanggal_kjb:date| None = Field(default=date.today())
-    remark:str
+    remark:str | None = Field(nullable=True)
     manager_id:UUID = Field(foreign_key="manager.id")
     sales_id:UUID = Field(foreign_key="sales.id")
     mediator:str | None
