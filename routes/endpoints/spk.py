@@ -401,6 +401,7 @@ async def printout(id:UUID | str,
     for k in obj_kelengkapans:
         kelengkapan = SpkDetailPrintOut(**dict(k))
         kelengkapan.no = no
+        kelengkapan.tanggapan = kelengkapan.tanggapan or ''
         spk_details.append(kelengkapan)
         no = no + 1
     

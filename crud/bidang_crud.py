@@ -46,7 +46,10 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.notaris)
                                                         ).options(selectinload(Bidang.bundlehd)
                                                         ).options(selectinload(Bidang.hasil_peta_lokasi)
-                                                        ).options(selectinload(Bidang.sub_project))
+                                                        ).options(selectinload(Bidang.sub_project)
+                                                        ).options(selectinload(Bidang.invoices)
+                                                        ).options(selectinload(Bidang.overlaps)
+                                                        ).options(selectinload(Bidang.komponen_biayas))
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()
