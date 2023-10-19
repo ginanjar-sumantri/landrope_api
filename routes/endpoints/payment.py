@@ -8,7 +8,7 @@ from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
-from schemas.giro_sch import GiroSch
+from schemas.giro_sch import GiroSch, GiroCreateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
@@ -34,7 +34,17 @@ async def create(
         giro_current = await crud.giro.get_by_id(id=sch.giro_id)
         if (giro_current.giro_outstanding - sch.amount) < 0:
             raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
-    
+    else:
+        giro_current = await crud.giro.get_by_code_lower(code=sch.code)
+        if giro_current:
+            if (giro_current.giro_outstanding - sch.amount) < 0:
+                raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
+        else:
+            sch_giro = GiroCreateSch(code=sch.code, amount=sch.amount, is_active=True)
+            giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        
+        sch.giro_id = giro_current.id      
+
     amount_dtls = [dt.amount for dt in sch.details]
     if (sch.amount - sum(amount_dtls)) < 0:
         raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")

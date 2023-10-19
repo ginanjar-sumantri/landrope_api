@@ -55,6 +55,24 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         obj = await db_session.execute(select(self.model).where(self.model.code == code))
         return obj.scalar_one_or_none()
     
+    async def get_by_code_ilike(
+        self, *, code: str, db_session: AsyncSession | None = None
+    ) -> ModelType:
+        db_session = db_session or db.session
+        query = select(self.model)
+        query = query.filter(self.model.code.ilike(f'%{code}%'))
+        obj = await db_session.execute(select(self.model).where(self.model.code == code))
+        return obj.scalar_one_or_none()
+    
+    async def get_by_code_lower(
+        self, *, code: str, db_session: AsyncSession | None = None
+    ) -> ModelType:
+        db_session = db_session or db.session
+        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.code, ' ', ''))) == code.strip().lower().replace(' ', ''))
+        
+        obj = await db_session.execute(query)
+        return obj.scalar_one_or_none()
+    
     async def get_by_name(
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> ModelType:
