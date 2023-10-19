@@ -299,11 +299,11 @@ class Bidang(BidangFullBase, table=True):
         total_harga_overlap:Decimal = 0
         total_luas_bayar_overlap:Decimal = 0
         if len(self.overlaps) > 0:
-            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_harga_overlap = numpy.sum(array_total_harga_overlap)
+            array_total_harga_overlap = [((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
+            total_harga_overlap = sum(array_total_harga_overlap)
 
-            array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
+            array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
+            total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
 
         return Decimal(((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
     
@@ -312,11 +312,11 @@ class Bidang(BidangFullBase, table=True):
         total_harga_overlap:Decimal = 0
         total_luas_bayar_overlap:Decimal = 0
         if len(self.overlaps) > 0:
-            array_total_harga_overlap = numpy.array([((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_harga_overlap = numpy.sum(array_total_harga_overlap)
+            array_total_harga_overlap = [((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
+            total_harga_overlap = sum(array_total_harga_overlap)
 
-            array_total_luas_bayar_overlap = numpy.array([(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None])
-            total_luas_bayar_overlap = numpy.sum(array_total_luas_bayar_overlap)
+            array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
+            total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
 
         return Decimal(((self.harga_akta or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
     

@@ -72,8 +72,8 @@ class Payment(PaymentFullBase, table=True):
     def payment_outstanding(self) -> Decimal | None:
         total_payment:Decimal = 0
         if len(self.details) > 0:
-            array_payment = numpy.array([payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True])
-            total_payment = Decimal(numpy.sum(array_payment))
+            array_payment = [payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True]
+            total_payment = sum(array_payment)
         
         return self.amount - total_payment
 
