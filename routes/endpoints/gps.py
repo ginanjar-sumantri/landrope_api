@@ -72,8 +72,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    query = select(Gps).where(Gps.id == id).options(selectinload(Gps.skpt))
-    obj = await crud.gps.get(query=query)
+    obj = await crud.gps.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
