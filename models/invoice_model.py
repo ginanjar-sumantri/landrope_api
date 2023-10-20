@@ -166,3 +166,7 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
             "lazy" : "select"
         }
     )
+
+    @property
+    def beban_pembeli(self) -> bool | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_pembeli', None)

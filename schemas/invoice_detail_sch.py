@@ -15,6 +15,7 @@ class InvoiceDetailExtSch(SQLModel):
 
 class InvoiceDetailSch(InvoiceDetailFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
+    beban_pembeli:bool|None = Field(alias="beban_pembeli")
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):

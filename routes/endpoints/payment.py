@@ -190,6 +190,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
 async def void(id:UUID, sch:PaymentVoidSch,
+               background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
@@ -207,15 +208,19 @@ async def void(id:UUID, sch:PaymentVoidSch,
 
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
+    bidang_ids = []
     for dt in obj_current.details:
         payment_dtl_updated = dt
         payment_dtl_updated.is_void = True
         payment_dtl_updated.remark = sch.remark
         payment_dtl_updated.void_by_id = current_worker.id
 
+        bidang_ids.append(dt.invoice.bidang_id)
         await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
+
+    background_task.add_task(bidang_update_status, bidang_ids)
 
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
@@ -224,27 +229,32 @@ async def void(id:UUID, sch:PaymentVoidSch,
 async def void_detail(
                 id:UUID,
                 sch:PaymentVoidExtSch,
+                background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
     db_session = db.session
 
-    obj_current = await crud.payment.get(id=id)
+    obj_current = await crud.payment.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Payment, id)
 
+    bidang_ids = []
     for dt in sch.details:
         payment_dtl_current = await crud.payment_detail.get(id=dt.id)
+        invoice_current = await crud.invoice.get(id=payment_dtl_current.invoice_id)
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
         payment_dtl_updated.remark = dt.remark
         payment_dtl_updated.void_by_id = current_worker.id
 
+        bidang_ids.append(invoice_current.bidang_id)
+
         await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
-
+    background_task.add_task(bidang_update_status, bidang_ids)
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
 
