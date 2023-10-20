@@ -242,6 +242,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         inner join bidang b on b.id = i.bidang_id
                         inner join beban_biaya bb on bb.id = kb.beban_biaya_id
                         where kb.is_void != true
+                        and kb.is_use = true
                         and i.id = '{str(invoice_id)}'
                 """)
 
