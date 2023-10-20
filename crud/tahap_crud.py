@@ -38,7 +38,8 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
                                                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya))
                                                                                 ).options(selectinload(Bidang.overlaps
                                                                                                     ).options(selectinload(BidangOverlap.bidang_intersect))
-                                                                                ).options(selectinload(Bidang.invoices))
+                                                                                ).options(selectinload(Bidang.invoices)
+                                                                                ).options(selectinload(Bidang.pemilik))
                                                             )
                                         ).options(selectinload(Tahap.sub_project)
                                         ).options(selectinload(Tahap.termins))

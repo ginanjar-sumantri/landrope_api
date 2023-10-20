@@ -188,6 +188,10 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "harga_transaksi", None)
     
     @property
+    def pemilik_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "pemilik_name", None)
+    
+    @property
     def project_name(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "project_name", None)
     

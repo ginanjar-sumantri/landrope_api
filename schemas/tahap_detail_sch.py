@@ -39,6 +39,7 @@ class TahapDetailSch(TahapDetailFullBase):
     planing_id:Optional[UUID] = Field(alias="planing_id")
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     ptsk_id:Optional[UUID] = Field(alias="ptsk_id")
+    pemiik_name:Optional[str] = Field(alias="pemilik_name")
     total_harga_transaksi:Optional[Decimal] = Field(alias="total_harga_transaksi")
     total_harga_akta:Optional[Decimal] = Field(alias="total_harga_akta")
     sisa_pelunasan:Optional[Decimal] = Field(alias="sisa_pelunasan")
