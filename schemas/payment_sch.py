@@ -6,17 +6,18 @@ from decimal import Decimal
 from uuid import UUID
 
 class PaymentCreateSch(PaymentBase):
+    nomor_giro:str|None
     details:list[PaymentDetailExtSch]|None
 
 class PaymentSch(PaymentFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
     giro_code:str|None = Field(alias="giro_code")
-    giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
+    nomor_giro:str|None = Field(alias="nomor_giro")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
 
 class PaymentByIdSch(PaymentFullBase):
     giro_code:str|None = Field(alias="giro_code")
-    giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
+    nomor_giro:str|None = Field(alias="nomor_giro")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
     details:list[PaymentDetailSch]
 
@@ -32,4 +33,5 @@ class PaymentVoidExtSch(SQLModel):
 
 @optional
 class PaymentUpdateSch(PaymentBase):
+    nomor_giro:str|None
     details:list[PaymentDetailExtSch]|None

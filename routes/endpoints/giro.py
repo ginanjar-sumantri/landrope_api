@@ -2,14 +2,16 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select
+from sqlmodel import select, or_
 from sqlalchemy import exc
 from sqlalchemy.orm import selectinload
 from models.giro_model import Giro
 from models.worker_model import Worker
 from schemas.giro_sch import (GiroSch, GiroCreateSch, GiroUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException)
+from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
+from common.generator import generate_code
+from models.code_counter_model import CodeCounterEnum
 from decimal import Decimal
 import crud
 import pandas
@@ -24,12 +26,17 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-    
-    obj_current = await crud.giro.get_by_code(code=sch.code)
+    db_session = db.session
+
+    obj_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
     if obj_current:
-        raise NameExistException(name=sch.code, model=Giro)
+        raise NameExistException(name=sch.nomor_giro, model=Giro)
     
-    new_obj = await crud.giro.create(obj_in=sch, created_by_id=current_worker.id)
+    last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
+    sch.code = f"GIRO/{last_number}"
+    sch.from_master = True
+    
+    new_obj = await crud.giro.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     new_obj = await crud.giro.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
@@ -47,7 +54,10 @@ async def get_list(
     query = select(Giro).options(selectinload(Giro.payments))
 
     if keyword:
-        query = query.filter(Giro.code.ilike(f"%{keyword}%"))
+        query = query.filter(or_(
+                            Giro.code.ilike(f"%{keyword}%"),
+                            Giro.nomor_giro.ilike(f"%{keyword}%")
+                            ))
     
     if filter_query:
         filter_query = json.loads(filter_query)
@@ -79,57 +89,67 @@ async def update(id:UUID, sch:GiroUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Giro, id)
     
+    if obj_current:
+        amount_payment_detail = [payment_detail.amount for payment_detail in obj_current.payment.details if payment_detail.is_void != True]
+        total_amount_payment_detail = sum(amount_payment_detail)
+
+        if (sch.amount - total_amount_payment_detail) < 0 :
+            raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
+
+    
     obj_updated = await crud.giro.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.giro.get_by_id(id=obj_updated.id)
     
     return create_response(data=obj_updated)
 
-@router.delete("/delete", response_model=DeleteResponseBaseSch[GiroSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+# @router.delete("/delete", response_model=DeleteResponseBaseSch[GiroSch], status_code=status.HTTP_200_OK)
+# async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-    """Delete a object"""
+#     """Delete a object"""
 
-    obj_current = await crud.giro.get(id=id)
-    if not obj_current:
-        raise IdNotFoundException(Giro, id)
+#     obj_current = await crud.giro.get(id=id)
+#     if not obj_current:
+#         raise IdNotFoundException(Giro, id)
     
-    obj_deleted = await crud.giro.remove(id=id)
+#     obj_deleted = await crud.giro.remove(id=id)
 
-    return obj_deleted
+#     return obj_deleted
 
 @router.post("/import-giro")
 async def extract_excel(file:UploadFile,
                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Import Excel object"""
-    try:
-        db_session = db.session
 
-        file_content = await file.read()
-        df = pandas.read_excel(file_content)
-        rows, commit, row = [len(df), False, 1]
+    db_session = db.session
 
-        for i, data in df.iterrows():
-            sch = GiroCreateSch(code=str(data["code"]), 
-                                amount=Decimal(int(data["amount"])), 
-                                is_active=True)
+    file_content = await file.read()
+    df = pandas.read_excel(file_content)
+    rows, commit, row = [len(df), False, 1]
 
-            if row == rows:
-                commit = True
-            
-            obj_current = await crud.giro.get_by_code(code=sch.code)
+    for i, data in df.iterrows():
+        sch = GiroCreateSch(code=str(data["code"]), 
+                            amount=Decimal(int(data["amount"])), 
+                            is_active=True)
 
-            if obj_current:
-                await crud.giro.update(obj_current=obj_current, obj_new=sch, with_commit=commit, db_session=db_session, updated_by_id=current_worker.id)
+        if row == rows:
+            commit = True
+        
+        obj_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.code)
 
-            await crud.giro.create(obj_in=sch, created_by_id=current_worker.id, with_commit=commit, db_session=db_session)
+        if obj_current:
+            amount_payment_detail = [payment_detail.amount for payment_detail in obj_current.payment.details if payment_detail.is_void != True]
+            total_amount_payment_detail = sum(amount_payment_detail)
 
-            row = row + 1
+            if (sch.amount - total_amount_payment_detail) < 0 :
+                raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
+
+            await crud.giro.update(obj_current=obj_current, obj_new=sch, with_commit=commit, db_session=db_session, updated_by_id=current_worker.id)
+
+        await crud.giro.create(obj_in=sch, created_by_id=current_worker.id, with_commit=commit, db_session=db_session)
+
+        row = row + 1
     
-    except exc.IntegrityError:
-            await db_session.rollback()
-            raise HTTPException(status_code=409, detail="Resource already exists")
-
     return {'message' : 'successfully import'}
 
 

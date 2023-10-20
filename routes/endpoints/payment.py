@@ -13,7 +13,7 @@ from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 import crud
@@ -30,24 +30,25 @@ async def create(
     """Create a new object"""
     db_session = db.session
 
-    if sch.giro_id:
-        giro_current = await crud.giro.get_by_id(id=sch.giro_id)
-        if (giro_current.giro_outstanding - sch.amount) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
-    else:
-        giro_current = await crud.giro.get_by_code_lower(code=sch.code)
-        if giro_current:
-            if (giro_current.giro_outstanding - sch.amount) < 0:
-                raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
-        else:
-            sch_giro = GiroCreateSch(code=sch.code, amount=sch.amount, is_active=True)
+    giro_current = None
+    if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
+        giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
+        if giro_current is None:
+            sch_giro = GiroCreateSch(code=sch.code, amount=sch.amount, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
         sch.giro_id = giro_current.id      
 
     amount_dtls = [dt.amount for dt in sch.details]
-    if (sch.amount - sum(amount_dtls)) < 0:
-        raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    if giro_current:
+        if giro_current.amount - sum(amount_dtls) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    else:
+        if (sch.amount - sum(amount_dtls)) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+
+    last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
+    sch.code = f"PAY/{last_number}"
 
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False, db_session=db_session)
     
@@ -130,14 +131,24 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    if sch.giro_id:
-        giro_current = await crud.giro.get_by_id(id=sch.giro_id)
-        if ((giro_current.giro_outstanding + obj_current.amount) - sch.amount) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment tidak boleh lebih besar dari giro outstanding {giro_current.giro_outstanding}!!")
-    
+    giro_current = None
+    if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
+        giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
+        if giro_current is None:
+            sch_giro = GiroCreateSch(code=sch.code, amount=sch.amount, is_active=True, from_master=False)
+            giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        
+        sch.giro_id = giro_current.id 
+    elif sch.giro_id:
+        giro_current = await crud.giro.get_by_id(id=sch.giro_id)     
+
     amount_dtls = [dt.amount for dt in sch.details]
-    if (sch.amount - sum(amount_dtls)) < 0:
-        raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    if giro_current:
+        if giro_current.amount - sum(amount_dtls) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    else:
+        if (sch.amount - sum(amount_dtls)) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
     
     sch.is_void = obj_current.is_void
     
@@ -304,38 +315,46 @@ async def get_list(
 
 @router.get("/search/giro", response_model=GetResponseBaseSch[list[GiroSch]])
 async def get_list(
-                keyword:str = None, 
+                keyword:str = None,
+                payment_id:UUID = None, 
                 filter_query:str=None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    query = select(Giro)
+    # query = select(Giro)
     # query = query.outerjoin(Payment, Payment.giro_id == Giro.id)
     # query = query.filter(Payment.is_void != True)
 
-    subquery = (
-    select(func.coalesce(func.sum(Payment.amount), 0))
-    .filter(and_(Payment.giro_id == Giro.id, Payment.is_void != True))
-    .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
-    )
+    # subquery = (
+    # select(func.coalesce(func.sum(Payment.amount), 0))
+    # .filter(and_(Payment.giro_id == Giro.id, Payment.is_void != True))
+    # .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
+    # )
 
-    query = query.filter(Giro.amount - subquery != 0)  
+    # query = query.filter(Giro.amount - subquery != 0)  
      
+    query = select(Giro)
+
+    if payment_id is None:
+        query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True))
+    else:
+        query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True, Payment.id == payment_id))
+    
     if keyword:
         query = query.filter(
             or_(
                 Giro.code.ilike(f'%{keyword}%'),
-                # Payment.code.ilike(f'%{keyword}%')
+                Giro.nomor_giro.ilike(f'%{keyword}%'),
             )
         )
     
     if filter_query:
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
-                query = query.where(getattr(Invoice, key) == value)
+                query = query.where(getattr(Giro, key) == value)
     
-    query = query.options(selectinload(Giro.payments))
+    query = query.options(selectinload(Giro.payment))
     query = query.distinct()
 
     objs = await crud.giro.get_multi_no_page(query=query)

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class PaymentBase(SQLModel):
     payment_method:PaymentMethodEnum = Field(nullable=False)
     amount:Decimal = Field(nullable=True)
-    giro_id:Optional[UUID] = Field(foreign_key="giro.id")
+    giro_id:Optional[UUID] = Field(foreign_key="giro.id", nullable=True)
     code:Optional[str] = Field(nullable=True)
     pay_to: str = Field(nullable=False)
     remark:str | None = Field(nullable=True)
@@ -35,10 +35,10 @@ class Payment(PaymentFullBase, table=True):
     )
 
     giro:"Giro" = Relationship(
-        back_populates="payments",
+        back_populates="payment",
         sa_relationship_kwargs=
         {
-            "lazy" : "selectin"
+            "lazy" : "select"
         }
     )
 
@@ -65,8 +65,8 @@ class Payment(PaymentFullBase, table=True):
         return getattr(getattr(self, "giro", None), "code", None)
     
     @property
-    def giro_outstanding(self) -> Decimal | None:
-        return getattr(getattr(self, "giro", None), "giro_outstanding", None)
+    def nomor_giro(self) -> Decimal | None:
+        return getattr(getattr(self, "giro", None), "nomor_giro", None)
     
     @property
     def payment_outstanding(self) -> Decimal | None:
@@ -75,7 +75,7 @@ class Payment(PaymentFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        return self.amount - total_payment
+        return Decimal(self.amount - total_payment)
 
 class PaymentDetailBase(SQLModel):
     payment_id:UUID = Field(foreign_key="payment.id")

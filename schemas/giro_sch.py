@@ -8,9 +8,8 @@ class GiroCreateSch(GiroBase):
     pass
 
 class GiroSch(GiroFullBase):
-    giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
     is_used:bool|None = Field(alias="is_used")
-    giro_used:Decimal|None = Field(alias="giro_used")
+    payment_code:str|None = Field(alias="payment_code")
 
 @optional
 class GiroUpdateSch(GiroFullBase):

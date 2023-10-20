@@ -18,7 +18,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
         
         query = select(Payment).where(Payment.id == id
                                 ).options(selectinload(Payment.giro
-                                                    ).options(selectinload(Giro.payments))
+                                                    ).options(selectinload(Giro.payment))
                                 ).options(selectinload(Payment.details
                                                     ).options(selectinload(PaymentDetail.invoice
                                                                         ).options(selectinload(Invoice.bidang
