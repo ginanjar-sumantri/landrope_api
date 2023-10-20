@@ -35,3 +35,21 @@ class Giro(GiroFullBase, table=True):
             total_payment = sum(array_payment)
         
         return Decimal(self.amount - Decimal(total_payment))
+    
+    @property
+    def is_used(self) -> bool | None:
+        if len(self.payments) > 0:
+            array_payment = [payment for payment in self.payments if payment.is_void != True]
+            if len(array_payment) > 0:
+                return True
+        
+        return False
+    
+    @property
+    def giro_used(self) -> Decimal | None:
+        total_payment:Decimal = 0
+        if len(self.payments) > 0:
+            array_payment = [payment.amount for payment in self.payments if payment.is_void != True]
+            total_payment = sum(array_payment)
+
+        return Decimal(total_payment)

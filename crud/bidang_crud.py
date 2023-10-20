@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from typing import List
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice,
-                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd)
+                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
@@ -49,7 +49,10 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.sub_project)
                                                         ).options(selectinload(Bidang.invoices)
                                                         ).options(selectinload(Bidang.overlaps)
-                                                        ).options(selectinload(Bidang.komponen_biayas))
+                                                        ).options(selectinload(Bidang.komponen_biayas)
+                                                        ).options(selectinload(Bidang.tahap_details
+                                                                            ).options(selectinload(TahapDetail.tahap))
+                                                        )
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()

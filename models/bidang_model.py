@@ -13,7 +13,7 @@ from geoalchemy2 import Geometry
 
 if TYPE_CHECKING:
     from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
-                        Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice)
+                        Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice, TahapDetail)
     
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150)
@@ -139,6 +139,14 @@ class Bidang(BidangFullBase, table=True):
             "lazy":"select"
         }
     )
+
+    tahap_details:list["TahapDetail"] = Relationship(
+        back_populates="bidang",
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
@@ -146,6 +154,7 @@ class Bidang(BidangFullBase, table=True):
             "primaryjoin": "Bidang.updated_by_id==Worker.id",
         }
     )
+
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
@@ -348,6 +357,18 @@ class Bidang(BidangFullBase, table=True):
             total_invoice = Decimal(sum(list_invoices))
         
         return Decimal(total_invoice)
+    
+    @property
+    def nomor_tahap(self) -> int | None:
+        if self.tahap is None:
+            tahap_detail = next((x for x in self.tahap_details if x.is_void == False), None)
+
+            if tahap_detail:
+                return tahap_detail.tahap.nomor_tahap
+        else:
+            return int(self.tahap)
+        
+        return None
     
     # @property
     # def total_payment(self) -> Decimal | None:

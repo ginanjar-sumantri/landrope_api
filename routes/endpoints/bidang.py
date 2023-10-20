@@ -87,7 +87,6 @@ async def get_list(
     query = select(Bidang)
     query = query.outerjoin(Bidang.planing)
     query = query.outerjoin(Bidang.pemilik)
-    query = query.outerjoin(Bidang.invoices)
 
     if keyword:
         query = query.filter(

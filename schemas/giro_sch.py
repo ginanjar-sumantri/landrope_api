@@ -9,6 +9,8 @@ class GiroCreateSch(GiroBase):
 
 class GiroSch(GiroFullBase):
     giro_outstanding:Decimal|None = Field(alias="giro_outstanding")
+    is_used:bool|None = Field(alias="is_used")
+    giro_used:Decimal|None = Field(alias="giro_used")
 
 @optional
 class GiroUpdateSch(GiroFullBase):

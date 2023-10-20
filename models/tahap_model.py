@@ -142,9 +142,6 @@ class TahapDetail(TahapDetailFullBase, table=True):
     def group(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "group", None)
     
-    @property
-    def alashak(self) -> str | None:
-        return getattr(getattr(self, "bidang", None), "group", None)
     
     @property
     def luas_surat(self) -> Decimal | None:

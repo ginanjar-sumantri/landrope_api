@@ -232,7 +232,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = text(f"""
                     select 
                     case
-                        when bkb.beban_pembeli = true Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
                         else 'DITANGGUNG PENJUAL'
                     end as tanggapan,
                     bb.name
@@ -258,7 +259,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = text(f"""
                     select 
                     case
-                        when bkb.beban_pembeli = true Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
                         else 'DITANGGUNG PENJUAL'
                     end as tanggapan,
                     bb.name
