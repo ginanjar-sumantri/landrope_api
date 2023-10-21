@@ -52,7 +52,7 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Giro).options(selectinload(Giro.payments))
+    query = select(Giro).options(selectinload(Giro.payment))
 
     if keyword:
         query = query.filter(or_(
