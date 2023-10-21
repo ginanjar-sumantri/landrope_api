@@ -25,7 +25,8 @@ class Giro(GiroFullBase, table=True):
         back_populates="giro",
         sa_relationship_kwargs=
         {
-            "lazy" : "select"
+            "lazy" : "select",
+            "uselist":False
         }
     )
 

@@ -90,15 +90,15 @@ async def update(id:UUID, sch:GiroUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Giro, id)
     
-    
     if obj_current.payment:
         payment_current = obj_current.payment
-        amount_payment_detail = [payment_detail.amount for payment_detail in payment_current.details if payment_detail.is_void != True]
-        total_amount_payment_detail = sum(amount_payment_detail)
+        if len(payment_current.details) > 0:
+            amount_payment_detail = [payment_detail.amount for payment_detail in payment_current.details if payment_detail.is_void != True]
+            total_amount_payment_detail = sum(amount_payment_detail)
 
-        if (sch.amount - total_amount_payment_detail) < 0 :
-            raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
-        
+            if (sch.amount - total_amount_payment_detail) < 0 :
+                raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
+            
         payment_updated = PaymentUpdateSch(amount=sch.amount)
         await crud.payment.update(obj_current=payment_current, obj_new=payment_updated, with_commit=False, db_session=db_session)
 
