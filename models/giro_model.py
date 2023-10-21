@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 class GiroBase(SQLModel):
     code:str|None = Field(sa_column=(Column("code", String, unique=True)), nullable=False)
     nomor_giro:str|None = Field(sa_column=(Column("nomor_giro", String, unique=True)), nullable=False)
-    amount:condecimal(decimal_places=2) = Field(nullable=False, default=0)
-    is_active:bool = Field(default=True)
+    amount:condecimal(decimal_places=2)|None = Field(nullable=False, default=0)
+    is_active:bool|None = Field(default=True)
     from_master:bool|None = Field(nullable=True) #create from
 
 class GiroFullBase(BaseUUIDModel, GiroBase):
