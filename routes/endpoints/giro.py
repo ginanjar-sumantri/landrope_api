@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from models.giro_model import Giro
 from models.worker_model import Worker
 from schemas.giro_sch import (GiroSch, GiroCreateSch, GiroUpdateSch)
+from schemas.payment_sch import PaymentUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.generator import generate_code
@@ -83,21 +84,26 @@ async def update(id:UUID, sch:GiroUpdateSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
-
-    obj_current = await crud.giro.get(id=id)
+    db_session = db.session
+    obj_current = await crud.giro.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Giro, id)
     
-    if obj_current:
-        amount_payment_detail = [payment_detail.amount for payment_detail in obj_current.payment.details if payment_detail.is_void != True]
+    
+    if obj_current.payment:
+        payment_current = obj_current.payment
+        amount_payment_detail = [payment_detail.amount for payment_detail in payment_current.details if payment_detail.is_void != True]
         total_amount_payment_detail = sum(amount_payment_detail)
 
         if (sch.amount - total_amount_payment_detail) < 0 :
             raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
+        
+        payment_updated = PaymentUpdateSch(amount=sch.amount)
+        await crud.payment.update(obj_current=payment_current, obj_new=payment_updated, with_commit=False, db_session=db_session)
 
     
-    obj_updated = await crud.giro.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.giro.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
     obj_updated = await crud.giro.get_by_id(id=obj_updated.id)
     
     return create_response(data=obj_updated)

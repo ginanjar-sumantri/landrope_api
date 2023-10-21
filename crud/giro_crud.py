@@ -17,7 +17,9 @@ class CRUDGiro(CRUDBase[Giro, GiroCreateSch, GiroUpdateSch]):
         db_session = db_session or db.session
         
         query = select(Giro).where(Giro.id == id
-                                ).options(selectinload(Giro.payment))
+                                ).options(selectinload(Giro.payment
+                                                    ).options(selectinload(Payment.details))
+                                )
                                     
         
         response = await db_session.execute(query)
