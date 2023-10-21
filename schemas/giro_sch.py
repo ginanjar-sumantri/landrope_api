@@ -12,5 +12,5 @@ class GiroSch(GiroFullBase):
     payment_code:str|None = Field(alias="payment_code")
 
 @optional
-class GiroUpdateSch(GiroFullBase):
+class GiroUpdateSch(GiroBase):
     pass
