@@ -168,10 +168,13 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                             inner join Termin tr on tr.id = i.termin_id
                             inner join bidang b on b.id = i.bidang_id
                             inner join payment_detail pd on i.id = pd.invoice_id
+                            inner join payment py on py.id = pd.payment_id
                             left outer join spk s on s.id = i.spk_id
                             where tr.is_void != true
                             and i.is_void != true
                             and i.bidang_id in ({ids})
+                            and pd.is_void != true
+                            and py.is_void != true
                             group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.nilai
                          """)
             
