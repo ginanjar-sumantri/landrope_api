@@ -33,8 +33,8 @@ async def create(
     if obj_current:
         raise NameExistException(name=sch.nomor_giro, model=Giro)
     
-    last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
-    sch.code = f"GIRO/{last_number}"
+    last_number = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
+    sch.code = f"BG/{last_number}"
     sch.from_master = True
     
     new_obj = await crud.giro.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)

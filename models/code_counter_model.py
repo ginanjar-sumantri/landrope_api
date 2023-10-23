@@ -18,6 +18,7 @@ class CodeCounterEnum(str, Enum):
     Lunas = "Lunas"
     Invoice = "Invoice"
     Payment = "Payment"
+    Giro = "Giro"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None
