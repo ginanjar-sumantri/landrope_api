@@ -72,7 +72,7 @@ async def create(
         bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
         if bundledt_current:
             if bundledt_current.meta_data is None:
-                meta_data = f"<'Pihak_Penjual': null,'Pihak_Pembeli': null,'Nomor':'{kjb_dt.alashak}','Nomor_Dasar_Tanah': null,'Nomor_PBB': null,'Nomor_AJB_Riwayat': null>".replace("<", "{").replace(">", "}")
+                meta_data = f"<'Pihak_Penjual': null,'Pihak_Pembeli': null,'Nomor_Alas_Hak':'{kjb_dt.alashak}','Nomor_Dasar_Tanah': null,'Nomor_PBB': null,'Nomor_AJB_Riwayat': null>".replace("<", "{").replace(">", "}")
         
                 await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=current_worker.id)

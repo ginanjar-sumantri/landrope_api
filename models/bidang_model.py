@@ -370,20 +370,20 @@ class Bidang(BidangFullBase, table=True):
         
         return None
     
-    # @property
-    # def total_payment(self) -> Decimal | None:
-    #     total_payment:Decimal = 0
+    @property
+    def total_payment(self) -> Decimal | None:
+        total_payment:Decimal = 0
 
-    #     if len(self.invoices) > 0:
-    #         payment = []
-    #         list_invoices = [inv for inv in self.invoices if inv.is_void != True]
-    #         for invoice in list_invoices:
-    #             active_payments = [payment for payment in invoice.payment_details if payment.is_void != True]
+        if len(self.invoices) > 0:
+            payment = []
+            list_invoices = [inv for inv in self.invoices if inv.is_void != True]
+            for invoice in list_invoices:
+                active_payments = [payment.amount for payment in invoice.payment_details if payment.is_void != True]
+                payment = payment + active_payments
 
-    #         list_payment = [payment for payment in list_invoices]
-    #         total_invoice = Decimal(sum(list_invoices))
+            total_payment = Decimal(sum(payment))
         
-    #     return Decimal(total_invoice)
+        return Decimal(total_payment)
     
     @property
     def sisa_pelunasan(self) -> Decimal | None:
