@@ -16,6 +16,7 @@ from common.generator import generate_code
 from common.enum import StatusBidangEnum, PaymentMethodEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
+from datetime import date
 import crud
 import json
 
@@ -32,7 +33,7 @@ async def create(
 
     giro_current = None
     if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
-        giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
+        giro_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.nomor_giro)
         if giro_current is None:
             sch_giro = GiroCreateSch(code=sch.code, amount=sch.amount, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
@@ -141,8 +142,16 @@ async def update(id:UUID, sch:PaymentUpdateSch,
         sch.giro_id = giro_current.id 
     elif sch.giro_id:
         giro_current = await crud.giro.get_by_id(id=sch.giro_id)     
+    
+    amount_dtls = []
+    for dt in sch.details:
+        if dt.id:
+            dt_current = await crud.payment_detail.get(id=dt.id)
+            if dt_current.is_void != True:
+                amount_dtls.append(dt_current.amount)
+        else:
+            amount_dtls.append(dt.amount)
 
-    amount_dtls = [dt.amount for dt in sch.details]
     if giro_current:
         if giro_current.amount - sum(amount_dtls) < 0:
             raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
@@ -212,19 +221,20 @@ async def void(id:UUID, sch:PaymentVoidSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    obj_updated = obj_current
-    obj_updated.is_void = True
-    obj_updated.remark = sch.remark
-    obj_updated.void_by_id = current_worker.id
+    # obj_updated = obj_current
+    # obj_updated.is_void = True
+    # obj_updated.remark = sch.void_reason
+    # obj_updated.void_by_id = current_worker.id
 
-    obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    # obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     bidang_ids = []
     for dt in obj_current.details:
         payment_dtl_updated = dt
         payment_dtl_updated.is_void = True
-        payment_dtl_updated.remark = sch.remark
+        payment_dtl_updated.remark = sch.void_reason
         payment_dtl_updated.void_by_id = current_worker.id
+        payment_dtl_updated.void_at = date.today()
 
         bidang_ids.append(dt.invoice.bidang_id)
         await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
@@ -257,8 +267,9 @@ async def void_detail(
         invoice_current = await crud.invoice.get(id=payment_dtl_current.invoice_id)
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
-        payment_dtl_updated.remark = dt.remark
+        payment_dtl_updated.void_reason = dt.void_reason
         payment_dtl_updated.void_by_id = current_worker.id
+        payment_dtl_updated.void_at = date.today()
 
         bidang_ids.append(invoice_current.bidang_id)
 

@@ -21,6 +21,8 @@ class PaymentBase(SQLModel):
     reference:str|None = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=True, default=False)
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    void_reason:Optional[str] = Field(nullable=True)
+    void_at:Optional[date] = Field(nullable=True)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -84,6 +86,8 @@ class PaymentDetailBase(SQLModel):
     is_void:Optional[bool] = Field(default=False, nullable=False)
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     remark:Optional[str] = Field(nullable=True)
+    void_reason:Optional[str] = Field(nullable=True)
+    void_at:Optional[date] = Field(nullable=True)
 
 class PaymentDetailFullBase(BaseUUIDModel, PaymentDetailBase):
     pass
@@ -133,6 +137,13 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
             return self.payment.giro.code
         
         return self.payment.code
+    
+    @property
+    def nomor_giro(self) -> str | None:
+        if self.payment.giro:
+            return self.payment.giro.nomor_giro
+        
+        return None
     
     @property
     def payment_method(self) -> PaymentMethodEnum | None:

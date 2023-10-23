@@ -22,11 +22,11 @@ class PaymentByIdSch(PaymentFullBase):
     details:list[PaymentDetailSch]
 
 class PaymentVoidSch(SQLModel):
-    remark:str
+    void_reason:str
 
 class PaymentDetailVoidSch(SQLModel):
     id:UUID
-    remark:str
+    void_reason:str
 
 class PaymentVoidExtSch(SQLModel):
     details:list[PaymentDetailVoidSch]

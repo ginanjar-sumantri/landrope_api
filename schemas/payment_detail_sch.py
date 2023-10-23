@@ -16,6 +16,7 @@ class PaymentDetailExtSch(SQLModel):
 
 class PaymentDetailSch(PaymentDetailFullBase):
     code_giro:str | None = Field(alias="code_giro")
+    nomor_giro:str | None = Field(alias="nomor_giro")
     payment_method:PaymentMethodEnum | None = Field(alias="payment_method")
     updated_by_name:str|None = Field(alias="updated_by_name")
     void_by_name:str|None = Field(alias="void_by_name")
