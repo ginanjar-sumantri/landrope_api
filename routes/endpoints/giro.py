@@ -90,8 +90,9 @@ async def update(id:UUID, sch:GiroUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Giro, id)
     
-    if obj_current.payment:
-        payment_current = obj_current.payment
+    payment_current = next((x for x in obj_current.payment if x.is_void != True), None)
+    
+    if payment_current:
         if len(payment_current.details) > 0:
             amount_payment_detail = [payment_detail.amount for payment_detail in payment_current.details if payment_detail.is_void != True]
             total_amount_payment_detail = sum(amount_payment_detail)
@@ -143,12 +144,15 @@ async def extract_excel(file:UploadFile,
         
         obj_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.code)
 
-        if obj_current:
-            amount_payment_detail = [payment_detail.amount for payment_detail in obj_current.payment.details if payment_detail.is_void != True]
-            total_amount_payment_detail = sum(amount_payment_detail)
+        payment_current = next((x for x in obj_current.payment if x.is_void != True), None)
 
-            if (sch.amount - total_amount_payment_detail) < 0 :
-                raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
+        if obj_current:
+            if payment_current:
+                amount_payment_detail = [payment_detail.amount for payment_detail in payment_current.details if payment_detail.is_void != True]
+                total_amount_payment_detail = sum(amount_payment_detail)
+
+                if (sch.amount - total_amount_payment_detail) < 0 :
+                    raise ContentNoChangeException(detail=f"Giro {sch.code} eksis di database dan telah terpakai payment, namun amount saat ini lebih kecil dari total paymentnya. Harap dicek kembali")
 
             await crud.giro.update(obj_current=obj_current, obj_new=sch, with_commit=commit, db_session=db_session, updated_by_id=current_worker.id)
 

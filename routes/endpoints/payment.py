@@ -35,8 +35,8 @@ async def create(
     if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
         giro_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.nomor_giro)
         if giro_current is None:
-            last_number = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
-            code_giro = f"BG/{last_number}"
+            last_number_giro = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
+            code_giro = f"BG/{last_number_giro}"
             sch_giro = GiroCreateSch(code=code_giro, nomor_giro=sch.nomor_giro, amount=sch.amount, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
@@ -130,6 +130,9 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     db_session = db.session
 
     obj_current = await crud.payment.get_by_id(id=id)
+
+    if obj_current.is_void:
+        raise ContentNoChangeException(detail="Payment telah di void")
 
     if not obj_current:
         raise IdNotFoundException(Payment, id)
@@ -225,12 +228,12 @@ async def void(id:UUID, sch:PaymentVoidSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    # obj_updated = obj_current
-    # obj_updated.is_void = True
-    # obj_updated.remark = sch.void_reason
-    # obj_updated.void_by_id = current_worker.id
+    obj_updated = obj_current
+    obj_updated.is_void = True
+    obj_updated.remark = sch.void_reason
+    obj_updated.void_by_id = current_worker.id
 
-    # obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     bidang_ids = []
     for dt in obj_current.details:

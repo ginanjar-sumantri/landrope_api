@@ -21,12 +21,11 @@ class GiroFullBase(BaseUUIDModel, GiroBase):
     pass
 
 class Giro(GiroFullBase, table=True):
-    payment:"Payment" = Relationship(
+    payment:list["Payment"] = Relationship(
         back_populates="giro",
         sa_relationship_kwargs=
         {
-            "lazy" : "select",
-            "uselist":False
+            "lazy" : "select"
         }
     )
 
@@ -39,8 +38,13 @@ class Giro(GiroFullBase, table=True):
     
     @property
     def payment_code(self) -> str | None:
-        return getattr(getattr(self, "payment", None), "code", None)
-
+        if len(self.payment) > 0:
+            payment = next((x for x in self.payment if x.is_void != True), None)
+            if payment:
+                return payment.code
+            
+        return None
+    
     # @property
     # def giro_outstanding(self) -> Decimal | None:
     #     total_payment:Decimal = 0
