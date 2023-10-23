@@ -175,6 +175,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                             and i.bidang_id in ({ids})
                             and pd.is_void != true
                             and py.is_void != true
+                            and tr.id != '{termin_id}'
                             group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.nilai
                          """)
             

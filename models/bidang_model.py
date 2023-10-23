@@ -374,11 +374,13 @@ class Bidang(BidangFullBase, table=True):
     # def total_payment(self) -> Decimal | None:
     #     total_payment:Decimal = 0
 
-    #     for inv in self.invoices:
-
-
     #     if len(self.invoices) > 0:
-    #         list_invoices = [inv.amount for inv in self.invoices if inv.is_void != True]
+    #         payment = []
+    #         list_invoices = [inv for inv in self.invoices if inv.is_void != True]
+    #         for invoice in list_invoices:
+    #             active_payments = [payment for payment in invoice.payment_details if payment.is_void != True]
+
+    #         list_payment = [payment for payment in list_invoices]
     #         total_invoice = Decimal(sum(list_invoices))
         
     #     return Decimal(total_invoice)
