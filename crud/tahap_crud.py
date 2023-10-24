@@ -41,7 +41,8 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
                                                                                 ).options(selectinload(Bidang.invoices
                                                                                                     ).options(selectinload(Invoice.payment_details)
                                                                                                     )
-                                                                                ).options(selectinload(Bidang.pemilik))
+                                                                                ).options(selectinload(Bidang.pemilik)
+                                                                                ).options(selectinload(Bidang.hasil_peta_lokasi))
                                                             )
                                         ).options(selectinload(Tahap.sub_project)
                                         ).options(selectinload(Tahap.termins))
