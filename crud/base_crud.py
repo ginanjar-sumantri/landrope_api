@@ -165,7 +165,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         filter_query: str | None = None,
         params: Params | None = Params(),
         order_by: str | None = None,
-        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        order: OrderEnumSch | None = OrderEnumSch.descendent,
         query: T | Select[T] | None = None,
         db_session: AsyncSession | None = None,
         join:bool | None = False
@@ -194,9 +194,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if cls_meta and order_by in cls_meta().order_fields:
                 order_by = cls_meta().order_fields[order_by]
             else:
-                order_by = 'id'    
+                order_by = 'updated_at'    
         elif order_by is None:
-            order_by = 'id'
+            order_by = 'updated_at'
         
         if query is None:
             query = select(self.model)
@@ -264,7 +264,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         *,
         params: Params | None = Params(),
         order_by: str | None = None,
-        order: OrderEnumSch | None = OrderEnumSch.ascendent,
+        order: OrderEnumSch | None = OrderEnumSch.descendent,
         query: T | Select[T] | None = None,
         db_session: AsyncSession | None = None,
     ) -> Page[ModelType]:
@@ -273,13 +273,18 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         columns = self.model.__table__.columns
 
         if order_by not in columns or order_by is None:
-            order_by = self.model.id
+            order_by = "updated_at"
 
         if query is None:
             if order == OrderEnumSch.ascendent:
                 query = select(self.model).order_by(columns[order_by].asc())
             else:
                 query = select(self.model).order_by(columns[order_by].desc())
+        else:
+            if order == OrderEnumSch.ascendent:
+                query = query.order_by(columns[order_by].asc())
+            else:
+                query = query.order_by(columns[order_by].desc())
 
         return await paginate(db_session, query, params)
 

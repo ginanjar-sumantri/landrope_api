@@ -248,7 +248,8 @@ async def export_shp(
     
     results = await crud.skptdt.get_multi_by_dict(filter_query=filter_query)
 
-    for data in results:
+    for skptdt in results:
+        data = await crud.skptdt.get_by_id(id=skptdt.id)
         sch = SkptShpSch(geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       code=data.skpt.ptsk.code,
                       name=data.skpt.ptsk.name,

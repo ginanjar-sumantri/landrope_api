@@ -65,7 +65,7 @@ async def get_list(
         for key, value in filter_query.items():
             query = query.where(getattr(Giro, key) == value)
 
-    objs = await crud.giro.get_multi_paginated(params=params, query=query)
+    objs = await crud.giro.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[GiroSch])

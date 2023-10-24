@@ -58,12 +58,7 @@ async def get_list(
                                                                     ).options(selectinload(Payment.giro))
                                                 )
                             )
-    
-    
-    
-    query = query.distinct()
         
-    
     if keyword:
         query = query.filter(
             or_(
@@ -79,8 +74,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Invoice, key) == value)
 
+    query = query.distinct()
 
-    objs = await crud.invoice.get_multi_paginated(params=params, query=query)
+    objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 

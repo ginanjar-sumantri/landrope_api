@@ -86,6 +86,17 @@ class SkptDt(SkptDtFullBase, table=True):
         return self.planing.project.name
     
     @property
+    def section_name(self) -> str:
+        if self.planing is None:
+            return ""
+        if self.planing.project is None:
+            return ""
+        if self.planing.project.section is None:
+            return ""
+        
+        return self.planing.project.section.name
+    
+    @property
     def desa_name(self) -> str:
         if self.planing is None:
             return ""
@@ -93,3 +104,12 @@ class SkptDt(SkptDtFullBase, table=True):
             return ""
         
         return self.planing.desa.name
+    
+    @property
+    def desa_code(self) -> str:
+        if self.planing is None:
+            return ""
+        if self.planing.desa is None:
+            return ""
+        
+        return self.planing.desa.code

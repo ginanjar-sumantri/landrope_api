@@ -71,7 +71,7 @@ async def get_list(
 
     query = query.order_by(text(order_by))
     
-    objs = await crud.bundledt.get_multi_paginated(params=params, query=query)
+    objs = await crud.bundledt.get_multi_paginated_ordered(params=params, query=query)
 
     return create_response(data=objs)
 

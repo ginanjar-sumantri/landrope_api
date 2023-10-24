@@ -99,7 +99,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(ChecklistKelengkapanDokumenHd, key) == value)
 
-    objs = await crud.checklist_kelengkapan_dokumen_hd.get_multi_paginated(params=params, query=query)
+    query = query.distinct()
+
+    objs = await crud.checklist_kelengkapan_dokumen_hd.get_multi_paginated_ordered(params=params, query=query, order_by="updated_at")
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ChecklistKelengkapanDokumenHdByIdSch])

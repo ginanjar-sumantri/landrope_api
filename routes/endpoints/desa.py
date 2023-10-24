@@ -174,6 +174,7 @@ async def export_shp(
     results = await crud.desa.get_multi_by_dict(filter_query=filter_query)
 
     for data in results:
+        
         sch = DesaExportSch(
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       name=data.name,

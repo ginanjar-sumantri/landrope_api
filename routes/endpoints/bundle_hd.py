@@ -59,8 +59,10 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
             query = query.where(getattr(BundleHd, key) == value)
+    
+    query = query.distinct()
 
-    objs = await crud.bundlehd.get_multi_paginated(params=params, query=query)
+    objs = await crud.bundlehd.get_multi_paginated_ordered(params=params, query=query, order_by="updated_at")
 
     return create_response(data=objs)
 

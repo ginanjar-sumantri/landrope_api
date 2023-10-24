@@ -210,7 +210,8 @@ async def export_shp(
     
     results = await crud.planing.get_multi_by_dict(filter_query=filter_query)
 
-    for data in results:
+    for planing in results:
+        data = await crud.planing.get_by_id(id=planing.id)
         sch = PlaningShpSch(
                       geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
                       luas=data.luas,

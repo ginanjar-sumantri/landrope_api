@@ -106,10 +106,8 @@ async def get_list(
 
     query = query.distinct()
 
-    objs = await crud.bidang.get_multi_paginated(query=query, params=params)
-
-
-    # objs = await crud.bidang.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    objs = await crud.bidang.get_multi_paginated_ordered(query=query, params=params, order_by="updated_at")
+    
     return create_response(data=objs)
 
 @router.get("/order_gu", response_model=GetResponsePaginatedSch[BidangRawSch])
@@ -497,7 +495,8 @@ async def export(
 
     results = await crud.bidang.get_multi_by_dict(filter_query=filter_query)
     schemas = []
-    for data in results:
+    for bidang in results:
+        data = await crud.bidang.get_by_id(id=bidang.id)
         sch = BidangShpSch(n_idbidang=data.id_bidang,
                            o_idbidang=data.id_bidang_lama,
                            pemilik=data.pemilik_name,
