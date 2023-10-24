@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field
 from typing import Optional
 from common.partial import optional
 from common.as_form import as_form
+from common.enum import HasilAnalisaPetaLokasiEnum
 from uuid import UUID
 from decimal import Decimal
 
@@ -43,6 +44,7 @@ class TahapDetailSch(TahapDetailFullBase):
     total_harga_transaksi:Optional[Decimal] = Field(alias="total_harga_transaksi")
     total_harga_akta:Optional[Decimal] = Field(alias="total_harga_akta")
     sisa_pelunasan:Optional[Decimal] = Field(alias="sisa_pelunasan")
+    hasil_analisa_peta_lokasi:Optional[HasilAnalisaPetaLokasiEnum] = Field(alias="hasil_analisa_peta_lokasi")
     overlaps:Optional[list[BidangOverlapRawSch]] = Field(alias="overlaps")
 
 class TahapDetailExtSch(SQLModel):

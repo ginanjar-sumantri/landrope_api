@@ -25,7 +25,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         query = select(self.model).where(and_(
                             self.model.bidang_id == bidang_id,
                             self.model.beban_biaya_id == beban_biaya_id
-            ))
+            )).options(selectinload(BidangKomponenBiaya.beban_biaya))
+        
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
@@ -110,21 +111,21 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         kb.id As komponen_id,
                         kb.beban_pembeli,
                         bb.name,
-                        bb.satuan_harga,
-                        bb.satuan_bayar,
-                        bb.amount as beban_biaya_amount,
+                        kb.satuan_harga,
+                        kb.satuan_bayar,
+                        kb.amount as beban_biaya_amount,
                         CASE
-                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
+                            WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
                                 Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                    ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
                                 End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
                                 Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                    ELSE ROUND((kb.amount * b.luas_bayar), 2)
                                 End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
                         END As total_beban
                         from bidang_komponen_biaya kb
                         inner join bidang b on kb.bidang_id = b.id
@@ -220,21 +221,21 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         b.harga_transaksi,
                         kb.id As komponen_id,
                         bb.name,
-                        bb.satuan_harga,
-                        bb.satuan_bayar,
-                        bb.amount as beban_biaya_amount,
+                        kb.satuan_harga,
+                        kb.satuan_bayar,
+                        kb.amount as beban_biaya_amount,
                         CASE
-                            WHEN bb.satuan_bayar = 'Percentage' and bb.satuan_harga = 'Per_Meter2' Then
+                            WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
                                 Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                    ELSE ROUND((bb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                    ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
                                 End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Per_Meter2' Then
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
                                 Case
-                                    WHEN b.luas_bayar is Null Then ROUND((bb.amount * b.luas_surat), 2)
-                                    ELSE ROUND((bb.amount * b.luas_bayar), 2)
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                    ELSE ROUND((kb.amount * b.luas_bayar), 2)
                                 End
-                            WHEN bb.satuan_bayar = 'Amount' and bb.satuan_harga = 'Lumpsum' Then bb.amount
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
                         END As total_beban
                         from bidang_komponen_biaya kb
                         inner join invoice_detail idt on kb.id = idt.bidang_komponen_biaya_id

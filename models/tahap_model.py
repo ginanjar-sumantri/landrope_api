@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from models import BidangOverlap
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
@@ -206,6 +206,10 @@ class TahapDetail(TahapDetailFullBase, table=True):
     @property
     def planing_id(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "planing_id", None)
+    
+    @property
+    def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
+        return getattr(getattr(self, "bidang", None), "hasil_analisa_peta_lokasi", None)
     
     @property
     def ptsk_name(self) -> str | None:

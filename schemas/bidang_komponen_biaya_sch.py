@@ -15,6 +15,9 @@ class BidangKomponenBiayaExtSch(SQLModel):
     beban_pembeli:bool | None
     is_void:Optional[bool]
     remark:Optional[str]
+    satuan_bayar:Optional[SatuanBayarEnum]
+    satuan_harga:Optional[SatuanHargaEnum]
+    amount:Optional[Decimal]
 
 
 class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):

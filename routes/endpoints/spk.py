@@ -46,13 +46,17 @@ async def create(
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
         else:
+            beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_use=False,
-                                                        remark=komponen_biaya.remark)
+                                                        remark=komponen_biaya.remark,
+                                                        satuan_bayar=beban_biaya.satuan_bayar,
+                                                        satuan_harga=beban_biaya.satuan_harga,
+                                                        amount=beban_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
