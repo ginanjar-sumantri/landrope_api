@@ -130,7 +130,9 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                 ).options(selectinload(Bidang.komponen_biayas
                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya)
                                                                     )
-                                                ).options(selectinload(Bidang.invoices))
+                                                ).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                )
                             )
 
         response =  await db_session.execute(query)
@@ -163,7 +165,9 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                 ).options(selectinload(Bidang.komponen_biayas
                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya)
                                                                     )
-                                                ).options(selectinload(Bidang.invoices))
+                                                ).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                )
                             )
 
         response =  await db_session.execute(query)

@@ -312,9 +312,10 @@ async def get_list_spk_by_tahap_id(
     spkts = []
     for s in spk_details:
         spk = SpkForTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.nilai, spk_satuan_bayar=s.satuan_bayar,
-                              bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
-                              luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
-                              total_harga=s.bidang.total_harga_transaksi, sisa_pelunasan=s.bidang.sisa_pelunasan, amount=s.spk_amount)
+                            bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
+                            luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
+                            total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, 
+                            total_payment=s.bidang.total_payment, sisa_pelunasan=s.bidang.sisa_pelunasan, amount=s.spk_amount)
 
         if jenis_bayar == JenisBayarEnum.LUNAS:
             spk.amount = spk.sisa_pelunasan

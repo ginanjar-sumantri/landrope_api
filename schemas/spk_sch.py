@@ -98,6 +98,7 @@ class SpkForTerminSch(SQLModel):
     total_harga:Optional[Decimal]
     total_beban:Optional[Decimal]
     total_invoice:Optional[Decimal]
+    total_payment:Optional[Decimal]
     sisa_pelunasan:Optional[Decimal]
     amount:Optional[Decimal]
 
