@@ -119,11 +119,13 @@ class InvoiceForPrintOutExt(InvoiceForPrintOut):
     luas_pbt_peroranganExt:Optional[str]
     luas_bayarExt:Optional[str]
 
-class InvoiceHistoryforPrintOut(InvoiceFullBase):
-    id_bidang:str|None = Field(alias="id_bidang")
-    jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
+class InvoiceHistoryforPrintOut(SQLModel):
+    id_bidang:str|None 
+    jenis_bayar:Optional[JenisBayarEnum]
     str_jenis_bayar:Optional[str]
     tanggal_transaksi:Optional[date]
     amount:Optional[Decimal]
+    amountExt:Optional[Decimal]
+    
     
 

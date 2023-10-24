@@ -1,9 +1,11 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
-from common.enum import TanggunganBiayaEnum
+from common.enum import TanggunganBiayaEnum, SatuanBayarEnum, SatuanHargaEnum
 from uuid import UUID
 from datetime import date
 from typing import TYPE_CHECKING, Optional
+from pydantic import condecimal
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from bidang_model import Bidang
@@ -19,6 +21,10 @@ class BidangKomponenBiayaBase(SQLModel):
     is_paid:Optional[bool] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
+    # satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
+    # satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
+    # amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    # amount_calculate:Optional[Decimal] = Field(nullable=True)
     
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):

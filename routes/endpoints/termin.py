@@ -12,7 +12,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
                                 TerminBidangIDSch, TerminInvoiceHistoryforPrintOutExt,
                                 TerminBebanBiayaForPrintOutExt)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt
+from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
@@ -568,9 +568,9 @@ async def printout(id:UUID | str,
 
 
     invoices_history = []
-    obj_invoices_history = await crud.termin.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
+    obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
     for his in obj_invoices_history:
-        history = TerminInvoiceHistoryforPrintOutExt(**dict(his))
+        history = InvoiceHistoryforPrintOut(**dict(his))
         history.amountExt = "{:,.0f}".format(history.amount)
         invoices_history.append(history)
 

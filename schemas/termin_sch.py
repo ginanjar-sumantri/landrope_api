@@ -63,16 +63,6 @@ class TerminInvoiceforPrintOut(SQLModel):
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
 
-class TerminInvoiceHistoryforPrintOut(SQLModel):
-    id_bidang:Optional[str]
-    jenis_bayar:Optional[JenisBayarEnum]
-    str_jenis_bayar:Optional[str]
-    tanggal_transaksi:Optional[date]
-    amount:Optional[Decimal]
-
-class TerminInvoiceHistoryforPrintOutExt(TerminInvoiceHistoryforPrintOut):
-    amountExt:Optional[str]
-
 class TerminUtjHistoryForPrintOut(SQLModel):
     id_bidang:Optional[str]
     jenis_bayar:Optional[JenisBayarEnum]

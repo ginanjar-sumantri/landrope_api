@@ -101,6 +101,7 @@ class BidangByIdForTahapSch(BidangRawBase):
     ptsk_id:Optional[UUID] = Field(alias="ptsk_id")
     kjb_harga_akta:Optional[Decimal] = Field(alias="kjb_harga_akta")
     kjb_harga_transaksi:Optional[Decimal] = Field(alias="kjb_harga_transaksi")
+    hasil_analisa_peta_lokasi:Optional[HasilAnalisaPetaLokasiEnum] = Field(alias="hasil_analisa_peta_lokasi")
     overlaps:Optional[list[BidangOverlapRawSch]]
 
 class BidangDraftChecklistDokumenSch(SQLModel):
