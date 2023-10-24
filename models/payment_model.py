@@ -88,6 +88,7 @@ class PaymentDetailBase(SQLModel):
     remark:Optional[str] = Field(nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
+    allocation_date:Optional[date] = Field(nullable=True)
 
 class PaymentDetailFullBase(BaseUUIDModel, PaymentDetailBase):
     pass

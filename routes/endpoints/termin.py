@@ -197,7 +197,7 @@ async def update(
 
     list_id_invoice = [inv.id for inv in sch.invoices if inv.id != None]
     if len(list_id_invoice) > 0:
-        removed_invoice = await crud.invoice.get_invoice_not_in_by_ids(list_ids=list_id_invoice, termin_id=obj_updated.id)
+        removed_invoice = await crud.invoice.get_multi_not_in_id_removed(list_ids=list_id_invoice, termin_id=obj_updated.id)
         for ls in removed_invoice:
             if len(ls.payment_details) > 0:
                 raise ContentNoChangeException(detail=f"invoice {ls.code} tidak dapat dihapus karena memiliki payment")
@@ -207,7 +207,7 @@ async def update(
 
     if len(list_id_invoice) == 0 and len(obj_current.invoices) > 0:
         list_id_invoice = [dt.id for dt in obj_current.invoices if dt.id is not None]
-        removed_invoice = await crud.invoice.get_by_ids_and_termin_id(list_ids=list_id_invoice, termin_id=obj_updated.id)
+        removed_invoice = await crud.invoice.get_multi_in_id_removed(list_ids=list_id_invoice, termin_id=obj_updated.id)
         for ls in removed_invoice:
             if len(ls.payment_details) > 0:
                 raise ContentNoChangeException(detail=f"invoice {ls.code} tidak dapat dihapus karena memiliki payment")
@@ -314,8 +314,8 @@ async def get_list_spk_by_tahap_id(
         spk = SpkForTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.nilai, spk_satuan_bayar=s.satuan_bayar,
                             bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
                             luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
-                            total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, 
-                            total_payment=s.bidang.total_payment, sisa_pelunasan=s.bidang.sisa_pelunasan, amount=s.spk_amount)
+                            total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
+                            sisa_pelunasan=s.bidang.sisa_pelunasan, amount=s.spk_amount, utj_amount=s.utj_amount)
 
         if jenis_bayar == JenisBayarEnum.LUNAS:
             spk.amount = spk.sisa_pelunasan

@@ -181,7 +181,7 @@ async def update(
     #remove bidang
     list_id = [dt.id for dt in sch.details if dt.id is not None]
     if len(list_id) > 0:
-        list_detail = await crud.tahap_detail.get_multi_removed_detail(list_ids=list_id, tahap_id=id)
+        list_detail = await crud.tahap_detail.get_multi_not_in_id_removed(list_ids=list_id, tahap_id=id)
         for ls in list_detail:
             if len(ls.bidang.invoices) > 0:
                 raise ContentNoChangeException(detail=f"bidang {ls.bidang.id_bidang} tidak dapat dihapus karena memiliki invoice")
@@ -191,7 +191,7 @@ async def update(
     
     if len(list_id) == 0 and len(obj_current.details) > 0:
         list_id = [dt.id for dt in obj_current.details if dt.id is not None]
-        list_detail = await crud.tahap_detail.get_multi_removed_detail(list_ids=list_id, tahap_id=id)
+        list_detail = await crud.tahap_detail.get_multi_in_id_removed(list_ids=list_id, tahap_id=id)
         for ls in list_detail:
             if len(ls.bidang.invoices) > 0:
                 raise ContentNoChangeException(detail=f"bidang {ls.bidang.id_bidang} tidak dapat dihapus karena memiliki invoice")

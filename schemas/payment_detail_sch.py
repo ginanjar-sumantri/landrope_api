@@ -5,6 +5,7 @@ from common.enum import PaymentMethodEnum, JenisBayarEnum
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
+from datetime import date
 
 class PaymentDetailCreateSch(PaymentDetailBase):
     pass
@@ -13,6 +14,7 @@ class PaymentDetailExtSch(SQLModel):
     id:UUID|None
     invoice_id:UUID|None
     amount:Decimal|None
+    allocation_date:date|None
 
 class PaymentDetailSch(PaymentDetailFullBase):
     code_giro:str | None = Field(alias="code_giro")

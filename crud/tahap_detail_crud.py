@@ -10,7 +10,7 @@ from typing import List
 from uuid import UUID
 
 class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpdateSch]):
-    async def get_multi_removed_detail(
+    async def get_multi_not_in_id_removed(
            self, 
            *, 
            list_ids: List[UUID | str],
@@ -21,6 +21,27 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
         query = select(self.model).where(
             and_(
             ~self.model.id.in_(list_ids),
+            self.model.tahap_id == tahap_id,
+            self.model.is_void == False
+        ))
+
+        query = query.options(selectinload(TahapDetail.bidang
+                                        ).options(selectinload(Bidang.invoices))
+                    )
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_multi_in_id_removed(
+           self, 
+           *, 
+           list_ids: List[UUID | str],
+           tahap_id:UUID | str,
+           db_session : AsyncSession | None = None) -> List[TahapDetail] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(
+            and_(
+            self.model.id.in_(list_ids),
             self.model.tahap_id == tahap_id,
             self.model.is_void == False
         ))

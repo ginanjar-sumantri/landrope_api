@@ -18,6 +18,7 @@ class InvoiceExtSch(SQLModel):
     spk_id:Optional[UUID]
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
+    use_utj:Optional[bool]
     details:list[InvoiceDetailExtSch]
 
 class InvoiceSch(InvoiceFullBase):
@@ -33,11 +34,15 @@ class InvoiceSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     spk_amount:Optional[Decimal] = Field(alias="spk_amount")
     has_payment:Optional[bool] = Field(alias="has_payment")
+    
     # payment_methods:Optional[str] = Field(alias="payment_methods")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
+
+class InvoiceInTerminSch(InvoiceSch):
+    utj_amount:Optional[Decimal] = Field(alias="utj_amount")
 
 class InvoiceByIdSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")

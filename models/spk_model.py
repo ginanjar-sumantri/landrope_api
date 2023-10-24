@@ -71,6 +71,21 @@ class Spk(SpkFullBase, table=True):
             total_amount = ((self.nilai or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
 
         return Decimal(total_amount)
+    
+    @property
+    def utj_amount(self) -> Decimal | None:
+        utj = 0
+        utj_is_used = any(invoice.use_utj == True for invoice in self.bidang.invoices if invoice.is_void != True)
+        if utj_is_used == False:
+            utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
+                                if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+                                and invoice_utj.is_void != True))
+            
+            if utj_current:
+                utj = utj_current.amount or 0
+        
+        return Decimal(utj)
+        
 
 
 # class SpkBebanBiayaBase(SQLModel):

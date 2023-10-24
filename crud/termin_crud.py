@@ -33,13 +33,15 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                                         ).options(selectinload(InvoiceDetail.bidang_komponen_biaya))
                                                                 ).options(selectinload(Invoice.bidang
                                                                         ).options(selectinload(Bidang.skpt
-                                                                                            ).options(selectinload(Skpt.ptsk)
-                                                                                            )
+                                                                                        ).options(selectinload(Skpt.ptsk)
+                                                                                        )
                                                                         ).options(selectinload(Bidang.planing)
+                                                                        ).options(selectinload(Bidang.invoices
+                                                                                        ).options(selectinload(Invoice.termin))
                                                                         )
                                                                 ).options(selectinload(Invoice.payment_details
                                                                         ).options(selectinload(PaymentDetail.payment
-                                                                                            ).options(selectinload(Payment.giro))
+                                                                                        ).options(selectinload(Payment.giro))
                                                                         )
                                                                 ).options(selectinload(Invoice.spk)
                                                                 )

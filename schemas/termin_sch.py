@@ -1,5 +1,5 @@
 from models.termin_model import Termin, TerminBase, TerminFullBase
-from schemas.invoice_sch import InvoiceExtSch, InvoiceSch
+from schemas.invoice_sch import InvoiceExtSch, InvoiceSch, InvoiceInTerminSch
 from schemas.termin_bayar_sch import TerminBayarExtSch, TerminBayarSch
 from common.partial import optional
 from common.enum import JenisBayarEnum, SatuanBayarEnum
@@ -34,7 +34,7 @@ class TerminByIdSch(TerminFullBase):
     manager_name:str|None = Field(alias="manager_name")
     sales_name:str|None = Field(alias="sales_name")
     termin_bayars:list[TerminBayarSch]
-    invoices:list[InvoiceSch]
+    invoices:list[InvoiceInTerminSch]
 
 @optional
 class TerminUpdateSch(TerminBase):

@@ -19,6 +19,7 @@ class InvoiceBase(SQLModel):
     amount:Optional[Decimal] = Field(nullable=True, default=0)
     is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
+    use_utj:Optional[bool] = Field(nullable=True, default=False)
 
 class InvoiceFullBase(BaseUUIDModel, InvoiceBase):
     pass
@@ -141,6 +142,19 @@ class Invoice(InvoiceFullBase, table=True):
             methods = methods[0:-2]
         
         return methods
+    
+    @property
+    def utj_amount(self) -> Decimal | None:
+        utj = 0
+        if self.use_utj:
+            utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
+                                if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+                                and invoice_utj.is_void != True))
+            
+            if utj_current:
+                utj = utj_current.amount or 0
+        
+        return Decimal(utj)
 
 
 class InvoiceDetailBase(SQLModel):

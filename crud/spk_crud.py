@@ -131,7 +131,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya)
                                                                     )
                                                 ).options(selectinload(Bidang.invoices
-                                                                    ).options(selectinload(Invoice.payment_details))
+                                                                    ).options(selectinload(Invoice.payment_details)
+                                                                    ).options(selectinload(Invoice.termin))
                                                 )
                             )
 
@@ -166,7 +167,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya)
                                                                     )
                                                 ).options(selectinload(Bidang.invoices
-                                                                    ).options(selectinload(Invoice.payment_details))
+                                                                    ).options(selectinload(Invoice.payment_details)
+                                                                    ).options(selectinload(Invoice.termin))
                                                 )
                             )
 

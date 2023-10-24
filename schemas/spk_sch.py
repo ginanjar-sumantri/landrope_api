@@ -101,6 +101,7 @@ class SpkForTerminSch(SQLModel):
     total_payment:Optional[Decimal]
     sisa_pelunasan:Optional[Decimal]
     amount:Optional[Decimal]
+    utj_amount:Optional[Decimal]
 
 
     
