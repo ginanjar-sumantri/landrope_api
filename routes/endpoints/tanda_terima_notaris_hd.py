@@ -116,8 +116,10 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(TandaTerimaNotarisHd, key) == value)
+    
+    query = query.distinct()
 
-    objs = await crud.tandaterimanotaris_hd.get_multi_paginated(params=params, query=query)
+    objs = await crud.tandaterimanotaris_hd.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[TandaTerimaNotarisHdSch])

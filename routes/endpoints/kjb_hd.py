@@ -66,8 +66,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(KjbHd, key) == value)
 
+    query = query.distinct()
 
-    objs = await crud.kjb_hd.get_multi_paginated(params=params, query=query)
+    objs = await crud.kjb_hd.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/not-draft", response_model=GetResponsePaginatedSch[KjbHdSch])

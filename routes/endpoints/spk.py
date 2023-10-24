@@ -94,9 +94,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Spk, key) == value)
 
-    query = query.order_by(text("created_at desc"))
+    query = query.distinct()
 
-    objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query, order_by="created_at")
+    objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])

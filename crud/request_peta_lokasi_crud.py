@@ -56,9 +56,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             query = query.filter(filter_clause)
         
         if order == OrderEnumSch.ascendent:
-            query = query.order_by(columns["code"].asc())
+            query = query.order_by(columns["updated_at"].asc())
         else:
-            query = query.order_by(columns["code"].desc())
+            query = query.order_by(columns["updated_at"].desc())
         
         
         return await paginate(db_session, query, params)
@@ -114,9 +114,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             query = query.filter(filter_clause)
         
         if order == OrderEnumSch.ascendent:
-            query = query.order_by(columns["code"].asc())
+            query = query.order_by(columns["updated_at"].asc())
         else:
-            query = query.order_by(columns["code"].desc())
+            query = query.order_by(columns["updated_at"].desc())
         
         
         return await paginate(db_session, query, params)

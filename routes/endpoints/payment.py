@@ -107,7 +107,9 @@ async def get_list(
         for key, value in filter_query.items():
             query = query.where(getattr(Payment, key) == value)
 
-    objs = await crud.payment.get_multi_paginated(params=params, query=query)
+    query = query.distinct()
+
+    objs = await crud.payment.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[PaymentByIdSch])

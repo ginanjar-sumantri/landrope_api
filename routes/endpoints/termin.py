@@ -146,6 +146,8 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(Termin, key) == value)
+    
+    query = query.distinct()
 
     objs = await crud.termin.get_multi_paginated_ordered(params=params, order_by="created_at", order=OrderEnumSch.descendent, query=query)
     return create_response(data=objs)
