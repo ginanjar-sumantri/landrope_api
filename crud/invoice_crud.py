@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin, Bidang, Skpt, Planing
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOut
+from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOut, InvoiceHistoryforPrintOut
 from typing import List
 from uuid import UUID
 
@@ -159,4 +159,69 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_history_invoice_by_bidang_ids_for_printout(self, 
+                                            *, 
+                                            list_id: List[UUID] | List[str],
+                                            termin_id:UUID | str,
+                                            db_session: AsyncSession | None = None
+                                            ) -> List[InvoiceHistoryforPrintOut] | None:
+            db_session = db_session or db.session
+            # query = select(Bidang.id,
+            #                Bidang.id_bidang,
+            #                Termin.jenis_bayar,
+            #                Spk.nilai,
+            #                Spk.satuan_bayar,
+            #                Termin.created_at.label("tanggal_bayar"),
+            #                Invoice.amount
+            #                ).select_from(Invoice
+            #                     ).join(Termin, Termin.id == Invoice.termin_id
+            #                     ).join(Spk, Spk.id == Invoice.spk_id
+            #                     ).join(Bidang, Bidang.id == Invoice.bidang_id
+            #                     ).where(and_(
+            #                         Invoice.is_void != True,
+            #                         Bidang.id.in_(b for b in list_id),
+            #                         Termin.id != termin_id
+            #                     ))
+            ids:str = ""
+            for bidang_id in list_id:
+                ids += f"'{bidang_id}',"
+            
+            ids = ids[0:-1]
+
+            query = text(f"""select 
+                            b.id_bidang,
+                            case
+                                when tr.jenis_bayar != 'UTJ' then 
+                                    case 
+                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || s.nilai || '%'
+                                        else tr.jenis_bayar || ' (' || s.nilai || ')'
+                                    end
+                                else tr.jenis_bayar
+                            end as str_jenis_bayar,
+                            case
+                                when tr.jenis_bayar = 'UTJ' then DATE(i.created_at)
+                                else tr.tanggal_transaksi
+                            end tanggal_transaksi,
+                            tr.jenis_bayar,
+                            Sum(pd.amount) as amount
+                            from Invoice i
+                            inner join Termin tr on tr.id = i.termin_id
+                            inner join bidang b on b.id = i.bidang_id
+                            inner join payment_detail pd on i.id = pd.invoice_id
+                            inner join payment py on py.id = pd.payment_id
+                            left outer join spk s on s.id = i.spk_id
+                            where tr.is_void != true
+                            and i.is_void != true
+                            and i.bidang_id in ({ids})
+                            and pd.is_void != true
+                            and py.is_void != true
+                            and tr.id != '{termin_id}'
+                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.nilai
+                         """)
+            
+
+            response = await db_session.execute(query)
+
+            return response.fetchall()
+
 invoice = CRUDInvoice(Invoice)

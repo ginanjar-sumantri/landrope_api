@@ -8,6 +8,7 @@ from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
 from typing import Optional
+from datetime import date
 
 class InvoiceCreateSch(InvoiceBase):
     pass
@@ -117,5 +118,12 @@ class InvoiceForPrintOutExt(InvoiceForPrintOut):
     luas_nettExt:Optional[str]
     luas_pbt_peroranganExt:Optional[str]
     luas_bayarExt:Optional[str]
+
+class InvoiceHistoryforPrintOut(InvoiceFullBase):
+    id_bidang:str|None = Field(alias="id_bidang")
+    jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
+    str_jenis_bayar:Optional[str]
+    tanggal_transaksi:Optional[date]
+    amount:Optional[Decimal]
     
 

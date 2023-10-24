@@ -77,7 +77,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> ModelType:
         db_session = db_session or db.session
-        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.name, ' ', ''))) == name.strip().lower().replace(' ', ''))
+        query = select(self.model).where(func.lower(func.trim(func.replace(func.replace(self.model.name, ' ', ''), '-', ''))) == name.strip().lower().replace(' ', '').replace('-', ''))
         
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
@@ -263,7 +263,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         *,
         params: Params | None = Params(),
-        order_by: str | None = None,
+        order_by: str | None = "updated_at",
         order: OrderEnumSch | None = OrderEnumSch.descendent,
         query: T | Select[T] | None = None,
         db_session: AsyncSession | None = None,
