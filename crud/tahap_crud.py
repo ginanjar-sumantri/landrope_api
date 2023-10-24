@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models.tahap_model import Tahap
-from models import Planing, Project, Desa, Ptsk, TahapDetail, Bidang, Skpt, BidangKomponenBiaya, BidangOverlap
+from models import Planing, Project, Desa, Ptsk, TahapDetail, Bidang, Skpt, BidangKomponenBiaya, BidangOverlap, Invoice
 from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch, TahapForTerminByIdSch, TahapByIdSch
 from uuid import UUID
 
@@ -38,7 +38,9 @@ class CRUDTahap(CRUDBase[Tahap, TahapCreateSch, TahapUpdateSch]):
                                                                                                     ).options(selectinload(BidangKomponenBiaya.beban_biaya))
                                                                                 ).options(selectinload(Bidang.overlaps
                                                                                                     ).options(selectinload(BidangOverlap.bidang_intersect))
-                                                                                ).options(selectinload(Bidang.invoices)
+                                                                                ).options(selectinload(Bidang.invoices
+                                                                                                    ).options(selectinload(Invoice.payment_details)
+                                                                                                    )
                                                                                 ).options(selectinload(Bidang.pemilik))
                                                             )
                                         ).options(selectinload(Tahap.sub_project)
