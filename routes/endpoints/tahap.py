@@ -346,6 +346,8 @@ async def export_to_excel(
                         ).options(selectinload(Tahap.details)
                         ).options(selectinload(Tahap.ptsk))
     
+    query = query.distinct()
+    
 
     objs = await crud.tahap.get_multi_no_page(query=query)
 

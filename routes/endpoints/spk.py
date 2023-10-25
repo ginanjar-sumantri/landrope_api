@@ -10,6 +10,7 @@ from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, Spk
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
+from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum
 from common.ordered import OrderEnumSch
@@ -118,7 +119,15 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Bidang, obj.bidang_id)
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
-    
+    termins = []
+    for tr in harga.termins:
+        if tr.id == obj.kjb_termin_id:
+             termin = KjbTerminInSpkSch(**tr.dict(), spk_id=obj.id, spk_code=obj.code)
+             termins.append(termin)
+        else:
+            termin = KjbTerminInSpkSch(**tr.dict())
+            termins.append(termin)
+
     ktp_value:str = ""
     ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
     if ktp_meta_data:
@@ -155,7 +164,7 @@ async def get_by_id(id:UUID):
                                     bundle_hd_id=bidang_obj.bundle_hd_id,
                                     ktp=ktp_value,
                                     npwp=npwp_value,
-                                    termins=harga.termins,
+                                    termins=termins,
                                     percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
     obj_return = SpkByIdSch(**obj.dict())
@@ -287,6 +296,8 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
 
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+    termins = [KjbTerminInSpkSch(**termin.dict()) for termin in harga.termins]
+
     beban = []
     if spk_id:
         beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
@@ -333,7 +344,7 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
                                     kelengkapan_dokumens=kelengkapan_dokumen,
                                     ktp=ktp_value,
                                     npwp=npwp_value,
-                                    termins=harga.termins,
+                                    termins=termins,
                                     percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
     

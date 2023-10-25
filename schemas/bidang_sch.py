@@ -1,6 +1,6 @@
 from models.bidang_model import BidangBase, BidangRawBase, BidangFullBase
 from models.base_model import BaseGeoModel
-from schemas.kjb_termin_sch import KjbTerminSch
+from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.bidang_overlap_sch import BidangOverlapForTahap, BidangOverlapRawSch
@@ -86,7 +86,7 @@ class BidangForSPKByIdSch(SQLModel):
     npwp:str | None
     percentage_lunas:Optional[int]
     jenis_alashak:JenisAlashakEnum | None
-    termins:list[KjbTerminSch] | None
+    termins:list[KjbTerminInSpkSch] | None
 
 class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
     

@@ -287,15 +287,8 @@ class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
 
 class KjbTermin(KjbTerminFullBase, table=True):
     harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'select'})
-    spk:"Spk" = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'select', 'uselist':False})
+    # spks:list["Spk"] = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'select'})
 
-    @property
-    def spk_id(self) -> Optional[UUID]:
-        return getattr(getattr(self, "spk", None), "id", None)
-    
-    @property
-    def spk_code(self) -> Optional[UUID]:
-        return getattr(getattr(self, "spk", None), "code", None)
 
 #################################################################################
 

@@ -220,6 +220,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         b.luas_bayar,
                         b.harga_transaksi,
                         kb.id As komponen_id,
+                        kb.beban_pembeli,
                         bb.name,
                         kb.satuan_harga,
                         kb.satuan_bayar,

@@ -49,8 +49,7 @@ class CRUDKjbHarga(CRUDBase[KjbHarga, KjbHargaCreateSch, KjbHargaUpdateSch]):
         
         db_session = db_session or db.session
         query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id, self.model.jenis_alashak == jenis_alashak)
-                                        ).options(selectinload(KjbHarga.termins
-                                                            ).options(selectinload(KjbTermin.spk))
+                                        ).options(selectinload(KjbHarga.termins)
                                         )
         response = await db_session.execute(query)
 

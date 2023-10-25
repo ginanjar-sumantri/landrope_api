@@ -15,8 +15,11 @@ class KjbTerminCreateExtSch(BaseModel):
     nilai:Decimal
 
 class KjbTerminSch(KjbTerminFullBase):
-    spk_id:UUID|None = Field(alias="spk_id")
-    spk_code:str|None = Field(alias="spk_code")
+    pass
+
+class KjbTerminInSpkSch(KjbTerminFullBase):
+    spk_id:UUID|None
+    spk_code:str|None
 
 @optional
 class KjbTerminUpdateSch(KjbTerminFullBase):
