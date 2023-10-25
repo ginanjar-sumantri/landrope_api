@@ -31,7 +31,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                     ).options(selectinload(Termin.invoices
                                                                 ).options(selectinload(Invoice.details
                                                                         ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                                                        ).options(selectinload(BidangKomponenBiaya.bidang))
+                                                                                        ).options(selectinload(BidangKomponenBiaya.bidang)
+                                                                                        ).options(selectinload(BidangKomponenBiaya.beban_biaya))
                                                                         )
                                                                 ).options(selectinload(Invoice.bidang
                                                                         ).options(selectinload(Bidang.skpt

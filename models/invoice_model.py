@@ -206,9 +206,9 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         amount = 0
         if self.bidang_komponen_biaya.beban_pembeli == False:
             if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = self.bidang_komponen_biaya.amount or 0 * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
+                    amount = (self.bidang_komponen_biaya.amount or 0) * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
             elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                amount = self.bidang_komponen_biaya.amount or 0 * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
+                amount = (self.bidang_komponen_biaya.amount or 0) * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
             else:
                 amount = self.bidang_komponen_biaya.amount or 0
         

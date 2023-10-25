@@ -313,7 +313,17 @@ async def get_list(
     query = query.options(selectinload(Invoice.bidang)
                             ).options(selectinload(Invoice.termin
                                                 ).options(selectinload(Termin.tahap))
-                            ).options(selectinload(Invoice.payment_details))  
+                            ).options(selectinload(Invoice.payment_details)
+                            ).options(selectinload(Invoice.details
+                                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                )
+                            ).options(selectinload(Invoice.bidang
+                                                ).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.termin)
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                )
+                            )
 
     if keyword:
         query = query.filter(
