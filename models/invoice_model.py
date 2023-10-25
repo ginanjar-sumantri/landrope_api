@@ -141,6 +141,13 @@ class Invoice(InvoiceFullBase, table=True):
         return Decimal(self.amount - Decimal(total_payment) - amount_beban_biaya - self.utj_amount)
     
     @property
+    def amount_nett(self) -> Decimal | None:
+        amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
+        amount_beban_biaya = sum(amount_beban_biayas)
+        
+        return Decimal(self.amount - amount_beban_biaya - self.utj_amount)
+    
+    @property
     def has_payment(self) -> bool | None:
         if len(self.payment_details) > 0:
             return True
