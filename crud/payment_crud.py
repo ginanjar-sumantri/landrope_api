@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Payment, PaymentDetail, Invoice, Termin, Giro, Bidang, Skpt
+from models import Payment, PaymentDetail, Invoice, Termin, Giro, Bidang, Skpt, InvoiceDetail, BidangKomponenBiaya
 from schemas.payment_sch import PaymentCreateSch, PaymentUpdateSch
 from uuid import UUID
 
@@ -26,10 +26,18 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                                             ).options(selectinload(Bidang.skpt
                                                                                                                 ).options(selectinload(Skpt.ptsk))
                                                                                             ).options(selectinload(Bidang.penampung)
+                                                                                            ).options(selectinload(Bidang.invoices
+                                                                                                                ).options(selectinload(Invoice.payment_details)
+                                                                                                                ).options(selectinload(Invoice.termin))
                                                                                             )
                                                                         ).options(selectinload(Invoice.termin
                                                                                             ).options(selectinload(Termin.tahap))
-                                                                        ).options(selectinload(Invoice.payment_details))
+                                                                        ).options(selectinload(Invoice.payment_details)
+                                                                        ).options(selectinload(Invoice.details
+                                                                                            ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                                                                ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                                                            )
+                                                                        )
                                                     )
                                 )
                                     
