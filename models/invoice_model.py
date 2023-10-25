@@ -219,4 +219,4 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
             else:
                 amount = self.bidang_komponen_biaya.amount or 0
         
-        return amount
+        return round(amount, 0)
