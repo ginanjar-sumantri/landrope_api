@@ -63,7 +63,7 @@ async def create(
         
         bidang_ids.append(invoice_current.bidang_id)
 
-        detail = PaymentDetailCreateSch(payment_id=new_obj.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False)
+        detail = PaymentDetailCreateSch(payment_id=new_obj.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False, allocation_date=dt.allocation_date)
         await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
@@ -196,7 +196,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
                 raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
             
             bidang_ids.append(invoice_current.bidang_id)
-            detail = PaymentDetailCreateSch(payment_id=obj_current.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False)
+            detail = PaymentDetailCreateSch(payment_id=obj_current.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False, allocation_date=dt.allocation_date)
             await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         else:
             payment_dtl_current = await crud.payment_detail.get(id=dt.id)
@@ -207,7 +207,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
             
             bidang_ids.append(invoice_current.bidang_id)
-            payment_dtl_updated = PaymentDetailUpdateSch(payment_id=obj_updated.id, invoice_id=dt.invoice_id, amount=dt.amount)
+            payment_dtl_updated = PaymentDetailUpdateSch(payment_id=obj_updated.id, invoice_id=dt.invoice_id, amount=dt.amount, allocation_date=dt.allocation_date)
             await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
