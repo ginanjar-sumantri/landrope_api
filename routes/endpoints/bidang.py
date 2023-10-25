@@ -444,6 +444,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                         sales_id=sales,
                         mediator=shp_data.mediator,
                         luas_surat=luas_surat,
+                        luas_clear=luas_surat,
+                        luas_bayar=luas_surat,
                         geom=shp_data.geom)
 
         obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
@@ -452,6 +454,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         if obj_current:
             if obj_current.geom :
                 obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+            sch.luas_bayar = obj_current.luas_bayar if obj_current.luas_bayar is not None else sch.luas_surat
+            sch.luas_clear = obj_current.luas_clear if obj_current.luas_clear is not None else sch.luas_surat
             obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=log.created_by_id)
         else:
             obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
