@@ -84,6 +84,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                         where tr.jenis_bayar = '{jenis_bayar}'
                         and i.is_void != true
                         and tr.id = '{str(termin_id)}'
+                        and i.amount > 0
                         """)
 
             response = await db_session.execute(query)
