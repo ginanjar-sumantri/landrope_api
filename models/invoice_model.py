@@ -135,7 +135,7 @@ class Invoice(InvoiceFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        amount_beban_biayas = [dt.amount for dt in self.details]
+        amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
         amount_beban_biaya = sum(amount_beban_biayas)
         
         return Decimal(self.amount - Decimal(total_payment) - amount_beban_biaya - self.utj_amount)
