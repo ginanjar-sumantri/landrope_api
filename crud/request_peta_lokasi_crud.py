@@ -32,8 +32,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             Desa.name.label("desa_name"),
             KjbHd.mediator,
             KjbHd.nama_group.label("group"),
-            KjbHd.code.label("kjb_hd_code"),
-            RequestPetaLokasi.updated_at
+            KjbHd.code.label("kjb_hd_code")
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
@@ -57,11 +56,12 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             query = query.filter(filter_clause)
         
         if order == OrderEnumSch.ascendent:
-            query = query.order_by(columns["updated_at"].asc())
+            query = query.order_by(columns["code"].asc())
         else:
-            query = query.order_by(columns["updated_at"].desc())
+            query = query.order_by(columns["code"].desc())
         
-        
+        query = query.distinct()
+
         return await paginate(db_session, query, params)
     
     async def get_multi_detail_paginated(self, *, params: Params | None = Params(),

@@ -23,7 +23,6 @@ class RequestPetaLokasiHdSch(SQLModel):
     mediator:str | None
     group:str | None 
     kjb_hd_code:str | None
-    updated_at:datetime|None
 
 class RequestPetaLokasiHdbyCodeSch(BaseModel):
     code:str | None
