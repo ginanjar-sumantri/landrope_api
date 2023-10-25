@@ -322,7 +322,7 @@ async def get_list_spk_by_tahap_id(
                             total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
                             sisa_pelunasan=s.bidang.sisa_pelunasan, amount=round(s.spk_amount,0), utj_amount=s.utj_amount)
 
-        if jenis_bayar == JenisBayarEnum.LUNAS:
+        if jenis_bayar == JenisBayarEnum.LUNAS or jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
             spk.amount = spk.sisa_pelunasan
 
         spkts.append(spk)
