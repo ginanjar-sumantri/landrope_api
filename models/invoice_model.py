@@ -81,6 +81,14 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "id_bidang", None)
     
     @property
+    def luas_bayar(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "luas_bayar", None)
+    
+    @property
+    def harga_transaksi(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "harga_transaksi", None)
+    
+    @property
     def group(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "group", None)
     
@@ -111,6 +119,10 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def nomor_tahap(self) -> int | None:
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
+    
+    @property
+    def spk_code(self) -> Decimal | None:
+        return getattr(getattr(self, "spk", None), "code", None)
     
     @property
     def spk_amount(self) -> Decimal | None:

@@ -34,7 +34,7 @@ class InvoiceSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     spk_amount:Optional[Decimal] = Field(alias="spk_amount")
     has_payment:Optional[bool] = Field(alias="has_payment")
-    
+
     # payment_methods:Optional[str] = Field(alias="payment_methods")
 
     payment_details:list[PaymentDetailSch]
@@ -42,6 +42,10 @@ class InvoiceSch(InvoiceFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class InvoiceInTerminSch(InvoiceSch):
+    spk_code:Optional[str] = Field(alias="spk_code")
+    luas_bayar:Optional[Decimal] = Field(alias="luas_bayar")
+    harga_transaksi:Optional[Decimal] = Field(alias="harga_transaksi")
+    invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
 
 class InvoiceByIdSch(InvoiceFullBase):

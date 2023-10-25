@@ -82,7 +82,8 @@ class Spk(SpkFullBase, table=True):
                                 and invoice_utj.is_void != True))
             
             if utj_current:
-                utj = utj_current.amount or 0
+                amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details]
+                utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
         
