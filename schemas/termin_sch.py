@@ -76,6 +76,7 @@ class TerminHistoryForPrintOut(SQLModel):
 class TerminBebanBiayaForPrintOut(SQLModel):
     id_bidang:Optional[str]
     beban_biaya_name:Optional[str]
+    beban_pembeli:Optional[bool]
     tanggungan:Optional[str]
     amount:Optional[Decimal]
 

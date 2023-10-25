@@ -128,26 +128,27 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                 ) -> List[TerminBebanBiayaForPrintOut] | None:
         db_session = db_session or db.session
         query = text(f"""
-                    select
-                    b.id_bidang,
-                    bb.name as beban_biaya_name,
-                    case
-                        when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
-                        else '(BEBAN PENJUAL)'
-                    end as tanggungan,
-                    SUM(idt.amount) as amount
-                    from termin t
-                    inner join invoice i on i.termin_id = t.id
-                    inner join invoice_detail idt on idt.invoice_id = i.id
-                    inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
-                    inner join bidang b on b.id = bkb.bidang_id
-                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
-                    where i.is_void != true
-                    and bkb.is_void != true
-                    and t.id = '{str(id)}'
-                    group by bb.id, bkb.id, b.id
-                     """)
-        
+                select
+                b.id_bidang,
+                bb.name as beban_biaya_name,
+                case
+                when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
+                else '(BEBAN PENJUAL)'
+                end as tanggungan,
+                SUM(idt.amount) as amount,
+                bkb.beban_pembeli
+                from termin t
+                inner join invoice i on i.termin_id = t.id
+                inner join invoice_detail idt on idt.invoice_id = i.id
+                inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
+                inner join bidang b on b.id = bkb.bidang_id
+                inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                where i.is_void != true
+                and bkb.is_void != true
+                and t.id = '{str(id)}'
+                group by bb.id, bkb.id, b.id
+                """)
+
 
         response = await db_session.execute(query)
 

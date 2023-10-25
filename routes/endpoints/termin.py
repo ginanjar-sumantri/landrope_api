@@ -217,7 +217,7 @@ async def update(
 
     for invoice in sch.invoices:
         if invoice.id:
-            invoice_current = await crud.invoice.get(id=invoice.id)
+            invoice_current = await crud.invoice.get_by_id(id=invoice.id)
             if invoice_current:
                 invoice_updated_sch = InvoiceUpdateSch(**invoice.dict())
                 invoice_updated_sch.is_void = invoice_current.is_void
@@ -581,6 +581,9 @@ async def printout(id:UUID | str,
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
         beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
+    
+    amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False]
+    amount_beban_biaya = sum(amount_beban_biayas)
 
     harga_aktas = []
     obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
@@ -592,7 +595,6 @@ async def printout(id:UUID | str,
     termin_bayars = []
     no = 1
     obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
-
     filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(filename)
@@ -621,7 +623,7 @@ async def printout(id:UUID | str,
                                       tanggal_rencana_transaksi=termin_header.tanggal_rencana_transaksi,
                                       hari_transaksi=hari_transaksi,
                                       jenis_bayar=termin_header.jenis_bayar,
-                                      amount="{:,.0f}".format(termin_header.amount),
+                                      amount="{:,.0f}".format((termin_header.amount - amount_beban_biaya)),
                                       remark=termin_header.remark
                                     )
     
