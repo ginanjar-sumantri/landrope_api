@@ -32,7 +32,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             Desa.name.label("desa_name"),
             KjbHd.mediator,
             KjbHd.nama_group.label("group"),
-            KjbHd.code.label("kjb_hd_code")
+            KjbHd.code.label("kjb_hd_code"),
+            RequestPetaLokasi.updated_at
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id

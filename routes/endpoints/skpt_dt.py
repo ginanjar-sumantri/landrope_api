@@ -173,7 +173,7 @@ async def bulk_skpt(file:UploadFile=File()):
             shp_data.tgl_sk = date(geo_data['tgl_sk'])
         jatuhtempo = str(geo_data['jatuhtempo']).lower()    
         if jatuhtempo != "nan" and jatuhtempo != "none":
-            shp_data.tgl_sk = date(geo_data['tgl_sk'])
+            shp_data.jatuhtempo = date(geo_data['jatuhtempo'])
         
         project = await crud.project.get_by_name(name=shp_data.project)
 
