@@ -94,6 +94,7 @@ class InvoiceForPrintOutUtj(SQLModel):
     amountExt:Optional[str]
 
 class InvoiceForPrintOut(SQLModel):
+    id:Optional[UUID]
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     group:Optional[str]

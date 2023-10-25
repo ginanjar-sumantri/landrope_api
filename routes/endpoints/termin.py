@@ -265,10 +265,15 @@ async def update(
             for dt in invoice.details:
                 invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
                 await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-
-                payload = {"id" : dt.bidang_komponen_biaya_id}
-                url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
-                GCloudTaskService().create_task(payload=payload, base_url=url)
+                
+                bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+                sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
+                sch_komponen_biaya.is_use = True
+                await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
+    
+                # payload = {"id" : dt.bidang_komponen_biaya_id}
+                # url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
+                # GCloudTaskService().create_task(payload=payload, base_url=url)
     
     list_id_termin_bayar = [bayar.id for bayar in sch.termin_bayars if bayar.id != None]
     if len(list_id_termin_bayar) > 0:
@@ -520,6 +525,7 @@ async def printout(id:UUID | str,
     
         bidangs = []
         overlap_exists = False
+        amount_utj_used = []
         for bd in obj_bidangs:
             bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
                                         harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
@@ -530,11 +536,17 @@ async def printout(id:UUID | str,
                                         luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
                                         luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
             
+            invoice_curr = await crud.invoice.get_by_id(id=bd.id)
+            
+            amount_utj_used.append(invoice_curr.utj_amount)
+
             bidang.overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
             if len(bidang.overlaps) > 0:
                 overlap_exists = True
 
             bidangs.append(bidang)
+        
+        amount_utj = sum(amount_utj_used) or 0
             
         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
         
@@ -623,7 +635,7 @@ async def printout(id:UUID | str,
                                         tanggal_rencana_transaksi=termin_header.tanggal_rencana_transaksi,
                                         hari_transaksi=hari_transaksi,
                                         jenis_bayar=termin_header.jenis_bayar,
-                                        amount="{:,.0f}".format((termin_header.amount - amount_beban_biaya)),
+                                        amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
                                         remark=termin_header.remark
                                         )
         

@@ -32,10 +32,14 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                                         ).options(selectinload(Bidang.planing
                                                                             ).options(selectinload(Planing.project)
                                                                             ).options(selectinload(Planing.desa))
+                                                        ).options(selectinload(Bidang.invoices
+                                                                            ).options(selectinload(Invoice.payment_details)
+                                                                            ).options(selectinload(Invoice.termin))
                                                         )
                                     ).options(selectinload(Invoice.details
                                                         ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                                            ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                                            ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+                                                                            ).options(selectinload(BidangKomponenBiaya.bidang))
                                                         )
                                     ).options(selectinload(Invoice.payment_details
                                                         ).options(selectinload(PaymentDetail.payment
@@ -99,6 +103,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
             db_session = db_session or db.session
             query = text(f"""
                         select
+                        i.id,
                         b.id as bidang_id,
                         b.id_bidang,
                         b.group,

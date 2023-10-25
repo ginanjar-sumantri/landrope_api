@@ -294,7 +294,8 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
 
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
-
+    
+    #bidang_spk_used = await crud.spk.get_by_bidang_id(bidang_id=id)
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
     termins = [KjbTerminInSpkSch(**termin.dict()) for termin in harga.termins]
 

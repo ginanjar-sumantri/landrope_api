@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, SatuanBayarEnum, SatuanHargaEnum
 from decimal import Decimal
 from pydantic import condecimal
 import numpy
@@ -135,7 +135,10 @@ class Invoice(InvoiceFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        return Decimal(self.amount - Decimal(total_payment))
+        amount_beban_biayas = [dt.amount for dt in self.details]
+        amount_beban_biaya = sum(amount_beban_biayas)
+        
+        return Decimal(self.amount - Decimal(total_payment) - amount_beban_biaya - self.utj_amount)
     
     @property
     def has_payment(self) -> bool | None:
@@ -161,10 +164,11 @@ class Invoice(InvoiceFullBase, table=True):
         if self.use_utj:
             utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
                                 if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-                                and invoice_utj.is_void != True))
+                                and invoice_utj.is_void != True), None)
             
             if utj_current:
-                utj = utj_current.amount or 0
+                amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
+                utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
 
@@ -196,3 +200,16 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def beban_pembeli(self) -> bool | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_pembeli', None)
+    
+    @property
+    def amount_beban_penjual(self) -> Decimal | None:
+        amount = 0
+        if self.bidang_komponen_biaya.beban_pembeli == False:
+            if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                    amount = self.bidang_komponen_biaya.amount or 0 * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
+            elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                amount = self.bidang_komponen_biaya.amount or 0 * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
+            else:
+                amount = self.bidang_komponen_biaya.amount or 0
+        
+        return amount

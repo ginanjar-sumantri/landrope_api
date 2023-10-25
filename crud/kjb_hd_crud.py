@@ -37,8 +37,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                                         ).options(selectinload(KjbDt.request_peta_lokasi))
                                                 ).options(selectinload(KjbHd.rekenings)
                                                 ).options(selectinload(KjbHd.hargas
-                                                                        ).options(selectinload(KjbHarga.termins
-                                                                                               ).options(selectinload(KjbTermin.spk)))
+                                                                        ).options(selectinload(KjbHarga.termins)
+                                                                        )
                                                 ).options(selectinload(KjbHd.bebanbiayas
                                                                         ).options(selectinload(KjbBebanBiaya.beban_biaya))
                                                 ).options(selectinload(KjbHd.penjuals))
