@@ -113,8 +113,6 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
                     and b.id = '{str(bidang_id)}'
                     """)
         
-        print(query)
-        
         response = await db_session.execute(query)
 
         return response.fetchone()

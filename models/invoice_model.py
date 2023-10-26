@@ -169,13 +169,14 @@ class Invoice(InvoiceFullBase, table=True):
     def utj_amount(self) -> Decimal | None:
         utj = 0
         if self.use_utj:
-            utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
-                                if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-                                and invoice_utj.is_void != True), None)
+            utj = self.bidang.utj_amount
+            # utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
+            #                     if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+            #                     and invoice_utj.is_void != True), None)
             
-            if utj_current:
-                amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
-                utj = sum(amount_payment_details) or 0
+            # if utj_current:
+            #     amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
+            #     utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
 

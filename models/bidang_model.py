@@ -7,7 +7,7 @@ from decimal import Decimal
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
-                         SatuanBayarEnum, SatuanHargaEnum)
+                         SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum)
 import numpy
 from geoalchemy2 import Geometry
 
@@ -383,5 +383,18 @@ class Bidang(BidangFullBase, table=True):
     @property
     def sisa_pelunasan(self) -> Decimal | None:
         return Decimal(self.total_harga_transaksi - (self.total_payment + self.total_beban_penjual))
+    
+    @property
+    def utj_amount(self) -> Decimal | None:
+        utj = 0
+        utj_current = next((invoice_utj for invoice_utj in self.invoices 
+                            if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+                            and invoice_utj.is_void != True))
+        
+        if utj_current:
+            amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
+            utj = sum(amount_payment_details) or 0
+        
+        return Decimal(utj)
 
 

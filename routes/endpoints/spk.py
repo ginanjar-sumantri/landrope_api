@@ -295,9 +295,18 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
     
-    #bidang_spk_used = await crud.spk.get_by_bidang_id(bidang_id=id)
+    spk_exists_on_bidangs = await crud.spk.get_multi_by_bidang_id(bidang_id=id)
+    
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
-    termins = [KjbTerminInSpkSch(**termin.dict()) for termin in harga.termins]
+    termins = []
+    for tr in harga.termins:
+        spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
+        if spk_exists_on_bidang:
+            termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
+            termins.append(termin)
+        else:
+            termin = KjbTerminInSpkSch(**tr.dict())
+            termins.append(termin)
 
     beban = []
     if spk_id:

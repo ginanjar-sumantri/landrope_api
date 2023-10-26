@@ -77,13 +77,14 @@ class Spk(SpkFullBase, table=True):
         utj = 0
         utj_is_used = any(invoice.use_utj == True for invoice in self.bidang.invoices if invoice.is_void != True)
         if utj_is_used == False:
-            utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
-                                if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-                                and invoice_utj.is_void != True))
+            utj = self.bidang.utj_amount
+            # utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
+            #                     if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+            #                     and invoice_utj.is_void != True))
             
-            if utj_current:
-                amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
-                utj = sum(amount_payment_details) or 0
+            # if utj_current:
+            #     amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
+            #     utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
         
