@@ -6,7 +6,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya
+from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, 
+                    TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya, Planing)
 from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkInTerminSch, SpkPrintOut, 
                              SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
@@ -30,6 +31,16 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                                             ).options(selectinload(HasilPetaLokasi.kjb_dt
                                                                                                 ).options(selectinload(KjbDt.kjb_hd))
                                                                             )
+                                                        ).options(selectinload(Bidang.overlaps)
+                                                        ).options(selectinload(Bidang.komponen_biayas
+                                                                            ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+                                                                            )
+                                                        ).options(selectinload(Bidang.invoices
+                                                                            ).options(selectinload(Invoice.payment_details)
+                                                                            ).options(selectinload(Invoice.termin))
+                                                        ).options(selectinload(Bidang.planing
+                                                                            ).options(selectinload(Planing.project))
+                                                        ).options(selectinload(Bidang.sub_project)
                                                         )
                                     ).options(selectinload(Spk.kjb_termin)
                                     ).options(selectinload(Spk.spk_kelengkapan_dokumens

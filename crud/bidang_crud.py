@@ -262,7 +262,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
             query = text(f"""
                     select
                     bidang_id,
-                    (100 - SUM(nilai)) as percentage_lunas
+                    (100 - SUM(amount)) as percentage_lunas
                     from spk
                     where bidang_id = '{str(bidang_id)}'
                     group by bidang_id
