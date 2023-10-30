@@ -150,8 +150,7 @@ class HelperService:
         riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
 
         return riwayat_data, file_path
-    
-    
+      
     async def update_bundle_keyword(self, meta_data:str|None,
                         bundle_hd_id:UUID|None,
                         key_field:str|None,
@@ -247,7 +246,6 @@ class HelperService:
                                                         key_field=dokumen.key_field, 
                                                         db_session=db_session)
     
-
     def ToMonthName(self, month:int = None) -> str | None:
         if month == 1:
             return "Januari"
@@ -293,3 +291,10 @@ class HelperService:
             return "MINGGU"
         else:
             return ""
+        
+    def CheckField(self, gdf, field_values:list) -> str | None:
+        for field in field_values:
+            if field not in gdf.columns:
+                return str(field)
+        
+        return None

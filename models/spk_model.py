@@ -17,7 +17,7 @@ class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
-    nilai:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
     kjb_termin_id:Optional[UUID] = Field(nullable=True, foreign_key="kjb_termin.id")
 
@@ -66,9 +66,9 @@ class Spk(SpkFullBase, table=True):
     
     @property
     def spk_amount(self) -> Decimal | None:
-        total_amount = self.nilai
+        total_amount = self.amount
         if self.satuan_bayar == SatuanBayarEnum.Percentage:
-            total_amount = ((self.nilai or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
+            total_amount = ((self.amount or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
 
         return Decimal(total_amount)
     

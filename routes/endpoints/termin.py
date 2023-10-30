@@ -14,7 +14,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
-from schemas.spk_sch import SpkSrcSch, SpkForTerminSch
+from schemas.spk_sch import SpkSrcSch, SpkInTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch, BidangKomponenBiayaUpdateSch
@@ -316,7 +316,7 @@ async def get_list_spk_by_tahap_id(
         
     spkts = []
     for s in spk_details:
-        spk = SpkForTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.nilai, spk_satuan_bayar=s.satuan_bayar,
+        spk = SpkInTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.amount, spk_satuan_bayar=s.satuan_bayar,
                             bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
                             luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
                             total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
@@ -448,39 +448,21 @@ async def get_list_rekening(
 
     return create_response(data=objs)
 
-@router.get("/search/spk", response_model=GetResponsePaginatedSch[SpkSrcSch])
+@router.get("/search/spk", response_model=GetResponseBaseSch[list[SpkSrcSch]])
 async def get_list_spk_by_tahap_id(
-                tahap_id:UUID,
-                jenis_bayar:JenisBayarEnum,
+                tahap_id:UUID | None = None,
+                termin_id:UUID | None = None,
+                jenis_bayar:JenisBayarEnum | None = None,
                 keyword:str = None,
-                limit:int = 100,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    list_bidang_id = await crud.tahap_detail.get_bidang_id_by_tahap_id(tahap_id=tahap_id)
-
-    query = select(Spk.id, Spk.code, Bidang.id_bidang).select_from(Spk
-                        ).outerjoin(Bidang, Bidang.id == Spk.bidang_id
-                        ).outerjoin(Invoice, Invoice.spk_id == Spk.id
-                        ).where(
-                            and_(
-                                Spk.bidang_id.in_(id for id in list_bidang_id),
-                                Spk.jenis_bayar == jenis_bayar,
-                                or_(
-                                    Invoice.spk == None,
-                                    Invoice.is_void == True
-                                )
-                        ))
+    objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
     
-    if keyword:
-        query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
-
-
-    objs = await crud.spk.get_multi(query=query, limit=limit)
     return create_response(data=objs)
 
-@router.get("/search/spk/{id}", response_model=GetResponseBaseSch[SpkForTerminSch])
+@router.get("/search/spk/{id}", response_model=GetResponseBaseSch[SpkInTerminSch])
 async def get_by_id(id:UUID,
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
@@ -493,7 +475,7 @@ async def get_by_id(id:UUID,
     total_beban_penjual = numpy.sum(array_total_beban)
 
 
-    obj = SpkForTerminSch(**dict(obj))
+    obj = SpkInTerminSch(**dict(obj))
 
     if obj.satuan_bayar == SatuanBayarEnum.Percentage:
         amount = Decimal((obj.spk_amount * obj.total_harga)/100)

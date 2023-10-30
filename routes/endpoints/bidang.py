@@ -18,7 +18,7 @@ from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch,
                                 BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException, NameExistException, 
+from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException,
                                ImportFailedException, DocumentFileNotFoundException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
@@ -26,6 +26,7 @@ from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, Jenis
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
+from services.helper_service import HelperService
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
@@ -194,7 +195,17 @@ async def create_bulking_task(
 
     """Create a new object"""
 
-    rows = GeomService.total_row_geodataframe(file=file.file)
+    field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
+                        "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
+                        "proses", "status", "group", "no_peta", "desa", "project"]
+    
+    geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+    error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
+
+    if error_message:
+        raise HTTPException(status_code=422, detail=f"field '{error_message}' tidak eksis dalam file, field tersebut dibutuhkan untuk import data")
+    file.file.seek(0)
+    rows = GeomService.total_row_geodataframe(file=file)
     file.file.seek(0)
     file_path, file_name = await GCStorageService().upload_zip(file=file)
 
@@ -220,7 +231,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
     
         # file = await file.read()
     try:
-
         log = await crud.import_log.get(id=payload.import_log_id)
         if log is None:
             raise IdNotFoundException(ImportLog, payload.import_log_id)
@@ -232,7 +242,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             start = log.done_count
 
         null_values = ["", "None", "nan", None]
-
+        
         file = await GCStorageService().download_file(payload.file_path)
         if not file:
             raise DocumentFileNotFoundException(dokumenname=payload.file_path)
@@ -240,7 +250,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
         geo_dataframe = GeomService.file_to_geodataframe(file)
 
         start_time = time.time()
-        max_duration = 7 * 60
+        max_duration = 4 * 60
 
         for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
             luassurat = str(geo_data['luassurat'])
@@ -293,9 +303,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 kategori = kat.id
             
             kategori_sub = None
-            kat_sub = await crud.kategori_sub.get_by_name(name=shp_data.kat_bidang)
-            if kat_sub:
-                kategori_sub = kat_sub.id
+            if kategori:
+                kat_sub = await crud.kategori_sub.get_by_name_and_kategori_id(name=shp_data.kat_bidang, kategori_id=kategori)
+                if kat_sub:
+                    kategori_sub = kat_sub.id
             
             kategori_proyek = None
             kat_proyek = await crud.kategori_proyek.get_by_name(name=shp_data.kat_proyek)
@@ -308,9 +319,37 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 pt = ptsk.id
             
             skpt = None
-            no_sk = await crud.skpt.get_by_sk_number(number=shp_data.no_sk)
-            if no_sk:
-                skpt = no_sk.id
+            if pt:
+                no_sk = await crud.skpt.get_by_sk_number_and_ptsk_id_and_status_sk(no_sk=shp_data.no_sk, ptsk_id=pt, status=shp_data.status_sk)
+                if no_sk:
+                    skpt = no_sk.id
+            else:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, PTSK {shp_data.ptsk} not exists in table master. "
+                log_error = ImportLogErrorSch(row=i+1,
+                                                error_message=error_m,
+                                                import_log_id=log.id)
+
+                log_error = await crud.import_log_error.create(obj_in=log_error)
+
+                obj_updated = log
+                count = count + 1
+                obj_updated.done_count = count
+
+                log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+
+                if log.total_row == log.done_count:
+                    obj_updated = log
+                    if log.total_error_log > 0:
+                        obj_updated.status = TaskStatusEnum.Done_With_Error
+                    else:
+                        obj_updated.status = TaskStatusEnum.Done
+
+                    obj_updated.completed_at = datetime.now()
+
+                    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                    break
+                
+                continue
             
             penampung = None
             pt_penampung = await crud.ptsk.get_by_name(name=shp_data.penampung)
@@ -445,8 +484,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                             sales_id=sales,
                             mediator=shp_data.mediator,
                             luas_surat=luas_surat,
-                            luas_clear=luas_surat,
-                            luas_bayar=luas_surat,
                             geom=shp_data.geom)
 
             obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
@@ -455,8 +492,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             if obj_current:
                 if obj_current.geom :
                     obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-                sch.luas_bayar = obj_current.luas_bayar if obj_current.luas_bayar is not None else sch.luas_surat
-                sch.luas_clear = obj_current.luas_clear if obj_current.luas_clear is not None else sch.luas_surat
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=log.created_by_id)
             else:
                 obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
@@ -492,6 +527,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             time.sleep(0.2)
 
         return {'message' : 'successfully import'}
+
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -569,7 +605,7 @@ def FindJenisBidang(type:str|None = None):
         else:
             return JenisBidangEnum.Standard
     else:
-        return JenisBidangEnum.Standardm
+        return JenisBidangEnum.Standard
 
 def FindJenisAlashak(type:str|None = None):
     if type:

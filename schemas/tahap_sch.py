@@ -1,7 +1,7 @@
 from sqlmodel import Field, SQLModel
 from models.tahap_model import TahapBase, TahapFullBase
 from schemas.tahap_detail_sch import TahapDetailCreateExtSch, TahapDetailSch, TahapDetailUpdateExtSch, TahapDetailExtSch
-from schemas.spk_sch import SpkForTerminSch
+from schemas.spk_sch import SpkInTerminSch
 from common.partial import optional
 from common.as_form import as_form
 from typing import Optional
@@ -44,7 +44,7 @@ class TahapForTerminByIdSch(SQLModel):
     ptsk_name:Optional[str]
     nomor_tahap:Optional[int]
     group:Optional[str]
-    spkts:list[SpkForTerminSch] | None
+    spkts:list[SpkInTerminSch] | None
 
 @optional
 class TahapUpdateSch(TahapBase):

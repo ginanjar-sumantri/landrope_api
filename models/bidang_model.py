@@ -371,6 +371,15 @@ class Bidang(BidangFullBase, table=True):
         return None
     
     @property
+    def tahap_id(self) -> UUID | None:
+        tahap_detail = next((x for x in self.tahap_details if x.is_void == False), None)
+
+        if tahap_detail:
+            return tahap_detail.tahap_id
+        
+        return None
+    
+    @property
     def total_payment(self) -> Decimal | None:
         total_payment:Decimal = 0
 

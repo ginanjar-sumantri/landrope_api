@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya
-from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkForTerminSch, SpkPrintOut, 
+from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkInTerminSch, SpkPrintOut, 
                              SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
 from uuid import UUID
@@ -57,7 +57,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         return response.scalars().all()
 
-    async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> SpkForTerminSch | None:
+    async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> SpkInTerminSch | None:
         db_session = db_session or db.session
         query = select(Spk.id.label("spk_id"),
                        Spk.code.label("spk_code"),
@@ -70,7 +70,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                        Bidang.harga_akta,
                        (Bidang.luas_bayar * Bidang.harga_transaksi).label("total_harga"),
                        Spk.satuan_bayar,
-                       Spk.nilai.label("spk_amount")
+                       Spk.amount.label("spk_amount")
                        ).select_from(Spk
                             ).join(Bidang, Bidang.id == Spk.bidang_id
                             ).where(self.model.id == id)
@@ -78,6 +78,63 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchone()
+    
+    async def get_multi_by_keyword_tahap_id_and_termin_id(self, 
+                                *,
+                                keyword:str | None = None,
+                                tahap_id:UUID | None = None,
+                                termin_id:UUID | None = None,
+                                jenis_bayar:JenisBayarEnum | None = None,
+                               db_session : AsyncSession | None = None
+                        ) -> List[Spk] | None:
+        db_session = db_session or db.session
+        
+        query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
+                            ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
+                            ).outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id
+                            ).outerjoin(Invoice, Invoice.spk_id == Spk.id)
+        
+        if tahap_id == None and termin_id == None:
+             query = query.where(and_(
+                                        Spk.jenis_bayar != JenisBayarEnum.PAJAK,
+                                        or_(
+                                             Invoice.spk_id == None,
+                                             Invoice.is_void == True
+                                        )
+                                    )
+                                )
+
+        if tahap_id and termin_id == None:
+             query = query.where(and_(
+                                        Spk.jenis_bayar == jenis_bayar,
+                                        Tahap.id == tahap_id,
+                                        or_(
+                                             Invoice.spk_id == None,
+                                             Invoice.is_void == True
+                                        )
+                                    ))
+             
+        if termin_id:
+             query = query.outerjoin(Termin, Termin.id == Invoice.termin_id)
+             query = query.where(
+                                 and_(
+                                        Spk.jenis_bayar == jenis_bayar,
+                                        Tahap.id == tahap_id,
+                                        Termin.id == termin_id,
+                                        Invoice != True
+                                      ))
+        
+        if keyword:
+             query = query.filter(or_(
+                  Bidang.id_bidang.ilike(f"%{keyword}%"),
+                  Bidang.id_bidang_lama.ilke(f"%{keyword}%"),
+                  Bidang.alashak.ilike(f"%{keyword}%")
+             ))
+
+        query = query.options(selectinload(Spk.bidang))
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
     
     async def get_multi_by_tahap_id(self, 
                                 *,
@@ -113,8 +170,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         response =  await db_session.execute(query)
         return response.scalars().all()
-    
-    
+     
     async def get_multi_by_tahap_id_and_termin_id(self, 
                                 *,
                                 tahap_id:UUID,
@@ -177,7 +233,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 sk.status As status_il,
                 hpl.hasil_analisa_peta_lokasi As analisa,
                 s.jenis_bayar,
-                s.nilai,
+                s.amount,
                 s.satuan_bayar,
                 mng.name As manager_name,
                 sls.name As sales_name,

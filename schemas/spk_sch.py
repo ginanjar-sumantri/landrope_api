@@ -21,9 +21,11 @@ class SpkSch(SpkFullBase):
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
 
 class SpkSrcSch(SQLModel):
-    id:UUID
-    code:str
-    id_bidang:str
+    id:UUID|None
+    code:str|None
+    id_bidang:str|None
+    amount:Decimal|None
+    jenis_bayar:JenisBayarEnum|None
 
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
@@ -83,7 +85,7 @@ class SpkOverlapPrintOutExt(SpkOverlapPrintOut):
 class SpkRekeningPrintOut(SQLModel):
     rekening:Optional[str]
 
-class SpkForTerminSch(SQLModel):
+class SpkInTerminSch(SQLModel):
     spk_id:Optional[UUID]
     spk_code:Optional[str]
     spk_amount:Optional[Decimal]
