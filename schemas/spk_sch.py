@@ -98,6 +98,8 @@ class SpkInTerminSch(SQLModel):
     project_name:Optional[str]
     sub_project_id:Optional[UUID]
     sub_project_name:Optional[str]
+    nomor_tahap:Optional[int]
+    tahap_id:Optional[UUID]
     luas_bayar:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
     harga_akta:Optional[Decimal]

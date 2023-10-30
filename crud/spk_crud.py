@@ -41,7 +41,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                         ).options(selectinload(Bidang.planing
                                                                             ).options(selectinload(Planing.project))
                                                         ).options(selectinload(Bidang.sub_project)
-                                                        )
+                                                        ).options(selectinload(Bidang.tahap_details))
                                     ).options(selectinload(Spk.kjb_termin)
                                     ).options(selectinload(Spk.spk_kelengkapan_dokumens
                                                         ).options(selectinload(SpkKelengkapanDokumen.bundledt
