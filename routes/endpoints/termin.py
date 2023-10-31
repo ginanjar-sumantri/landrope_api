@@ -490,7 +490,8 @@ async def get_by_id(id:UUID,
                             luas_bayar=obj.bidang.luas_bayar, harga_transaksi=obj.bidang.harga_transaksi, harga_akta=obj.bidang.harga_akta, 
                             amount=round(obj.spk_amount,0), utj_amount=obj.utj_amount, project_id=obj.bidang.planing.project_id, 
                             project_name=obj.bidang.project_name, sub_project_id=obj.bidang.sub_project_id,
-                            sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id)
+                            sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id,
+                            jenis_bayar=obj.jenis_bayar)
 
     if obj.jenis_bayar == JenisBayarEnum.LUNAS or obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         spk.amount = obj.bidang.sisa_pelunasan

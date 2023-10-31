@@ -91,6 +91,7 @@ class SpkInTerminSch(SQLModel):
     spk_code:Optional[str]
     spk_amount:Optional[Decimal]
     spk_satuan_bayar:Optional[str]
+    jenis_bayar:Optional[JenisBayarEnum]
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     alashak:Optional[str]

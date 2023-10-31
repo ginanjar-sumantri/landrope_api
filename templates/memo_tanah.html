@@ -168,7 +168,7 @@
         </tr>
         {% endfor %}
         <tr>
-          <td colspan="6"></td>
+          <td colspan="5"></td>
           <td align="center">{{total_luas_surat}}</td>
           <td align="center">{{total_luas_ukur}}</td>
           <td align="center">{{total_luas_gu_perorangan}}</td>
@@ -185,7 +185,7 @@
           <th>ID Bidang</th>
           <th>Jenis Pembayaran</th>
           <th>Tanggal</th>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item2 in data_invoice_history %}
@@ -194,41 +194,39 @@
           <td>{{item2.id_bidang}}</td>
           <td>{{item2.str_jenis_bayar}}</td>
           <td>{{item2.tanggal_transaksi}}</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right">{{item2.amountExt}}</td>
         </tr>
         {% endfor %} {% endif %}
         <tr>
-          <td colspan="15">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         {% if data_beban_biaya|length > 0 %}
         <tr>
           <td>&nbsp;</td>
-          <th>ID Bidang</th>
-          <th>Beban Biaya</th>
-          <td>&nbsp;</td>
+          <!-- <th>ID Bidang</th> -->
+          <th colspan="3">Beban Biaya</th>
           <td colspan="10">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
-          <td>{{item3.id_bidang}}</td>
-          <td>{{item3.beban_biaya_name}}</td>
-          <td>&nbsp;</td>
+          <!-- <td>{{item3.id_bidang}}</td> -->
+          <td colspan="3">{{item3.beban_biaya_name}}</td>
           <td colspan="10">&nbsp;</td>
           <td align="right">{{item3.amountExt}}</td>
         </tr>
         {% endfor %} {% endif %}
         <tr>
-          <td colspan="15">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         <tr>
           <td>&nbsp;</td>
           <td style="font-weight: bold">{{tanggal_transaksi}}</td>
           <td style="font-weight: bold">{{jenis_bayar}}</td>
           <td>&nbsp;</td>
-          <td colspan="10">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right" style="font-weight: bold">{{amount}}</td>
         </tr>
       </table>
