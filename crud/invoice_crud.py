@@ -184,14 +184,14 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             case
                                 when tr.jenis_bayar != 'UTJ' then 
                                     case 
-                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || s.nilai || '%'
-                                        else tr.jenis_bayar || ' (' || s.nilai || ')'
+                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || s.amount || '%'
+                                        else tr.jenis_bayar || ' (' || s.amount || ')'
                                     end
                                 else tr.jenis_bayar
                             end as str_jenis_bayar,
                             case
-                                when tr.jenis_bayar = 'UTJ' then DATE(i.created_at)
-                                else DATE(i.created_at)
+                                when tr.jenis_bayar = 'UTJ' then MAX(DATE(py.payment_date))
+                                else MAX(DATE(py.payment_date))
                             end tanggal_transaksi,
                             tr.jenis_bayar,
                             Sum(pd.amount) as amount
@@ -207,7 +207,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             and pd.is_void != true
                             and py.is_void != true
                             and tr.id != '{termin_id}'
-                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.nilai
+                            group by b.id, tr.jenis_bayar, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.amount
                          """)
             
 

@@ -11,6 +11,7 @@ class BidangKomponenBiayaCreateSch(BidangKomponenBiayaBase):
     pass
 
 class BidangKomponenBiayaExtSch(SQLModel):
+    id:UUID | None
     beban_biaya_id:UUID | None
     beban_pembeli:bool | None
     is_void:Optional[bool]

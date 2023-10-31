@@ -1,7 +1,7 @@
 from models.bidang_overlap_model import BidangOverlap, BidangOverlapBase, BidangOverlapFullBase, BidangOverlapRawBase
 from common.partial import optional
 from common.as_form import as_form
-from common.enum import KategoriOverlapEnum
+from common.enum import KategoriOverlapEnum, JenisBidangEnum, TipeOverlapEnum
 from sqlmodel import Field, SQLModel
 from uuid import UUID
 from decimal import Decimal
@@ -14,6 +14,8 @@ class BidangOverlapRawSch(BidangOverlapRawBase):
     id_bidang_intersect:str|None = Field(alias="id_bidang_intersect")
     alashak_intersect:str|None = Field(alias="alashak_intersect")
     luas_surat_intersect:str|None = Field(alias="luas_surat_intersect")
+    jenis_bidang_intersect:JenisBidangEnum|None = Field(alias="jenis_bidang_intersect")
+    tipe_overlap:TipeOverlapEnum|None = Field(alias="tipe_overlap")
 
 class BidangOverlapSch(BidangOverlapFullBase):
     pass
@@ -28,6 +30,7 @@ class BidangOverlapUpdateExtSch(SQLModel):
     kategori:KategoriOverlapEnum|None
     harga_transaksi:Decimal|None
     luas_bayar:Decimal|None
+    is_show:bool|None
 
 
 class BidangOverlapForTahap(SQLModel):

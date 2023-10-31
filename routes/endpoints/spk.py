@@ -204,6 +204,18 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
+    #remove beban biaya
+    list_id = [beban_biaya.id for beban_biaya in sch.spk_beban_biayas if beban_biaya.id != None]
+    if len(list_id) > 0:
+        beban_biaya_will_removed = await crud.bidang_komponen_biaya.get_not_in_by_ids(list_ids=list_id)
+
+        if len(beban_biaya_will_removed) > 0:
+            await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=beban_biaya_will_removed, db_session=db_session)
+    
+    elif len(list_id) == 0:
+        list_obj = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj_current.bidang_id)
+        await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=list_obj, db_session=db_session)
+
     for komponen_biaya in sch.spk_beban_biayas:
         komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=obj_updated.bidang_id, 
                                                                                                       beban_biaya_id=komponen_biaya.beban_biaya_id)

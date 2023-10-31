@@ -186,6 +186,7 @@ class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
     )
 
     bidang_overlap : "BidangOverlap" = Relationship(
+                            back_populates="hasil_peta_lokasi_detail",
                             sa_relationship_kwargs=
                             {
                                 "lazy" : "select"
