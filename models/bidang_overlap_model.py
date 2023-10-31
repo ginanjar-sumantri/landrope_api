@@ -78,9 +78,9 @@ class BidangOverlap(BidangOverlapFullBase, table=True):
         return getattr(getattr(self, "hasil_peta_lokasi_detail", None), "tipe_overlap", None)
     
     @property
-    def luas_surat_parent(self) -> str | None :
+    def luas_surat_parent(self) -> Decimal | None :
         return getattr(getattr(self, "bidang", None), "luas_surat", None)
     
     @property
-    def luas_surat_intersect(self) -> str | None :
+    def luas_surat_intersect(self) -> Decimal | None :
         return getattr(getattr(self, "bidang_intersect", None), "luas_surat", None)

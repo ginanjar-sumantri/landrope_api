@@ -513,6 +513,10 @@ async def printout(id:UUID | str,
         
         termin_header = TerminByIdForPrintOut(**dict(obj))
         date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
+        nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
+        nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
+        tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
+    
         day_of_week = date_obj.strftime("%A")
         hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
         
@@ -629,7 +633,7 @@ async def printout(id:UUID | str,
                                         data_harga_akta=harga_aktas,
                                         data_payment=obj_termin_bayar,
                                         tanggal_transaksi=termin_header.tanggal_transaksi,
-                                        tanggal_rencana_transaksi=termin_header.tanggal_rencana_transaksi,
+                                        tanggal_rencana_transaksi=tanggal_hasil,
                                         hari_transaksi=hari_transaksi,
                                         jenis_bayar=termin_header.jenis_bayar,
                                         amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
@@ -647,6 +651,21 @@ async def printout(id:UUID | str,
     
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+bulan_dict = {
+    "January": "Januari",
+    "February": "Februari",
+    "March": "Maret",
+    "April": "April",
+    "May": "Mei",
+    "June": "Juni",
+    "July": "Juli",
+    "August": "Agustus",
+    "September": "September",
+    "October": "Oktober",
+    "November": "November",
+    "December": "Desember"
+}
 
 @router.get("/print-out/utj/{id}")
 async def printout(id:UUID | str,

@@ -13,7 +13,7 @@ class BidangOverlapCreateSch(BidangOverlapBase):
 class BidangOverlapRawSch(BidangOverlapRawBase):
     id_bidang_intersect:str|None = Field(alias="id_bidang_intersect")
     alashak_intersect:str|None = Field(alias="alashak_intersect")
-    luas_surat_intersect:str|None = Field(alias="luas_surat_intersect")
+    luas_surat_intersect:Decimal|None = Field(alias="luas_surat_intersect")
     jenis_bidang_intersect:JenisBidangEnum|None = Field(alias="jenis_bidang_intersect")
     tipe_overlap:TipeOverlapEnum|None = Field(alias="tipe_overlap")
 
