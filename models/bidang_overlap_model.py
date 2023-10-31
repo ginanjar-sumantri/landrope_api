@@ -3,7 +3,7 @@ from models.base_model import BaseUUIDModel, BaseGeoModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 from decimal import Decimal
-from common.enum import StatusLuasOverlapEnum, KategoriOverlapEnum
+from common.enum import StatusLuasOverlapEnum, KategoriOverlapEnum, TipeOverlapEnum
 from geoalchemy2 import Geometry
 
 if TYPE_CHECKING:
@@ -47,7 +47,8 @@ class BidangOverlap(BidangOverlapFullBase, table=True):
         back_populates="bidang_overlap",
         sa_relationship_kwargs=
         {
-            "lazy" : "select"
+            "lazy" : "select",
+            "uselist" : False
         }
     )
 
@@ -73,7 +74,7 @@ class BidangOverlap(BidangOverlapFullBase, table=True):
         return getattr(getattr(self, "bidang_intersect", None), "jenis_bidang", None)
     
     @property
-    def tipe_overlap(self) -> str | None :
+    def tipe_overlap(self) -> TipeOverlapEnum | None :
         return getattr(getattr(self, "hasil_peta_lokasi_detail", None), "tipe_overlap", None)
     
     @property
