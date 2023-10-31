@@ -398,7 +398,7 @@ class Bidang(BidangFullBase, table=True):
         utj = 0
         utj_current = next((invoice_utj for invoice_utj in self.invoices 
                             if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-                            and invoice_utj.is_void != True))
+                            and invoice_utj.is_void != True), None)
         
         if utj_current:
             amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
