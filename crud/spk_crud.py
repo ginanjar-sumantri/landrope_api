@@ -139,7 +139,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
              query = query.filter(or_(
                   Bidang.id_bidang.ilike(f"%{keyword}%"),
                   Bidang.id_bidang_lama.ilike(f"%{keyword}%"),
-                  Bidang.alashak.ilike(f"%{keyword}%")
+                  Bidang.alashak.ilike(f"%{keyword}%"),
+                  Spk.code.ilike(f"%{keyword}%")
              ))
 
         query = query.options(selectinload(Spk.bidang))

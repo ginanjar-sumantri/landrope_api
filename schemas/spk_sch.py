@@ -26,6 +26,7 @@ class SpkSrcSch(SQLModel):
     id_bidang:str|None
     amount:Decimal|None
     jenis_bayar:JenisBayarEnum|None
+    alashak:str|None
 
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
