@@ -70,34 +70,38 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         db_session = db_session or db.session
 
         query = text(f"""
-                    select
-                    tr.id,
-                    tr.code,
-                    t.id,
-                    tr.created_at,
-                    tr.tanggal_transaksi,
-                    tr.tanggal_rencana_transaksi,
-                    (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
-                    t.nomor_tahap,
-                    SUM(i.amount) as amount,
-                    pr.name as project_name,
-                    Coalesce(tr.mediator, '') as mediator,
-                    Coalesce(mng.name, '') as manager_name,
-                    Coalesce(sls.name, '') as sales_name,
-                    Coalesce(nt.name, '') as notaris_name,
-                    tr.jenis_bayar,
-                    tr.remark
-                    from termin tr
-                    inner join invoice i on i.termin_id = tr.id
-                    inner join bidang b on b.id = i.bidang_id
-                    left outer join tahap t on t.id = tr.tahap_id
-                    left outer join planing pl on pl.id = t.planing_id
-                    left outer join project pr on pr.id = pl.project_id
-                    left outer join manager mng on mng.id = tr.manager_id
-                    left outer join sales sls on sls.id = tr.sales_id
-                    left outer join notaris nt on nt.id = tr.notaris_id
-                    where tr.id = '{str(id)}'
-                    group by tr.id, t.id, pr.id, mng.id, sls.id, nt.id
+                        select
+                        tr.id,
+                        tr.code,
+                        t.id as tahap_id,
+                        tr.created_at,
+                        tr.tanggal_transaksi,
+                        tr.tanggal_rencana_transaksi,
+                        (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
+                        t.nomor_tahap,
+                        SUM(i.amount) as amount,
+                        pr.name as project_name,
+                        ds.name as desa_name,
+                        pt.name as ptsk_name,
+                        Coalesce(tr.mediator, '') as mediator,
+                        Coalesce(mng.name, '') as manager_name,
+                        Coalesce(sls.name, '') as sales_name,
+                        Coalesce(nt.name, '') as notaris_name,
+                        tr.jenis_bayar,
+                        tr.remark
+                        from termin tr
+                        inner join invoice i on i.termin_id = tr.id
+                        inner join bidang b on b.id = i.bidang_id
+                        left outer join tahap t on t.id = tr.tahap_id
+                        left outer join planing pl on pl.id = t.planing_id
+                        left outer join project pr on pr.id = pl.project_id
+                        left outer join desa ds on ds.id = pl.desa_id
+                        left outer join ptsk pt on pt.id = t.ptsk_id
+                        left outer join manager mng on mng.id = tr.manager_id
+                        left outer join sales sls on sls.id = tr.sales_id
+                        left outer join notaris nt on nt.id = tr.notaris_id
+                        where tr.id = '{str(id)}'
+                        group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id
                     """)
 
         response = await db_session.execute(query)
@@ -131,13 +135,34 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                 db_session: AsyncSession | None = None
                                                 ) -> List[TerminBebanBiayaForPrintOut] | None:
         db_session = db_session or db.session
+        # query = text(f"""
+        #         select
+        #         b.id_bidang,
+        #         bb.name as beban_biaya_name,
+        #         case
+        #         when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
+        #         else '(BEBAN PENJUAL)'
+        #         end as tanggungan,
+        #         SUM(idt.amount) as amount,
+        #         bkb.beban_pembeli
+        #         from termin t
+        #         inner join invoice i on i.termin_id = t.id
+        #         inner join invoice_detail idt on idt.invoice_id = i.id
+        #         inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
+        #         inner join bidang b on b.id = bkb.bidang_id
+        #         inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+        #         where i.is_void != true
+        #         and bkb.is_void != true
+        #         and t.id = '{str(id)}'
+        #         group by bb.id, bkb.id, b.id
+        #         """)
+        
         query = text(f"""
                 select
-                b.id_bidang,
                 bb.name as beban_biaya_name,
                 case
-                when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
-                else '(BEBAN PENJUAL)'
+                        when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
+                        else '(BEBAN PENJUAL)'
                 end as tanggungan,
                 SUM(idt.amount) as amount,
                 bkb.beban_pembeli
@@ -150,8 +175,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                 where i.is_void != true
                 and bkb.is_void != true
                 and t.id = '{str(id)}'
-                group by bb.id, bkb.id, b.id
-                """)
+                group by bb.id, bkb.beban_pembeli       
+                     """)
 
 
         response = await db_session.execute(query)

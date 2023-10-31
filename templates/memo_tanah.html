@@ -78,6 +78,26 @@
       <div class="sub-header">
         <table width="100%">
           <tr>
+            <td>Desa</td>
+            <td>:</td>
+            <td>{{desa_name}}</td>
+          </tr>
+          <tr>
+            <td>Project</td>
+            <td>:</td>
+            <td>{{project_name}}</td>
+          </tr>
+          <tr>
+            <td>PT SK</td>
+            <td>:</td>
+            <td>{{ptsk_name}}</td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+        <table width="100%">
+          <tr>
             <td valign="top" align="left">
               <table width="50%">
                 <tr>
@@ -114,7 +134,7 @@
           <th>NO</th>
           <th>ID BID</th>
           <th>ALIAS</th>
-          <th>LOKASI</th>
+          <!-- <th>LOKASI</th> -->
           <th>PEMILIK</th>
           <th>SURAT ASAL</th>
           <th>L SURAT</th>
@@ -132,7 +152,7 @@
           <td align="center">{{ loop.index }}.</td>
           <td align="center">{{ item.id_bidang }}</td>
           <td align="center">{{ item.group }}</td>
-          <td align="center">{{ item.lokasi }}</td>
+          <!-- <td align="center">{{ item.lokasi }}</td> -->
           <td align="center">{{ item.pemilik_name }}</td>
           <td align="center">{{ item.alashak }}</td>
           <td align="right">{{ item.luas_suratExt }}</td>

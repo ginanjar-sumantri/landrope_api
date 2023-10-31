@@ -182,12 +182,12 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             select 
                             b.id_bidang,
                             case
-                                when tr.jenis_bayar != 'UTJ' then 
+                                when tr.jenis_bayar != 'UTJ' and tr.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then 
                                     case 
-                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || s.amount || '%'
+                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || Coalesce(s.amount,0) || '%'
                                         else tr.jenis_bayar || ' (' || s.amount || ')'
                                     end
-                                else tr.jenis_bayar
+                                else Replace(tr.jenis_bayar, '_', ' ')
                             end as str_jenis_bayar,
                             case
                                 when tr.jenis_bayar = 'UTJ' then MAX(DATE(py.payment_date))

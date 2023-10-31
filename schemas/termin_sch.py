@@ -44,11 +44,13 @@ class TerminUpdateSch(TerminBase):
 class TerminByIdForPrintOut(SQLModel):
     id:Optional[UUID]
     code:Optional[str]
-    tahap_id:Optional[str]
+    tahap_id:Optional[UUID]
     created_at:Optional[datetime]
     nomor_tahap:Optional[int]
     amount:Optional[Decimal]
     project_name:Optional[str]
+    desa_name:Optional[str]
+    ptsk_name:Optional[str]
     tanggal_transaksi:Optional[date]
     tanggal_rencana_transaksi:Optional[date]
     jenis_bayar:Optional[str]
@@ -74,7 +76,7 @@ class TerminHistoryForPrintOut(SQLModel):
     amount:Optional[Decimal]
 
 class TerminBebanBiayaForPrintOut(SQLModel):
-    id_bidang:Optional[str]
+    # id_bidang:Optional[str]
     beban_biaya_name:Optional[str]
     beban_pembeli:Optional[bool]
     tanggungan:Optional[str]

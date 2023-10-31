@@ -61,7 +61,9 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
                     inner join hasil_peta_lokasi_detail hpl on hpl.bidang_overlap_id = bo.id
                     left outer join pemilik pm on pm.id = bi.pemilik_id
                     where bp.id = '{str(bidang_id)}'
+                    
                     """)
+        # and bo.is_show = true
 
         response =  await db_session.execute(query)
         datas = response.fetchall()

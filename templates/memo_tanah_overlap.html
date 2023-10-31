@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="pdfkit-page-size" content="Legal" />
     <meta name="pdfkit-orientation" content="Landscape" />
-    <title>SPK</title>
+    <title>Memo Tanah Overlap</title>
     <style>
       @page {
         size: A4 landscape;
@@ -76,6 +76,26 @@
   <body>
     <div class="header">
       <div class="sub-header">
+        <table>
+          <tr>
+            <td>Desa</td>
+            <td>:</td>
+            <td>{{desa_name}}</td>
+          </tr>
+          <tr>
+            <td>Project</td>
+            <td>:</td>
+            <td>{{project_name}}</td>
+          </tr>
+          <tr>
+            <td>PT SK</td>
+            <td>:</td>
+            <td>{{ptsk_name}}</td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
         <table width="100%">
           <tr>
             <td valign="top" align="left">
@@ -114,7 +134,7 @@
           <th>NO</th>
           <th>ID BID</th>
           <th>ALIAS</th>
-          <th>LOKASI</th>
+          <!-- <th>LOKASI</th> -->
           <th>PEMILIK</th>
           <th>SURAT ASAL</th>
           <th>L SURAT</th>
@@ -144,9 +164,9 @@
             {{ item.id_bidang }}
           </td>
           <td align="center" rowspan="{{ overlap_count }}">{{ item.group }}</td>
-          <td align="center" rowspan="{{ overlap_count }}">
+          <!-- <td align="center" rowspan="{{ overlap_count }}">
             {{ item.lokasi }}
-          </td>
+          </td> -->
           <td align="center" rowspan="{{ overlap_count }}">
             {{ item.pemilik_name }}
           </td>
@@ -195,7 +215,7 @@
           <td align="center">{{ loop.index or '' }}</td>
           <td align="center">{{ item.id_bidang or '' }}</td>
           <td align="center">{{ item.group or '' }}</td>
-          <td align="center">{{ item.lokasi or '' }}</td>
+          <!-- <td align="center">{{ item.lokasi or '' }}</td> -->
           <td align="center">{{ item.pemilik_name or '' }}</td>
           <td align="center">{{ item.alashak or '' }}</td>
           <td align="right">{{ item.luas_suratExt or '' }}</td>
@@ -223,59 +243,55 @@
           <td align="center">{{total_luas_ukur}}</td>
           <td align="center">{{total_luas_nett}}</td>
           <td align="center">{{total_luas_bayar}}</td>
-          <td colspan="12">&nbsp;</td>
+          <td colspan="11">&nbsp;</td>
           <td align="center">{{total_harga}}</td>
         </tr>
         {% if data_invoice_history|length > 0 %}
         <tr>
           <td>&nbsp;</td>
           <th>ID Bidang</th>
-          <th>Jenis Pembayaran</th>
-          <th>Tanggal</th>
-          <td colspan="18">&nbsp;</td>
+          <th colspan="2">Jenis Pembayaran</th>
+          <th colspan="2">Tanggal</th>
+          <td colspan="15">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item2 in data_invoice_history %}
         <tr>
           <td>&nbsp;</td>
           <td>{{item2.id_bidang}}</td>
-          <td>{{item2.str_jenis_bayar}}</td>
-          <td>{{item2.tanggal_transaksi}}</td>
-          <td colspan="18">&nbsp;</td>
+          <td colspan="2">{{item2.str_jenis_bayar}}</td>
+          <td colspan="2">{{item2.tanggal_transaksi}}</td>
+          <td colspan="15">&nbsp;</td>
           <td align="right">{{item2.amountExt}}</td>
         </tr>
         {% endfor %} {% endif %}
         <tr>
-          <td colspan="23">&nbsp;</td>
+          <td colspan="22">&nbsp;</td>
         </tr>
         {% if data_beban_biaya|length > 0 %}
         <tr>
           <td>&nbsp;</td>
-          <th>ID Bidang</th>
-          <th>Beban Biaya</th>
-          <td>&nbsp;</td>
-          <td colspan="18">&nbsp;</td>
+          <!-- <th>ID Bidang</th> -->
+          <th colspan="5">Beban Biaya</th>
+          <td colspan="15">&nbsp;</td>
           <th>Nominal</th>
         </tr>
         {% for item3 in data_beban_biaya %}
         <tr>
           <td>&nbsp;</td>
-          <td>{{item3.id_bidang}}</td>
-          <td>{{item3.beban_biaya_name}}</td>
-          <td>&nbsp;</td>
-          <td colspan="18">&nbsp;</td>
+          <!-- <td>{{item3.id_bidang}}</td> -->
+          <td colspan="5">{{item3.beban_biaya_name}}</td>
+          <td colspan="15">&nbsp;</td>
           <td align="right">{{item3.amountExt}}</td>
         </tr>
         {% endfor %} {% endif %}
         <tr>
-          <td colspan="23">&nbsp;</td>
+          <td colspan="22">&nbsp;</td>
         </tr>
         <tr>
           <td>&nbsp;</td>
           <td style="font-weight: bold">{{tanggal_transaksi}}</td>
-          <td style="font-weight: bold">{{jenis_bayar}}</td>
-          <td>&nbsp;</td>
-          <td colspan="18">&nbsp;</td>
+          <td style="font-weight: bold" colspan="19">{{jenis_bayar}}</td>
           <td align="right" style="font-weight: bold">{{amount}}</td>
         </tr>
       </table>
