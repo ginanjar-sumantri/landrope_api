@@ -158,24 +158,38 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         #         """)
         
         query = text(f"""
-                select
-                bb.name as beban_biaya_name,
-                case
-                        when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
-                        else '(BEBAN PENJUAL)'
-                end as tanggungan,
-                SUM(idt.amount) as amount,
-                bkb.beban_pembeli
-                from termin t
-                inner join invoice i on i.termin_id = t.id
-                inner join invoice_detail idt on idt.invoice_id = i.id
-                inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
-                inner join bidang b on b.id = bkb.bidang_id
-                inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
-                where i.is_void != true
-                and bkb.is_void != true
-                and t.id = '{str(id)}'
-                group by bb.id, bkb.beban_pembeli       
+                        With subquery as (select
+                        bb.name as beban_biaya_name,
+                        case
+                                when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
+                                else '(BEBAN PENJUAL)'
+                        end as tanggungan,
+                        CASE
+                                WHEN bkb.satuan_bayar = 'Percentage' and bkb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                                WHEN b.luas_bayar is Null Then ROUND((bkb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                                ELSE ROUND((bkb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                End
+                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                                WHEN b.luas_bayar is Null Then ROUND((bkb.amount * b.luas_surat), 2)
+                                                ELSE ROUND((bkb.amount * b.luas_bayar), 2)
+                                End
+                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Lumpsum' Then bkb.amount
+                        END As amount,
+                        bkb.beban_pembeli
+                        from termin t
+                        inner join invoice i on i.termin_id = t.id
+                        inner join invoice_detail idt on idt.invoice_id = i.id
+                        inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
+                        inner join bidang b on b.id = bkb.bidang_id
+                        inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                        where i.is_void != true
+                        and bkb.is_void != true
+                        and t.id = '{str(id)}')
+                        Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli
+                        from subquery
+                        group by beban_biaya_name, tanggungan, beban_pembeli
                      """)
 
 
