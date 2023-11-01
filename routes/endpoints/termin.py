@@ -458,13 +458,17 @@ async def get_list_spk_by_tahap_id(
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+    objs = []
 
-    objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
+    if tahap_id == None and termin_id == None:
+        objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
+
     if tahap_id and termin_id == None:
         objs_with_tahap = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword, 
                                                                                      tahap_id=tahap_id, 
                                                                                      jenis_bayar=jenis_bayar)
         objs = objs + objs_with_tahap
+        # objs = list(set(objs + objs_with_tahap))
     
     if tahap_id and termin_id:
         objs_with_tahap_termin = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword, 
@@ -473,8 +477,6 @@ async def get_list_spk_by_tahap_id(
                                                                                             jenis_bayar=jenis_bayar)
         objs = objs + objs_with_tahap_termin
 
-        
-    
     return create_response(data=objs)
 
 @router.get("/search/spk/{id}", response_model=GetResponseBaseSch[SpkInTerminSch])

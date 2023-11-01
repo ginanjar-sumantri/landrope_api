@@ -144,6 +144,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
              ))
 
         query = query.options(selectinload(Spk.bidang))
+        query = query.distinct()
 
         response =  await db_session.execute(query)
         return response.scalars().all()
