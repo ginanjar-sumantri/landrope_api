@@ -184,7 +184,7 @@ class Invoice(InvoiceFullBase, table=True):
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
     bidang_komponen_biaya_id:Optional[UUID] = Field(foreign_key="bidang_komponen_biaya.id")
-    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    # amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
 class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):
     pass
@@ -208,6 +208,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def beban_pembeli(self) -> bool | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_pembeli', None)
+    
+    @property
+    def amount(self) -> Decimal|None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'amount_calculate', None)
     
     @property
     def amount_beban_penjual(self) -> Decimal | None:

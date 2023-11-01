@@ -16,7 +16,7 @@ class TerminBase(SQLModel):
     tahap_id:Optional[UUID] = Field(foreign_key="tahap.id", nullable=True)
     kjb_hd_id:Optional[UUID] = Field(foreign_key="kjb_hd.id", nullable=True)
     jenis_bayar:JenisBayarEnum = Field(nullable=True)
-    amount:Optional[Decimal] = Field(nullable=True)
+    # amount:Optional[Decimal] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=False)
     tanggal_rencana_transaksi:Optional[date] = Field(nullable=True) #tanggal rencana transaksi
     tanggal_transaksi:Optional[date] = Field(nullable=True)

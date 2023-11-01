@@ -11,11 +11,12 @@ class InvoiceDetailCreateSch(InvoiceDetailBase):
 class InvoiceDetailExtSch(SQLModel):
     id:Optional[UUID]
     bidang_komponen_biaya_id:Optional[UUID]
-    amount:Optional[Decimal]
+    # amount:Optional[Decimal]
 
 class InvoiceDetailSch(InvoiceDetailFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
     beban_pembeli:bool|None = Field(alias="beban_pembeli")
+    amount:Decimal|None = Field(alias="amount")
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):
