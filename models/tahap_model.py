@@ -240,5 +240,14 @@ class TahapDetail(TahapDetailFullBase, table=True):
     @property
     def overlaps(self) -> list[BidangOverlap] | None:
         return self.bidang.overlaps
+    
+    @property
+    def has_invoice(self) -> bool | None:
+        invoice = next((x for x in self.bidang.invoices if x.is_void != True), None)
+
+        if invoice:
+            return True
+        
+        return False
         
     

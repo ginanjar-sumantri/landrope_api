@@ -15,6 +15,20 @@ from typing import List
 from uuid import UUID
 
 class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch]):
+    
+    async def get_by_id(
+            self, 
+            *, 
+            id: UUID | str, 
+            db_session: AsyncSession | None = None) -> BidangKomponenBiaya | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.id == id
+            ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_by_bidang_id_and_beban_biaya_id(
             self, 
             *, 

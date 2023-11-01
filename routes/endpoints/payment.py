@@ -298,17 +298,31 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Invoice)
-    query = query.outerjoin(Invoice.bidang)
-    query = query.outerjoin(Invoice.termin)
+    query = query.join(Invoice.bidang)
+    query = query.join(Invoice.termin)
     query = query.filter(Invoice.is_void != True)
 
-    subquery = (
-    select(func.coalesce(func.sum(PaymentDetail.amount), 0))
-    .filter(and_(PaymentDetail.invoice_id == Invoice.id, PaymentDetail.is_void != True))
-    .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
-    )
+    # subquery_payment = (
+    # select(func.coalesce(func.sum(PaymentDetail.amount), 0))
+    # .filter(and_(PaymentDetail.invoice_id == Invoice.id, PaymentDetail.is_void != True))
+    # .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
+    # )
 
-    query = query.filter(Invoice.amount - subquery != 0)  
+    # subquery_beban_biaya = (
+    #             select(func.coalesce(func.sum(InvoiceDetail.amount), 0)
+    #                 ).join(BidangKomponenBiaya, BidangKomponenBiaya.id == InvoiceDetail.bidang_komponen_biaya_id
+    #                 ).filter(and_(InvoiceDetail.invoice_id == Invoice.id, 
+    #                               BidangKomponenBiaya.is_void != True, 
+    #                               BidangKomponenBiaya.beban_pembeli == False))
+    #                 .scalar_subquery()
+    #         )
+    
+    # subquery_utj_amount = (
+    #             select(Invoice
+    #                 ).join()
+    # )
+
+    # query = query.filter(Invoice.amount - (subquery_payment + subquery_beban_biaya) != 0)  
     
     query = query.options(selectinload(Invoice.bidang)
                             ).options(selectinload(Invoice.termin
@@ -330,7 +344,8 @@ async def get_list(
             or_(
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
-                Invoice.code.ilike(f'%{keyword}%')
+                Invoice.code.ilike(f'%{keyword}%'),
+                Termin.nomor_memo.ilike(f'%{keyword}%')
             )
         )
     
@@ -338,10 +353,23 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(Invoice, key) == value)
-
+    
+    query = query.distinct()
 
     objs = await crud.invoice.get_multi_no_page(query=query)
+    objs = [inv for inv in objs if inv.invoice_outstanding > 0]
     return create_response(data=objs)
+
+@router.get("/search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+async def get_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    obj = await crud.invoice.get_by_id(id=id)
+    if obj:
+        return create_response(data=obj)
+    else:
+        raise IdNotFoundException(Invoice, id)
 
 @router.get("/search/giro", response_model=GetResponseBaseSch[list[GiroSch]])
 async def get_list(
@@ -389,17 +417,6 @@ async def get_list(
 
     objs = await crud.giro.get_multi_no_page(query=query)
     return create_response(data=objs)
-
-@router.get("/search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
-async def get_by_id(id:UUID):
-
-    """Get an object by id"""
-
-    obj = await crud.invoice.get_by_id(id=id)
-    if obj:
-        return create_response(data=obj)
-    else:
-        raise IdNotFoundException(Invoice, id)
 
 async def bidang_update_status(bidang_ids:list[UUID]):
     for id in bidang_ids:

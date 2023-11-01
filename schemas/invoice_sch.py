@@ -73,6 +73,7 @@ class InvoiceSearchSch(InvoiceFullBase):
     nomor_memo:Optional[str] = Field(alias="nomor_memo")
     code_termin:Optional[str] = Field(alias="code_termin")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
+    amount_nett:Optional[Decimal] = Field(alias="amount_nett")
     
 
 @optional

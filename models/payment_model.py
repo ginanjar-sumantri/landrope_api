@@ -149,6 +149,10 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def payment_method(self) -> PaymentMethodEnum | None:
         return getattr(getattr(self, "payment", None), "payment_method", None)
+
+    @property
+    def payment_date(self) -> date | None:
+        return getattr(getattr(self, "payment", None), "payment_date", None)
     
     @property
     def id_bidang(self) -> str | None:

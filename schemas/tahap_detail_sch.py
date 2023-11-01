@@ -45,6 +45,7 @@ class TahapDetailSch(TahapDetailFullBase):
     total_harga_akta:Optional[Decimal] = Field(alias="total_harga_akta")
     sisa_pelunasan:Optional[Decimal] = Field(alias="sisa_pelunasan")
     hasil_analisa_peta_lokasi:Optional[HasilAnalisaPetaLokasiEnum] = Field(alias="hasil_analisa_peta_lokasi")
+    has_invoice:Optional[bool] = Field(alias="has_invoice")
     overlaps:Optional[list[BidangOverlapRawSch]] = Field(alias="overlaps")
 
 class TahapDetailExtSch(SQLModel):

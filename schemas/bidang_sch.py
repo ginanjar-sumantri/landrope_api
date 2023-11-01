@@ -28,6 +28,10 @@ class BidangRawSch(BidangRawBase):
     sisa_pelunasan:Decimal|None = Field(alias="sisa_pelunasan")
     total_payment:Decimal|None = Field(alias="total_payment")
     nomor_tahap:int|None = Field(alias="nomor_tahap")
+    status_sk:StatusSKEnum|None = Field(alias="status_sk")
+    no_sk:str|None = Field(alias="no_sk")
+    ptsk_name:str|None = Field(alias="ptsk_name")
+    planing_name:str|None = Field(alias="planing_name")
 
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
