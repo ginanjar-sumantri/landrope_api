@@ -2,11 +2,11 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, and_
-from models.kjb_model import KjbDt, KjbHd
+from sqlmodel import select, or_, and_, func
+from models import KjbDt, KjbHd
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
-from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch)
+from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch)
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -33,33 +33,47 @@ async def create(sch: KjbDtCreateSch,
     
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[KjbDtSch])
+# @router.get("", response_model=GetResponsePaginatedSch[KjbDtSch])
+# async def get_list(
+#             params: Params=Depends(), 
+#             order_by:str = None, 
+#             keyword:str = None, 
+#             filter_query:str = None,
+#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Gets a paginated list objects"""
+
+#     query = select(KjbDt).select_from(KjbDt
+#                     ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id)
+    
+#     if keyword:
+#         query = query.filter(
+#             or_(
+#                 KjbDt.alashak.ilike(f'%{keyword}%'),
+#                 KjbHd.code.ilike(f'%{keyword}%')
+#             )
+#         )
+
+#     if filter_query:
+#         filter_query = json.loads(filter_query)
+#         for key, value in filter_query.items():
+#                 query = query.where(getattr(KjbDt, key) == value)
+
+#     objs = await crud.kjb_dt.get_multi_paginated_ordered(params=params, query=query)
+#     return create_response(data=objs)
+
+@router.get("", response_model=GetResponsePaginatedSch[KjbDtListSch])
 async def get_list(
             params: Params=Depends(), 
             order_by:str = None, 
             keyword:str = None, 
             filter_query:str = None,
+            filter:str = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    query = select(KjbDt).select_from(KjbDt
-                    ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id)
-    
-    if keyword:
-        query = query.filter(
-            or_(
-                KjbDt.alashak.ilike(f'%{keyword}%'),
-                KjbHd.code.ilike(f'%{keyword}%')
-            )
-        )
-
-    if filter_query:
-        filter_query = json.loads(filter_query)
-        for key, value in filter_query.items():
-                query = query.where(getattr(KjbDt, key) == value)
-
-    objs = await crud.kjb_dt.get_multi_paginated_ordered(params=params, query=query)
+    objs = await crud.kjb_dt.get_multi_paginated_ordered(params=params, keyword=keyword, filter=filter)
     return create_response(data=objs)
 
 @router.get("/tanda-terima/notaris", response_model=GetResponsePaginatedSch[KjbDtSch])

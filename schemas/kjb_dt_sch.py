@@ -1,10 +1,11 @@
 from models.kjb_model import KjbDt, KjbDtBase, KjbDtFullBase
 from common.partial import optional
-from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum
+from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, StatusPetaLokasiEnum
 from sqlmodel import Field, SQLModel
 from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
+from datetime import datetime
 
 class KjbDtCreateSch(KjbDtBase):
     pass
@@ -33,6 +34,17 @@ class KjbDtSch(KjbDtFullBase):
     pemilik_name:str | None = Field(alias="pemilik_name")
     nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
     updated_by_name:str|None = Field(alias="updated_by_name")
+
+class KjbDtListSch(SQLModel):
+    id:UUID|None
+    alashak:str|None
+    harga_akta:Decimal|None
+    harga_transaksi:Decimal|None
+    status_peta_lokasi:StatusPetaLokasiEnum|None
+    luas_surat:Decimal|None
+    luas_surat_by_ttn:Decimal|None
+    created_at:datetime|None
+    harga_standard:Decimal|None
     
 
 @optional

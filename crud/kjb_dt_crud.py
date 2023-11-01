@@ -9,8 +9,9 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
-from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi
-from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud
+from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing
+from models.master_model import HargaStandard
+from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -39,6 +40,48 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_multi_paginated_ordered(self, *, params: Params | None = Params(),
+                                  order: OrderEnumSch | None = OrderEnumSch.descendent,
+                                  keyword:str | None = None,
+                                  filter:str | None = None,
+                                  db_session: AsyncSession | None = None) -> Page[KjbDtListSch]:
+        db_session = db_session or db.session
+
+        query = select(KjbDt.id,
+                   KjbDt.alashak,
+                   KjbDt.jenis_alashak,
+                   KjbDt.harga_akta,
+                   KjbDt.harga_transaksi,
+                   KjbDt.status_peta_lokasi,
+                   KjbDt.luas_surat,
+                   KjbDt.luas_surat_by_ttn,
+                   KjbDt.created_at,
+                   func.coalesce(func.max(HargaStandard.harga)).label("harga_standard")
+                    ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                    ).outerjoin(Planing, Planing.desa_id == KjbDt.desa_by_ttn_id
+                    ).outerjoin(HargaStandard, HargaStandard.planing_id == Planing.id
+                    ).group_by(HargaStandard.id, KjbDt.id)
+        
+        if filter == "lebihdari":
+            query = query.filter(KjbDt.harga_transaksi > HargaStandard.harga)
+        
+        if filter == "kurangdarisamadengan":
+            query = query.filter(KjbDt.harga_transaksi <= HargaStandard.harga)
+
+        if keyword:
+            query = query.filter(
+                or_(
+                    KjbDt.alashak.ilike(f'%{keyword}%'),
+                    KjbHd.code.ilike(f'%{keyword}%')
+                )
+            )
+        
+        
+        query = query.order_by(text("created_at desc"))
+        query = query.distinct()
+
+        return await paginate(db_session, query, params)
     
     async def get_multi_for_petlok(self, *,
                                     params: Params | None = Params(),
