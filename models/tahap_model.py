@@ -243,7 +243,7 @@ class TahapDetail(TahapDetailFullBase, table=True):
     
     @property
     def has_invoice(self) -> bool | None:
-        invoice = next((x for x in self.bidang.invoices if x.is_void != True), None)
+        invoice = next((x for x in self.bidang.invoices if x.is_void != True and x.jenis_bayar != JenisBayarEnum.UTJ and x.jenis_bayar != JenisBayarEnum.UTJ_KHUSUS), None)
 
         if invoice:
             return True
