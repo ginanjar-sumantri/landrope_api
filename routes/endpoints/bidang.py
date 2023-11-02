@@ -58,7 +58,11 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     sch.jenis_alashak = jenis_surat.jenis_alashak
 
     if file:
-        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        geo_dataframe = None
+        try:
+            geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e)}")
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
@@ -167,9 +171,11 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
         obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
 
     if file:
-        # buffer = await file.read()
-
-        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        geo_dataframe = None
+        try:
+            geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Error read file. Detail = {str(e)}")
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
@@ -201,11 +207,11 @@ async def create_bulking_task(
     
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
     error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
-
     if error_message:
         raise HTTPException(status_code=422, detail=f"field '{error_message}' tidak eksis dalam file, field tersebut dibutuhkan untuk import data")
+    
     file.file.seek(0)
-    rows = GeomService.total_row_geodataframe(file=file)
+    rows = GeomService.total_row_geodataframe(file=file.file)
     file.file.seek(0)
     file_path, file_name = await GCStorageService().upload_zip(file=file)
 
@@ -229,30 +235,33 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
     """Create bulk or import data"""
     
-        # file = await file.read()
-    try:
-        log = await crud.import_log.get(id=payload.import_log_id)
-        if log is None:
-            raise IdNotFoundException(ImportLog, payload.import_log_id)
+    id_bidang_on_proc:str = ""
+    on_proc:str = ""
+    on_row:int = 0
 
-        start:int = log.done_count
-        count:int = log.done_count
+    log = await crud.import_log.get(id=payload.import_log_id)
+    if log is None:
+        raise IdNotFoundException(ImportLog, payload.import_log_id)
 
-        if log.done_count > 0:
-            start = log.done_count
+    start:int = log.done_count
+    count:int = log.done_count
 
-        null_values = ["", "None", "nan", None]
-        
-        file = await GCStorageService().download_file(payload.file_path)
-        if not file:
-            raise DocumentFileNotFoundException(dokumenname=payload.file_path)
+    if log.done_count > 0:
+        start = log.done_count
 
-        geo_dataframe = GeomService.file_to_geodataframe(file)
+    null_values = ["", "None", "nan", None]
+    
+    file = await GCStorageService().download_file(payload.file_path)
+    if not file:
+        raise DocumentFileNotFoundException(dokumenname=payload.file_path)
 
-        start_time = time.time()
-        max_duration = 4 * 60
+    geo_dataframe = GeomService.file_to_geodataframe(file)
 
-        for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
+    start_time = time.time()
+    max_duration = 1 * 60
+
+    for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
+        try:
             luassurat = str(geo_data['luassurat'])
             if luassurat in null_values:
                 geo_data['luassurat'] = RoundTwo(Decimal(0))
@@ -284,40 +293,50 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
 
+            id_bidang_on_proc = shp_data.o_idbidang if shp_data.o_idbidang not in null_values else shp_data.n_idbidang
+            on_row = i
+
             luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
 
+            on_proc = "[get by name pemilik]"
             pemilik = None
             pmlk = await crud.pemilik.get_by_name(name=shp_data.pemilik)
             if pmlk:
                 pemilik = pmlk.id
             
+            on_proc = "[get by name jenis surat]"
             jenis_surat = await crud.jenissurat.get_by_jenis_alashak_and_name(jenis_alashak=shp_data.dokumen, name=shp_data.sub_surat)
             if jenis_surat is None:
                 jenissurat = None
             else:
                 jenissurat = jenis_surat.id
 
+            on_proc = "[get by name kategori]"
             kategori = None
             kat = await crud.kategori.get_by_name(name=shp_data.kat)
             if kat:
                 kategori = kat.id
             
+            on_proc = "[get by name kategori sub]"
             kategori_sub = None
             if kategori:
                 kat_sub = await crud.kategori_sub.get_by_name_and_kategori_id(name=shp_data.kat_bidang, kategori_id=kategori)
                 if kat_sub:
                     kategori_sub = kat_sub.id
             
+            on_proc = "[get by name kategori proyek]"
             kategori_proyek = None
             kat_proyek = await crud.kategori_proyek.get_by_name(name=shp_data.kat_proyek)
             if kat_proyek:
                 kategori_proyek = kat_proyek.id
             
+            on_proc = "[get by name ptsk]"
             pt = None
             ptsk = await crud.ptsk.get_by_name(name=shp_data.ptsk)
             if ptsk:
                 pt = ptsk.id
             
+            on_proc = "[get skpt]"
             skpt = None
             if pt:
                 no_sk = await crud.skpt.get_by_sk_number_and_ptsk_id_and_status_sk(no_sk=shp_data.no_sk, ptsk_id=pt, status=shp_data.status_sk)
@@ -351,21 +370,25 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 
                 continue
             
+            on_proc = "[get by name penampung]"
             penampung = None
             pt_penampung = await crud.ptsk.get_by_name(name=shp_data.penampung)
             if pt_penampung:
                 penampung = pt_penampung.id
 
+            on_proc = "[get by name manager]"
             manager = None
             mng = await crud.manager.get_by_name(name=shp_data.manager)
             if mng:
                 manager = mng.id
             
+            on_proc = "[get by name sales]"
             sales = None
             sls = await crud.sales.get_by_name(name=shp_data.sales)
             if sls:
                 sales = sls.id
 
+            on_proc = "[get by name project]"
             project = await crud.project.get_by_name(name=shp_data.project)
             if project is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
@@ -394,8 +417,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                     break
 
                 continue
-
-                # raise NameNotFoundException(Project, name=shp_data.project)
 
             desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
@@ -426,8 +447,6 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 
                 continue
 
-                # raise NameNotFoundException(Desa, name=shp_data.desa)
-
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
@@ -456,10 +475,13 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 continue
 
                 # raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
-                
+            
+            
             if shp_data.n_idbidang in null_values:
+                on_proc = "[get by idbidang lama]"
                 bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
                 if bidang_lama is None and plan is not None:
+                    on_proc = "[generate id bidang]"
                     shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
                 else:
                     shp_data.n_idbidang = bidang_lama.id_bidang
@@ -525,11 +547,17 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 break  # Hentikan looping setelah 7 menit berlalu
 
             time.sleep(0.2)
+        except Exception as e:
+            error_m = f"Error on {id_bidang_on_proc}, Process: {on_proc}, Error Detail : {str(e)}"
+            log_error = ImportLogErrorSch(row=on_row+1,
+                                            error_message=error_m,
+                                            import_log_id=log.id)
 
-        return {'message' : 'successfully import'}
+            log_error = await crud.import_log_error.create(obj_in=log_error)
 
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=422, detail=f"{str(e)}")
+    
+    return {'message' : 'successfully import'}
 
 @router.get("/export/shp", response_class=Response)
 async def export(

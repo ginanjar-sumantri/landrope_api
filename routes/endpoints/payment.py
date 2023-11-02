@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, func, and_
+from sqlmodel import select, or_, func, and_, text
 from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
@@ -355,6 +355,7 @@ async def get_list(
                 query = query.where(getattr(Invoice, key) == value)
     
     query = query.distinct()
+    query = query.order_by(text("created_at desc"))
 
     objs = await crud.invoice.get_multi_no_page(query=query)
     objs = [inv for inv in objs if inv.invoice_outstanding > 0]

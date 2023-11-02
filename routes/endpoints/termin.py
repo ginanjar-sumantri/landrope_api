@@ -18,6 +18,7 @@ from schemas.spk_sch import SpkSrcSch, SpkInTerminSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch, BidangKomponenBiayaUpdateSch
+from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.kjb_harga_sch import KjbHargaAktaSch
 from schemas.payment_detail_sch import PaymentDetailForPrintout
@@ -28,7 +29,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
-from common.enum import JenisBayarEnum, StatusHasilPetaLokasiEnum, SatuanBayarEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
@@ -537,11 +538,28 @@ async def printout(id:UUID | str,
                                         luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
                                         luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
             
-            invoice_curr = await crud.invoice.get_by_id(id=bd.id)
+            invoice_curr = await crud.invoice.get_utj_amount_by_id(id=bd.id)
             
             amount_utj_used.append(invoice_curr.utj_amount)
 
-            bidang.overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+            overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+            list_overlap = []
+            for ov in overlaps:
+                overlap = BidangOverlapForPrintout(**dict(ov))
+                bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
+                if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
+                    nib_perorangan:str = ""
+                    nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
+                    if nib_perorangan_meta_data:
+                        if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
+                            metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
+                            nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
+                    overlap.nib = nib_perorangan
+
+                list_overlap.append(overlap)
+
+            bidang.overlaps = list_overlap
+
             if len(bidang.overlaps) > 0:
                 overlap_exists = True
 

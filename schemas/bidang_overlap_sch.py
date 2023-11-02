@@ -54,4 +54,5 @@ class BidangOverlapForPrintout(SQLModel):
     kat:str|None
     id_bidang:str|None
     status_overlap:str|None
+    nib:str|None
 
