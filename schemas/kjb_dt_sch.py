@@ -37,6 +37,7 @@ class KjbDtSch(KjbDtFullBase):
 
 class KjbDtListSch(SQLModel):
     kjb_code:str|None
+    kjb_hd_id:UUID|None
     id:UUID|None
     alashak:str|None
     harga_akta:Decimal|None

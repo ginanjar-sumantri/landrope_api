@@ -58,11 +58,12 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                    KjbDt.luas_surat_by_ttn,
                    KjbDt.created_at,
                    KjbHd.code.label("kjb_code"),
+                   KjbDt.kjb_hd_id,
                    func.coalesce(func.max(HargaStandard.harga)).label("harga_standard")
                     ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Planing, Planing.desa_id == KjbDt.desa_by_ttn_id
                     ).outerjoin(HargaStandard, HargaStandard.planing_id == Planing.id
-                    ).group_by(HargaStandard.id, KjbDt.id)
+                    ).group_by(HargaStandard.id, KjbDt.id, KjbHd.code)
         
         if filter == "lebihdari":
             query = query.filter(KjbDt.harga_transaksi > HargaStandard.harga)
