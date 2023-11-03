@@ -245,7 +245,7 @@ class Bidang(BidangFullBase, table=True):
     @property
     def status_sk(self) -> str:
         if self.skpt is None:
-            return ""
+            return None
         
         return self.skpt.status
     

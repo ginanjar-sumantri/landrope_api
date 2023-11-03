@@ -596,7 +596,7 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #                 if not clipped_gdf.is_empty.all():
 #                     geom_new = GeomService.single_geometry_to_wkt(clipped_gdf[0])
                 
-#                 obj_new = BidangSch(geom_ori=geom_ori or bidang_intersects_current.geom_ori, geom=geom_new or bidang_intersects_current.geom)
+#                 obj_new = BidangSch(geom_ori=(geom_ori or bidang_intersects_current.geom_ori), geom=geom_new or bidang_intersects_current.geom)
 
 #                 await crud.bidang.update(obj_current=bidang_intersects_current,
 #                                         obj_new=obj_new,
@@ -728,3 +728,27 @@ async def update_geom_bidang(payload:HasilPetaLokasiTaskUpdateKulitBintang):
 #                                                                         with_commit=False)
         
 #     await db_session.commit()
+
+# async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID):
+    
+#     bidang_overlaps = await crud.bidangoverlap.get_multi_kulit_bintang_batal_by_petlok_id(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
+
+#     for overlap in bidang_overlaps:
+#         if overlap.geom:
+#             overlap.geom = wkt.dumps(wkb.loads(overlap.geom.data, hex=True))
+        
+#         ov_series = gpd.GeoSeries.from_wkt([overlap.geom])
+#         ov_gdf = gpd.GeoDataFrame(geometry=ov_series)
+
+#         bidang_bintang = await crud.bidang.get(id=overlap.parent_bidang_intersect_id)
+#         if bidang_bintang.geom:
+#             bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
+        
+#         bd_series = gpd.GeoSeries.from_wkt([bidang_bintang.geom])
+#         bd_gdf = gpd.GeoDataFrame(geometry=bd_series)
+        
+#         union_geom = bd_gdf.union(ov_gdf)
+#         geom_union = GeomService.single_geometry_to_wkt(union_geom[0])
+
+#         bidang_bintang_updated = BidangUpdateSch(geom=geom_union)
+#         await crud.bidang.update(obj_current=bidang_bintang, obj_new=bidang_bintang_updated)
