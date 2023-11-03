@@ -57,6 +57,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                    KjbDt.luas_surat,
                    KjbDt.luas_surat_by_ttn,
                    KjbDt.created_at,
+                   KjbHd.code.label("kjb_code"),
                    func.coalesce(func.max(HargaStandard.harga)).label("harga_standard")
                     ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Planing, Planing.desa_id == KjbDt.desa_by_ttn_id

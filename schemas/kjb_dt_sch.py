@@ -36,6 +36,7 @@ class KjbDtSch(KjbDtFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class KjbDtListSch(SQLModel):
+    kjb_code:str|None
     id:UUID|None
     alashak:str|None
     harga_akta:Decimal|None
