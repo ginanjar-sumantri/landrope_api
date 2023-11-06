@@ -19,6 +19,16 @@ from uuid import UUID
 from datetime import datetime
 
 class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateSch, RequestPetaLokasiUpdateSch]):
+    async def get_by_id(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> RequestPetaLokasi | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.id == id
+                                        ).options(selectinload(RequestPetaLokasi.kjb_dt
+                                                            ).options(selectinload(KjbDt.kjb_hd))
+                                        ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi))
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_multi_header_paginated(self, *, params: Params | None = Params(),
                                   order: OrderEnumSch | None = OrderEnumSch.descendent,
                                   keyword:str | None,

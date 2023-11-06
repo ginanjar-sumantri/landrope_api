@@ -6,7 +6,7 @@ from sqlmodel import select, or_, and_, func
 from models import KjbDt, KjbHd
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
-from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch)
+from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch)
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
@@ -96,7 +96,7 @@ async def get_list(
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
-@router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtSch])
+@router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtListRequestPetlokSch])
 async def get_list_for_petlok(kjb_hd_id:UUID | None, no_order:str | None = None, params: Params=Depends()):
     
     """Gets a paginated list objects"""

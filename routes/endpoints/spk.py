@@ -3,9 +3,9 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
-from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker)
+from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin)
 from models.code_counter_model import CodeCounterEnum
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, 
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
@@ -72,7 +72,7 @@ async def create(
     
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[SpkSch])
+@router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
                 params: Params=Depends(), 
                 order_by:str = None, 

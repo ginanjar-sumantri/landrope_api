@@ -554,6 +554,7 @@ async def updateExt(
             id:UUID, 
             request:Request,
             sch:HasilPetaLokasiUpdateExtSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -568,12 +569,6 @@ async def updateExt(
         url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
         payload = {"bidang_id" : str(obj_current.bidang_id)}
         GCloudTaskService().create_task(payload=payload, base_url=url)
-
-    #remove existing data detail dan overlap
-    list_overlap = [ov.bidang_overlap for ov in obj_current.details if ov.bidang_overlap != None]
-
-    await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
-    await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session)
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
@@ -586,51 +581,24 @@ async def updateExt(
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
+    bidang_current = await crud.bidang.get(id=sch.bidang_id)
+    if bidang_current.geom :
+        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
 
-    # draft_header_id = None  
-    for dt in sch.hasilpetalokasidetails:
-        bidang_overlap_id = None
-        if dt.draft_detail_id is not None:
-            #input bidang overlap dari hasil analisa
+    draft = await crud.draft.get(id=sch.draft_id)
 
-            draft_detail = await crud.draft_detail.get(id=dt.draft_detail_id)
-            if draft_detail is None:
-                raise ContentNoChangeException(detail="Bidang Overlap tidak exists di Draft Detail")
-            
-            # draft_header_id = draft_detail.draft_id
-            
-            code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
-            bidang_overlap_sch = BidangOverlapSch(
-                                    code=code,
-                                    parent_bidang_id=sch.bidang_id,
-                                    parent_bidang_intersect_id=dt.bidang_id,
-                                    luas=dt.luas_overlap,
-                                    status_luas=dt.status_luas,
-                                    geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
-            
-            new_obj_bidang_overlap = await crud.bidangoverlap.create(obj_in=bidang_overlap_sch, db_session=db_session, 
-                                                                     with_commit=False, created_by_id=current_worker.id)
-            
-            bidang_overlap_id = new_obj_bidang_overlap.id
-        
-        #input detail hasil peta lokasi
-        detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
-        detail_sch.hasil_peta_lokasi_id=obj_updated.id
-        detail_sch.bidang_overlap_id=bidang_overlap_id
-
-        await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
+    bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
+    
     payload = HasilPetaLokasiTaskUpdateBidang(bidang_id=str(obj_updated.bidang_id),
                                               hasil_peta_lokasi_id=str(obj_updated.id),
                                               kjb_dt_id=str(obj_updated.kjb_dt_id),
                                               draft_id=str(sch.draft_id))
     
     
-    url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url)
-
-    url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
+    background_task.add_task(insert_detail, sch, obj_updated.id, current_worker.id, True)
+    background_task.add_task(update_bidang_override, payload)
+    background_task.add_task(generate_kelengkapan_bidang_override, payload)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)

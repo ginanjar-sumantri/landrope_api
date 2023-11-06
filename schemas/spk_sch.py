@@ -20,6 +20,10 @@ class SpkSch(SpkFullBase):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(alias="hasil_analisa_peta_lokasi")
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
 
+class SpkListSch(SpkSch):
+    has_termin:bool|None = Field(alias="has_termin")
+    nomor_memo:str|None = Field(alias="nomor_memo")
+
 class SpkSrcSch(SQLModel):
     id:UUID|None
     code:str|None

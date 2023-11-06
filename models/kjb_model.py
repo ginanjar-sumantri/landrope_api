@@ -201,6 +201,13 @@ class KjbDt(KjbDtFullBase, table=True):
         return status
     
     @property
+    def has_input_petlok(self) -> bool:
+        if self.hasil_peta_lokasi:
+            return True
+        
+        return False
+    
+    @property
     def nomor_telepon(self) -> list[str] | None:
         kontaks = []
         if self.pemilik is None:

@@ -35,11 +35,15 @@ class KjbDtSch(KjbDtFullBase):
     nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+class KjbDtListRequestPetlokSch(KjbDtSch):
+    has_input_petlok:bool | None = Field(alias="has_input_petlok")
+
 class KjbDtListSch(SQLModel):
     kjb_code:str|None
     kjb_hd_id:UUID|None
     id:UUID|None
     alashak:str|None
+    jenis_alashak:JenisAlashakEnum|None
     harga_akta:Decimal|None
     harga_transaksi:Decimal|None
     status_peta_lokasi:StatusPetaLokasiEnum|None

@@ -170,6 +170,12 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
     if obj_current.geom :
         obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
 
+    jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
+    if jenis_surat is None:
+        raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
+    
+    sch.jenis_alashak = jenis_surat.jenis_alashak
+
     if file:
         geo_dataframe = None
         try:

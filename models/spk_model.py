@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models.bidang_model import Bidang
-    from models.master_model import BebanBiaya
-    from models.bundle_model import BundleDt
-    from models.kjb_model import KjbTermin
+    from models import Bidang, BundleDt, KjbTermin, Invoice
 
 class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -30,6 +27,14 @@ class Spk(SpkFullBase, table=True):
         {
             "lazy" : "select",
 
+        }
+    )
+
+    invoices:list["Invoice"] = Relationship(
+        back_populates="spk",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
         }
     )
 
@@ -87,6 +92,22 @@ class Spk(SpkFullBase, table=True):
             #     utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
+    
+    @property
+    def has_termin(self) -> bool | None:
+        invoice = next((x for x in self.invoices if x.is_void != True), None)
+        if invoice:
+            return True
+        
+        return False
+    
+    @property
+    def nomor_memo(self) -> str | None:
+        invoice = next((x for x in self.invoices if x.is_void != True), None)
+        if invoice:
+            return invoice.nomor_memo
+        
+        return None
         
 
 

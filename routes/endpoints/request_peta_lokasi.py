@@ -185,6 +185,8 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
 
     await db_session.commit()
 
+    obj = await crud.request_peta_lokasi.get_by_id(id=obj.id)
+
     return create_response(data=obj)
 
 @router.get("/perintah/pengukuran")

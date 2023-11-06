@@ -34,6 +34,7 @@ class Invoice(InvoiceFullBase, table=True):
     )
 
     spk:"Spk" = Relationship(
+        back_populates="invoices",
         sa_relationship_kwargs=
         {
             "lazy" : "select"
