@@ -78,6 +78,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.hasil_peta_lokasi
                                                                             ).options(selectinload(HasilPetaLokasi.kjb_dt)
                                                                             )
+                                                        ).options(selectinload(Bidang.invoices
+                                                                            ).options(selectinload(Invoice.payment_details))
                                                         )
            
            response = await db_session.execute(query)
