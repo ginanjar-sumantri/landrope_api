@@ -23,6 +23,7 @@ class SpkSch(SpkFullBase):
 class SpkListSch(SpkSch):
     has_termin:bool|None = Field(alias="has_termin")
     nomor_memo:str|None = Field(alias="nomor_memo")
+    tahap_id:UUID|None = Field(alias="tahap_id")
 
 class SpkSrcSch(SQLModel):
     id:UUID|None

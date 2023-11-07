@@ -597,8 +597,8 @@ async def updateExt(
     
     
     background_task.add_task(insert_detail, sch, obj_updated.id, current_worker.id, True)
-    background_task.add_task(update_bidang_override, payload)
-    background_task.add_task(generate_kelengkapan_bidang_override, payload)
+    # background_task.add_task(update_bidang_override, payload)
+    # background_task.add_task(generate_kelengkapan_bidang_override, payload)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -613,7 +613,7 @@ async def insert_detail(sch: HasilPetaLokasiCreateExtSch,
                   updated:bool|None = False):
     
     db_session = db.session
-    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get(id=id)
+    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
 
     if updated:
         # kalau dia update, merge dulu semua geom hasil irisan di table bidang overlap dengan geom curent bidang bintang yg terkena overlap
@@ -669,11 +669,10 @@ async def insert_detail(sch: HasilPetaLokasiCreateExtSch,
                 if not clipped_gdf.is_empty.all():
                     geom_new = GeomService.single_geometry_to_wkt(clipped_gdf[0])
                 
-                obj_new = BidangSch(geom_ori=(geom_ori or bidang_intersects_current.geom_ori), geom=(geom_new or bidang_intersects_current.geom))
+                obj_new = BidangSch(geom_ori=(geom_ori if bidang_intersects_current.geom_ori is None else bidang_intersects_current.geom_ori), geom=(geom_new if geom_new is not None else bidang_intersects_current.geom))
 
                 await crud.bidang.update(obj_current=bidang_intersects_current,
                                         obj_new=obj_new,
-                                        updated_by_id=hasil_peta_lokasi_current.updated_by_id,
                                         db_session=db_session,
                                         with_commit=False)
             
@@ -697,6 +696,8 @@ async def insert_detail(sch: HasilPetaLokasiCreateExtSch,
         detail_sch.bidang_overlap_id=bidang_overlap_id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
+
+        await db_session.commit()
 
         #memotong 
 
@@ -806,7 +807,9 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
     
     bidang_overlaps = await crud.bidangoverlap.get_multi_kulit_bintang_batal_by_petlok_id(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
 
-    for overlap in bidang_overlaps:
+    for ov in bidang_overlaps:
+        db_session_update = db.session
+        overlap = await crud.bidangoverlap.get(id=ov.id)
         if overlap.geom:
             overlap.geom = wkt.dumps(wkb.loads(overlap.geom.data, hex=True))
         
@@ -817,11 +820,14 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
         if bidang_bintang.geom:
             bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
         
+        if bidang_bintang.geom_ori:
+            bidang_bintang.geom_ori = wkt.dumps(wkb.loads(bidang_bintang.geom_ori.data, hex=True))
+
         bd_series = gpd.GeoSeries.from_wkt([bidang_bintang.geom])
         bd_gdf = gpd.GeoDataFrame(geometry=bd_series)
         
         union_geom = bd_gdf.union(ov_gdf)
         geom_union = GeomService.single_geometry_to_wkt(union_geom[0])
 
-        bidang_bintang_updated = BidangUpdateSch(geom=geom_union)
-        await crud.bidang.update(obj_current=bidang_bintang, obj_new=bidang_bintang_updated)
+        bidang_bintang_updated = {"geom" : geom_union}
+        await crud.bidang.update(obj_current=bidang_bintang, obj_new=bidang_bintang_updated, db_session=db_session_update)

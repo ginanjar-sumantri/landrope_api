@@ -110,7 +110,7 @@ async def analisa(
 
     if hasil_peta_lokasi_id:
         intersects_ov_bidangs = await crud.bidangoverlap.get_intersect_bidang(geom=geom_wkb, hasil_peta_lokasi_id=hasil_peta_lokasi_id)
-        bidang_ov_intersection = [BidangIntersectionSch(id=b.id, geom=wkt.dumps(wkb.loads(b.geom_temp.data, hex=True))) for b in intersects_ov_bidangs]
+        bidang_ov_intersection = [BidangIntersectionSch(id=b.parent_bidang_intersect_id, geom=wkt.dumps(wkb.loads(b.geom_temp.data, hex=True))) for b in intersects_ov_bidangs]
         bidang_intersection = bidang_intersection + bidang_ov_intersection
 
     for intersect_bidang in bidang_intersection:
@@ -125,6 +125,7 @@ async def analisa(
         intersected_geometry = gdf1.geometry.intersection(gdf2.geometry)
 
         if intersected_geometry[0].geom_type != "Polygon":
+            print(intersected_geometry[0].geom_type)
             is_polygon = intersected_geometry.geometry[0].is_ring
             if is_polygon:
 
@@ -158,9 +159,12 @@ async def analisa(
 
 async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID):
     
+    
     bidang_overlaps = await crud.bidangoverlap.get_multi_kulit_bintang_batal_by_petlok_id(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
 
-    for overlap in bidang_overlaps:
+    for ov in bidang_overlaps:
+        db_session_update = db.session
+        overlap = await crud.bidangoverlap.get(id=ov.id)
         if overlap.geom:
             overlap.geom = wkt.dumps(wkb.loads(overlap.geom.data, hex=True))
         
@@ -177,8 +181,9 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
         union_geom = bd_gdf.union(ov_gdf)
         geom_temp = GeomService.single_geometry_to_wkt(union_geom[0])
 
-        bidang_overlap_updated = BidangOverlapUpdateSch(geom_temp=geom_temp)
-        await crud.bidangoverlap.update(obj_current=overlap, obj_new=bidang_overlap_updated)
+        bidang_overlap_updated = overlap
+        bidang_overlap_updated.geom_temp = geom_temp
+        await crud.bidangoverlap.update(obj_current=overlap, obj_new=bidang_overlap_updated, db_session=db_session_update)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):

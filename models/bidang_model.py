@@ -360,7 +360,7 @@ class Bidang(BidangFullBase, table=True):
     
     @property
     def nomor_tahap(self) -> int | None:
-        if self.tahap is None:
+        if self.tahap is None or self.tahap == '0':
             tahap_detail = next((x for x in self.tahap_details if x.is_void == False), None)
 
             if tahap_detail:
