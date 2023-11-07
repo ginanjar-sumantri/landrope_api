@@ -157,7 +157,7 @@ async def create_bulking_task(
 
     """Create a new object"""
 
-    field_values = ["code", "name", "project", "desa", "luas"]
+    field_values = ["code", "name", "project", "desa", "kecamatan", "kota" "luas"]
     
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -228,6 +228,7 @@ async def bulk(payload:ImportLogCloudTaskSch,
             code:str = geo_data['code']
             project_name:str = geo_data['project']
             desa_name:str = geo_data['desa']
+            kota:str = geo_data.get('kota', '')
             luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
 
             entity_on_proc = f"{code}-{name}-{project_name}-{desa_name}"

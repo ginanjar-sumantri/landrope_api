@@ -110,12 +110,13 @@ class Spk(SpkFullBase, table=True):
         return None
     
     @property
-    def tahap_id(self) -> UUID | None:
-        invoice = next((x for x in self.invoices if x.is_void != True), None)
-        if invoice:
-            return invoice.termin.tahap_id
+    def has_on_tahap(self) -> bool | None:
+        tahap_detail = next((x for x in self.bidang.tahap_details if x.is_void != True), None)
+        if tahap_detail:
+            return True
         
-        return None
+        return False
+        
         
 
 
