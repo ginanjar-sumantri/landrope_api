@@ -224,12 +224,13 @@ async def bulk(payload:ImportLogCloudTaskSch,
 
     for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
         try:
-            name:str = geo_data['name']
-            code:str = geo_data['code']
-            project_name:str = geo_data['project']
-            desa_name:str = geo_data['desa']
+            name:str = geo_data.get('name', '')
+            code:str = geo_data.get('code', '')
+            project_name:str = geo_data.get('project', '')
+            desa_name:str = geo_data.get('desa')
             kota:str = geo_data.get('kota', '')
-            luas:Decimal = RoundTwo(Decimal(geo_data['luas']))
+            kecamatan:str = geo_data.get('kecamatan', '')
+            luas:Decimal = RoundTwo(Decimal(geo_data.get('luas', 0)))
 
             entity_on_proc = f"{code}-{name}-{project_name}-{desa_name}"
             on_row = i
@@ -265,9 +266,9 @@ async def bulk(payload:ImportLogCloudTaskSch,
                 continue
             
             on_proc = "[get by name desa]"
-            desa = await crud.desa.get_by_name(name=desa_name)
+            desa = await crud.desa.get_by_administrasi(name=desa_name, kota=kota, kecamatan=kecamatan)
             if desa is None:
-                error_m = f"Desa {desa_name} not exists in table master. "
+                error_m = f"Desa {desa_name} kec. {kecamatan} kota {kota} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
                                                 error_message=error_m,
                                                 import_log_id=log.id)

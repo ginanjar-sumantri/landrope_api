@@ -39,6 +39,8 @@ class SkptShpSch(BaseGeoModel):
     luas:Decimal | None
     desa:str | None
     code_desa:str | None
+    kota:str | None
+    kecamatan:str | None
 
 @optional
 class SkptUpdateSch(SkptBase):

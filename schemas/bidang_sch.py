@@ -141,6 +141,8 @@ class BidangShpSch(BaseGeoModel):
     no_peta:str | None
     desa:str | None
     project:str | None
+    kota:str | None
+    kecamatan:str | None
 
 class BidangShpExSch(BaseGeoModel):
     n_idbidang:str | None

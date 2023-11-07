@@ -209,7 +209,7 @@ async def create_bulking_task(
 
     field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
                         "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-                        "proses", "status", "group", "no_peta", "desa", "project"]
+                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
     
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
     error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
@@ -272,30 +272,32 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             if luassurat in null_values:
                 geo_data['luassurat'] = RoundTwo(Decimal(0))
 
-            shp_data = BidangShpSch(n_idbidang=str(geo_data['n_idbidang']),
-                                    o_idbidang=geo_data['o_idbidang'],
-                                    pemilik=geo_data['pemilik'],
-                                    code_desa=geo_data['code_desa'],
-                                    dokumen=geo_data['dokumen'],
-                                    sub_surat=geo_data['sub_surat'],
-                                    alashak=geo_data['alashak'],
-                                    luassurat=geo_data['luassurat'],
-                                    kat=geo_data['kat'],
-                                    kat_bidang=geo_data['kat_bidang'],
-                                    kat_proyek=geo_data['kat_proyek'],
-                                    ptsk=geo_data['ptsk'],
-                                    penampung=geo_data['penampung'],
-                                    no_sk=geo_data['no_sk'],
-                                    status_sk=geo_data['status_sk'],
-                                    manager=geo_data['manager'],
-                                    sales=geo_data['sales'],
-                                    mediator=geo_data['mediator'],
-                                    proses=geo_data['proses'],
-                                    status=geo_data['status'],
-                                    group=geo_data['group'],
-                                    no_peta=geo_data['no_peta'],
-                                    desa=geo_data['desa'],
-                                    project=geo_data['project'],
+            shp_data = BidangShpSch(n_idbidang=str(geo_data.get('n_idbidang', '')),
+                                    o_idbidang=geo_data.get('o_idbidang', ''),
+                                    pemilik=geo_data.get('pemilik', ''),
+                                    code_desa=geo_data.get('code_desa', ''),
+                                    dokumen=geo_data.get('dokumen', ''),
+                                    sub_surat=geo_data.get('sub_surat',''),
+                                    alashak=geo_data.get('alashak', ''),
+                                    luassurat=geo_data.get('luassurat', ''),
+                                    kat=geo_data.get('kat', ''),
+                                    kat_bidang=geo_data.get('kat_bidang', ''),
+                                    kat_proyek=geo_data.get('kat_proyek', ''),
+                                    ptsk=geo_data.get('ptsk', ''),
+                                    penampung=geo_data.get('penampung',''),
+                                    no_sk=geo_data.get('no_sk', ''),
+                                    status_sk=geo_data.get('status_sk', ''),
+                                    manager=geo_data.get('manager', ''),
+                                    sales=geo_data.get('sales', ''),
+                                    mediator=geo_data.get('mediator', ''),
+                                    proses=geo_data.get('proses', ''),
+                                    status=geo_data.get('status', ''),
+                                    group=geo_data.get('group', ''),
+                                    no_peta=geo_data.get('no_peta', ''),
+                                    desa=geo_data.get('desa', ''),
+                                    project=geo_data.get('project', ''),
+                                    kota=geo_data.get('kota', ''),
+                                    kecamatan=geo_data.get('kecamatan', ''),
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
 
@@ -424,9 +426,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
                 continue
 
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
+            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
             if desa is None:
-                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} code {shp_data.code_desa} not exists in table master. "
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
                                                 error_message=error_m,
                                                 import_log_id=log.id)

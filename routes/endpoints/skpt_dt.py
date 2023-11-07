@@ -171,7 +171,7 @@ async def create_bulking_task(
     """Create a new object"""
 
     field_values = ["code", "name", "kategori", "luas", "no_sk", "status", "section", 
-                        "code_desa", "project", "desa", "tgl_sk", "jatuhtempo"]
+                        "code_desa", "project", "desa", "kota", "kecamatan", "tgl_sk", "jatuhtempo"]
     
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -239,22 +239,25 @@ async def bulk_skpt(payload:ImportLogCloudTaskSch,
     for i, geo_data in islice(geo_dataframe.iterrows(), start, None):
         try:
             shp_data = SkptShpSch(geom=GeomService.single_geometry_to_wkt(geo_data.geometry),
-                                    code=geo_data['code'],
-                                    name=geo_data['name'],
-                                    kategori=geo_data['kategori'],
-                                    luas=RoundTwo(Decimal(geo_data['luas'])),
-                                    no_sk=geo_data['no_sk'],
-                                    status=geo_data['status'],
-                                    section=geo_data['section'],
+                                    code=geo_data.get('code', ''),
+                                    name=geo_data.get('name', ''),
+                                    kategori=geo_data.get('kategori', ''),
+                                    luas=RoundTwo(Decimal(geo_data.get('luas', 0))),
+                                    no_sk=geo_data.get('no_sk', ''),
+                                    status=geo_data.get('status', ''),
+                                    section=geo_data.get('section',''),
                                 #   tgl_sk=geo_data['tgl_sk'],
                                 #   jatuhtempo=geo_data['jatuhtempo'],
-                                    code_desa=geo_data['code_desa'],
-                                    project=geo_data['project'],
-                                    desa=geo_data['desa'])
-            tgl_sk = str(geo_data['tgl_sk']).lower()
+                                    code_desa=geo_data.get('code_desa', ''),
+                                    project=geo_data.get('project', ''),
+                                    desa=geo_data.get('desa', ''),
+                                    kota=geo_data.get('kota', ''),
+                                    kecamatan=geo_data.get('kecamatan', '')
+                                    )
+            tgl_sk = str(geo_data.get('tgl_sk', 'nan')).lower()
             if tgl_sk != "nan" and tgl_sk != "none":
                 shp_data.tgl_sk = date(geo_data['tgl_sk'])
-            jatuhtempo = str(geo_data['jatuhtempo']).lower()    
+            jatuhtempo = str(geo_data.get('jatuhtempo', 'nan')).lower()    
             if jatuhtempo != "nan" and jatuhtempo != "none":
                 shp_data.jatuhtempo = date(geo_data['jatuhtempo'])
             
@@ -292,9 +295,9 @@ async def bulk_skpt(payload:ImportLogCloudTaskSch,
                 continue
             
             on_proc = "[get by name desa]"
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
+            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
             if desa is None:
-                error_m = f"Desa {shp_data.desa} not exists in table master. "
+                error_m = f"Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
                                                 error_message=error_m,
                                                 import_log_id=log.id)
