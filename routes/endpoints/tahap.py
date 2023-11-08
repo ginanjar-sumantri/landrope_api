@@ -257,12 +257,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    status_ = [StatusBidangEnum.Deal]
+    # status_ = [StatusBidangEnum.Deal]
     query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
                     ).outerjoin(TahapDetail, TahapDetail.bidang_id == Bidang.id
                     ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id
                     ).where(and_(
-                                Bidang.status.in_(status_),
+                                # Bidang.status.in_(status_),
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
                                 Bidang.hasil_peta_lokasi != None,
                                 Bidang.planing_id == planing_id,

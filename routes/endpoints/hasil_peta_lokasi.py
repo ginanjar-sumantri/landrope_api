@@ -51,7 +51,9 @@ async def create(
 
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if len(sch.hasilpetalokasidetails) > 0:
+    its_overlap = next((x for x in sch.hasilpetalokasidetails 
+                        if x.tipe_overlap != TipeOverlapEnum.NIBOrangLain or x.tipe_overlap != TipeOverlapEnum.SertifikatOrangLain), None)
+    if its_overlap:
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
@@ -161,7 +163,9 @@ async def update(
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if len(sch.hasilpetalokasidetails) > 0:
+    its_overlap = next((x for x in sch.hasilpetalokasidetails 
+                        if x.tipe_overlap != TipeOverlapEnum.NIBOrangLain or x.tipe_overlap != TipeOverlapEnum.SertifikatOrangLain), None)
+    if its_overlap:
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     #update hasil peta lokasi
@@ -170,7 +174,6 @@ async def update(
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-
     # draft_header_id = None  
     for dt in sch.hasilpetalokasidetails:
         bidang_overlap_id = None

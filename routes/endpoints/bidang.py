@@ -425,7 +425,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                     break
 
                 continue
-
+            
+            on_proc = "[get by administrasi desa]"
             desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
@@ -454,7 +455,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                     break
                 
                 continue
-
+            
+            on_proc = "[get planing]"
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
