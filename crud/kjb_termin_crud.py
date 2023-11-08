@@ -28,8 +28,7 @@ class CRUDKjbTermin(CRUDBase[KjbTermin, KjbTerminCreateSch, KjbTerminUpdateSch])
         db_session = db_session or db.session
         
         query = select(KjbTermin).where(KjbTermin.id == id
-                                                ).options(selectinload(KjbTermin.harga)
-                                                ).options(selectinload(KjbTermin.spk))
+                                                ).options(selectinload(KjbTermin.harga))
                                                 
 
         response = await db_session.execute(query)
