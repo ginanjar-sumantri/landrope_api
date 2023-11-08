@@ -348,6 +348,26 @@ class Bidang(BidangFullBase, table=True):
             total_beban_penjual = sum(calculate) or 0
         
         return Decimal(total_beban_penjual)
+    
+    @property
+    def total_pengembalian_beban_penjual(self) -> Decimal | None:
+        total_pengembalian:Decimal = 0
+        if len(self.komponen_biayas) > 0:
+            calculate = []
+            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void == True and kb.is_paid == True]
+            for beban in komponen_biaya_beban_penjual:
+                if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
+                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
+                elif beban.satuan_bayar == SatuanBayarEnum.Amount and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
+                    amount = (beban.amount or 0) * (self.luas_bayar or self.luas_surat)
+                else:
+                    amount = beban.amount or 0
+                
+                calculate.append(Decimal(amount))
+            
+            total_pengembalian = sum(calculate) or 0
+        
+        return Decimal(total_pengembalian)
             
     @property
     def total_invoice(self) -> Decimal | None:

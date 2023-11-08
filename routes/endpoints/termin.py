@@ -496,8 +496,8 @@ async def get_by_id(id:UUID,
                             sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id,
                             jenis_bayar=obj.jenis_bayar)
 
-    if obj.jenis_bayar == JenisBayarEnum.LUNAS or obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-        spk.amount = obj.bidang.sisa_pelunasan
+    # if obj.jenis_bayar == JenisBayarEnum.LUNAS or obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+    #     spk.amount = obj.bidang.sisa_pelunasan
 
     if obj:
         return create_response(data=spk)
