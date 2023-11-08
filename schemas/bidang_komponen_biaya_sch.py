@@ -43,5 +43,7 @@ class BidangKomponenBiayaBebanPenjualSch(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum]
     beban_biaya_amount:Optional[Decimal]
     total_beban:Optional[Decimal]
+    is_use:Optional[bool]
+    is_void:Optional[bool]
 
 

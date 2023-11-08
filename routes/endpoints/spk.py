@@ -321,9 +321,13 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
             termins.append(termin)
 
     beban = []
-    if spk_id:
-        beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
-    else:
+    # if spk_id:
+    #     beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
+    # else:
+    #     beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
+
+    beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
+    if len(beban) == 0:
         beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
     
     ktp_value:str = ""
@@ -389,8 +393,8 @@ async def printout(id:UUID | str,
     
     spk_header = SpkPrintOut(**dict(obj))
     percentage_value:str = ""
-    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage:
-        percentage_value = f" {spk_header.nilai}%"
+    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and (spk_header.jenis_bayar == JenisBayarEnum.DP or spk_header.jenis_bayar == JenisBayarEnum.LUNAS):
+        percentage_value = f" {spk_header.amount}%"
     
     ktp_value:str = ""
     ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=spk_header.bidang_id)
@@ -425,6 +429,8 @@ async def printout(id:UUID | str,
     obj_beban_biayas = []
     if spk_header.jenis_bayar == JenisBayarEnum.PAJAK:
         obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
+    elif spk_header.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        obj_beban_biayas = await crud.spk.get_beban_biaya_pengembalian_by_id_for_printout(id=id)
     else:
         obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
 
@@ -469,7 +475,7 @@ async def printout(id:UUID | str,
     akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
     render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
-                                      jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}',
+                                      jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}'.replace("_", " "),
                                       group=spk_header.group, 
                                       pemilik_name=spk_header.pemilik_name,
                                       alashak=spk_header.alashak,

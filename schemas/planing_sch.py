@@ -17,6 +17,8 @@ class PlaningRawSch(PlaningRawBase):
     desa_name:str = Field(alias='desa_name')
     section_name:str | None = Field(alias='section_name')
     sub_project_exists:bool | None = Field(alias="sub_project_exists")
+    kota:str | None = Field(alias="kota")
+    kecamatan:str | None = Field(alias="kecamatan")
 
 class PlaningSch(PlaningFullBase):
     pass

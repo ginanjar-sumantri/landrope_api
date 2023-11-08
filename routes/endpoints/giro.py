@@ -29,7 +29,7 @@ async def create(
     """Create a new object"""
     db_session = db.session
 
-    obj_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
+    obj_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.nomor_giro)
     if obj_current:
         raise NameExistException(name=sch.nomor_giro, model=Giro)
     

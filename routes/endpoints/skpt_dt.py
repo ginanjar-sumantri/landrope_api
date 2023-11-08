@@ -66,7 +66,7 @@ async def create(
     
     new_obj = await crud.skptdt.create(obj_in=sch, created_by_id=current_worker.id)
 
-    query = select(SkptDt).where(SkptDt.id == id).options(selectinload(SkptDt.skpt)
+    query = select(SkptDt).where(SkptDt.id == new_obj.id).options(selectinload(SkptDt.skpt)
                                                         ).options(selectinload(SkptDt.planing
                                                                                 ).options(selectinload(Planing.project)
                                                                                 ).options(selectinload(Planing.desa))

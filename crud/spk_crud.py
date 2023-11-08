@@ -53,6 +53,57 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         return response.scalar_one_or_none()
     
+    async def get_by_id_in_termin(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Spk | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk).where(Spk.id == id
+                                ).options(selectinload(Spk.bidang
+                                            ).options(selectinload(Bidang.invoices
+                                                            ).options(selectinload(Invoice.termin)
+                                                            ).options(selectinload(Invoice.payment_details)
+                                                            )
+                                            ).options(selectinload(Bidang.komponen_biayas)
+                                            ).options(selectinload(Bidang.planing
+                                                            ).options(selectinload(Planing.project)
+                                                            )
+                                            ).options(selectinload(Bidang.sub_project)
+                                            ).options(selectinload(Bidang.tahap_details)
+                                            ).options(selectinload(Bidang.manager)
+                                            ).options(selectinload(Bidang.sales)
+                                            ).options(selectinload(Bidang.notaris)
+                                            )
+                                )
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+        
+
+    async def get_multi_history_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Spk] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk)
+        query = query.outerjoin(Spk.invoices)
+        query = query.filter(Spk.bidang_id == bidang_id)
+        query = query.options(selectinload(Spk.invoices
+                                        ).options(selectinload(Invoice.termin))
+                    ).options(selectinload(Spk.bidang)
+                    )
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+
     async def get_multi_by_bidang_id(self, 
                   *, 
                   bidang_id: UUID | str | None = None,
@@ -294,6 +345,32 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     where s.id = '{str(id)}'
                     and bb.is_tax = true
                     and bkb.is_void != true
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+    
+    async def get_beban_biaya_pengembalian_by_id_for_printout(self, 
+                                                 *, 
+                                                 id: UUID | str, 
+                                                 db_session: AsyncSession | None = None
+                                                 ) -> List[SpkDetailPrintOut] | None:
+        db_session = db_session or db.session
+        query = text(f"""
+                    select 
+                    case
+                        when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                        else 'DITANGGUNG PENJUAL (PENGEMBALIAN)'
+                    end as tanggapan,
+                    bb.name
+                    from spk s
+                    inner join bidang b on b.id = s.bidang_id
+                    inner join bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where s.id = '{str(id)}'
+                    and bkb.is_void = true
                     """)
 
         response = await db_session.execute(query)

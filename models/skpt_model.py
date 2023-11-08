@@ -113,3 +113,11 @@ class SkptDt(SkptDtFullBase, table=True):
             return ""
         
         return self.planing.desa.code
+    
+    @property
+    def kota(self) -> str | None:
+        return getattr(getattr(getattr(self, "planing", None), "desa", None), "kota", None)
+
+    @property
+    def kecamatan(self) -> str:
+        return getattr(getattr(getattr(self, "planing", None), "desa", None), "kecamatan", None)

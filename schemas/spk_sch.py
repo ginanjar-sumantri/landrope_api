@@ -25,6 +25,11 @@ class SpkListSch(SpkSch):
     nomor_memo:str|None = Field(alias="nomor_memo")
     has_on_tahap:bool|None = Field(alias="has_on_tahap")
 
+class SpkHistorySch(SpkFullBase):
+    id_bidang:str | None = Field(alias="id_bidang")
+    alashak:str | None = Field(alias="alashak")
+    nomor_memo:str|None = Field(alias="nomor_memo")
+
 class SpkSrcSch(SQLModel):
     id:UUID|None
     code:str|None
@@ -61,7 +66,7 @@ class SpkPrintOut(SQLModel):
     ptsk_name:Optional[str]
     analisa:Optional[HasilAnalisaPetaLokasiEnum]
     jenis_bayar:Optional[JenisBayarEnum]
-    nilai:Optional[Decimal]
+    amount:Optional[Decimal]
     satuan_bayar:Optional[SatuanBayarEnum]
     manager_name:Optional[str]
     sales_name:Optional[str]
@@ -112,6 +117,13 @@ class SpkInTerminSch(SQLModel):
     harga_akta:Optional[Decimal]
     amount:Optional[Decimal]
     utj_amount:Optional[Decimal]
+    manager_id:Optional[UUID]
+    manager_name:Optional[str]
+    sales_id:Optional[UUID]
+    sales_name:Optional[str]
+    notaris_id:Optional[UUID]
+    notaris_name:Optional[str]
+    mediator:Optional[str]
 
 
     

@@ -32,6 +32,8 @@ class BidangRawSch(BidangRawBase):
     no_sk:str|None = Field(alias="no_sk")
     ptsk_name:str|None = Field(alias="ptsk_name")
     planing_name:str|None = Field(alias="planing_name")
+    kota:str|None = Field(alias="kota")
+    kecamatan:str|None = Field(alias="kecamatan")
 
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')

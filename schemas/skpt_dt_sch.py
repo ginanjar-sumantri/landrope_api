@@ -12,6 +12,8 @@ class SkptDtRawSch(SkptDtRawBase):
     nomor_sk:str | None = Field(alias="nomor_sk")
     project_name:str | None = Field(alias="project_name")
     desa_name:str | None = Field(alias="desa_name")
+    kota:str | None = Field(alias="kota")
+    kecamatan:str | None = Field(alias="kecamatan")
 
 class SkptDtSch(SkptDtFullBase):
     pass

@@ -183,6 +183,14 @@ class Bidang(BidangFullBase, table=True):
     @property
     def desa_code(self) -> str | None:
         return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'code', None)
+    
+    @property
+    def kota(self) -> str | None:
+        return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'kota', None)
+    
+    @property
+    def kecamatan(self) -> str | None:
+        return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'kecamatan', None)
 
     @property
     def sub_project_name(self) -> str | None:

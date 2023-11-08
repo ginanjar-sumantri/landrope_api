@@ -16,6 +16,7 @@ class BebanBiayaForSpkSch(SQLModel):
     beban_pembeli:bool|None
     beban_biaya_name:str|None
     is_tax:bool|None
+    is_void:bool|None = Field(default=False)
 
 
 @optional

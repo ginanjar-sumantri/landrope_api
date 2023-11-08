@@ -47,6 +47,20 @@ class Planing(PlaningFullBase, table=True):
         return self.desa.name
     
     @property
+    def kota(self)-> str|None:
+        return getattr(getattr(self, "desa", None), "kota", None)
+    
+    @property
+    def kecamatan(self)-> str|None:
+        return getattr(getattr(self, "desa", None), "kecamatan", None)
+    
+    @property
+    def desa_name(self)-> str:
+        if self.desa is None:
+            return ""
+        return self.desa.name
+    
+    @property
     def section_name(self)-> str:
         if self.project is None:
             return ""

@@ -14,7 +14,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
-from schemas.spk_sch import SpkSrcSch, SpkInTerminSch
+from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch, BidangKomponenBiayaUpdateSch
@@ -298,40 +298,6 @@ async def update(
 
     return create_response(data=obj_updated)
 
-# @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[TahapForTerminByIdSch])
-# async def get_list_spk_by_tahap_id(
-#                 id:UUID,
-#                 jenis_bayar:JenisBayarEnum,
-#                 termin_id:UUID | None = None,
-#                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-#     """Gets a paginated list objects"""
-
-#     tahap = await crud.tahap.get_by_id_for_termin(id=id)
-#     obj_return = TahapForTerminByIdSch(**dict(tahap))
-
-#     spk_details = await crud.spk.get_multi_by_tahap_id(tahap_id=id, jenis_bayar=jenis_bayar)
-#     if termin_id:
-#         exists_spk_details = await crud.spk.get_multi_by_tahap_id_and_termin_id(tahap_id=id, jenis_bayar=jenis_bayar, termin_id=termin_id)
-#         spk_details = spk_details + exists_spk_details
-        
-#     spkts = []
-#     for s in spk_details:
-#         spk = SpkInTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.amount, spk_satuan_bayar=s.satuan_bayar,
-#                             bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
-#                             luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
-#                             total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
-#                             sisa_pelunasan=s.bidang.sisa_pelunasan, amount=round(s.spk_amount,0), utj_amount=s.utj_amount
-#                             )
-
-#         if jenis_bayar == JenisBayarEnum.LUNAS or jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-#             spk.amount = spk.sisa_pelunasan
-
-#         spkts.append(spk)
-
-#     obj_return.spkts = spkts
-#     return create_response(data=obj_return)
-
 @router.get("/search/kjb_hd", response_model=GetResponseBaseSch[list[KjbHdSearchSch]])
 async def get_list_kjb_hd(
                 keyword:str = None,
@@ -387,14 +353,20 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
 
     return create_response(data=objs)
 
-@router.get("/search/komponen_biaya/bidang/{id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
-async def get_list_komponen_biaya_by_bidang_id(
-                id:UUID,
+@router.get("/search/komponen_biaya/bidang/{spk_id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
+async def get_list_komponen_biaya_by_spk_id(
+                spk_id:UUID,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=id)
+    spk = await crud.spk.get(id=spk_id)
+
+    objs = []
+    if spk.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
+    else:
+        objs = await crud.bidang_komponen_biaya.get_multi_pengembalian_beban_by_bidang_id(bidang_id=spk.bidang_id)
 
     return create_response(data=objs)
 
@@ -486,7 +458,7 @@ async def get_by_id(id:UUID,
 
     """Get an object by id"""
 
-    obj = await crud.spk.get_by_id(id=id)
+    obj = await crud.spk.get_by_id_in_termin(id=id)
 
     spk = SpkInTerminSch(spk_id=obj.id, spk_code=obj.code, spk_amount=obj.amount, spk_satuan_bayar=obj.satuan_bayar,
                             bidang_id=obj.bidang_id, id_bidang=obj.id_bidang, alashak=obj.alashak, group=obj.bidang.group,
@@ -494,7 +466,10 @@ async def get_by_id(id:UUID,
                             amount=round(obj.spk_amount,0), utj_amount=obj.utj_amount, project_id=obj.bidang.planing.project_id, 
                             project_name=obj.bidang.project_name, sub_project_id=obj.bidang.sub_project_id,
                             sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id,
-                            jenis_bayar=obj.jenis_bayar)
+                            jenis_bayar=obj.jenis_bayar, manager_id=obj.bidang.manager_id, manager_name=obj.bidang.manager_name,
+                            sales_id=obj.bidang.sales_id, sales_name=obj.bidang.sales_name, notaris_id=obj.bidang.notaris_id, 
+                            notaris_name=obj.bidang.notaris_name, mediator=obj.bidang.mediator
+                            )
 
     # if obj.jenis_bayar == JenisBayarEnum.LUNAS or obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
     #     spk.amount = obj.bidang.sisa_pelunasan
@@ -503,6 +478,16 @@ async def get_by_id(id:UUID,
         return create_response(data=spk)
     else:
         raise IdNotFoundException(Bidang, id)
+
+@router.get("/history/spk/{bidang_id}", response_model=GetResponseBaseSch[list[SpkHistorySch]])
+async def get_list_history_spk_by_bidang_id(bidang_id:UUID,
+                                            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Get list history spk by bidang_id"""
+
+    objs = await crud.spk.get_multi_history_by_bidang_id(bidang_id=bidang_id)
+
+    return create_response(data=objs)
 
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str,
@@ -748,5 +733,36 @@ async def printout(id:UUID | str,
         raise HTTPException(status_code=422, detail=str(e))
 
 
-
+# @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[TahapForTerminByIdSch])
+# async def get_list_spk_by_tahap_id(
+#                 id:UUID,
+#                 jenis_bayar:JenisBayarEnum,
+#                 termin_id:UUID | None = None,
+#                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
+#     """Gets a paginated list objects"""
+
+#     tahap = await crud.tahap.get_by_id_for_termin(id=id)
+#     obj_return = TahapForTerminByIdSch(**dict(tahap))
+
+#     spk_details = await crud.spk.get_multi_by_tahap_id(tahap_id=id, jenis_bayar=jenis_bayar)
+#     if termin_id:
+#         exists_spk_details = await crud.spk.get_multi_by_tahap_id_and_termin_id(tahap_id=id, jenis_bayar=jenis_bayar, termin_id=termin_id)
+#         spk_details = spk_details + exists_spk_details
+        
+#     spkts = []
+#     for s in spk_details:
+#         spk = SpkInTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.amount, spk_satuan_bayar=s.satuan_bayar,
+#                             bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
+#                             luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
+#                             total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
+#                             sisa_pelunasan=s.bidang.sisa_pelunasan, amount=round(s.spk_amount,0), utj_amount=s.utj_amount
+#                             )
+
+#         if jenis_bayar == JenisBayarEnum.LUNAS or jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+#             spk.amount = spk.sisa_pelunasan
+
+#         spkts.append(spk)
+
+#     obj_return.spkts = spkts
+#     return create_response(data=obj_return)
