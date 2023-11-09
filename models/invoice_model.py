@@ -159,7 +159,8 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def has_payment(self) -> bool | None:
-        if len(self.payment_details) > 0:
+        active_payments = [x for x in self.payment_details if x.is_void != True]
+        if len(active_payments) > 0:
             return True
         
         return False

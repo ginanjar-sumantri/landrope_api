@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
-from common.enum import TanggunganBiayaEnum, SatuanBayarEnum, SatuanHargaEnum
+from common.enum import JenisBayarEnum, SatuanBayarEnum, SatuanHargaEnum
 from uuid import UUID
 from datetime import date
 from typing import TYPE_CHECKING, Optional
@@ -74,5 +74,13 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
             total_amount = (self.amount or 0)
         
         return total_amount
+    
+    @property
+    def has_invoice_lunas(self) -> bool | None:
+        invoice_lunas = next((x for x in self.bidang.invoices if x.is_void != True and x.jenis_bayar == JenisBayarEnum.LUNAS), None)
+        if invoice_lunas:
+            return True
+        
+        return False
 
 
