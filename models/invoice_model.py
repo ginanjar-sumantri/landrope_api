@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum, SatuanBayarEnum, SatuanHargaEnum
 from decimal import Decimal
+from datetime import date
 from pydantic import condecimal
 import numpy
 
@@ -20,6 +21,9 @@ class InvoiceBase(SQLModel):
     is_void:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
     use_utj:Optional[bool] = Field(nullable=True, default=False)
+    void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    void_reason:Optional[str] = Field(nullable=True)
+    void_at:Optional[date] = Field(nullable=True)
 
 class InvoiceFullBase(BaseUUIDModel, InvoiceBase):
     pass
@@ -70,6 +74,13 @@ class Invoice(InvoiceFullBase, table=True):
         sa_relationship_kwargs={
             "lazy": "select",
             "primaryjoin": "Invoice.updated_by_id==Worker.id",
+        }
+    )
+
+    worker_do_void: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Invoice.void_by_id==Worker.id",
         }
     )
 
@@ -152,10 +163,12 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def amount_nett(self) -> Decimal | None:
+        return Decimal(self.amount - self.amount_beban_biaya - self.utj_amount)
+    
+    @property
+    def amount_beban_biaya(self) -> Decimal | None:
         amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
-        amount_beban_biaya = sum(amount_beban_biayas)
-        
-        return Decimal(self.amount - amount_beban_biaya - self.utj_amount)
+        return sum(amount_beban_biayas)
     
     @property
     def has_payment(self) -> bool | None:

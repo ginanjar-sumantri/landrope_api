@@ -84,6 +84,22 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()
+    
+    async def get_by_id_for_spk(
+                  self,
+                  *,
+                  id:UUID,
+                  db_session: AsyncSession | None = None
+    ) -> Bidang | None:
+           
+           db_session = db_session or db.session
+
+           query = select(Bidang).where(Bidang.id == id).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.termin))
+                                                        )
+           
+           response = await db_session.execute(query)
+           return response.scalar_one_or_none()
    
     async def get_by_id_bidang(
         self, *, idbidang: str, db_session: AsyncSession | None = None

@@ -201,6 +201,11 @@ async def update(id:UUID, sch:SpkUpdateSch,
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
+
+    bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
+
+    if bidang_current.has_invoice_lunas:
+        raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
@@ -233,7 +238,10 @@ async def update(id:UUID, sch:SpkUpdateSch,
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_use=False,
-                                                        remark=komponen_biaya.remark)
+                                                        remark=komponen_biaya.remark,
+                                                        satuan_bayar=komponen_biaya.satuan_bayar,
+                                                        satuan_harga=komponen_biaya.satuan_harga,
+                                                        amount=komponen_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 

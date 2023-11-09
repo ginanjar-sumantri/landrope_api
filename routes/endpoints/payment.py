@@ -232,8 +232,9 @@ async def void(id:UUID, sch:PaymentVoidSch,
     
     obj_updated = obj_current
     obj_updated.is_void = True
-    obj_updated.remark = sch.void_reason
+    obj_updated.void_reason = sch.void_reason
     obj_updated.void_by_id = current_worker.id
+    obj_updated.void_at = date.today()
 
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -241,7 +242,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
     for dt in obj_current.details:
         payment_dtl_updated = dt
         payment_dtl_updated.is_void = True
-        payment_dtl_updated.remark = sch.void_reason
+        payment_dtl_updated.void_reason = sch.void_reason
         payment_dtl_updated.void_by_id = current_worker.id
         payment_dtl_updated.void_at = date.today()
 

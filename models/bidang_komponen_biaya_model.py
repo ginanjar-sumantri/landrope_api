@@ -77,10 +77,6 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     
     @property
     def has_invoice_lunas(self) -> bool | None:
-        invoice_lunas = next((x for x in self.bidang.invoices if x.is_void != True and x.jenis_bayar == JenisBayarEnum.LUNAS), None)
-        if invoice_lunas:
-            return True
-        
-        return False
+        return getattr(getattr(self, "bidang", False), "has_invoice_lunas", False)
 
 

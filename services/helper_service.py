@@ -3,11 +3,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
 from models.bundle_model import BundleDt, BundleHd
 from schemas.dokumen_sch import RiwayatSch
+from schemas.bidang_sch import BidangUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
+from common.enum import StatusBidangEnum
 from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from typing import Tuple
+from shapely import wkt, wkb
 import crud
 import json
 
@@ -298,3 +301,19 @@ class HelperService:
                 return str(field)
         
         return None
+
+    async def bidang_update_status(self, bidang_ids:list[UUID]):
+        for id in bidang_ids:
+            payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
+            if len(payment_details) > 0:
+                bidang_current = await crud.bidang.get(id=id)
+                if bidang_current.geom :
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+                bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
+            else:
+                bidang_current = await crud.bidang.get(id=id)
+                if bidang_current.geom :
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+                bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)

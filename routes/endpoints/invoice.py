@@ -1,17 +1,19 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
 from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
 from models.code_counter_model import CodeCounterEnum
-from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch)
+from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
                                   PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code_month
+from common.enum import JenisBayarEnum
+from services.helper_service import HelperService
 from datetime import date
 import crud
 import json
@@ -118,4 +120,54 @@ async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active
 
     return obj_deleted
 
-   
+@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+async def void(id:UUID, sch:InvoiceVoidSch,
+               background_task:BackgroundTasks,
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """void a obj by its ids"""
+    db_session = db.session
+
+    obj_current = await crud.invoice.get_by_id(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(Invoice, id)
+    
+    bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
+    if obj_current.jenis_bayar != JenisBayarEnum.LUNAS and obj_current.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        if bidang_current.has_invoice_lunas:
+            raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
+    
+    obj_updated = obj_current
+    obj_updated.is_void = True
+    obj_updated.void_reason = sch.void_reason
+    obj_updated.void_by_id = current_worker.id
+    obj_updated.void_at = date.today()
+
+    obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    for dt in obj_current.details:
+        bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+        bidang_komponen_biaya_updated = bidang_komponen_biaya_current
+        bidang_komponen_biaya_updated.is_use = False
+
+        await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_updated, db_session=db_session, with_commit=False)
+
+    bidang_ids = []
+    for dt in obj_current.payment_details:
+        payment_dtl_updated = dt
+        payment_dtl_updated.is_void = True
+        payment_dtl_updated.void_reason = sch.void_reason
+        payment_dtl_updated.void_by_id = current_worker.id
+        payment_dtl_updated.void_at = date.today()
+        
+        await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
+
+    bidang_ids.append(obj_updated.bidang_id)
+
+    background_task.add_task(HelperService().bidang_update_status, bidang_ids)
+
+    obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
+    return create_response(data=obj_updated) 
