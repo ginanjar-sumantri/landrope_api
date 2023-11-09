@@ -6,7 +6,7 @@ from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
 from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
 from models.code_counter_model import CodeCounterEnum
-from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch)
+from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch, InvoiceByIdVoidSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
                                   PutResponseBaseSch, create_response)
@@ -120,7 +120,7 @@ async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active
 
     return obj_deleted
 
-@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdVoidSch])
 async def void(id:UUID, sch:InvoiceVoidSch,
                background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -169,5 +169,5 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
 
-    obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
+    obj_updated = await crud.invoice.get(id=obj_updated.id)
     return create_response(data=obj_updated) 

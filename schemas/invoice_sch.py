@@ -65,6 +65,9 @@ class InvoiceByIdSch(InvoiceFullBase):
     details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+class InvoiceByIdVoidSch(InvoiceFullBase):
+    pass
+
 class InvoiceSearchSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
     alashak:str|None = Field(alias="alashak")
