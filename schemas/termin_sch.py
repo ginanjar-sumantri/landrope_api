@@ -53,7 +53,7 @@ class TerminByIdForPrintOut(SQLModel):
     ptsk_name:Optional[str]
     tanggal_transaksi:Optional[date]
     tanggal_rencana_transaksi:Optional[date]
-    jenis_bayar:Optional[str]
+    jenis_bayar:Optional[JenisBayarEnum]
     notaris_name:str|None 
     manager_name:str|None 
     sales_name:str|None 

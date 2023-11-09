@@ -592,7 +592,8 @@ async def printout(id:UUID | str,
             invoices_history.append(history)
 
         komponen_biayas = []
-        obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id)
+
+        obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
         for bb in obj_komponen_biayas:
             beban_biaya = TerminBebanBiayaForPrintOutExt(**dict(bb))
             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
@@ -641,7 +642,7 @@ async def printout(id:UUID | str,
                                         tanggal_transaksi=termin_header.tanggal_transaksi,
                                         tanggal_rencana_transaksi=tanggal_hasil,
                                         hari_transaksi=hari_transaksi,
-                                        jenis_bayar=termin_header.jenis_bayar,
+                                        jenis_bayar=termin_header.jenis_bayar.value.replace('_', ' '),
                                         amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
                                         remark=termin_header.remark
                                         )
