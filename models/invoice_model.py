@@ -126,8 +126,17 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "spk", None), "code", None)
     
     @property
+    def spk_satuan_bayar(self) -> SatuanBayarEnum | None:
+        return getattr(getattr(self, "spk", None), "satuan_bayar", None)
+    
+    #hasil perhitungan spk dengan luas bayar dan harga transaksi
+    @property
     def spk_amount(self) -> Decimal | None:
         return getattr(getattr(self, "spk", None), "spk_amount", None)
+    
+    @property
+    def amount_of_spk(self) -> Decimal | None:
+        return getattr(getattr(self, "spk", None), "amount", None)
     
     @property
     def invoice_outstanding(self) -> Decimal | None:

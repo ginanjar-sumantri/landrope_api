@@ -12,7 +12,8 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
                                 TerminBidangIDSch,
                                 TerminBebanBiayaForPrintOutExt)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut
+from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
+                                 InvoiceHistoryInTermin)
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
@@ -479,13 +480,13 @@ async def get_by_id(id:UUID,
     else:
         raise IdNotFoundException(Bidang, id)
 
-@router.get("/history/spk/{bidang_id}", response_model=GetResponseBaseSch[list[SpkHistorySch]])
-async def get_list_history_spk_by_bidang_id(bidang_id:UUID,
+@router.get("/history/memo/{bidang_id}", response_model=GetResponseBaseSch[list[InvoiceHistoryInTermin]])
+async def get_list_history_memo_by_bidang_id(bidang_id:UUID,
                                             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-    """Get list history spk by bidang_id"""
+    """Get list history memo bayar dp by bidang_id"""
 
-    objs = await crud.spk.get_multi_history_by_bidang_id(bidang_id=bidang_id)
+    objs = await crud.invoice.get_multi_history_invoice_by_bidang_id(bidang_id=bidang_id, jenis_bayar=JenisBayarEnum.DP)
 
     return create_response(data=objs)
 

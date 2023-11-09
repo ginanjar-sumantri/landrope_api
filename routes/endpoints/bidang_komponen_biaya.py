@@ -4,7 +4,7 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.bidang_komponen_biaya_model import BidangKomponenBiaya
 from models.worker_model import Worker
-from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaSch, BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch)
+from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaSch, BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaListSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
@@ -27,7 +27,7 @@ async def create(
     
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[BidangKomponenBiayaSch])
+@router.get("", response_model=GetResponsePaginatedSch[BidangKomponenBiayaListSch])
 async def get_list(
                 params: Params=Depends(), 
                 order_by:str = None, 

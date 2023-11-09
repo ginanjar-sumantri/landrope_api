@@ -207,7 +207,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
     #remove beban biaya
     list_id = [beban_biaya.id for beban_biaya in sch.spk_beban_biayas if beban_biaya.id != None]
     if len(list_id) > 0:
-        beban_biaya_will_removed = await crud.bidang_komponen_biaya.get_not_in_by_ids(list_ids=list_id)
+        beban_biaya_will_removed = await crud.bidang_komponen_biaya.get_multi_not_in_id_removed(bidang_id=obj_updated.bidang_id, list_ids=list_id)
 
         if len(beban_biaya_will_removed) > 0:
             await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=beban_biaya_will_removed, db_session=db_session)
@@ -241,7 +241,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
     #remove kelengkapan dokumen 
     list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
     if len(list_ids) > 0:
-        kelengkapan_biaya_will_removed = await crud.spk_kelengkapan_dokumen.get_not_in_by_ids(list_ids=list_ids)
+        kelengkapan_biaya_will_removed = await crud.spk_kelengkapan_dokumen.get_multi_not_in_id_removed(spk_id=obj_updated.id, list_ids=list_ids)
 
         if len(kelengkapan_biaya_will_removed) > 0:
             await crud.spk_kelengkapan_dokumen.remove_multiple_data(list_obj=kelengkapan_biaya_will_removed, db_session=db_session)

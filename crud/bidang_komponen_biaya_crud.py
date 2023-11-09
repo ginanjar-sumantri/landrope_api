@@ -318,4 +318,10 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
     
+    async def get_multi_not_in_id_removed(self, *, bidang_id:UUID, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[BidangKomponenBiaya] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.bidang_id == bidang_id))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
 bidang_komponen_biaya = CRUDBidangKomponenBiaya(BidangKomponenBiaya)

@@ -3,7 +3,7 @@ from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
 from schemas.payment_detail_sch import PaymentDetailSch
 from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from common.partial import optional
-from common.enum import JenisBayarEnum, JenisBidangEnum
+from common.enum import JenisBayarEnum, JenisBidangEnum, SatuanBayarEnum
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
@@ -75,6 +75,16 @@ class InvoiceSearchSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     amount_nett:Optional[Decimal] = Field(alias="amount_nett")
     
+class InvoiceHistoryInTermin(InvoiceFullBase):
+    id_bidang:str|None = Field(alias="id_bidang")
+    alashak:str|None = Field(alias="alashak")
+    nomor_memo:Optional[str] = Field(alias="nomor_memo")
+    jenis_bayar:Optional[JenisBayarEnum] = Field(alias="jenis_bayar")
+    spk_satuan_bayar:SatuanBayarEnum | None = Field(alias="spk_satuan_bayar")
+    amount_of_spk:Optional[Decimal] = Field(alias="amount_of_spk")
+    amount_nett:Optional[Decimal] = Field(alias="amount_nett")
+    invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
+    has_payment:Optional[bool] = Field(alias="has_payment")
 
 @optional
 class InvoiceUpdateSch(InvoiceBase):

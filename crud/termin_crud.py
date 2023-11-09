@@ -6,6 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
+from common.enum import JenisBayarEnum
 from crud.base_crud import CRUDBase
 from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment, Planing, InvoiceDetail, BidangKomponenBiaya
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
@@ -131,32 +132,18 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
     
     async def get_beban_biaya_by_id_for_printout(self, 
                                                 *, 
-                                                id: UUID | str, 
+                                                id: UUID | str,
+                                                jenis_bayar:JenisBayarEnum | None = None,
                                                 db_session: AsyncSession | None = None
                                                 ) -> List[TerminBebanBiayaForPrintOut] | None:
         db_session = db_session or db.session
-        # query = text(f"""
-        #         select
-        #         b.id_bidang,
-        #         bb.name as beban_biaya_name,
-        #         case
-        #         when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
-        #         else '(BEBAN PENJUAL)'
-        #         end as tanggungan,
-        #         SUM(idt.amount) as amount,
-        #         bkb.beban_pembeli
-        #         from termin t
-        #         inner join invoice i on i.termin_id = t.id
-        #         inner join invoice_detail idt on idt.invoice_id = i.id
-        #         inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
-        #         inner join bidang b on b.id = bkb.bidang_id
-        #         inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
-        #         where i.is_void != true
-        #         and bkb.is_void != true
-        #         and t.id = '{str(id)}'
-        #         group by bb.id, bkb.id, b.id
-        #         """)
-        
+
+        filter_by_jenis_bayar:str = ""
+        if jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+             filter_by_jenis_bayar = "and bkb.is_void = true"
+        else:
+             filter_by_jenis_bayar:str = "and bkb.is_void != true"
+
         query = text(f"""
                         With subquery as (select
                         bb.name as beban_biaya_name,
@@ -184,8 +171,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         inner join bidang_komponen_biaya bkb on bkb.id = idt.bidang_komponen_biaya_id
                         inner join bidang b on b.id = bkb.bidang_id
                         inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
-                        where i.is_void != true
-                        and bkb.is_void != true
+                        where 
+                        i.is_void != true
+                        {filter_by_jenis_bayar}
                         and t.id = '{str(id)}')
                         Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli
                         from subquery
