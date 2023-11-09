@@ -25,7 +25,7 @@ class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
     beban_biaya_name:Optional[str] = Field(alias="beban_biaya_name")
 
-class BidangKomponenBiayaListSch(BidangKomponenBiayaFullBase):
+class BidangKomponenBiayaListSch(BidangKomponenBiayaSch):
     amount_calculate:Decimal|None = Field(alias="amount_calculate")
 
 @optional

@@ -17,6 +17,7 @@ class KategoriSKEnum(str, Enum):
     SK_ASG = "SK_ASG"
 
 class JenisBidangEnum(str, Enum):
+    Kulit_Bintang = "Kulit_Bintang"
     Bintang = "Bintang"
     Standard = "Standard"
     Overlap = "Overlap"
