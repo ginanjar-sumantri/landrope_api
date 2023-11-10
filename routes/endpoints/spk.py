@@ -170,7 +170,11 @@ async def get_by_id(id:UUID):
     obj_return = SpkByIdSch(**obj.dict())
     obj_return.bidang = bidang_sch
 
-    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id)
+    pengembalian = False
+    if obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        pengembalian = True
+
+    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id, pengembalian=pengembalian)
 
     list_komponen_biaya = []
     for kb in komponen_biayas:

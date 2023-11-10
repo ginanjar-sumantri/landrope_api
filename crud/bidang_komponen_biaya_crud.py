@@ -49,11 +49,18 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             self, 
             *, 
             bidang_id: UUID | str,
+            pengembalian:bool|None = False,
             db_session: AsyncSession | None = None
             ) -> List[BidangKomponenBiaya] | None:
         
         db_session = db_session or db.session
+        
         query = select(self.model).where(self.model.bidang_id == bidang_id)
+        if pengembalian:
+            query = query.filter(self.model.is_void == True)
+        else:
+            query = query.filter(self.model.is_void != True)
+
         response = await db_session.execute(query)
 
         return response.scalars().all()
