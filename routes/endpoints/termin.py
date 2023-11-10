@@ -69,7 +69,13 @@ async def create(
         last_number = await generate_code_month(entity=CodeCounterEnum.Dp if sch.jenis_bayar == JenisBayarEnum.DP else CodeCounterEnum.Lunas,
                                                 with_commit=False, db_session=db_session)
         
-        jns_byr = JenisBayarEnum.DP.value if sch.jenis_bayar == JenisBayarEnum.DP else JenisBayarEnum.LUNAS.value
+        jns_byr = JenisBayarEnum.DP.value if sch.jenis_bayar == JenisBayarEnum.DP elif JenisBayarEnum.LUNAS.value
+        if sch.jenis_bayar == JenisBayarEnum.DP:
+            jns_byr = JenisBayarEnum.DP.value
+        elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
+            jns_byr = JenisBayarEnum.LUNAS.value
+        else:
+            jns_byr = "PENGEMBALIAN"
         sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
