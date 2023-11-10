@@ -77,7 +77,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         query = select(self.model).where(and_(~self.model.id.in_(list_komponen_id), 
                                             self.model.bidang_id.in_(list_bidang_id),
                                             self.model.is_use == False, 
-                                            self.model.beban_pembeli == False))
+                                            self.model.beban_pembeli == False,
+                                            self.model.is_void != True))
         
         response = await db_session.execute(query)
 

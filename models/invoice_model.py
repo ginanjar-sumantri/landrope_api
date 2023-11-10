@@ -231,6 +231,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_pembeli', None)
     
     @property
+    def is_void(self) -> bool | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'is_void', None)
+    
+    @property
     def amount(self) -> Decimal|None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'amount_calculate', None)
     
