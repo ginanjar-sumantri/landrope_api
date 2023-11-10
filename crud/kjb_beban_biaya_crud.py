@@ -18,6 +18,16 @@ from sqlalchemy import exc
 
 
 class CRUDKjbBebanBiaya(CRUDBase[KjbBebanBiaya, KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch]):
+    async def get_by_id(self, *, 
+                  id:UUID|str,
+                  db_session: AsyncSession | None = None) -> KjbBebanBiaya | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.id == id).options(selectinload(KjbBebanBiaya.beban_biaya))
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def get_beban_pembeli_by_kjb_hd_id(self, *, 
                   kjb_hd_id: UUID | str,
                   db_session: AsyncSession | None = None) -> List[KjbBebanBiayaSch] | None:
@@ -28,6 +38,17 @@ class CRUDKjbBebanBiaya(CRUDBase[KjbBebanBiaya, KjbBebanBiayaCreateSch, KjbBeban
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    async def get_by_kjb_hd_id_and_beban_biaya_id(self, *, 
+                  kjb_hd_id: UUID | str,
+                  beban_biaya_id:UUID | str,
+                  db_session: AsyncSession | None = None) -> KjbBebanBiaya | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.kjb_hd_id == kjb_hd_id, self.model.beban_biaya_id == beban_biaya_id))
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
     
     async def get_kjb_beban_by_kjb_hd_id(self, *, 
                   kjb_hd_id: UUID | str,

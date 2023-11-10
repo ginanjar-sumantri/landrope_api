@@ -17,10 +17,16 @@ async def create(sch: KjbBebanBiayaCreateSch,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Create a new object"""
+    obj = await crud.kjb_bebanbiaya.get_by_kjb_hd_id_and_beban_biaya_id(kjb_hd_id=sch.kjb_hd_id, beban_biaya_id=sch.beban_biaya_id)
 
-    new_obj = await crud.kjb_bebanbiaya.create(obj_in=sch, created_by_id=current_worker.id)
+    if obj:
+        obj_updated = KjbBebanBiayaUpdateSch(**sch.dict())
+        obj = await crud.kjb_bebanbiaya.update(obj_current=obj, obj_new=obj_updated, updated_by_id=current_worker.id)
+    else:
+        obj = await crud.kjb_bebanbiaya.create(obj_in=sch, created_by_id=current_worker.id)
     
-    return create_response(data=new_obj)
+    obj = await crud.kjb_bebanbiaya.get_by_id(id=obj.id)
+    return create_response(data=obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbBebanBiayaSch])
 async def get_list(params: Params=Depends(), order_by:str = None, keyword:str = None, filter_query:str=None):

@@ -11,6 +11,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
 from services.geom_service import GeomService
+from services.helper_service import HelperService
 from shapely.geometry import shape
 from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
@@ -30,7 +31,14 @@ async def create(
     if file is None:
         ImportFailedException()
 
+    field_values = ["pemilik", "alashak", "luas_surat", "desa", "petunjuk_b", "pic", "group"]
+    
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+    error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
+    if error_message:
+        raise HTTPException(status_code=422, detail=f"field '{error_message}' tidak eksis dalam file, field tersebut dibutuhkan untuk import data")
+
+    # geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
     if geo_dataframe.geometry[0].geom_type == "LineString":
         polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
