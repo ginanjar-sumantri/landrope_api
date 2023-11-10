@@ -156,10 +156,7 @@ class Invoice(InvoiceFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
-        amount_beban_biaya = sum(amount_beban_biayas)
-        
-        return Decimal(self.amount - Decimal(total_payment) - amount_beban_biaya - self.utj_amount)
+        return Decimal(self.amount - Decimal(total_payment) - self.amount_beban - self.utj_amount)
     
     @property
     def amount_nett(self) -> Decimal | None:
@@ -240,7 +237,7 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def amount_beban_penjual(self) -> Decimal | None:
         amount = 0
-        if self.bidang_komponen_biaya.beban_pembeli == False:
+        if self.bidang_komponen_biaya.beban_pembeli == False and self.bidang_komponen_biaya.is_void != True:
             if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
                     amount = (self.bidang_komponen_biaya.amount or 0) * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
             elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
