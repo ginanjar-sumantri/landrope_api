@@ -273,4 +273,71 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().all()
+
+    async def get_multi_src_invoice(self, 
+                  *, 
+                  keyword: str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Invoice] | None:
+        
+        db_session = db_session or db.session
+
+        filter:str = ""
+        
+        if keyword:
+             filter = f"""
+                    AND (lower(b.id_bidang) LIKE lower('%{keyword}%') OR 
+                    lower(b.alashak) LIKE lower('%{keyword}%') OR 
+                    lower(i.code) LIKE lower('%{keyword}%') OR 
+                    lower(t.nomor_memo) LIKE lower('%{keyword}%'))
+                    """
+
+        query = f"""
+                    SELECT i.*
+                    FROM invoice i
+                    inner join bidang b on b.id = i.bidang_id
+                    inner join termin t on t.id = i.termin_id
+                    WHERE 
+                    i.amount - ((
+                        CASE
+                        WHEN i.use_utj = True THEN (
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM invoice i_utj
+                            Inner join termin tr on tr.id = i_utj.termin_id
+                            WHERE i.bidang_id = i_utj.bidang_id
+                            and tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
+                        )
+                        ELSE 0
+                        END
+                    ) + (
+                        select coalesce(sum(amount), 0) 
+                        from payment_detail py
+                        where i.id = py.invoice_id
+                        and py.is_void != true
+                        ) + (
+                            Select 
+                                Coalesce(SUM(CASE
+                                        WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
+                                            Case
+                                                WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                                ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                            End
+                                        WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
+                                            Case
+                                                WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                                ELSE ROUND((kb.amount * b.luas_bayar), 2)
+                                            End
+                                        WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                                    END), 0)
+                                from invoice_detail idt
+                                inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
+                                inner join bidang b on b.id = kb.bidang_id
+                                where idt.invoice_id = i.id
+                                and kb.beban_pembeli = false)) != 0 {filter}
+        """
+        
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+    
 invoice = CRUDInvoice(Invoice)

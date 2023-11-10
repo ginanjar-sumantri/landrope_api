@@ -362,6 +362,18 @@ async def get_list(
     objs = [inv for inv in objs if inv.invoice_outstanding > 0]
     return create_response(data=objs)
 
+
+@router.get("/search/invoiceExt", response_model=GetResponseBaseSch[list[InvoiceSearchSch]])
+async def get_list(
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets all list objects"""
+
+    objs = await crud.invoice.get_multi_src_invoice(keyword=keyword)
+    
+    return create_response(data=objs)
+
 @router.get("/search/invoice/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
 async def get_by_id(id:UUID):
 

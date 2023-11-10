@@ -163,10 +163,10 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def amount_nett(self) -> Decimal | None:
-        return Decimal(self.amount - self.amount_beban_biaya - self.utj_amount)
+        return Decimal(self.amount - self.amount_beban - self.utj_amount)
     
     @property
-    def amount_beban_biaya(self) -> Decimal | None:
+    def amount_beban(self) -> Decimal | None:
         amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
         return sum(amount_beban_biayas)
     

@@ -87,7 +87,7 @@ class InvoiceHistoryInTermin(InvoiceFullBase):
     spk_satuan_bayar:SatuanBayarEnum | None = Field(alias="spk_satuan_bayar")
     amount_of_spk:Optional[Decimal] = Field(alias="amount_of_spk")
     amount_nett:Optional[Decimal] = Field(alias="amount_nett")
-    amount_beban_biaya:Optional[Decimal] = Field(alias="amount_beban_biaya")
+    amount_beban:Optional[Decimal] = Field(alias="amount_beban")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     has_payment:Optional[bool] = Field(alias="has_payment")
