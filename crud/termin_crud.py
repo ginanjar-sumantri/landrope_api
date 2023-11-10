@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from common.enum import JenisBayarEnum
 from crud.base_crud import CRUDBase
-from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment, Planing, InvoiceDetail, BidangKomponenBiaya
+from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment, Planing, InvoiceDetail, BidangKomponenBiaya, Spk
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
                                 TerminInvoiceforPrintOut,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
@@ -48,7 +48,10 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                                         ).options(selectinload(PaymentDetail.payment
                                                                                         ).options(selectinload(Payment.giro))
                                                                         )
-                                                                ).options(selectinload(Invoice.spk)
+                                                                ).options(selectinload(Invoice.spk
+                                                                                        ).options(selectinload(Spk.bidang
+                                                                                                        ).options(selectinload(Bidang.komponen_biayas))
+                                                                                        )
                                                                 )
                                                     ).options(selectinload(Termin.notaris)
                                                     ).options(selectinload(Termin.termin_bayars

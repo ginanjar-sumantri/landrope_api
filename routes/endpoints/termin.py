@@ -123,6 +123,7 @@ async def get_list(
     else:
         jenis_bayars.append("DP")
         jenis_bayars.append("LUNAS")
+        jenis_bayars.append("PENGEMBALIAN_BEBAN_PENJUAL")
 
     query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
