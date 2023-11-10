@@ -167,7 +167,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                 End
                                 WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Lumpsum' Then bkb.amount
                         END As amount,
-                        bkb.beban_pembeli
+                        bkb.beban_pembeli,
+                        bkb.is_void
                         from termin t
                         inner join invoice i on i.termin_id = t.id
                         inner join invoice_detail idt on idt.invoice_id = i.id
@@ -178,9 +179,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         i.is_void != true
                         {filter_by_jenis_bayar}
                         and t.id = '{str(id)}')
-                        Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli
+                        Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli, is_void
                         from subquery
-                        group by beban_biaya_name, tanggungan, beban_pembeli
+                        group by beban_biaya_name, tanggungan, beban_pembeli, is_void
                      """)
 
 

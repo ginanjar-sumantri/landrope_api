@@ -601,7 +601,7 @@ async def printout(id:UUID | str,
             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
             komponen_biayas.append(beban_biaya)
         
-        amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False]
+        amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
         amount_beban_biaya = sum(amount_beban_biayas)
 
         harga_aktas = []
