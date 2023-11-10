@@ -135,9 +135,9 @@ class Termin(TerminFullBase, table=True):
     
     @property
     def total_amount(self) -> Optional[Decimal]:
-        array_total = numpy.array([invoice.amount for invoice in self.invoices])
-        total = numpy.sum(array_total)
-        return total or 0
+        array_total = [invoice.amount for invoice in self.invoices if invoice.is_void != True]
+        total = sum(array_total)
+        return total
     
 class TerminBayarBase(SQLModel):
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
