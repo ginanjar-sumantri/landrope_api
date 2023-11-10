@@ -58,6 +58,24 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.scalars().all()
     
+    async def get_multi_beban_penjual_not_use(
+            self, 
+            *, 
+            list_bidang_id: UUID | str,
+            list_komponen_id:UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BidangKomponenBiaya] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.id.in_(list_komponen_id), 
+                                            self.model.bidang_id.in_(list_bidang_id),
+                                            self.model.is_use == False, 
+                                            self.model.beban_pembeli == False))
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+    
     async def get_multi_beban_penjual_by_bidang_id(
             self, 
             *, 

@@ -77,11 +77,11 @@ async def create(
                 await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=current_worker.id)
 
-    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat
-    kjb_dt_update.desa_by_ttn_id = sch.desa_id
-    kjb_dt_update.project_by_ttn_id = sch.project_id
-    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
-    kjb_dt_update.pemilik_id = sch.pemilik_id
+    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat if sch.luas_surat != None else kjb_dt_update.luas_surat
+    kjb_dt_update.desa_by_ttn_id = sch.desa_id if sch.desa_id != None else kjb_dt_update.desa_by_ttn_id
+    kjb_dt_update.project_by_ttn_id = sch.project_id if sch.project_id != None else kjb_dt_update.project_by_ttn_id
+    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi if sch.status_peta_lokasi != None else kjb_dt_update.status_peta_lokasi
+    kjb_dt_update.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
@@ -179,12 +179,12 @@ async def update(id:UUID,
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
 
         kjb_dt_update.bundle_hd_id = bundle.id
-    
-    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat
-    kjb_dt_update.desa_by_ttn_id = sch.desa_id
-    kjb_dt_update.project_by_ttn_id = sch.project_id
-    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi
-    kjb_dt_update.pemilik_id = sch.pemilik_id
+
+    kjb_dt_update.luas_surat_by_ttn = sch.luas_surat if sch.luas_surat != None else kjb_dt_update.luas_surat
+    kjb_dt_update.desa_by_ttn_id = sch.desa_id if sch.desa_id != None else kjb_dt_update.desa_by_ttn_id
+    kjb_dt_update.project_by_ttn_id = sch.project_id if sch.project_id != None else kjb_dt_update.project_by_ttn_id
+    kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi if sch.status_peta_lokasi != None else kjb_dt_update.status_peta_lokasi
+    kjb_dt_update.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 

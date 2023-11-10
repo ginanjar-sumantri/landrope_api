@@ -41,6 +41,6 @@ class CRUDTandaTerimaNotarisHd(CRUDBase[TandaTerimaNotarisHd, TandaTerimaNotaris
         query = select(self.model.id, self.model.notaris_id).where(self.model.kjb_dt_id == kjb_dt_id).order_by(self.model.created_at.desc())
         response = await db_session.execute(query)
 
-        return response.fetchone()
+        return response.first()
 
 tandaterimanotaris_hd = CRUDTandaTerimaNotarisHd(TandaTerimaNotarisHd)

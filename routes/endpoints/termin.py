@@ -66,15 +66,20 @@ async def create(
         last_number = await generate_code_month(entity=CodeCounterEnum.Utj, with_commit=False, db_session=db_session)
         sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
     else:
-        last_number = await generate_code_month(entity=CodeCounterEnum.Dp if sch.jenis_bayar == JenisBayarEnum.DP else CodeCounterEnum.Lunas,
-                                                with_commit=False, db_session=db_session)
-        
+        code_counter=None
         if sch.jenis_bayar == JenisBayarEnum.DP:
             jns_byr = JenisBayarEnum.DP.value
+            code_counter = CodeCounterEnum.Dp
         elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
             jns_byr = JenisBayarEnum.LUNAS.value
+            code_counter = CodeCounterEnum.Lunas
+            await make_sure_all_beban_penjual_is_used(sch=sch)
         else:
             jns_byr = "PENGEMBALIAN"
+            code_counter = CodeCounterEnum.Pengembalian_Beban_Penjual
+
+        last_number = await generate_code_month(entity=code_counter,
+                                                with_commit=False, db_session=db_session)
         sch.code = f"{last_number}/{jns_byr}/LA/{month}/{year}"
 
     new_obj = await crud.termin.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
@@ -109,6 +114,15 @@ async def create(
     new_obj = await crud.termin.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
+
+async def make_sure_all_beban_penjual_is_used(sch: TerminCreateSch):
+    bidang_ids = [x.bidang_id for x in sch.invoices]
+    bidang_komponen_biaya_ids = [x.bidang_komponen_biaya_id for inv in sch.invoices for x in inv.details]
+
+    bidang_komponen_biaya_not_in_use = await crud.bidang_komponen_biaya.get_multi_beban_penjual_not_use(list_bidang_id=bidang_ids, list_komponen_id=bidang_komponen_biaya_ids)
+    
+    if len(bidang_komponen_biaya_not_in_use) > 0:
+        raise HTTPException(status_code=422, detail="Failed create termin. Detail : Ada bidang yang beban penjualnya belum dipakai dimanapun!")
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
 async def get_list(
@@ -198,8 +212,14 @@ async def update(
         jns_byr = JenisBayarEnum.UTJ.value
         
     else:
-        jns_byr = JenisBayarEnum.DP.value if sch.jenis_bayar == JenisBayarEnum.DP else JenisBayarEnum.LUNAS.value
-      
+        
+        if sch.jenis_bayar == JenisBayarEnum.DP:
+            jns_byr = JenisBayarEnum.DP.value
+        elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
+            jns_byr = JenisBayarEnum.LUNAS.value
+            await make_sure_all_beban_penjual_is_used(sch=sch)
+        else:
+            jns_byr = "PENGEMBALIAN"
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -234,7 +254,7 @@ async def update(
                 list_id_invoice_dt = [dt.id for dt in invoice.details if dt.id != None]
 
                 #get invoice detail not exists on update and update komponen is not use
-                list_invoice_detail = await crud.invoice_detail.get_multi_by_ids_not_in(list_ids=list_id_invoice_dt)
+                list_invoice_detail = await crud.invoice_detail.get_multi_by_ids_not_in(list_ids=list_id_invoice_dt, invoice_id=invoice_current.id)
                 for inv_dt in list_invoice_detail:
                     d_bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=inv_dt.bidang_komponen_biaya_id)
                     d_sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**d_bidang_komponen_biaya_current.dict())
