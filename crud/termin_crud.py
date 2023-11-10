@@ -151,8 +151,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         With subquery as (select
                         bb.name as beban_biaya_name,
                         case
-                                when bkb.beban_pembeli is true then '(BEBAN PEMBELI)'
-                                else '(BEBAN PENJUAL)'
+                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(BEBAN PEMBELI)'
+                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(PENGEMBALIAN BEBAN PENJUAL)'
+				else '(BEBAN PENJUAL)'
                         end as tanggungan,
                         CASE
                                 WHEN bkb.satuan_bayar = 'Percentage' and bkb.satuan_harga = 'Per_Meter2' Then
