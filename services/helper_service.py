@@ -6,7 +6,7 @@ from schemas.dokumen_sch import RiwayatSch
 from schemas.bidang_sch import BidangUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
-from common.enum import StatusBidangEnum
+from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
 from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from typing import Tuple
@@ -317,3 +317,46 @@ class HelperService:
                     bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
                 bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
                 await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
+
+    def FindStatusBidang(self, status:str|None = None):
+        if status:
+            if status.replace(" ", "").lower() == StatusBidangEnum.Bebas.replace("_", "").lower():
+                return StatusBidangEnum.Bebas
+            elif status.replace(" ", "").lower() == StatusBidangEnum.Belum_Bebas.replace("_", "").lower():
+                return StatusBidangEnum.Belum_Bebas
+            elif status.replace(" ", "").lower() == StatusBidangEnum.Batal.replace("_", "").lower():
+                return StatusBidangEnum.Batal
+            elif status.replace(" ", "").lower() == StatusBidangEnum.Lanjut.replace("_", "").lower():
+                return StatusBidangEnum.Lanjut
+            elif status.replace(" ", "").lower() == StatusBidangEnum.Pending.replace("_", "").lower():
+                return StatusBidangEnum.Pending
+            else:
+                return StatusBidangEnum.Belum_Bebas
+        else:
+            return StatusBidangEnum.Belum_Bebas
+
+    def FindJenisBidang(self, type:str|None = None):
+        if type:
+            if type.replace(" ", "").lower() == JenisBidangEnum.Bintang.lower():
+                return JenisBidangEnum.Bintang
+            elif type.replace(" ", "").lower() == JenisBidangEnum.Standard.lower():
+                return JenisBidangEnum.Standard
+            elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
+                return JenisBidangEnum.Overlap
+            elif type.replace(" ", "").lower() == JenisBidangEnum.Kulit_Bintang.lower():
+                return JenisBidangEnum.Kulit_Bintang
+            else:
+                return JenisBidangEnum.Standard
+        else:
+            return JenisBidangEnum.Standard
+
+    def FindJenisAlashak(self, type:str|None = None):
+        if type:
+            if type.replace(" ", "").lower() == JenisAlashakEnum.Girik.lower():
+                return JenisAlashakEnum.Girik
+            elif type.replace(" ", "").lower() == JenisAlashakEnum.Sertifikat.lower():
+                return JenisAlashakEnum.Sertifikat
+            else:
+                return None
+        else:
+            return None

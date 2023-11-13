@@ -207,13 +207,13 @@ async def create_bulking_task(
 
     # """Create a new object"""
 
-    # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
-    #                     "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-    #                     "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
-
     field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
                         "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-                        "proses", "status", "group", "no_peta", "desa", "project"]
+                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
+
+    # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
+    #                     "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
+    #                     "proses", "status", "group", "no_peta", "desa", "project"]
     
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
     error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
@@ -356,30 +356,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                     skpt = no_sk.id
             else:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, PTSK {shp_data.ptsk} not exists in table master. "
-                log_error = ImportLogErrorSch(row=i+1,
-                                                error_message=error_m,
-                                                import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
-
-                obj_updated = log
-                count = count + 1
-                obj_updated.done_count = count
-
-                log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-                if log.total_row == log.done_count:
-                    obj_updated = log
-                    if log.total_error_log > 0:
-                        obj_updated.status = TaskStatusEnum.Done_With_Error
-                    else:
-                        obj_updated.status = TaskStatusEnum.Done
-
-                    obj_updated.completed_at = datetime.now()
-
-                    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                # if last row (done)
+                if done:
                     break
-                
+
                 continue
             
             on_proc = "[get by name penampung]"
@@ -404,93 +385,35 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             project = await crud.project.get_by_name(name=shp_data.project)
             if project is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
-                log_error = ImportLogErrorSch(row=i+1,
-                                                error_message=error_m,
-                                                import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
-
-                obj_updated = log
-                count = count + 1
-                obj_updated.done_count = count
-
-                log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-                if log.total_row == log.done_count:
-                    obj_updated = log
-                    if log.total_error_log > 0:
-                        obj_updated.status = TaskStatusEnum.Done_With_Error
-                    else:
-                        obj_updated.status = TaskStatusEnum.Done
-
-                    obj_updated.completed_at = datetime.now()
-
-                    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                # if last row (done)
+                if done:
                     break
 
                 continue
             
             on_proc = "[get by administrasi desa]"
-            #desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
+            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
+            #desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
-                log_error = ImportLogErrorSch(row=i+1,
-                                                error_message=error_m,
-                                                import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
-
-                obj_updated = log
-                count = count + 1
-                obj_updated.done_count = count
-
-                log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-                if log.total_row == log.done_count:
-                    obj_updated = log
-                    if log.total_error_log > 0:
-                        obj_updated.status = TaskStatusEnum.Done_With_Error
-                    else:
-                        obj_updated.status = TaskStatusEnum.Done
-
-                    obj_updated.completed_at = datetime.now()
-
-                    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                # if last row (done)
+                if done:
                     break
-                
+
                 continue
             
             on_proc = "[get planing]"
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
-                log_error = ImportLogErrorSch(row=i+1, error_message=error_m, import_log_id=log.id)
-
-                log_error = await crud.import_log_error.create(obj_in=log_error)
-
-                obj_updated = log
-                count = count + 1
-                obj_updated.done_count = count
-
-                log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-                if log.total_row == log.done_count:
-                    obj_updated = log
-                    if log.total_error_log > 0:
-                        obj_updated.status = TaskStatusEnum.Done_With_Error
-                    else:
-                        obj_updated.status = TaskStatusEnum.Done
-
-                    obj_updated.completed_at = datetime.now()
-
-                    await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                # if last row (done)
+                if done:
                     break
-                
-                continue
 
-                # raise NameNotFoundException(Planing, name=f"{shp_data.project}-{shp_data.desa}")
-            
+                continue
             
             if shp_data.n_idbidang in null_values:
                 on_proc = "[get by idbidang lama]"
@@ -510,11 +433,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                             id_bidang_lama=shp_data.o_idbidang,
                             no_peta=shp_data.no_peta,
                             pemilik_id=pemilik,
-                            jenis_bidang=FindJenisBidang(shp_data.proses),
-                            status=FindStatusBidang(shp_data.status),
+                            jenis_bidang=HelperService().FindJenisBidang(shp_data.proses),
+                            status=HelperService().FindStatusBidang(shp_data.status),
                             planing_id=plan.id,
                             group=shp_data.group,
-                            jenis_alashak=FindJenisAlashak(shp_data.dokumen),
+                            jenis_alashak=HelperService().FindJenisAlashak(shp_data.dokumen),
                             jenis_surat_id=jenissurat,
                             alashak=shp_data.alashak,
                             kategori_id=kategori,
@@ -546,22 +469,9 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             else:
                 obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
             
-            obj_updated = log
-            count = count + 1
-            obj_updated.done_count = count
-
-            log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-
-            if log.total_row == log.done_count:
-                obj_updated = log
-                if log.total_error_log > 0:
-                    obj_updated.status = TaskStatusEnum.Done_With_Error
-                else:
-                    obj_updated.status = TaskStatusEnum.Done
-
-                obj_updated.completed_at = datetime.now()
-
-                await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+            done = await manipulation_import_log(error_m=None, i=i, log=log)
+            # if last row (done)
+            if done:
                 break
 
             # Waktu sekarang
@@ -586,6 +496,36 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             raise HTTPException(status_code=422, detail=f"{str(e)}")
     
     return {'message' : 'successfully import'}
+
+async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,) -> bool:
+
+    if error_m:
+        log_error = ImportLogErrorSch(row=i+1,
+                                        error_message=error_m,
+                                        import_log_id=log.id)
+
+        log_error = await crud.import_log_error.create(obj_in=log_error)
+
+    obj_updated = log
+    count = count + 1
+    obj_updated.done_count = count
+
+    log = await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+
+    if log.total_row == log.done_count:
+        obj_updated = log
+        if log.total_error_log > 0:
+            obj_updated.status = TaskStatusEnum.Done_With_Error
+        else:
+            obj_updated.status = TaskStatusEnum.Done
+
+        obj_updated.completed_at = datetime.now()
+
+        await crud.import_log.update(obj_current=log, obj_new=obj_updated)
+        return True
+    
+    return False
+
 
 @router.get("/export/shp", response_class=Response)
 async def export(
@@ -632,49 +572,6 @@ async def export(
         return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
-
-def FindStatusBidang(status:str|None = None):
-    if status:
-        if status.replace(" ", "").lower() == StatusBidangEnum.Bebas.replace("_", "").lower():
-            return StatusBidangEnum.Bebas
-        elif status.replace(" ", "").lower() == StatusBidangEnum.Belum_Bebas.replace("_", "").lower():
-            return StatusBidangEnum.Belum_Bebas
-        elif status.replace(" ", "").lower() == StatusBidangEnum.Batal.replace("_", "").lower():
-            return StatusBidangEnum.Batal
-        elif status.replace(" ", "").lower() == StatusBidangEnum.Lanjut.replace("_", "").lower():
-            return StatusBidangEnum.Lanjut
-        elif status.replace(" ", "").lower() == StatusBidangEnum.Pending.replace("_", "").lower():
-            return StatusBidangEnum.Pending
-        else:
-            return StatusBidangEnum.Belum_Bebas
-    else:
-        return StatusBidangEnum.Belum_Bebas
-
-def FindJenisBidang(type:str|None = None):
-    if type:
-        if type.replace(" ", "").lower() == JenisBidangEnum.Bintang.lower():
-            return JenisBidangEnum.Bintang
-        elif type.replace(" ", "").lower() == JenisBidangEnum.Standard.lower():
-            return JenisBidangEnum.Standard
-        elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
-            return JenisBidangEnum.Overlap
-        elif type.replace(" ", "").lower() == JenisBidangEnum.Kulit_Bintang.lower():
-            return JenisBidangEnum.Kulit_Bintang
-        else:
-            return JenisBidangEnum.Standard
-    else:
-        return JenisBidangEnum.Standard
-
-def FindJenisAlashak(type:str|None = None):
-    if type:
-        if type.replace(" ", "").lower() == JenisAlashakEnum.Girik.lower():
-            return JenisAlashakEnum.Girik
-        elif type.replace(" ", "").lower() == JenisAlashakEnum.Sertifikat.lower():
-            return JenisAlashakEnum.Sertifikat
-        else:
-            return None
-    else:
-        return None
 
 @router.get("/report/map", response_model=GetResponseBaseSch[list[BidangForTreeReportSch]])
 async def get_list_for_report_map(project_id:UUID,
