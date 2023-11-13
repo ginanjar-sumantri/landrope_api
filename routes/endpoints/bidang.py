@@ -531,7 +531,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
 
             if obj_current:
                 if obj_current.geom :
-                    obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                    if isinstance(obj_current.geom, str):
+                        pass
+                    else:
+                        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=log.created_by_id)
             else:
                 obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
