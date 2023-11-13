@@ -342,7 +342,7 @@ class Bidang(BidangFullBase, table=True):
         total_beban_penjual:Decimal = 0
         if len(self.komponen_biayas) > 0:
             calculate = []
-            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_use == True]
+            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_paid == True]
             for beban in komponen_biaya_beban_penjual:
                 if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
                     amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
