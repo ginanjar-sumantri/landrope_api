@@ -498,6 +498,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 if bidang_lama:
                     if bidang_lama.geom :
                         bidang_lama.geom = wkt.dumps(wkb.loads(bidang_lama.geom.data, hex=True))
+                    if bidang_lama.geom_ori :
+                        bidang_lama.geom_ori = wkt.dumps(wkb.loads(bidang_lama.geom_ori.data, hex=True))
                 if bidang_lama is None and plan is not None:
                     on_proc = "[generate id bidang]"
                     shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
@@ -535,6 +537,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                         pass
                     else:
                         obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                if obj_current.geom_ori :
+                    if isinstance(obj_current.geom_ori, str):
+                        pass
+                    else:
+                        obj_current.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
                 obj = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=log.created_by_id)
             else:
                 obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
