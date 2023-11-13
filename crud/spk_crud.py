@@ -167,7 +167,16 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                     )
                                 )
 
-        if tahap_id and termin_id == None:
+        if tahap_id and jenis_bayar == None and termin_id == None:
+             query = query.where(and_(
+                                        Tahap.id == tahap_id,
+                                        or_(
+                                             Invoice.spk_id == None,
+                                             Invoice.is_void == True
+                                        )
+                                    ))
+
+        if tahap_id and jenis_bayar and termin_id == None:
              query = query.where(and_(
                                         Spk.jenis_bayar == jenis_bayar,
                                         Tahap.id == tahap_id,
@@ -176,7 +185,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                              Invoice.is_void == True
                                         )
                                     ))
-             
+
         if termin_id:
              query = query.outerjoin(Termin, Termin.id == Invoice.termin_id)
              query = query.where(
