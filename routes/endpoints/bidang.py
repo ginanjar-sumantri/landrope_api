@@ -497,7 +497,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 bidang_lama = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
                 if bidang_lama:
                     if bidang_lama.geom :
-                        obj_current.geom = wkt.dumps(wkb.loads(bidang_lama.geom.data, hex=True))
+                        bidang_lama.geom = wkt.dumps(wkb.loads(bidang_lama.geom.data, hex=True))
                 if bidang_lama is None and plan is not None:
                     on_proc = "[generate id bidang]"
                     shp_data.n_idbidang = await generate_id_bidang(planing_id=plan.id)
