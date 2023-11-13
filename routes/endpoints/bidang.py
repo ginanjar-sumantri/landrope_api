@@ -205,11 +205,15 @@ async def create_bulking_task(
     current_worker: Worker = Depends(crud.worker.get_active_worker)
     ):
 
-    """Create a new object"""
+    # """Create a new object"""
+
+    # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
+    #                     "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
+    #                     "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
 
     field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
                         "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
+                        "proses", "status", "group", "no_peta", "desa", "project"]
     
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
     error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
@@ -427,7 +431,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 continue
             
             on_proc = "[get by administrasi desa]"
-            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
+            #desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
+            desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
