@@ -779,12 +779,15 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
                                                    db_session=db_session, 
                                                    with_commit=False)
 
+    await db_session.commit()
+
+    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_current.id)
+
     hasil_peta_lokasi_update = {"is_done" : True}
     await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current, 
-                                        obj_new=hasil_peta_lokasi_update, 
-                                        db_session=db_session)
+                                        obj_new=hasil_peta_lokasi_update)
 
-    # await db_session.commit()
+    
 
 @router.post("/cloud-task-update-bidang")
 async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate):
