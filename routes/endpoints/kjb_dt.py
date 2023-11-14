@@ -152,7 +152,18 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
             bidang_current = obj_current.hasil_peta_lokasi.bidang
 
             if bidang_current.geom :
-                bidang_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+            if bidang_current.geom :
+                if isinstance(bidang_current.geom, str):
+                    pass
+                else:
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori :
+                if isinstance(bidang_current.geom_ori, str):
+                    pass
+                else:
+                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
             
             bidang_updated = BidangUpdateSch(harga_akta=obj_updated.harga_akta, harga_transaksi=obj_updated.harga_transaksi)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
