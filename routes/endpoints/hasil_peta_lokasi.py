@@ -548,12 +548,20 @@ async def create(
     bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
+    details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
+                                               bidang_id=str(x.bidang_id),
+                                               luas_overlap=str(x.luas_overlap),
+                                               keterangan=x.keterangan,
+                                               draft_detail_id=str(x.draft_detail_id),
+                                               status_luas=x.status_luas) 
+               for x in sch.hasilpetalokasidetails]
+
     payload = HasilPetaLokasiTaskUpdate(bidang_id=str(new_obj.bidang_id),
                                               hasil_peta_lokasi_id=str(new_obj.id),
                                               kjb_dt_id=str(new_obj.kjb_dt_id),
                                               draft_id=str(sch.draft_id),
                                               from_updated=False,
-                                              details=sch.hasilpetalokasidetails)
+                                              details=details)
     
     # background_task.add_task(insert_detail, payload)
     # background_task.add_task(update_bidang_override, payload)
@@ -666,7 +674,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
     db_session = db.session
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_id(id=payload.hasil_peta_lokasi_id)
 
-    if payload.updated:
+    if payload.from_updated:
         # kalau dia update, merge dulu semua geom hasil irisan di table bidang overlap dengan geom curent bidang bintang yg terkena overlap
         # agar geom current bintangnya kembali seperti sebelum terpotong
         # dengan kondisi yang tipe overlapnya bintang batal dan status luasnya menambah luas
