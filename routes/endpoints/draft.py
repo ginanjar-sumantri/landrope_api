@@ -175,7 +175,7 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
             bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
         
         bd_series = gpd.GeoSeries.from_wkt([bidang_bintang.geom])
-        #bd_series = bd_series.buffer(0).convex_hull
+        bd_series = bd_series.buffer(0).convex_hull
 
         # Memperbaiki geometry dengan melakukan perbaikan secara manual
         # Misalnya, kalau bd_series[0] milik bidang bintang adalah geometry yang tidak valid

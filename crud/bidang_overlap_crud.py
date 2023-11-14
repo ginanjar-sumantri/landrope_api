@@ -109,7 +109,7 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
         query = query.filter(BidangOverlap.status_luas == StatusLuasOverlapEnum.Menambah_Luas)
         query = query.filter(HasilPetaLokasiDetail.tipe_overlap == TipeOverlapEnum.BintangBatal)
         query = query.filter(functions.ST_IsValid(BidangOverlap.geom_temp) == True)
-        query = query.filter(functions.ST_Intersects(BidangOverlap.geom, geom))
+        query = query.filter(functions.ST_Intersects(BidangOverlap.geom_temp, geom))
         
         response =  await db_session.execute(query)
         
