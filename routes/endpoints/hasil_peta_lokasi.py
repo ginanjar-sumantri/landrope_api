@@ -672,9 +672,11 @@ async def update(
 async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
     
     db_session = db.session
-    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_id(id=payload.hasil_peta_lokasi_id)
+    
 
     if payload.from_updated:
+        db_session_remove = db.session
+        hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_id(id=payload.hasil_peta_lokasi_id)
         # kalau dia update, merge dulu semua geom hasil irisan di table bidang overlap dengan geom curent bidang bintang yg terkena overlap
         # agar geom current bintangnya kembali seperti sebelum terpotong
         # dengan kondisi yang tipe overlapnya bintang batal dan status luasnya menambah luas
@@ -684,8 +686,12 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
         #remove existing data detail dan overlap
         list_overlap = [ov.bidang_overlap for ov in hasil_peta_lokasi_current.details if ov.bidang_overlap != None]
 
-        await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=hasil_peta_lokasi_current.details, db_session=db_session)
-        await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session)
+        await crud.hasil_peta_lokasi_detail.remove_multiple_data(list_obj=hasil_peta_lokasi_current.details, db_session=db_session_remove)
+        await crud.bidangoverlap.remove_multiple_data(list_obj=list_overlap, db_session=db_session_remove)
+
+        await db_session_remove.commit()
+
+    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_id(id=payload.hasil_peta_lokasi_id)
 
     #bidang override
     bidang_override_current = await crud.bidang.get(id=hasil_peta_lokasi_current.bidang_id)
@@ -780,12 +786,15 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
                                                    with_commit=False)
 
     await db_session.commit()
+    await db_session.refresh(hasil_peta_lokasi_current)
 
-    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_current.id)
+    hasil_peta_lokasi_current_ = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_current.id)
 
     hasil_peta_lokasi_update = {"is_done" : True}
-    await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current, 
+    await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current_, 
                                         obj_new=hasil_peta_lokasi_update)
+
+    return {"message":"successfully"}
 
     
 
