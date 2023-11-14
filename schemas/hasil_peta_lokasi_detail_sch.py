@@ -18,6 +18,14 @@ class HasilPetaLokasiDetailCreateExtSch(SQLModel):
     draft_detail_id:UUID | None
     status_luas:StatusLuasOverlapEnum | None
 
+class HasilPetaLokasiDetailTaskUpdate(SQLModel):
+    tipe_overlap:TipeOverlapEnum
+    bidang_id:str | None
+    luas_overlap:str | None 
+    keterangan:str | None 
+    draft_detail_id:str | None
+    status_luas:StatusLuasOverlapEnum | None
+
 class HasilPetaLokasiDetailSch(HasilPetaLokasiDetailFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
     alashak:str|None = Field(alias="alashak")

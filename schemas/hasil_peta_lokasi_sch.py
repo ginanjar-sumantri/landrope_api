@@ -1,5 +1,5 @@
 from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiFullBase
-from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailSch
+from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailTaskUpdate, HasilPetaLokasiDetailSch
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum
@@ -64,7 +64,7 @@ class HasilPetaLokasiTaskUpdate(SQLModel):
     kjb_dt_id:str
     draft_id:str
     from_updated:bool | None = Field(default=False)
-    details:list[HasilPetaLokasiDetailCreateExtSch]
+    details:list[HasilPetaLokasiDetailTaskUpdate]
 
 class HasilPetaLokasiTaskUpdateKulitBintang(SQLModel):
     hasil_peta_lokasi_id:str

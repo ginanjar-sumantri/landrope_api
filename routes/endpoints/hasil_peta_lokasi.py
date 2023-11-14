@@ -14,7 +14,7 @@ from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiTa
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
                                            HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
-                                                  HasilPetaLokasiDetailUpdateSch)
+                                                  HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
 from schemas.bidang_sch import BidangSch, BidangUpdateSch, BidangSrcSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
@@ -32,6 +32,7 @@ from shapely.geometry import shape
 from geoalchemy2 import functions
 import geopandas as gpd
 import pandas as pd
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -622,13 +623,21 @@ async def update(
 
     bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
+
+    details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
+                                               bidang_id=str(x.bidang_id),
+                                               luas_overlap=str(x.luas_overlap),
+                                               keterangan=x.keterangan,
+                                               draft_detail_id=str(x.draft_detail_id),
+                                               status_luas=x.status_luas) 
+               for x in sch.hasilpetalokasidetails]
     
     payload = HasilPetaLokasiTaskUpdate(bidang_id=str(obj_updated.bidang_id),
                                               hasil_peta_lokasi_id=str(obj_updated.id),
                                               kjb_dt_id=str(obj_updated.kjb_dt_id),
                                               draft_id=str(sch.draft_id),
                                               from_updated=True,
-                                              details=sch.hasilpetalokasidetails)
+                                              details=details)
     
     
     # background_task.add_task(insert_detail, payload)
@@ -735,9 +744,9 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
             code = await generate_code(entity=CodeCounterEnum.BidangOverlap, db_session=db_session, with_commit=False)
             bidang_overlap_sch = BidangOverlapSch(
                                     code=code,
-                                    parent_bidang_id=payload.bidang_id,
-                                    parent_bidang_intersect_id=dt.bidang_id,
-                                    luas=dt.luas_overlap,
+                                    parent_bidang_id=UUID(payload.bidang_id),
+                                    parent_bidang_intersect_id=UUID(dt.bidang_id),
+                                    luas=Decimal(dt.luas_overlap),
                                     status_luas=dt.status_luas,
                                     geom=wkt.dumps(wkb.loads(draft_detail.geom.data, hex=True)))
             
@@ -749,8 +758,12 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
             
         
         #input detail hasil peta lokasi
-        detail_sch = HasilPetaLokasiDetailCreateSch(**dt.dict())
-        detail_sch.hasil_peta_lokasi_id=id
+        detail_sch = HasilPetaLokasiDetailCreateSch(tipe_overlap=dt.tipe_overlap, 
+                                                    bidang_id=UUID(dt.bidang_id), 
+                                                    luas_overlap=Decimal(dt.luas_overlap),
+                                                    keterangan=dt.keterangan, status_luas=dt.status_luas)
+        
+        detail_sch.hasil_peta_lokasi_id=hasil_peta_lokasi_current.id
         detail_sch.bidang_overlap_id=bidang_overlap_id
 
         await crud.hasil_peta_lokasi_detail.create(obj_in=detail_sch,
