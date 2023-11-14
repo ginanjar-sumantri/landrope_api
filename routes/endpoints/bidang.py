@@ -92,6 +92,8 @@ async def get_list(
     query = select(Bidang)
     query = query.outerjoin(Bidang.planing)
     query = query.outerjoin(Bidang.pemilik)
+    query = query.outerjoin(Project, Project.id == Planing.project_id)
+    query = query.outerjoin(Desa, Desa.id == Planing.desa_id)
 
     if keyword:
         query = query.filter(
