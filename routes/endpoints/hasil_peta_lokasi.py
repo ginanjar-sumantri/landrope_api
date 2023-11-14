@@ -133,7 +133,7 @@ async def get_by_id(id:UUID):
     if obj and (obj.is_done or obj.is_done is None):
         return create_response(data=obj)
     elif obj and obj.is_done == False:
-        raise HTTPException(status_code=423, detail="""Hasil Peta Lokasi ini masih terkunci 
+        raise HTTPException(status_code=422, detail="""Hasil Peta Lokasi ini masih terkunci 
                             dikarenakan sedang dalam proses pemotongan geometry bidang. Harap bersabar sebentar lagi.""")
     else:
         raise IdNotFoundException(HasilPetaLokasi, id)
