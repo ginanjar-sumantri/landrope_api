@@ -176,14 +176,30 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
             bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
         
         bd_series = gpd.GeoSeries.from_wkt([bidang_bintang.geom])
-        bd_gdf = gpd.GeoDataFrame(geometry=bd_series)
-        
-        union_geom = bd_gdf.union(ov_gdf)
-        geom_temp = GeomService.single_geometry_to_wkt(union_geom[0])
+        #bd_series = bd_series.buffer(0).convex_hull
 
-        bidang_overlap_updated = overlap
-        bidang_overlap_updated.geom_temp = geom_temp
-        await crud.bidangoverlap.update(obj_current=overlap, obj_new=bidang_overlap_updated, db_session=db_session_update)
+        # Memperbaiki geometry dengan melakukan perbaikan secara manual
+        # Misalnya, kalau bd_series[0] milik bidang bintang adalah geometry yang tidak valid
+        polygon = bd_series[0]
+        if not polygon.is_valid:
+            corrected_polygon = polygon.buffer(0).convex_hull
+            bd_series[0] = corrected_polygon
+
+        gdf = gpd.GeoDataFrame(geometry=pd.concat([bd_series, ov_series], ignore_index=True))
+
+        union_geom = gdf.geometry.unary_union
+        
+        if isinstance(union_geom, gpd.GeoSeries):
+            union_geom = union_geom[0]
+
+        # Cek apakah hasilnya tidak kosong
+        if not union_geom.is_empty:
+            geom_temp = GeomService.single_geometry_to_wkt(union_geom)
+            bidang_overlap_updated = overlap
+            bidang_overlap_updated.geom_temp = geom_temp
+            await crud.bidangoverlap.update(obj_current=overlap, obj_new=bidang_overlap_updated, db_session=db_session_update)
+        else:
+            print("Hasil gabungan geometri kosong atau tidak valid.")
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[DraftRawSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):

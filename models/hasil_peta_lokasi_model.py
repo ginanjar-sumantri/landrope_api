@@ -30,6 +30,7 @@ class HasilPetaLokasiBase(SQLModel):
     status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum = Field(nullable=False)
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(nullable=True)
     remark:str | None = Field(nullable=True)
+    is_done:bool | None = Field(nullable=True, default=False)
 
 class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass

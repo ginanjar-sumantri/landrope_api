@@ -58,6 +58,14 @@ class HasilPetaLokasiTaskUpdateBidang(SQLModel):
     kjb_dt_id:str
     draft_id:str
 
+class HasilPetaLokasiTaskUpdate(SQLModel):
+    bidang_id:str
+    hasil_peta_lokasi_id:str
+    kjb_dt_id:str
+    draft_id:str
+    from_updated:bool | None = Field(default=False)
+    details:list[HasilPetaLokasiDetailCreateExtSch]
+
 class HasilPetaLokasiTaskUpdateKulitBintang(SQLModel):
     hasil_peta_lokasi_id:str
     draft_id:str
