@@ -14,7 +14,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, 
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch,
                                 BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -79,7 +79,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
+@router.get("", response_model=GetResponsePaginatedSch[BidangListSch])
 async def get_list(
         params:Params = Depends(), 
         order_by:str = None, 
@@ -111,7 +111,7 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Bidang, key) == value)
 
-    query = query.distinct()
+    # query = query.distinct()
 
     objs = await crud.bidang.get_multi_paginated_ordered(query=query, params=params, order_by="updated_at")
     

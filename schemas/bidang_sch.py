@@ -35,6 +35,10 @@ class BidangRawSch(BidangRawBase):
     kota:str|None = Field(alias="kota")
     kecamatan:str|None = Field(alias="kecamatan")
 
+class BidangListSch(BidangRawBase):
+    total_harga_transaksi:Decimal|None = Field(alias="total_harga_transaksi")
+    sisa_pelunasan:Decimal|None = Field(alias="sisa_pelunasan")
+
 class BidangByIdSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')
