@@ -55,8 +55,7 @@ async def create(
 @router.post("/analisa", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
 async def analisa(
                 sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
-                file:UploadFile | None = None,
-                hasil_peta_lokasi_id:UUID | None = None
+                file:UploadFile | None = None
                 ):
     
     """Create a new analisa bidang"""
@@ -102,14 +101,14 @@ async def analisa(
 
     #Apabila hasil_peta_lokasi_id not None, gabungkan dulu geom intersects di overlap dengan geom current bidang yang tertimpa. 
     #Simpan di geom_temp bidang_overlap, untuk nanti dibandingkan kembali dengan geom rincik
-    if hasil_peta_lokasi_id:
-        await merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
+    if sch.hasil_peta_lokasi_id:
+        await merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id=sch.hasil_peta_lokasi_id)
 
     intersects_bidangs = await crud.bidang.get_intersect_bidang(geom=geom_wkb, id=sch.rincik_id)
     bidang_intersection = [BidangIntersectionSch(id=b.id, geom=wkt.dumps(wkb.loads(b.geom.data, hex=True))) for b in intersects_bidangs]
 
-    if hasil_peta_lokasi_id:
-        intersects_ov_bidangs = await crud.bidangoverlap.get_intersect_bidang(geom=geom_wkb, hasil_peta_lokasi_id=hasil_peta_lokasi_id)
+    if sch.hasil_peta_lokasi_id:
+        intersects_ov_bidangs = await crud.bidangoverlap.get_intersect_bidang(geom=geom_wkb, hasil_peta_lokasi_id=sch.hasil_peta_lokasi_id)
         bidang_ov_intersection = [BidangIntersectionSch(id=b.parent_bidang_intersect_id, geom=wkt.dumps(wkb.loads(b.geom_temp.data, hex=True))) for b in intersects_ov_bidangs]
         bidang_intersection = bidang_intersection + bidang_ov_intersection
 
