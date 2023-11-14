@@ -1,9 +1,11 @@
+name: $(Build.SourceBranchName).landrope-api.$(Rev:r)
 resources:
   - repo: self
     fetchDepth: 1
 pool:
   vmImage: ubuntu-latest
 trigger:
+  - master
   - staging
   - dev
 variables:
