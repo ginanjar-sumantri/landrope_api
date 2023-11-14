@@ -130,9 +130,9 @@ async def get_by_id(id:UUID):
     """Get an object by id"""
 
     obj = await crud.hasil_peta_lokasi.get_by_id(id=id)
-    if obj and obj.is_done:
+    if obj and (obj.is_done or obj.is_done is None):
         return create_response(data=obj)
-    elif obj and ~obj.is_done:
+    elif obj and obj.is_done == False:
         raise HTTPException(status_code=423, detail="""Hasil Peta Lokasi ini masih terkunci 
                             dikarenakan sedang dalam proses pemotongan geometry bidang. Harap bersabar sebentar lagi.""")
     else:
