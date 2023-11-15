@@ -92,8 +92,8 @@ async def search_for_map(keyword:str | None,
                 bidang.alashak as alashak
             FROM
                 Bidang
-            INNER JOIN Skpt ON Bidang.skpt_id = Skpt.id
-            INNER JOIN Ptsk ON Skpt.ptsk_id = Ptsk.id
+            LEFT OUTER JOIN Skpt ON Bidang.skpt_id = Skpt.id
+            LEFT OUTER JOIN Ptsk ON Skpt.ptsk_id = Ptsk.id
             INNER JOIN Planing ON Bidang.planing_id = Planing.id
             INNER JOIN Desa ON Planing.desa_id = Desa.id
             INNER JOIN Project ON Planing.project_id = Project.id
