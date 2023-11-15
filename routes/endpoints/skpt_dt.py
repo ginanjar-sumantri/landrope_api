@@ -170,11 +170,11 @@ async def create_bulking_task(
 
     """Create a new object"""
 
-    # field_values = ["code", "name", "kategori", "luas", "no_sk", "status", "section", 
-    #                     "code_desa", "project", "desa", "kota", "kecamatan", "tgl_sk", "jatuhtempo"]
-
     field_values = ["code", "name", "kategori", "luas", "no_sk", "status", "section", 
-                        "code_desa", "project", "desa", "tgl_sk", "jatuhtempo"]
+                        "code_desa", "project", "desa", "kota", "kecamatan", "tgl_sk", "jatuhtempo"]
+
+    # field_values = ["code", "name", "kategori", "luas", "no_sk", "status", "section", 
+    #                     "code_desa", "project", "desa", "tgl_sk", "jatuhtempo"]
     
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
@@ -298,8 +298,8 @@ async def bulk_skpt(payload:ImportLogCloudTaskSch,
                 continue
             
             on_proc = "[get by name desa]"
-            # desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
-            desa = await crud.desa.get_by_name(name=shp_data.desa)
+            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
+            # desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
                 log_error = ImportLogErrorSch(row=i+1,
