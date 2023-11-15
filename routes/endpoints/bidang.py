@@ -79,7 +79,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 
     return create_response(data=new_obj)
 
-@router.get("", response_model=GetResponsePaginatedSch[BidangListSch])
+@router.get("", response_model=GetResponsePaginatedSch[BidangRawSch])
 async def get_list(
         params:Params = Depends(), 
         order_by:str = None, 
@@ -92,17 +92,14 @@ async def get_list(
     query = select(Bidang)
     query = query.outerjoin(Bidang.planing)
     query = query.outerjoin(Bidang.pemilik)
-    query = query.outerjoin(Project, Project.id == Planing.project_id)
-    query = query.outerjoin(Desa, Desa.id == Planing.desa_id)
 
     if keyword:
         query = query.filter(
             or_(
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.id_bidang_lama.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
-                Bidang.group.ilike(f'%{keyword}%'),
-                Project.name.ilike(f'%{keyword}%'),
-                Desa.name.ilike(f'%{keyword}%')
+                Bidang.group.ilike(f'%{keyword}%')
             )
         )
     
@@ -207,15 +204,15 @@ async def create_bulking_task(
     current_worker: Worker = Depends(crud.worker.get_active_worker)
     ):
 
-    # """Create a new object"""
-
-    field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
-                        "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
+    """Create a new object"""
 
     # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
     #                     "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-    #                     "proses", "status", "group", "no_peta", "desa", "project"]
+    #                     "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
+
+    field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
+                        "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
+                        "proses", "status", "group", "no_peta", "desa", "project"]
     
     geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
     error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
@@ -395,8 +392,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 continue
             
             on_proc = "[get by administrasi desa]"
-            desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
-            #desa = await crud.desa.get_by_name(name=shp_data.desa)
+            # desa = await crud.desa.get_by_administrasi(name=shp_data.desa, kota=shp_data.kota, kecamatan=shp_data.kecamatan)
+            desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
                 done = await manipulation_import_log(error_m=error_m, i=i, log=log)
