@@ -137,13 +137,13 @@ async def get_list(
 
     jenis_bayars = []
     if is_utj:
-        jenis_bayars.append("UTJ")
-        jenis_bayars.append("UTJ_KHUSUS")
+        jenis_bayars.append(JenisBayarEnum.UTJ.value)
+        jenis_bayars.append(JenisBayarEnum.UTJ_KHUSUS.value)
     else:
-        jenis_bayars.append("DP")
-        jenis_bayars.append("LUNAS")
-        jenis_bayars.append("PENGEMBALIAN_BEBAN_PENJUAL")
-        jenis_bayars.append("BEGINNING_BALANCE")
+        jenis_bayars.append(JenisBayarEnum.DP.value)
+        jenis_bayars.append(JenisBayarEnum.LUNAS.value)
+        jenis_bayars.append(JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value)
+        jenis_bayars.append(JenisBayarEnum.BEGINNING_BALANCE.value)
 
     query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id

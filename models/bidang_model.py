@@ -38,7 +38,7 @@ class BidangBase(SQLModel):
     mediator:Optional[str] = Field(nullable=True)
     telepon_mediator:Optional[str] = Field(nullable=True)
     notaris_id:Optional[UUID] = Field(nullable=True, foreign_key="notaris.id")
-    tahap:Optional[str] = Field(nullable=True)
+    tahap:Optional[int] = Field(nullable=True)
     informasi_tambahan:Optional[str] = Field(nullable=True)
     luas_surat:Optional[Decimal] = Field(nullable=True)
     luas_ukur:Optional[Decimal] = Field(nullable=True)
