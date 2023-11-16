@@ -118,15 +118,17 @@ async def get_by_id(id:UUID):
     if not bidang_obj:
         raise IdNotFoundException(Bidang, obj.bidang_id)
 
-    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
     termins = []
-    for tr in harga.termins:
-        if tr.id == obj.kjb_termin_id:
-             termin = KjbTerminInSpkSch(**tr.dict(), spk_id=obj.id, spk_code=obj.code)
-             termins.append(termin)
-        else:
-            termin = KjbTerminInSpkSch(**tr.dict())
-            termins.append(termin)
+    if bidang_obj.hasil_peta_lokasi:
+        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
+        
+        for tr in harga.termins:
+            if tr.id == obj.kjb_termin_id:
+                termin = KjbTerminInSpkSch(**tr.dict(), spk_id=obj.id, spk_code=obj.code)
+                termins.append(termin)
+            else:
+                termin = KjbTerminInSpkSch(**tr.dict())
+                termins.append(termin)
 
     ktp_value:str = ""
     ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
@@ -142,14 +144,16 @@ async def get_by_id(id:UUID):
             metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
             npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
 
-    percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=bidang_obj.id)
+    percentage_lunas = None
+    if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
+        percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=bidang_obj.id)
 
     bidang_sch = BidangForSPKByIdSch(id=bidang_obj.id,
                                     jenis_alashak=bidang_obj.jenis_alashak,
                                     id_bidang=bidang_obj.id_bidang,
                                     hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
-                                    kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code,
-                                    satuan_bayar=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd.satuan_bayar,
+                                    kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code if bidang_obj.hasil_peta_lokasi else None,
+                                    satuan_bayar=obj.satuan_bayar,
                                     group=bidang_obj.group,
                                     pemilik_name=bidang_obj.pemilik_name,
                                     alashak=bidang_obj.alashak,
