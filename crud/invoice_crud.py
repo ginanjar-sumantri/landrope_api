@@ -292,7 +292,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     lower(t.nomor_memo) LIKE lower('%{keyword}%'))
                     """
 
-        query = f"""
+        query = text(f"""
                     SELECT i.*
                     FROM invoice i
                     inner join bidang b on b.id = i.bidang_id
@@ -334,7 +334,22 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                 inner join bidang b on b.id = kb.bidang_id
                                 where idt.invoice_id = i.id
                                 and kb.beban_pembeli = false)) != 0 {filter}
-        """
+        """)
+
+        query = query.options(selectinload(Invoice.bidang)
+                            ).options(selectinload(Invoice.termin
+                                                ).options(selectinload(Termin.tahap))
+                            ).options(selectinload(Invoice.payment_details)
+                            ).options(selectinload(Invoice.details
+                                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                )
+                            ).options(selectinload(Invoice.bidang
+                                                ).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.termin)
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                )
+                            )
         
         response = await db_session.execute(query)
 
