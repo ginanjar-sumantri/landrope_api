@@ -33,4 +33,4 @@ class Sales(SalesFullBase, table=True):
 
     @property
     def manager_name(self) -> str | None :
-        return self.manager.name or ""
+        return getattr(getattr(self, "manager", None), "name", None)

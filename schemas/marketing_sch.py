@@ -1,6 +1,6 @@
 from models.marketing_model import ManagerBase, ManagerFullBase, SalesBase, SalesFullBase
 from common.partial import optional
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 from uuid import UUID
 
 class ManagerCreateSch(ManagerBase):
@@ -27,7 +27,7 @@ class SalesSrcSch(SQLModel):
     name:str | None
 
 class SalesSch(SalesFullBase):
-    pass
+    manager_name:str|None = Field(alias="manager_name")
 
 @optional
 class SalesUpdateSch(SalesBase):

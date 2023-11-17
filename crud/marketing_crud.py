@@ -3,9 +3,8 @@ from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from sqlmodel.sql.expression import Select
-
+from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models import Manager, Sales, Bidang
@@ -48,5 +47,21 @@ class CRUDSales(CRUDBase[Sales, SalesCreateSch, SalesUpdateSch]):
 
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  query : Sales | Select[Sales] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Sales | None:
+        
+        db_session = db_session or db.session
+
+        if query == None:
+            query = select(self.model).where(self.model.id == id).options(selectinload(Sales.manager))
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 sales = CRUDSales(Sales)
