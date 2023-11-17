@@ -410,12 +410,17 @@ class Bidang(BidangFullBase, table=True):
     @property
     def total_payment(self) -> Decimal | None:
         total_payment:Decimal = 0
+        total_beban_penjual:Decimal = 0
 
         if len(self.invoices) > 0:
             payments = [payment.amount for invoice in self.invoices if invoice.is_void != True for payment in invoice.payment_details if payment.is_void != True]
             total_payment = Decimal(sum(payments))
         
-        return Decimal(total_payment)
+        if len(self.komponen_biayas) > 0:
+            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False]
+            total_beban_penjual = Decimal(sum(beban_biayas))
+
+        return Decimal(total_payment + total_beban_penjual)
     
     @property
     def sisa_pelunasan(self) -> Decimal | None:

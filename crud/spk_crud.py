@@ -169,6 +169,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
         if tahap_id and jenis_bayar == None and termin_id == None:
              query = query.where(and_(
+                                        Spk.jenis_bayar != JenisBayarEnum.PAJAK,
                                         Tahap.id == tahap_id,
                                         or_(
                                              Invoice.spk_id == None,
