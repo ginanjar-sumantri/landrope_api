@@ -47,7 +47,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.bundlehd)
                                                         ).options(selectinload(Bidang.hasil_peta_lokasi)
                                                         ).options(selectinload(Bidang.sub_project)
-                                                        ).options(selectinload(Bidang.invoices)
+                                                        ).options(selectinload(Bidang.invoices
+                                                                ).options(selectinload(Invoice.payment_details))
                                                         ).options(selectinload(Bidang.overlaps)
                                                         ).options(selectinload(Bidang.komponen_biayas)
                                                         ).options(selectinload(Bidang.tahap_details

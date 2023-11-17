@@ -174,6 +174,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
         raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
     
     sch.jenis_alashak = jenis_surat.jenis_alashak
+    sch.bundle_hd_id = obj_current.bundle_hd_id
 
     if file:
         geo_dataframe = None
@@ -191,6 +192,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
 
     obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
+    
     return create_response(data=obj_updated)
 
 @router.post(

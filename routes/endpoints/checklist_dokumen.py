@@ -33,7 +33,8 @@ async def create(sch: ChecklistDokumenBulkCreateSch,
                                    dokumen_id=dokumen)
         
         new_obj = await crud.checklistdokumen.create(obj_in=obj_new, created_by_id=current_worker.id)
-    
+        
+    new_obj = await crud.checklistdokumen.get_by_id(id=new_obj.id)
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[ChecklistDokumenSch])
@@ -72,6 +73,7 @@ async def update(id:UUID, sch:ChecklistDokumenUpdateSch,
         raise IdNotFoundException(ChecklistDokumen, id)
     
     obj_updated = await crud.checklistdokumen.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    obj_updated = await crud.checklistdokumen.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[ChecklistDokumenSch], status_code=status.HTTP_200_OK)

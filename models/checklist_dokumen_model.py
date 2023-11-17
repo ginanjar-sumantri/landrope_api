@@ -19,7 +19,7 @@ class ChecklistDokumenFullBase(BaseUUIDModel, ChecklistDokumenBase):
 
 class ChecklistDokumen(ChecklistDokumenFullBase, table=True):
 
-    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    dokumen:"Dokumen" = Relationship(sa_relationship_kwargs={'lazy':'select'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
