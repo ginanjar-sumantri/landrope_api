@@ -513,7 +513,7 @@ async def get_list_history_memo_by_bidang_id(bidang_id:UUID,
     
     """Get list history memo bayar dp by bidang_id"""
 
-    objs = await crud.invoice.get_multi_history_invoice_by_bidang_id(bidang_id=bidang_id, jenis_bayar=JenisBayarEnum.DP)
+    objs = await crud.invoice.get_multi_history_invoice_by_bidang_id(bidang_id=bidang_id)
 
     return create_response(data=objs)
 
