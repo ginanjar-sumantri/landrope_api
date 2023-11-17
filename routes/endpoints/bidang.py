@@ -355,7 +355,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                     skpt = no_sk.id
             else:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, PTSK {shp_data.ptsk} not exists in table master. "
-                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
                 # if last row (done)
                 if done:
                     break
@@ -384,7 +384,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             project = await crud.project.get_by_name(name=shp_data.project)
             if project is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Project {shp_data.project} not exists in table master. "
-                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
                 # if last row (done)
                 if done:
                     break
@@ -396,7 +396,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             desa = await crud.desa.get_by_name(name=shp_data.desa)
             if desa is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Desa {shp_data.desa} kec. {shp_data.kecamatan} kota {shp_data.kota} not exists in table master. "
-                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
                 # if last row (done)
                 if done:
                     break
@@ -407,7 +407,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             plan = await crud.planing.get_by_project_id_desa_id(project_id=project.id, desa_id=desa.id)
             if plan is None:
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Planing {shp_data.project}-{shp_data.desa} not exists in table master. "
-                done = await manipulation_import_log(error_m=error_m, i=i, log=log)
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
                 # if last row (done)
                 if done:
                     break
@@ -468,7 +468,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             else:
                 obj = await crud.bidang.create(obj_in=sch, created_by_id=log.created_by_id)
             
-            done = await manipulation_import_log(error_m=None, i=i, log=log)
+            done, count = await manipulation_import_log(error_m=None, i=i, log=log, count=count)
             # if last row (done)
             if done:
                 break
@@ -496,7 +496,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
     
     return {'message' : 'successfully import'}
 
-async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,) -> bool:
+async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None, count:int|None = 0) -> bool:
 
     if error_m:
         log_error = ImportLogErrorSch(row=i+1,
@@ -523,7 +523,7 @@ async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,
         await crud.import_log.update(obj_current=log, obj_new=obj_updated)
         return True
     
-    return False
+    return False, count
 
 
 @router.get("/export/shp", response_class=Response)
