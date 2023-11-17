@@ -424,7 +424,7 @@ class Bidang(BidangFullBase, table=True):
     
     @property
     def sisa_pelunasan(self) -> Decimal | None:
-        return Decimal(self.total_harga_transaksi - (self.total_payment + self.total_beban_penjual))
+        return Decimal(self.total_harga_transaksi - self.total_payment)
     
     @property
     def utj_amount(self) -> Decimal | None:
