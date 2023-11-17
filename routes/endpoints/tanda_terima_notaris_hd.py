@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Response
+from fastapi import APIRouter, status, Depends, UploadFile, Response, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func
@@ -63,17 +63,28 @@ async def create(
 
             bundle_sch = BundleHdCreateSch(planing_id=planing_id)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
-            bundle = await crud.bundlehd.get_by_id(id=bundle.id)
+            # bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         
         kjb_dt_update.bundle_hd_id = bundle.id
+        bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         
         #update bundle alashak for default if metadata not exists
         dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
         bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
         if bundledt_current:
             if bundledt_current.meta_data is None:
-                meta_data = f"<'Pihak_Penjual': null,'Pihak_Pembeli': null,'Nomor_Alas_Hak':'{kjb_dt.alashak}','Nomor_Dasar_Tanah': null,'Nomor_PBB': null,'Nomor_AJB_Riwayat': null>".replace("<", "{").replace(">", "}")
-        
+                input_dict = {}
+                # for field in dokumen.dyn_form.get("field", []):
+                #     key = field.get("key")
+                #     meta_data[key] = None
+                input_data = json.loads(dokumen.dyn_form)
+                input_dict = {field["key"]: None for field in input_data["field"]}
+                if dokumen.key_field not in input_dict:
+                    raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
+                
+                input_dict[dokumen.key_field] = kjb_dt.alashak
+                meta_data = json.dumps(input_dict)
+                
                 await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=current_worker.id)
 
