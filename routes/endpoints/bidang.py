@@ -521,7 +521,7 @@ async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,
         obj_updated.completed_at = datetime.now()
 
         await crud.import_log.update(obj_current=log, obj_new=obj_updated)
-        return True
+        return True, count
     
     return False, count
 
