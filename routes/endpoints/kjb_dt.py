@@ -96,7 +96,7 @@ async def get_list(
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
-@router.get("/request/petlok", response_model=GetResponseBaseSch[list[KjbDtListRequestPetlokSch]])
+@router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtListRequestPetlokSch])
 async def get_list_for_petlok(kjb_hd_id:UUID | None, no_order:str | None = None, params: Params=Depends()):
     
     """Gets a paginated list objects"""
@@ -115,7 +115,7 @@ async def get_list_for_petlok(kjb_hd_id:UUID | None, no_order:str | None = None,
                                             )
     query = query.distinct()
 
-    objs = await crud.kjb_dt.get_multi_no_page(query=query)
+    objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[KjbDtSch])
