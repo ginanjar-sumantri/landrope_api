@@ -48,7 +48,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                   db_session: AsyncSession | None = None) -> Page[KjbDtListSch]:
         db_session = db_session or db.session
 
-        query = select(KjbDt.id,
+        query = select(func.distinct(KjbDt.id),
                    KjbDt.alashak,
                    KjbDt.jenis_alashak,
                    KjbDt.harga_akta,
@@ -59,11 +59,10 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                    KjbDt.created_at,
                    KjbHd.code.label("kjb_code"),
                    KjbDt.kjb_hd_id,
-                   func.coalesce(func.max(HargaStandard.harga)).label("harga_standard")
+                   func.coalesce(func.max(HargaStandard.harga), 0).label("harga_standard")
                     ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Planing, Planing.desa_id == KjbDt.desa_by_ttn_id
-                    ).outerjoin(HargaStandard, HargaStandard.planing_id == Planing.id
-                    ).group_by(HargaStandard.id, KjbDt.id, KjbHd.code)
+                    ).outerjoin(HargaStandard, HargaStandard.planing_id == Planing.id)
         
         if filter == "lebihdari":
             query = query.filter(KjbDt.harga_transaksi > HargaStandard.harga)
@@ -80,8 +79,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
             )
         
         
-        query = query.order_by(text("created_at desc"))
-        query = query.distinct()
+        query = query.group_by(KjbDt.id, KjbHd.code
+                    ).order_by(KjbDt.id, KjbHd.code, KjbDt.created_at.desc())
 
         return await paginate(db_session, query, params)
     
