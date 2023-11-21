@@ -62,9 +62,6 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
     if not obj_current:
         raise IdNotFoundException(BidangKomponenBiaya, id)
     
-    if obj_current.beban_biaya.is_edit != True:
-        raise HTTPException(status_code=422, detail="Komponen tidak dapat diedit, silahkan ubah pengaturan pada master")
-    
     # sch.is_void = obj_current.is_void
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
