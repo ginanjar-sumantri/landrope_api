@@ -146,12 +146,13 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-    for dt in obj_current.details:
-        bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-        bidang_komponen_biaya_updated = bidang_komponen_biaya_current
-        bidang_komponen_biaya_updated.is_use = False
+    if obj_current.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        for dt in obj_current.details:
+            bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+            bidang_komponen_biaya_updated = bidang_komponen_biaya_current
+            bidang_komponen_biaya_updated.is_use = False
 
-        await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_updated, db_session=db_session, with_commit=False)
+            await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_updated, db_session=db_session, with_commit=False)
 
     bidang_ids = []
     for dt in obj_current.payment_details:
