@@ -24,6 +24,7 @@ class BidangKomponenBiayaExtSch(SQLModel):
 class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
     beban_biaya_name:Optional[str] = Field(alias="beban_biaya_name")
+    is_edit:Optional[bool] = Field(alias="is_edit")
 
 class BidangKomponenBiayaListSch(BidangKomponenBiayaSch):
     amount_calculate:Decimal|None = Field(alias="amount_calculate")

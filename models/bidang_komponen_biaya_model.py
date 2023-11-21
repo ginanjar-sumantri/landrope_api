@@ -64,6 +64,10 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
         return getattr(getattr(self, 'beban_biaya', None), 'is_tax', None)
     
     @property
+    def is_tax(self) -> bool | None :
+        return getattr(getattr(self, 'beban_biaya', False), 'is_edit', False)
+    
+    @property
     def amount_calculate(self) -> Decimal | None:
         total_amount:Decimal = 0
         if self.satuan_bayar == SatuanBayarEnum.Percentage and self.satuan_harga == SatuanHargaEnum.PerMeter2:

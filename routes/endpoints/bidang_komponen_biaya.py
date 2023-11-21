@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.bidang_komponen_biaya_model import BidangKomponenBiaya
@@ -61,6 +61,9 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
 
     if not obj_current:
         raise IdNotFoundException(BidangKomponenBiaya, id)
+    
+    if obj_current.beban_biaya.is_edit != True:
+        raise HTTPException(status_code=422, detail="Komponen tidak dapat diedit, silahkan ubah pengaturan pada master")
     
     # sch.is_void = obj_current.is_void
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)

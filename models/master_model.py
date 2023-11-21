@@ -14,6 +14,7 @@ class BebanBiayaBase(SQLModel):
     name:Optional[str] = Field(nullable=True)
     is_active:Optional[bool] = Field(nullable=True)
     is_tax:Optional[bool] = Field(nullable=True)
+    is_edit:Optional[bool] = Field(nullable=True)
     satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
