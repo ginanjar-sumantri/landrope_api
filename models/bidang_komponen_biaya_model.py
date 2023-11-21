@@ -64,7 +64,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
         return getattr(getattr(self, 'beban_biaya', None), 'is_tax', None)
     
     @property
-    def is_tax(self) -> bool | None :
+    def is_edit(self) -> bool | None :
         return getattr(getattr(self, 'beban_biaya', False), 'is_edit', False)
     
     @property
