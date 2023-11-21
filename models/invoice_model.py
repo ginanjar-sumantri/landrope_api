@@ -152,6 +152,9 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def invoice_outstanding(self) -> Decimal | None:
         total_payment:Decimal = 0
+        if self.is_void:
+            return total_payment
+        
         if len(self.payment_details) > 0:
             array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
