@@ -116,6 +116,17 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama))
         return obj.scalar_one_or_none()
     
+    # Untuk Import Bidang Overlap
+    async def get_by_id_bidang_lama_for_import_excel(
+        self, *, idbidang_lama: str, db_session: AsyncSession | None = None
+    ) -> Bidang:
+        db_session = db_session or db.session
+        query = select(Bidang).where(Bidang.id_bidang_lama.ilike(f'%{idbidang_lama}')).order_by(text("luas_surat desc"))
+
+        obj = await db_session.execute(query)
+
+        return obj.fetchone()
+
     async def get_by_id_bidang_id_bidang_lama(
         self, *, idbidang: str, idbidang_lama: str, db_session: AsyncSession | None = None
     ) -> Bidang:

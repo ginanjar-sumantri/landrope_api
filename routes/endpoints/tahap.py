@@ -5,12 +5,12 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
 from sqlalchemy.orm import selectinload
-from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin
+from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin, BidangOverlap
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.main_project_sch import MainProjectUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangByIdForTahapSch, BidangUpdateSch
-from schemas.bidang_overlap_sch import BidangOverlapForTahap
+from schemas.bidang_overlap_sch import BidangOverlapForTahap, BidangOverlapUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
@@ -77,16 +77,21 @@ async def create(
         
         for ov in dt.overlaps:
             bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
+            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict())
             if bidang_overlap_current.geom :
-                bidang_overlap_current.geom = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
-            
-            bidang_overlap_updated = bidang_overlap_current
-            bidang_overlap_updated.kategori = ov.kategori
-            bidang_overlap_updated.harga_transaksi = ov.harga_transaksi or 0
-            bidang_overlap_updated.luas_bayar = ov.luas_bayar or 0
-            bidang_overlap_updated.is_show = ov.is_show
+                geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
+                bidang_ov_current.geom = geom_ov
+            if bidang_overlap_current.geom_temp :
+                geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
+                bidang_ov_current.geom_temp = geom_temp_ov
+        
+            bidang_overlap_updated = BidangOverlapUpdateSch(**ov.dict())
+            # bidang_overlap_updated.kategori = ov.kategori
+            # bidang_overlap_updated.harga_transaksi = ov.harga_transaksi or 0
+            # bidang_overlap_updated.luas_bayar = ov.luas_bayar or 0
+            # bidang_overlap_updated.is_show = ov.is_show
 
-            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
+            await crud.bidangoverlap.update(obj_current=bidang_ov_current, obj_new=bidang_overlap_updated,
                                             with_commit=False, db_session=db_session,
                                             updated_by_id=current_worker.id)
     
