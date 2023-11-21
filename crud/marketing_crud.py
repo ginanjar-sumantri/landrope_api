@@ -33,8 +33,9 @@ manager = CRUDManager(Manager)
 
 
 class CRUDSales(CRUDBase[Sales, SalesCreateSch, SalesUpdateSch]):
-    async def get_multi_by_bidang_ids(self, 
-                        list_ids: List[UUID | str], 
+    async def get_multi_by_bidang_ids_and_manager_id(self, 
+                        list_ids: List[UUID | str],
+                        manager_id:UUID | None = None, 
                         db_session : AsyncSession | None = None
                         ) -> List[Sales]:
         
@@ -43,6 +44,10 @@ class CRUDSales(CRUDBase[Sales, SalesCreateSch, SalesUpdateSch]):
         query = select(Sales)
         query = query.join(Bidang, Bidang.sales_id == Sales.id)
         query = query.filter(Bidang.id.in_(list_ids))
+        
+        if manager_id:
+            query = query.filter(Sales.manager_id == manager_id)
+
         query = query.distinct()
 
         response =  await db_session.execute(query)

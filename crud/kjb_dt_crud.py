@@ -49,6 +49,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         db_session = db_session or db.session
 
         query = select(func.distinct(KjbDt.id),
+                   KjbDt.id, 
                    KjbDt.alashak,
                    KjbDt.jenis_alashak,
                    KjbDt.harga_akta,

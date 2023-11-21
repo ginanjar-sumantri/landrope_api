@@ -277,11 +277,12 @@ async def update(
                         invoice_dtl_updated_sch = InvoiceDetailUpdateSch(**dt.dict(), invoice_id=invoice_updated.id)
                         await crud.invoice_detail.update(obj_current=invoice_dtl_current, obj_new=invoice_dtl_updated_sch, db_session=db_session, with_commit=False)
                     
-                    bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-                    sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
-                    sch_komponen_biaya.is_use = True
-                    await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
-            
+                    if invoice_current.is_void != True:
+                        bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+                        sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
+                        sch_komponen_biaya.is_use = True
+                        await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
+                
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
@@ -434,7 +435,7 @@ async def get_list_sales(
 
     list_id = [id.bidang_id for id in sch.bidangs]
 
-    objs = await crud.sales.get_multi_by_bidang_ids(list_ids=list_id)
+    objs = await crud.sales.get_multi_by_bidang_ids_and_manager_id(list_ids=list_id, manager_id=sch.manager_id)
 
     return create_response(data=objs)
 

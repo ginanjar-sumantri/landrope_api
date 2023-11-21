@@ -12,6 +12,7 @@ from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdB
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
+from datetime import datetime
 import crud
 import json
 
@@ -41,6 +42,7 @@ async def get_list(
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+    search_date = None
 
     query = select(KjbHd).select_from(KjbHd
                         ).outerjoin(Manager, KjbHd.manager_id == Manager.id
@@ -49,7 +51,13 @@ async def get_list(
                         ).outerjoin(Pemilik, KjbPenjual.pemilik_id == Pemilik.id
                         ).outerjoin(KjbDt, KjbHd.id == KjbDt.kjb_hd_id)
     
-    if keyword:
+    try:
+        # Mengonversi string tanggal menjadi objek datetime
+        search_date = datetime.strptime(keyword, "%d-%m-%Y").date()
+    except:
+        pass
+    
+    if keyword and search_date is None:
         query = query.filter(
             or_(
                 KjbHd.code.ilike(f'%{keyword}%'),
@@ -60,6 +68,9 @@ async def get_list(
                 KjbDt.alashak.ilike(f'%{keyword}%')
             )
         )
+    
+    if search_date:
+        query = query.filter(KjbHd.tanggal_kjb == search_date)
     
     if filter_query:
         filter_query = json.loads(filter_query)
