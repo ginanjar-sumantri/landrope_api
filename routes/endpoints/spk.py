@@ -31,8 +31,9 @@ async def create(
     """Create a new object"""
 
     db_session = db.session
-
-    sch.code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
+    bidang = await crud.bidang.get(id=sch.bidang_id)
+    code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
+    sch.code = f"SPK-{sch.jenis_bayar.value.replace('_', ' ')}/{code}/{bidang.id_bidang}"
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
