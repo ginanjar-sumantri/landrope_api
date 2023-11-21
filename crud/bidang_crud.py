@@ -121,11 +121,11 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         self, *, idbidang_lama: str, db_session: AsyncSession | None = None
     ) -> Bidang:
         db_session = db_session or db.session
-        query = select(Bidang).where(Bidang.id_bidang_lama.ilike(f'%{idbidang_lama}')).order_by(text("luas_surat desc"))
+        query = select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama)
 
         obj = await db_session.execute(query)
-
-        return obj.fetchone()
+        
+        return obj.scalar_one_or_none()
 
     async def get_by_id_bidang_id_bidang_lama(
         self, *, idbidang: str, idbidang_lama: str, db_session: AsyncSession | None = None

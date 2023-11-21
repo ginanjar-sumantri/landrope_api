@@ -310,6 +310,9 @@ async def update(
     if len(list_id_termin_bayar) > 0:
         query_bayar = TerminBayar.__table__.delete().where(and_(~TerminBayar.id.in_(list_id_termin_bayar), TerminBayar.termin_id == obj_updated.id))
         await crud.termin_bayar.delete_multiple_where_not_in(query=query_bayar, db_session=db_session, with_commit=False)
+    
+    if len(list_id_termin_bayar) == 0 and len(obj_current.termin_bayars) > 0:
+        await crud.termin_bayar.remove_multiple_data(list_obj=obj_current.termin_bayars, db_session=db_session)
 
     for termin_bayar in sch.termin_bayars:
         if termin_bayar.id:

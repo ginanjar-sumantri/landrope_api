@@ -77,7 +77,7 @@ async def create(
         
         for ov in dt.overlaps:
             bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
-            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict())
+            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict(exclude={'created_at', 'updated_at', 'id'}))
             if bidang_overlap_current.geom :
                 geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
                 bidang_ov_current.geom = geom_ov
