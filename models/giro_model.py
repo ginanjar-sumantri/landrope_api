@@ -31,7 +31,11 @@ class Giro(GiroFullBase, table=True):
 
     @property
     def is_used(self) -> bool | None:
-        if self.payment:
+        # if len(self.payment) > 0:
+        #     return True
+        used = next((y for x in self.payment for y in x.details if y.is_void != True), None)
+
+        if used:
             return True
         
         return False
