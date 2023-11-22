@@ -520,6 +520,14 @@ async def create(
 
     db_session = db.session
 
+    draft = await crud.draft.get_by_id(id=sch.draft_id)
+    for dt in draft.details:
+        if dt.luas > sch.luas_ukur:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
+
+        if dt.luas > dt.bidang.luas_surat:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
+
     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
@@ -543,7 +551,6 @@ async def create(
         else:
             bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-    draft = await crud.draft.get(id=sch.draft_id)
 
     bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
@@ -594,6 +601,15 @@ async def update(
     """Update a obj by its id"""
 
     db_session = db.session
+
+    draft = await crud.draft.get_by_id(id=sch.draft_id)
+    for dt in draft.details:
+        if dt.luas > sch.luas_ukur:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
+
+        if dt.luas > dt.bidang.luas_surat:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
+
     obj_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
@@ -626,8 +642,6 @@ async def update(
             pass
         else:
             bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-
-    draft = await crud.draft.get(id=sch.draft_id)
 
     bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)

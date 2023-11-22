@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exc, select
+from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models.draft_model import Draft, DraftDetail
 from schemas.draft_sch import DraftCreateSch, DraftUpdateSch, DraftForAnalisaSch
@@ -9,6 +10,24 @@ from uuid import UUID
 from datetime import datetime
 
 class CRUDDraft(CRUDBase[Draft, DraftCreateSch, DraftUpdateSch]):
+    async def get_by_id(self, 
+                  *, 
+                  id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Draft | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Draft).where(Draft.id == id
+                                        ).options(selectinload(Draft.details
+                                                ).options(selectinload(DraftDetail.bidang))
+                                        )
+                                                    
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
     async def create_for_analisa(self, *, 
                      obj_in: DraftForAnalisaSch, 
                      created_by_id : UUID | str | None = None, 
