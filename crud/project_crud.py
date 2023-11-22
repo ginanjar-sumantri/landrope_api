@@ -46,7 +46,7 @@ class CRUDProject(CRUDBase[Project, ProjectCreateSch, ProjectUpdateSch]):
         db_session = db_session or db.session
         
         query = select(Project.id,
-                       Project.name).select_from(Project)
+                       Project.name).select_from(Project).order_by(Project.name.asc())
 
         response =  await db_session.execute(query)
         return response.fetchall()
