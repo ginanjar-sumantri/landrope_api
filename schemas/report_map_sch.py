@@ -2,6 +2,7 @@
 from sqlmodel import SQLModel
 from uuid import UUID
 from pydantic import condecimal
+from decimal import Decimal
 
 class SearchMapObj(SQLModel):
     type:str | None
@@ -50,4 +51,6 @@ class FishboneProject(SQLModel):
 
 class ParamProject(SQLModel):
     project_ids:list[UUID]
+
+
 

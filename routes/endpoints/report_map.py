@@ -1,12 +1,15 @@
 from uuid import UUID
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlmodel import text, select
 from models.bidang_model import Bidang
+from fastapi_pagination import Params, Page
+from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
 from schemas.report_map_sch import (SearchMapObj, SummaryProject, SummaryStatus, SummaryKategori,
                                     FishboneProject, FishboneStatus, FishboneKategori,
                                     ParamProject) 
-from schemas.response_sch import (GetResponseBaseSch, create_response)
+from schemas.bidang_sch import (ReportBidangBintang)
+from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, create_response)
 from common.rounder import RoundTwo
 from decimal import Decimal
 import crud
@@ -170,8 +173,6 @@ async def fishbone(project_ids:ParamProject):
 
     return create_response(data=fishbone)
         
-
-
 async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
 
     query = text(f"""
@@ -300,3 +301,14 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
                                  ) for data in datas]
     
     return list_data
+
+@router.get("/summary_bintang", response_model=GetResponsePaginatedSch[ReportBidangBintang])
+async def search_for_map(project_id:UUID | None,
+                        params:Params = Depends()):
+
+    """Get for search"""
+
+    objs = await crud.bidang.get_report_summary_bintang_by_project_id(project_id=project_id, params=params)
+    
+
+    return create_response(data=objs)

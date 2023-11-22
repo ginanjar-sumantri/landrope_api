@@ -217,3 +217,13 @@ class BidangPercentageLunasForSpk(SQLModel):
 class BidangIntersectionSch(SQLModel):
     id:UUID
     geom:str | None
+
+class ReportBidangBintang(SQLModel):
+    id_bidang:str|None
+    alashak:str|None
+    luas_surat:Decimal|None
+    luas_damai:Decimal|None
+    luas_batal:Decimal|None
+    sudah_claim:Decimal|None #percentage
+    belum_claim:Decimal|None #percentage
+    sisa_bintang:Decimal|None

@@ -1,7 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, and_, or_
+from sqlmodel import select, and_, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import text
@@ -11,7 +11,7 @@ from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk,
-                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch)
+                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
 from services.gcloud_storage_service import GCStorageService
@@ -302,4 +302,104 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
             response = await db_session.execute(query)
 
             return response.fetchone()
+
+    async def get_report_summary_bintang_by_project_id(self, 
+                                *,
+                                project_id:UUID|None = None,
+                                params: Params | None = Params(),
+                                db_session: AsyncSession | None = None
+                                ) -> Page[ReportBidangBintang]:
+        db_session = db_session or db.session
+
+        query = (
+            select([
+                Bidang.id_bidang,
+                Bidang.luas_surat,
+                Bidang.alashak,
+                func.coalesce(
+                    select([func.sum(BidangOverlap.luas)]).
+                    where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                    where(BidangOverlap.status_luas == 'Tidak_Menambah_Luas').
+                    label('luas_damai'),
+                    0
+                ).label('luas_damai'),
+                func.coalesce(
+                    select([func.sum(BidangOverlap.luas)]).
+                    where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                    where(BidangOverlap.status_luas == 'Menambah_Luas').
+                    label('luas_batal'),
+                    0
+                ).label('luas_batal'),
+                func.round(
+                    (
+                        (
+                            func.coalesce(
+                                select([func.sum(BidangOverlap.luas)]).
+                                where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                where(BidangOverlap.status_luas == 'Tidak_Menambah_Luas'),
+                                0
+                            ) +
+                            func.coalesce(
+                                select([func.sum(BidangOverlap.luas)]).
+                                where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                where(BidangOverlap.status_luas == 'Menambah_Luas'),
+                                0
+                            )
+                        ) / Bidang.luas_surat
+                    ) * 100,
+                    2
+                ).label('sudah_claim'),
+                func.round(
+                    (
+                        (
+                            Bidang.luas_surat -
+                            (
+                                func.coalesce(
+                                    select([func.sum(BidangOverlap.luas)]).
+                                    where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                    where(BidangOverlap.status_luas == 'Tidak_Menambah_Luas'),
+                                    0
+                                ) +
+                                func.coalesce(
+                                    select([func.sum(BidangOverlap.luas)]).
+                                    where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                    where(BidangOverlap.status_luas == 'Menambah_Luas'),
+                                    0
+                                )
+                            )
+                        ) / Bidang.luas_surat
+                    ) * 100,
+                    2
+                ).label('belum_claim'),
+                func.round(
+                    (
+                        Bidang.luas_surat -
+                        (
+                            func.coalesce(
+                                select([func.sum(BidangOverlap.luas)]).
+                                where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                where(BidangOverlap.status_luas == 'Tidak_Menambah_Luas'),
+                                0
+                            ) +
+                            func.coalesce(
+                                select([func.sum(BidangOverlap.luas)]).
+                                where(BidangOverlap.parent_bidang_intersect_id == Bidang.id).
+                                where(BidangOverlap.status_luas == 'Menambah_Luas'),
+                                0
+                            )
+                        )
+                    ), 2
+                ).label('sisa_bintang'),
+            ]).
+            select_from(Bidang).
+            join(Planing, Planing.id == Bidang.planing_id).
+            join(Project, Project.id == Planing.project_id).
+            where(Bidang.status == 'Lanjut').
+            where(Bidang.jenis_bidang == 'Bintang').
+            where(Project.id == project_id).
+            order_by(Bidang.id_bidang)
+        )
+        
+        return await paginate(db_session, query, params)
+
 bidang = CRUDBidang(Bidang)
