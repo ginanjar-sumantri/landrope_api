@@ -77,13 +77,13 @@ async def create(
         
         for ov in dt.overlaps:
             bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
-            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict(exclude={'created_at', 'updated_at', 'id'}))
+            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict(exclude={'created_at', 'updated_at'}))
             if bidang_overlap_current.geom :
                 geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
-                bidang_ov_current.geom = geom_ov
+                bidang_overlap_current.geom = geom_ov
             if bidang_overlap_current.geom_temp :
                 geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
-                bidang_ov_current.geom_temp = geom_temp_ov
+                bidang_overlap_current.geom_temp = geom_temp_ov
         
             bidang_overlap_updated = BidangOverlapUpdateSch(**ov.dict())
             # bidang_overlap_updated.kategori = ov.kategori
@@ -91,7 +91,7 @@ async def create(
             # bidang_overlap_updated.luas_bayar = ov.luas_bayar or 0
             # bidang_overlap_updated.is_show = ov.is_show
 
-            await crud.bidangoverlap.update(obj_current=bidang_ov_current, obj_new=bidang_overlap_updated,
+            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
                                             with_commit=False, db_session=db_session,
                                             updated_by_id=current_worker.id)
     
@@ -230,17 +230,17 @@ async def update(
         
         for ov in dt.overlaps:
             bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
-            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict(exclude={'created_at', 'updated_at', 'id'}))
+            bidang_ov_current = BidangOverlap(**bidang_overlap_current.dict(exclude={'created_at', 'updated_at'}))
             if bidang_overlap_current.geom :
                 geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
-                bidang_ov_current.geom = geom_ov
+                bidang_overlap_current.geom = geom_ov
             if bidang_overlap_current.geom_temp :
                 geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
-                bidang_ov_current.geom_temp = geom_temp_ov
+                bidang_overlap_current.geom_temp = geom_temp_ov
         
             bidang_overlap_updated = BidangOverlapUpdateSch(**ov.dict())
 
-            await crud.bidangoverlap.update(obj_current=bidang_ov_current, obj_new=bidang_overlap_updated,
+            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
                                             with_commit=False, db_session=db_session,
                                             updated_by_id=current_worker.id)
         
