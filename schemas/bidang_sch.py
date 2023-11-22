@@ -220,6 +220,7 @@ class BidangIntersectionSch(SQLModel):
 
 class ReportBidangBintang(SQLModel):
     id_bidang:str|None
+    id_bidang_lama:str|None
     alashak:str|None
     luas_surat:Decimal|None
     luas_damai:Decimal|None

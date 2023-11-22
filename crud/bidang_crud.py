@@ -305,6 +305,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
 
     async def get_report_summary_bintang_by_project_id(self, 
                                 *,
+                                keyword:str|None = None,
                                 project_id:UUID|None = None,
                                 params: Params | None = Params(),
                                 db_session: AsyncSession | None = None
@@ -314,6 +315,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         query = (
             select([
                 Bidang.id_bidang,
+                Bidang.id_bidang_lama,
                 Bidang.luas_surat,
                 Bidang.alashak,
                 func.coalesce(
@@ -399,7 +401,14 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
             where(Project.id == project_id).
             order_by(Bidang.id_bidang)
         )
-        
+
+        if keyword:
+             query = query.filter(or_(
+                  Bidang.id_bidang.ilike(f'%{keyword}%'),
+                  Bidang.id_bidang_lama.ilike(f'%{keyword}%'),
+                  Bidang.alashak.ilike(f'%{keyword}%')
+             ))
+    
         return await paginate(db_session, query, params)
 
 bidang = CRUDBidang(Bidang)

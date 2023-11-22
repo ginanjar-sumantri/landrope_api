@@ -304,11 +304,12 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
 
 @router.get("/summary_bintang", response_model=GetResponsePaginatedSch[ReportBidangBintang])
 async def search_for_map(project_id:UUID | None,
+                        keyword:str | None = None,
                         params:Params = Depends()):
 
     """Get for search"""
 
-    objs = await crud.bidang.get_report_summary_bintang_by_project_id(project_id=project_id, params=params)
+    objs = await crud.bidang.get_report_summary_bintang_by_project_id(project_id=project_id, keyword=keyword, params=params)
     
 
     return create_response(data=objs)
