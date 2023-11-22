@@ -246,11 +246,12 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         amount = 0
         if self.invoice.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
             if self.bidang_komponen_biaya.beban_pembeli == False:
-                if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                        amount = (self.bidang_komponen_biaya.amount or 0) * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
-                elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (self.bidang_komponen_biaya.amount or 0) * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
-                else:
-                    amount = self.bidang_komponen_biaya.amount or 0
+                # if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                #         amount = (self.bidang_komponen_biaya.amount or 0) * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
+                # elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
+                #     amount = (self.bidang_komponen_biaya.amount or 0) * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
+                # else:
+                #     amount = self.bidang_komponen_biaya.amount or 0
+                amount = self.bidang_komponen_biaya.amount_calculate or 0
         
         return round(amount, 0)

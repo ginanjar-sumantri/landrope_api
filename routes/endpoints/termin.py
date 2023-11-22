@@ -378,8 +378,12 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+    pengembalian = False
+    invoice = await crud.invoice.get_by_id(id=invoice_id)
+    if invoice.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        pengembalian = True
     
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id)
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id, pengembalian=pengembalian)
     if bidang_id:
         objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
         objs = objs + objs_2

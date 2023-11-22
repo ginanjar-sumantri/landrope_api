@@ -10,6 +10,7 @@ from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, St
                          SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum)
 import numpy
 from geoalchemy2 import Geometry
+import json
 
 if TYPE_CHECKING:
     from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
@@ -446,5 +447,21 @@ class Bidang(BidangFullBase, table=True):
             return True
         
         return False
+    
+    # @property
+    # def njop(self) -> Decimal | None:
+    #     nilai_njop:Decimal = 0
+    #     metadata_njop = next((x for x in self.bundlehd.bundledts if x.dokumen_name == "SPPT NOP PBB"), None)
+
+    #     if not metadata_njop:
+    #         return nilai_njop
+        
+    #     if metadata_njop.meta_data:
+    #         if metadata_njop.meta_data is not None and metadata_njop.meta_data != "":
+    #             metadata_dict = json.loads(metadata_njop.meta_data.replace("'", "\""))
+    #             nilai_njop = Decimal(metadata_dict[f'NJOP'])
+            
+    #     return nilai_njop
+
 
 

@@ -224,6 +224,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         where kb.is_void = true
                         and b.id = '{str(bidang_id)}'
                         and kb.is_use = true
+                        and kb.is_paid = true
                         and kb.beban_pembeli = false
                 """)
 
@@ -299,10 +300,17 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             self, 
             *, 
             invoice_id:UUID | str,
+            pengembalian:bool | None = None,
             db_session: AsyncSession | None = None
             ) -> List[BidangKomponenBiayaBebanPenjualSch] | None:
         
         db_session = db_session or db.session
+
+        void = "and kb.is_void != true"
+        
+        if pengembalian:
+            void = "and kb.is_void = true"
+
         query = text(f"""
                         select
                         b.id As bidang_id,
@@ -337,9 +345,10 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         inner join invoice i on idt.invoice_id = i.id
                         inner join bidang b on b.id = i.bidang_id
                         inner join beban_biaya bb on bb.id = kb.beban_biaya_id
-                        where kb.is_void != true
-                        and kb.is_use = true
+                        where 
+                        kb.is_use = true
                         and i.id = '{str(invoice_id)}'
+                        {void}
                 """)
 
         response = await db_session.execute(query)

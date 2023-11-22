@@ -203,7 +203,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             select 
                             b.id_bidang,
                             case
-                                when tr.jenis_bayar != 'UTJ' and tr.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then 
+                                when tr.jenis_bayar != 'UTJ' and tr.jenis_bayar != 'UTJ_KHUSUS' and tr.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then 
                                     case 
                                         when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || Coalesce(s.amount,0) || '%'
                                         else tr.jenis_bayar || ' (' || s.amount || ')'
