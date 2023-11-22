@@ -58,6 +58,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         query = select(self.model).where(self.model.bidang_id == bidang_id)
         if pengembalian:
             query = query.filter(self.model.is_void == True)
+            query = query.filter(self.model.is_paid == True)
         else:
             query = query.filter(self.model.is_void != True)
 
@@ -307,7 +308,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         db_session = db_session or db.session
 
         void = "and kb.is_void != true"
-        
+
         if pengembalian:
             void = "and kb.is_void = true"
 
