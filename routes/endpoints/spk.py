@@ -42,8 +42,11 @@ async def create(
                                                                                                       beban_biaya_id=komponen_biaya.beban_biaya_id)
         
         if komponen_biaya_current:
-            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.beban_pembeli, komponen_biaya.remark]
+            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
+                                                                beban_pembeli=komponen_biaya.beban_pembeli,
+                                                                remark=komponen_biaya.remark)
+            
+            
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
@@ -55,6 +58,8 @@ async def create(
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_use=False,
+                                                        is_retur=False,
+                                                        is_add_pay=beban_biaya.is_add_pay,
                                                         remark=komponen_biaya.remark,
                                                         satuan_bayar=beban_biaya.satuan_bayar,
                                                         satuan_harga=beban_biaya.satuan_harga,
@@ -178,8 +183,12 @@ async def get_by_id(id:UUID):
     pengembalian = False
     if obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         pengembalian = True
+    
+    pajak = False
+    if obj.jenis_bayar == JenisBayarEnum.PAJAK:
+        pajak = True
 
-    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id, pengembalian=pengembalian)
+    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id, pengembalian=pengembalian, pajak=pajak)
 
     list_komponen_biaya = []
     for kb in komponen_biayas:

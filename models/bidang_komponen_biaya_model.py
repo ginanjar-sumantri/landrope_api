@@ -20,6 +20,8 @@ class BidangKomponenBiayaBase(SQLModel):
     tanggal_bayar:Optional[date] = Field(nullable=True)
     is_paid:Optional[bool] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=True)
+    is_add_pay:Optional[bool] = Field(nullable=True)
+    is_retur:Optional[bool] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
     satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)

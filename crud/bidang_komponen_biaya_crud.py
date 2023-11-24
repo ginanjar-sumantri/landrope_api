@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.bidang_komponen_biaya_model import BidangKomponenBiaya
+from models import BidangKomponenBiaya, BebanBiaya
 from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, 
                                                BidangKomponenBiayaBebanPenjualSch)
 from schemas.beban_biaya_sch import BebanBiayaForSpkSch
@@ -50,17 +50,21 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             *, 
             bidang_id: UUID | str,
             pengembalian:bool|None = False,
+            pajak:bool|None = False,
             db_session: AsyncSession | None = None
             ) -> List[BidangKomponenBiaya] | None:
         
         db_session = db_session or db.session
         
-        query = select(self.model).where(self.model.bidang_id == bidang_id)
+        query = select(self.model).join(self.model.beban_biaya).where(self.model.bidang_id == bidang_id)
+
         if pengembalian:
-            query = query.filter(self.model.is_void == True)
-            query = query.filter(self.model.is_paid == True)
-        else:
-            query = query.filter(self.model.is_void != True)
+            query = query.filter(self.model.is_use == True)
+            query = query.filter(self.model.is_retur == True)
+        elif pajak:
+            query = query.filter(BebanBiaya.is_tax == True)
+        
+        query = query.filter(self.model.is_void != True)
 
         response = await db_session.execute(query)
 

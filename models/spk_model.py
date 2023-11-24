@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from models import Bidang, BundleDt, KjbTermin, Invoice
+    from models import Bidang, BundleDt, KjbTermin, Invoice, Worker
 
 class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -53,6 +53,13 @@ class Spk(SpkFullBase, table=True):
         }
     )
 
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Spk.created_by_id==Worker.id",
+        }
+    )
+
     @property
     def id_bidang(self) -> str | None:
         return self.bidang.id_bidang
@@ -60,6 +67,10 @@ class Spk(SpkFullBase, table=True):
     @property
     def alashak(self) -> str | None:
         return self.bidang.alashak
+    
+    @property
+    def group(self) -> str | None:
+        return self.bidang.group
     
     @property
     def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
@@ -118,6 +129,10 @@ class Spk(SpkFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def created_name(self) -> str | None:
+        return getattr(getattr(self, "worker", None), "name", None)
         
         
 
