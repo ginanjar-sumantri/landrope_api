@@ -3,6 +3,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
+from sqlalchemy import cast, Date
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch,
@@ -18,6 +19,7 @@ from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
 from jinja2 import Environment, FileSystemLoader
+from datetime import date
 import crud
 import json
 
@@ -80,6 +82,8 @@ async def create(
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
+                start_date:date|None = None,
+                end_date:date|None = None,
                 params: Params=Depends(), 
                 order_by:str = None, 
                 keyword:str = None, 
@@ -104,6 +108,9 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(Spk, key) == value)
+    
+    if start_date and end_date:
+        query = query.filter(cast(Spk.created_at, Date).between(start_date, end_date))
 
     query = query.distinct()
 
