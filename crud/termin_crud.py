@@ -143,9 +143,10 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         filter_by_jenis_bayar:str = ""
         if jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-             filter_by_jenis_bayar = "and bkb.is_void = true"
-        else:
-             filter_by_jenis_bayar:str = "and bkb.is_void != true"
+             filter_by_jenis_bayar = "and bkb.is_retur = true"
+        
+        if jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+             filter_by_jenis_bayar = "and bkb.is_add_pay = true"
 
         query = text(f"""
                         With subquery as (select
@@ -178,6 +179,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
                         where 
                         i.is_void != true
+                        and bkb.is_void != true
                         {filter_by_jenis_bayar}
                         and t.id = '{str(id)}')
                         Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli, is_void

@@ -83,11 +83,14 @@ class Spk(SpkFullBase, table=True):
     @property
     def spk_amount(self) -> Decimal | None:
         total_amount = self.amount
-        if self.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+        if self.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+            total_amount = self.bidang.total_pengembalian_beban_penjual
+        elif self.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+            total_amount = self.bidang.biaya_lain_not_use
+        else:
             if self.satuan_bayar == SatuanBayarEnum.Percentage:
                 total_amount = ((self.amount or 0) * ((self.bidang.luas_bayar or 0) * (self.bidang.harga_transaksi or 0)))/100
-        else:
-            total_amount = self.bidang.total_pengembalian_beban_penjual
+            
         return Decimal(total_amount)
     
     @property

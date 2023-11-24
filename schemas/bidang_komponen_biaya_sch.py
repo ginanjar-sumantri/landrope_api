@@ -50,5 +50,7 @@ class BidangKomponenBiayaBebanPenjualSch(SQLModel):
     total_beban:Optional[Decimal]
     is_use:Optional[bool]
     is_void:Optional[bool]
+    is_retur:Optional[bool]
+    is_add_pay:Optional[bool]
 
 

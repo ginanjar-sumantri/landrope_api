@@ -73,6 +73,8 @@ class JenisBayarEnum(str, Enum):
     PAJAK = "PAJAK"
     PENGEMBALIAN_BEBAN_PENJUAL = "PENGEMBALIAN_BEBAN_PENJUAL"
     BEGINNING_BALANCE = "BEGINNING_BALANCE"
+    BIAYA_LAIN = "BIAYA_LAIN"
+    SISA_PELUNASAN = "SISA_PELUNASAN"
 
 class PosisiBidangEnum(str, Enum):
     Pinggir_Jalan = "Pinggir_Jalan"

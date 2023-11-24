@@ -383,7 +383,10 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
     if invoice.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         pengembalian = True
     
-    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id, pengembalian=pengembalian)
+    if invoice.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+        biaya_lain = True
+    
+    objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id, pengembalian=pengembalian, biaya_lain=biaya_lain)
     if bidang_id:
         objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
         objs = objs + objs_2
@@ -400,10 +403,12 @@ async def get_list_komponen_biaya_by_spk_id(
     spk = await crud.spk.get(id=spk_id)
 
     objs = []
-    if spk.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-        objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
-    else:
+    if spk.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         objs = await crud.bidang_komponen_biaya.get_multi_pengembalian_beban_by_bidang_id(bidang_id=spk.bidang_id)
+    if spk.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+        objs = await crud.bidang_komponen_biaya.get_multi_beban_biaya_lain_by_bidang_id(bidang_id=spk.bidang_id)
+    else:
+        objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
 
     return create_response(data=objs)
 

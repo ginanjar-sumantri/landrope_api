@@ -3,6 +3,7 @@ from fastapi import APIRouter, status, Depends, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_, text
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
@@ -10,10 +11,11 @@ from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpda
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
 from schemas.giro_sch import GiroSch, GiroCreateSch
 from schemas.bidang_sch import BidangUpdateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -60,6 +62,9 @@ async def create(
         invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
         if (invoice_current.invoice_outstanding - dt.amount) < 0:
             raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+        
+        # if invoice_current.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+        #     await bidang_komponen_biaya_add_pay_update_is_paid()
         
         bidang_ids.append(invoice_current.bidang_id)
 
@@ -436,15 +441,33 @@ async def bidang_update_status(bidang_ids:list[UUID]):
     for id in bidang_ids:
         payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
         if len(payment_details) > 0:
-            bidang_current = await crud.bidang.get(id=id)
+            bidang_current = await crud.bidang.get_by_id(id=id)
             if bidang_current.geom :
                 bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
         else:
-            bidang_current = await crud.bidang.get(id=id)
+            bidang_current = await crud.bidang.get_by_id(id=id)
             if bidang_current.geom :
                 bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
+
+async def bidang_komponen_biaya_add_pay_update_is_paid(bidang_ids:list[UUID]):
+    for id in bidang_ids:
+        payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
+        
+        for payment in payment_details:
+            if payment.invoice.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+                bidang = await crud.bidang.get_by_id(id=id)
+                if bidang.biaya_lain == 0:
+                    bidang_komponen_biayas = [add_pay for add_pay in bidang.komponen_biayas if add_pay.is_add_pay and add_pay.is_void != True and add_pay.is_use]
+                    for komponen_biaya in bidang_komponen_biayas:
+                        bidang_komponen_biaya_update = BidangKomponenBiayaUpdateSch(*komponen_biaya.dict(exclude={"is_paid", "tanggal_bayar"}))
+                        bidang_komponen_biaya_update.is_paid = True
+                        bidang_komponen_biaya_update.tanggal_bayar = date(payment.created_at)
+
+                        await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=bidang_komponen_biaya_update)
+
+
 

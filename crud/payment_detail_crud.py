@@ -40,7 +40,10 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         
         db_session = db_session or db.session
         query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.payment_id == payment_id)
-                                ).options(selectinload(PaymentDetail.invoice))
+                                ).options(selectinload(PaymentDetail.invoice
+                                        ).options(selectinload(Invoice.termin)
+                                        ).options(selectinload(Invoice.details))
+                                )
         
         response = await db_session.execute(query)
         return response.scalars().all()
@@ -56,6 +59,11 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         query = query.join(PaymentDetail.invoice)
         query = query.filter(PaymentDetail.is_void != True)
         query = query.filter(Invoice.bidang_id == bidang_id)
+        
+        query = query.options(selectinload(PaymentDetail.invoice
+                                        ).options(selectinload(Invoice.termin)
+                                        ).options(selectinload(Invoice.details))
+                                )
 
         response =  await db_session.execute(query)
         return response.scalars().all()

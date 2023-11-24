@@ -363,7 +363,7 @@ class Bidang(BidangFullBase, table=True):
         total_pengembalian:Decimal = 0
         if len(self.komponen_biayas) > 0:
             calculate = []
-            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void == True and kb.is_paid == True]
+            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_retur == True]
             for beban in komponen_biaya_beban_penjual:
                 if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
                     amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
@@ -418,7 +418,7 @@ class Bidang(BidangFullBase, table=True):
             total_payment = Decimal(sum(payments))
         
         if len(self.komponen_biayas) > 0:
-            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False]
+            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True]
             total_beban_penjual = Decimal(sum(beban_biayas))
 
         return Decimal(total_payment + total_beban_penjual)
@@ -426,6 +426,32 @@ class Bidang(BidangFullBase, table=True):
     @property
     def sisa_pelunasan(self) -> Decimal | None:
         return Decimal(self.total_harga_transaksi - self.total_payment)
+    
+    #diperlukan untuk spk_amount saat pilih spk di termin
+    @property
+    def biaya_lain_not_use(self) -> Decimal | None:
+        total_biaya_lain:Decimal = 0
+        if len(self.komponen_biayas) > 0:
+            calculate = []
+            calculate = [x.amount_biaya_lain for x in self.komponen_biayas if x.is_use == False]
+            total_biaya_lain = sum(calculate)
+        
+        return Decimal(total_biaya_lain)
+    
+    @property
+    def sisa_biaya_lain(self) -> Decimal | None:
+        total_biaya_lain:Decimal = 0
+        if len(self.komponen_biayas) > 0:
+            calculate = []
+            calculate = [x.amount_biaya_lain for x in self.komponen_biayas]
+            total_biaya_lain = sum(calculate)
+
+        total_payment_invoice_biaya_lain:Decimal = 0
+        if len(self.invoices) > 0:
+            payments = [payment.amount for invoice in self.invoices if invoice.is_void != True and invoice.jenis_bayar == JenisBayarEnum.BIAYA_LAIN for payment in invoice.payment_details if payment.is_void != True]
+            total_payment_invoice_biaya_lain = Decimal(sum(payments))
+        
+        return Decimal(total_biaya_lain - total_payment_invoice_biaya_lain)
     
     @property
     def utj_amount(self) -> Decimal | None:

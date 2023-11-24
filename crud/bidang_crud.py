@@ -48,7 +48,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.hasil_peta_lokasi)
                                                         ).options(selectinload(Bidang.sub_project)
                                                         ).options(selectinload(Bidang.invoices
-                                                                ).options(selectinload(Invoice.payment_details))
+                                                                ).options(selectinload(Invoice.payment_details)
+                                                                ).options(selectinload(Invoice.termin))
                                                         ).options(selectinload(Bidang.overlaps)
                                                         ).options(selectinload(Bidang.komponen_biayas)
                                                         ).options(selectinload(Bidang.tahap_details
@@ -80,7 +81,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                                             ).options(selectinload(HasilPetaLokasi.kjb_dt)
                                                                             )
                                                         ).options(selectinload(Bidang.invoices
-                                                                            ).options(selectinload(Invoice.payment_details))
+                                                                            ).options(selectinload(Invoice.payment_details)
+                                                                            ).options(selectinload(Invoice.termin))
                                                         ).options(selectinload(Bidang.komponen_biayas))
            
            response = await db_session.execute(query)
@@ -96,8 +98,10 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
            db_session = db_session or db.session
 
            query = select(Bidang).where(Bidang.id == id).options(selectinload(Bidang.invoices
-                                                                    ).options(selectinload(Invoice.termin))
-                                                        )
+                                                                    ).options(selectinload(Invoice.termin)
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                        ).options(selectinload(Bidang.overlaps)
+                                                        ).options(selectinload(Bidang.komponen_biayas))
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()

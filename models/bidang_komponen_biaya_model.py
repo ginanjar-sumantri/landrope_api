@@ -53,6 +53,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
             "primaryjoin": "BidangKomponenBiaya.updated_by_id==Worker.id",
         }
     )
+
     @property
     def updated_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
@@ -80,6 +81,13 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
             total_amount = (self.amount or 0)
         
         return total_amount
+    
+    @property
+    def amount_biaya_lain(self) -> Decimal | None:
+        if self.is_add_pay and self.is_void != True and self.beban_pembeli:
+            return self.amount
+        
+        return 0
     
     @property
     def has_invoice_lunas(self) -> bool | None:

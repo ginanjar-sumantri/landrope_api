@@ -157,6 +157,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         kb.beban_pembeli,
                         kb.is_use,
                         kb.is_void,
+                        kb.is_retur,
+                        kb.is_add_pay,
                         bb.name,
                         kb.satuan_harga,
                         kb.satuan_bayar,
@@ -237,6 +239,57 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
 
         return response.fetchall()
     
+    async def get_multi_beban_biaya_lain_by_bidang_id(
+            self, 
+            *, 
+            bidang_id: UUID | str,
+            db_session: AsyncSession | None = None
+            ) -> List[BidangKomponenBiayaBebanPenjualSch] | None:
+        
+        db_session = db_session or db.session
+        query = text(f"""
+                        select
+                        b.id As bidang_id,
+                        b.id_bidang,
+                        b.alashak,
+                        b.luas_surat,
+                        b.luas_bayar,
+                        b.harga_transaksi,
+                        kb.id As komponen_id,
+                        kb.beban_pembeli,
+                        kb.is_use,
+                        kb.is_void,
+                        bb.name,
+                        kb.satuan_harga,
+                        kb.satuan_bayar,
+                        kb.amount as beban_biaya_amount,
+                        CASE
+                            WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                    ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                End
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
+                                Case
+                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                    ELSE ROUND((kb.amount * b.luas_bayar), 2)
+                                End
+                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                        END As total_beban
+                        from bidang_komponen_biaya kb
+                        inner join bidang b on kb.bidang_id = b.id
+                        inner join beban_biaya bb on kb.beban_biaya_id = bb.id
+                        where kb.is_void != true
+                        and b.id = '{str(bidang_id)}'
+                        and kb.is_use != true
+                        and kb.beban_pembeli = true
+                        and kb.is_add_pay = true
+                """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+
     async def get_multi_beban_by_bidang_id_for_spk(self, 
             *, 
             bidang_id: UUID | str,
@@ -306,15 +359,19 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             *, 
             invoice_id:UUID | str,
             pengembalian:bool | None = None,
+            biaya_lain:bool | None = None,
             db_session: AsyncSession | None = None
             ) -> List[BidangKomponenBiayaBebanPenjualSch] | None:
         
         db_session = db_session or db.session
 
-        void = "and kb.is_void != true"
+        filter = "and kb.is_void != true"
 
         if pengembalian:
-            void = "and kb.is_void = true"
+            filter = "and kb.is_retur = true"
+
+        if biaya_lain:
+            filter = "and kb.is_add_pay = true and kb.beban_pembeli = true"
 
         query = text(f"""
                         select
@@ -328,6 +385,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         kb.beban_pembeli,
                         kb.is_use,
                         kb.is_void,
+                        kb.is_retur,
+                        kb.is_add_pay,
                         bb.name,
                         kb.satuan_harga,
                         kb.satuan_bayar,
@@ -353,7 +412,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                         where 
                         kb.is_use = true
                         and i.id = '{str(invoice_id)}'
-                        {void}
+                        {filter}
                 """)
 
         response = await db_session.execute(query)
@@ -363,6 +422,22 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
     async def get_multi_not_in_id_removed(self, *, bidang_id:UUID, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[BidangKomponenBiaya] | None:
         db_session = db_session or db.session
         query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.bidang_id == bidang_id))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_komponen_biaya_add_pay(self, *,
+                    list_id:list[UUID]|None = [],
+                    bidang_id:UUID,
+                    db_session : AsyncSession | None = None
+                    ) -> List[BebanBiaya] | None:
+        
+        db_session = db_session or db.session
+        if query is None:
+            query = select(self.model).where(and_(BidangKomponenBiaya.beban_biaya_id.in_(list_id), 
+                                                  BidangKomponenBiaya.is_add_pay == True,
+                                                  BidangKomponenBiaya.is_void != True,
+                                                  BidangKomponenBiaya.bidang_id == bidang_id))
+
         response =  await db_session.execute(query)
         return response.scalars().all()
     

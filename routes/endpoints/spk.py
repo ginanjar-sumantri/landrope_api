@@ -33,6 +33,18 @@ async def create(
     """Create a new object"""
 
     db_session = db.session
+
+    #Filter
+
+    if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+        await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
+    
+    if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+        await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
+
+    #EndFilter
+
     bidang = await crud.bidang.get(id=sch.bidang_id)
     code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
     sch.code = f"SPK-{sch.jenis_bayar.value.replace('_', ' ')}/{code}/{bidang.id_bidang}"
@@ -79,6 +91,31 @@ async def create(
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
+
+async def filter_biaya_lain(beban_biaya_ids:list[UUID], bidang_id:UUID):
+
+    beban_biaya_add_pays = await crud.bebanbiaya.get_beban_biaya_add_pay(list_id=beban_biaya_ids)
+    add_pay_from_master = False
+    if len(beban_biaya_add_pays) > 0:
+        add_pay_from_master = True 
+    
+    komponen_biaya_add_pays = await crud.bidang_komponen_biaya.get_komponen_biaya_add_pay(list_id=beban_biaya_ids, bidang_id=bidang_id)
+    add_pay_from_komponen = False
+    if len(komponen_biaya_add_pays) > 0:
+        add_pay_from_komponen = True
+    
+    if add_pay_from_master == False and add_pay_from_komponen == False:
+        raise HTTPException(status_code=422, detail="Bidang tidak memiliki beban biaya lain diluar dari biaya tanah")
+
+async def filter_sisa_pelunasan(bidang_id:UUID):
+    bidang = await crud.bidang.get_by_id_for_spk(id=bidang_id)
+
+    if bidang.has_invoice_lunas != True:
+        raise HTTPException(status_code=422, detail="Bidang tidak memiliki pembayaran pelunasan")
+    
+    if bidang.sisa_pelunasan == 0:
+        raise HTTPException(status_code=422, detail="Bidang tidak memiliki sisa pelunasan")
+
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
@@ -229,8 +266,12 @@ async def update(id:UUID, sch:SpkUpdateSch,
 
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
-    if bidang_current.has_invoice_lunas:
-        raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
+    if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
+        if bidang_current.has_invoice_lunas:
+            raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
+    else:
+        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+        await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
@@ -257,16 +298,19 @@ async def update(id:UUID, sch:SpkUpdateSch,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
         else:
+            beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
                                                         beban_biaya_id=komponen_biaya.beban_biaya_id, 
                                                         beban_pembeli=komponen_biaya.beban_pembeli,
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_use=False,
+                                                        is_retur=False,
+                                                        is_add_pay=beban_biaya.is_add_pay,
                                                         remark=komponen_biaya.remark,
-                                                        satuan_bayar=komponen_biaya.satuan_bayar,
-                                                        satuan_harga=komponen_biaya.satuan_harga,
-                                                        amount=komponen_biaya.amount)
+                                                        satuan_bayar=beban_biaya.satuan_bayar,
+                                                        satuan_harga=beban_biaya.satuan_harga,
+                                                        amount=beban_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
@@ -464,6 +508,8 @@ async def printout(id:UUID | str,
         obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
     elif spk_header.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         obj_beban_biayas = await crud.spk.get_beban_biaya_pengembalian_by_id_for_printout(id=id)
+    elif spk_header.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+        obj_beban_biayas = await crud.spk.get_beban_biaya_lain_by_id_for_printout(id=id)
     else:
         obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
 

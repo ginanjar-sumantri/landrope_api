@@ -528,6 +528,13 @@ async def create(
         if dt.luas > dt.bidang.luas_surat:
             raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
 
+    for dt in sch.hasilpetalokasidetails:
+        if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
+            raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
+        
+        if dt.tipe_overlap == TipeOverlapEnum.BintangLanjut and dt.status_luas != StatusLuasOverlapEnum.Tidak_Menambah_Luas:
+            raise HTTPException(status_code=422, detail=f"Apabila Bintang lanjut pada overlap, maka status luas harus Tidak Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
+
     obj_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=sch.kjb_dt_id)
     if obj_current:
         raise ContentNoChangeException(detail="Alashak Sudah input hasil peta lokasi")
@@ -609,6 +616,13 @@ async def update(
 
         if dt.luas > dt.bidang.luas_surat:
             raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
+    
+    for dt in sch.hasilpetalokasidetails:
+        if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
+            raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
+        
+        if dt.tipe_overlap == TipeOverlapEnum.BintangLanjut and dt.status_luas != StatusLuasOverlapEnum.Tidak_Menambah_Luas:
+            raise HTTPException(status_code=422, detail=f"Apabila Bintang lanjut pada overlap, maka status luas harus Tidak Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
 
     obj_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
     if not obj_current:
