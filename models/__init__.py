@@ -29,7 +29,7 @@ from .import_log_model import ImportLog, ImportLogError
 from .kategori_model import Kategori, KategoriSub, KategoriProyek
 from .order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, OrderGambarUkurTembusan
 from .giro_model import Giro
-from .spk_model import Spk, SpkKelengkapanDokumen
+from .spk_model import Spk, SpkKelengkapanDokumen, SpkHistory
 from .tahap_model import Tahap, TahapDetail
 from .termin_model import Termin, TerminBayar
 from .invoice_model import Invoice, InvoiceDetail

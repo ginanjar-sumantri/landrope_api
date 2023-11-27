@@ -272,7 +272,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         columns = self.model.__table__.columns
 
-        if order_by not in columns or order_by is None:
+        if order_by is None or order_by not in columns:
             order_by = "updated_at"
 
         if query is None:

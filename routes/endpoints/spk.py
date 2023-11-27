@@ -3,12 +3,14 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
-from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch
+from schemas.spk_kelengkapan_dokumen_sch import (SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch)
+from schemas.spk_history_sch import SpkHistoryCreateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
@@ -116,7 +118,6 @@ async def filter_sisa_pelunasan(bidang_id:UUID):
     if bidang.sisa_pelunasan == 0:
         raise HTTPException(status_code=422, detail="Bidang tidak memiliki sisa pelunasan")
 
-
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
                 start_date:date|None = None,
@@ -158,6 +159,12 @@ async def get_list(
 async def get_by_id(id:UUID):
 
     """Get an object by id"""
+
+    obj_return = await get_by_id_spk(id=id)
+
+    return create_response(data=obj_return)
+
+async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     obj = await crud.spk.get_by_id(id=id)
 
@@ -250,7 +257,8 @@ async def get_by_id(id:UUID):
 
     obj_return.spk_beban_biayas = list_komponen_biaya
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
-    return create_response(data=obj_return)
+
+    return obj_return
 
 @router.put("/{id}", response_model=PutResponseBaseSch[SpkSch])
 async def update(id:UUID, sch:SpkUpdateSch,
@@ -263,6 +271,9 @@ async def update(id:UUID, sch:SpkUpdateSch,
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
+    
+    #schema for history
+    spk_history = await get_by_id_spk(id=id)
 
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
@@ -333,15 +344,23 @@ async def update(id:UUID, sch:SpkUpdateSch,
         else:
             kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
             kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
-            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
+            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)    
 
-    
+    #add history
+    await add_history(spk_id=id, meta_data=spk_history.json(), worker_id=current_worker.id, db_session=db_session)
+
     await db_session.commit()
     await db_session.refresh(obj_updated)
 
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
+
+async def add_history(spk_id:UUID, meta_data:str, worker_id:UUID, db_session:AsyncSession):
+    """Add History SPK"""
+
+    sch = SpkHistoryCreateSch(spk_id=spk_id, meta_data=meta_data)
+    await crud.spk_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[SpkSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):

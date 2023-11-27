@@ -17,6 +17,7 @@ class SpkBase(SQLModel):
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
     kjb_termin_id:Optional[UUID] = Field(nullable=True, foreign_key="kjb_termin.id")
+    remark:Optional[str] = Field(nullable=True)
 
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
@@ -58,6 +59,21 @@ class Spk(SpkFullBase, table=True):
             "lazy": "joined",
             "primaryjoin": "Spk.created_by_id==Worker.id",
         }
+    )
+
+    worker_updated: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Spk.updated_by_id==Worker.id",
+        }
+    )
+
+    spk_histories: "SpkHistory" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="spk"
     )
 
     @property
@@ -136,42 +152,10 @@ class Spk(SpkFullBase, table=True):
     @property
     def created_name(self) -> str | None:
         return getattr(getattr(self, "worker", None), "name", None)
-        
-        
-
-
-# class SpkBebanBiayaBase(SQLModel):
-#     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
-#     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
-#     beban_pembeli:bool = Field(nullable=False)
-
-# class SpkBebanBiayaFullBase(BaseUUIDModel, SpkBebanBiayaBase):
-#     pass
-
-# class SpkBebanBiaya(SpkBebanBiayaFullBase, table=True):
-#     spk:"Spk" = Relationship(
-#         back_populates="spk_beban_biayas",
-#         sa_relationship_kwargs=
-#         {
-#             "lazy" : "selectin",
-#             'foreign_keys': 'SpkBebanBiaya.spk_id'
-#         }
-#     )
-
-#     beban_biaya:"BebanBiaya" = Relationship(
-#         sa_relationship_kwargs=
-#         {
-#             "lazy" : "selectin"
-#         }
-#     )
-
-#     @property
-#     def beban_biaya_name(self) -> str :
-#         if self.beban_biaya is None:
-#             return ""
-        
-#         return self.beban_biaya.name
-
+    
+    @property
+    def last_modified_name(self) -> str | None:
+        return getattr(getattr(self, "worker_updated", None), "name", None)
 
 class SpkKelengkapanDokumenBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
@@ -209,3 +193,20 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
     @property
     def file_path(self) -> bool | None:
         return getattr(getattr(self, "bundledt", None), "file_path", None)
+    
+
+class SpkHistoryBase(SQLModel):
+    spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
+    meta_data:str = Field(nullable=False)
+
+class SpkHistoryFullBase(BaseUUIDModel, SpkHistoryBase):
+    pass
+
+class SpkHistory(SpkHistoryFullBase):
+    spk:"Spk" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="spk_histories"
+    )

@@ -61,6 +61,7 @@ from .order_gambar_ukur_tembusan_crud import order_gambar_ukur_tembusan
 
 from .spk_crud import spk
 from .spk_kelengkapan_dokumen_crud import spk_kelengkapan_dokumen
+from .spk_history_crud import spk_history
 
 from .tahap_crud import tahap
 from .tahap_detail_crud import tahap_detail
