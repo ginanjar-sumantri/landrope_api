@@ -498,9 +498,9 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
             query = text(f"""
                     select
-                    p.name as pemilik_name,
+                    Coalesce(p.name, '-') as pemilik_name,
                     bi.alashak,
-                    bi.tahap,
+                    Coalesce(bi.tahap, 0) as tahap,
                     bi.luas_surat,
                     bo.luas as luas_overlap,
                     bi.id_bidang,

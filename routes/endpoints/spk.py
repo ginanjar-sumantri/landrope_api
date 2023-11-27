@@ -623,6 +623,7 @@ async def printout(id:UUID | str,
             overlap.luas_overlapExt = "{:,.0f}".format(overlap.luas_overlap)
             overlap.luas_suratExt = "{:,.0f}".format(overlap.luas_surat)
             overlap.tipe_overlapExt = overlap.tipe_overlap.value.replace('_', ' ')
+            overlap.tahap = overlap.tahap if overlap.tahap != "0" else "-"
             overlap_details.append(overlap)
 
     rekening:str = ""
