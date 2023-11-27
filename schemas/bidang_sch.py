@@ -19,7 +19,25 @@ class BidangCreateSch(BidangBase):
     pass
 
 class BidangSch(BidangFullBase):
-    pass
+    created_by_name:str|None = Field(alias="created_by_name")
+    updated_by_name:str|None = Field(alias="updated_by_name")
+    pemilik_name:str|None = Field(alias="pemilik_name")
+    project_name:str|None = Field(alias="project_name")
+    desa_name:str|None = Field(alias="desa_name")
+    sub_project_name:str|None = Field(alias="sub_project_name")
+    planing_name:str|None = Field(alias="planing_name")
+    jenis_surat_name:str|None = Field(alias="jenis_surat_name")
+    kategori_name:str|None = Field(alias="kategori_name")
+    kategori_sub_name:str|None = Field(alias="kategori_sub_name")
+    kategori_proyek_name:str|None = Field(alias="kategori_proyek_name")
+    ptsk_name:str|None = Field(alias="ptsk_name")
+    no_sk:str|None = Field(alias="no_sk")
+    status_sk:str|None = Field(alias="status_sk")
+    penampung_name:str|None = Field(alias="penampung_name")
+    manager_name:str|None = Field(alias="manager_name")
+    sales_name:str|None = Field(alias="sales_name")
+    notaris_name:str|None = Field(alias="notaris_name")
+    
 
 class BidangRawSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')

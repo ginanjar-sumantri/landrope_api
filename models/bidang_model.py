@@ -152,13 +152,24 @@ class Bidang(BidangFullBase, table=True):
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
+            "primaryjoin": "Bidang.created_by_id==Worker.id",
+        }
+    )
+
+    worker_update: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
             "primaryjoin": "Bidang.updated_by_id==Worker.id",
         }
     )
 
     @property
-    def updated_by_name(self) -> str | None:
+    def created_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
+
+    @property
+    def updated_by_name(self) -> str | None:
+        return getattr(getattr(self, 'worker_update', None), 'name', None)
     
     @property
     def pemilik_name(self) -> str:
@@ -263,25 +274,16 @@ class Bidang(BidangFullBase, table=True):
         return getattr(getattr(self, 'penampung', None), 'name', None)
     
     @property
-    def manager_name(self) -> str:
-        if self.manager is None:
-            return ""
-        
-        return self.manager.name
+    def manager_name(self) -> str | None:
+        return getattr(getattr(self, 'manager', None), 'name', None)
     
     @property
-    def sales_name(self) -> str:
-        if self.sales is None:
-            return ""
-        
-        return self.sales.name
+    def sales_name(self) -> str | None:
+        return getattr(getattr(self, 'sales', None), 'name', None)
     
     @property
-    def notaris_name(self) -> str:
-        if self.notaris is None:
-            return ""
-        
-        return self.notaris.name
+    def notaris_name(self) -> str | None:
+        return getattr(getattr(self, 'notaris', None), 'name', None)
     
     @property
     def kjb_harga_akta(self) -> str:

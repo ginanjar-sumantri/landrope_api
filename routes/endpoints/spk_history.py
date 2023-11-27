@@ -15,12 +15,16 @@ router = APIRouter()
 @router.get("", response_model=GetResponsePaginatedSch[SpkHistorySch])
 async def get_list(
                 params: Params=Depends(),
+                keyword:str|None = None,
                 filter_query:str=None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
     query = select(SpkHistory).join(SpkHistory.spk)
+
+    if keyword:
+         query = query.filter(SpkHistory.meta_data.ilike(f"%{keyword}%"))
 
     if filter_query:
         filter_query = json.loads(filter_query)
