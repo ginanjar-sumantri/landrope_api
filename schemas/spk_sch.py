@@ -42,8 +42,8 @@ class SpkSrcSch(SQLModel):
 
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
-    created_name:str|None = Field(alias="created_name")
-    last_modified_name:str|None = Field(alias="last_modified_name")
+    created_name:str|None
+    last_modified_name:str|None
 
     spk_beban_biayas:list[BidangKomponenBiayaSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenSch] | None

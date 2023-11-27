@@ -509,7 +509,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
     
     return {'message' : 'successfully import'}
 
-async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None, count:int|None = 0) -> bool:
+async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None, count:int|None = 0):
 
     if error_m:
         log_error = ImportLogErrorSch(row=i+1,

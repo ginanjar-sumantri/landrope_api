@@ -202,7 +202,7 @@ class SpkHistoryBase(SQLModel):
 class SpkHistoryFullBase(BaseUUIDModel, SpkHistoryBase):
     pass
 
-class SpkHistory(SpkHistoryFullBase):
+class SpkHistory(SpkHistoryFullBase, table=True):
     spk:"Spk" = Relationship(
         sa_relationship_kwargs=
         {
