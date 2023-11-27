@@ -4,6 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from decimal import Decimal
+from datetime import datetime
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
@@ -55,7 +56,6 @@ class BidangBase(SQLModel):
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     
-
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
 
@@ -63,6 +63,13 @@ class BidangFullBase(BaseGeoModel, BidangRawBase):
     geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
 
 class Bidang(BidangFullBase, table=True):
+    bidang_histories: "BidangHistory" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="bidang"
+    )
     pemilik:"Pemilik" = Relationship(
         sa_relationship_kwargs = {'lazy':'select'})
     
@@ -492,4 +499,27 @@ class Bidang(BidangFullBase, table=True):
     #     return nilai_njop
 
 
+class BidangHistoryBase(SQLModel):
+    bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
+    meta_data:str = Field(nullable=False)
+    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
+    trans_at:datetime = Field(nullable=False)
 
+class BidangHistoryFullBase(BaseUUIDModel, BidangHistoryBase):
+    pass
+
+class BidangHistory(BidangHistoryFullBase, table=True):
+    bidang:"Bidang" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="bidang_histories"
+    )
+
+    trans_worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "BidangHistory.trans_worker_id==Worker.id",
+        }
+    )

@@ -37,7 +37,7 @@ class BidangSch(BidangFullBase):
     manager_name:str|None = Field(alias="manager_name")
     sales_name:str|None = Field(alias="sales_name")
     notaris_name:str|None = Field(alias="notaris_name")
-    
+
 
 class BidangRawSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
@@ -141,9 +141,6 @@ class BidangDraftChecklistDokumenSch(SQLModel):
     bundle_dt_id:UUID | None
     jenis_bayar:str | None
     dokumen_id:UUID | None
-    
-class BidangSch(BidangFullBase):
-    pass
 
 class BidangShpSch(BaseGeoModel):
     n_idbidang:str | None
