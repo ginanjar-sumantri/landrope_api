@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
@@ -367,21 +367,11 @@ async def export_to_excel(
     
     df = pd.DataFrame(data=data)
 
-    # Buat file Excel menggunakan openpyxl
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df.to_excel(writer, sheet_name="Data", index=False)
-        searchby = searchby[0:-2]
-        # Tambahkan judul ke cell pertama
-        workbook = writer.book
-        worksheet = writer.sheets["Data"]
-        worksheet.title = "Data"
-        # worksheet.cell(row=1, column=1, value=f'Search by : {searchby}').font = Font(bold=True)
+    df.to_excel(output, index=False, sheet_name=f'SPK')
 
     output.seek(0)
 
-    filename:str = f'Report Tahap {str(date.today())}'
-    # Simpan file sementara ke disk dan kirimkan sebagai FileResponse
-    with open("temp_excel.xlsx", "wb") as temp_file:
-        temp_file.write(output.read())
-    return FileResponse("temp_excel.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"})
+    return StreamingResponse(BytesIO(output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=tahap_data.xlsx"})

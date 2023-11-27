@@ -1,11 +1,13 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date
-from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin)
+from sqlalchemy.orm import selectinload
+from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin, Planing)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
@@ -24,6 +26,8 @@ from jinja2 import Environment, FileSystemLoader
 from datetime import date
 import crud
 import json
+import pandas as pd
+from io import BytesIO
 
 router = APIRouter()
 
@@ -155,6 +159,68 @@ async def get_list(
     objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
+@router.get("/export/excel")
+async def get_report(
+                start_date:date|None = None,
+                end_date:date|None = None,
+                keyword:str = None, 
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    filename:str = ''
+    query = select(Spk).select_from(Spk
+                    ).join(Bidang, Spk.bidang_id == Bidang.id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Spk.code.ilike(f'%{keyword}%'),
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if start_date and end_date:
+        query = query.filter(cast(Spk.created_at, Date).between(start_date, end_date))
+        filename = str(filename)
+
+    query = query.distinct()
+    query = query.options(selectinload(Spk.bidang
+                                ).options(selectinload(Bidang.pemilik)
+                                ).options(selectinload(Bidang.planing
+                                                ).options(selectinload(Planing.project)
+                                                ).options(selectinload(Planing.desa)
+                                                )
+                                )
+                    )
+
+    objs = await crud.spk.get_multi_no_page(query=query)
+
+    data = [{"Id Bidang" : spk.id_bidang, 
+             "Group" : spk.group,
+             "Pemilik" : spk.bidang.pemilik_name,
+             "Alashak" : spk.alashak,
+             "Project" : spk.bidang.project_name, 
+             "Desa" : spk.bidang.desa_name,
+             "Luas Surat" : spk.bidang.luas_surat, 
+             "Jenis Bayar" : spk.jenis_bayar,
+             "Tanggal Buat": spk.created_at, 
+             "Created By" : spk.created_name} for spk in objs]
+
+    
+    df = pd.DataFrame(data=data)
+
+    output = BytesIO()
+    df.to_excel(output, index=False, sheet_name=f'SPK')
+
+    output.seek(0)
+
+    return StreamingResponse(BytesIO(output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=spk_data.xlsx"})
+    
+   
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def get_by_id(id:UUID):
 
