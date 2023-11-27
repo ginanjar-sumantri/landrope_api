@@ -20,7 +20,7 @@ class SpkSch(SpkFullBase):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(alias="hasil_analisa_peta_lokasi")
     kjb_hd_code:str | None = Field(alias="kjb_hd_code")
     created_name:str|None = Field(alias="created_name")
-    last_modified_name:str|None = Field(alias="last_modified_name")
+    updated_name:str|None = Field(alias="updated_name")
     group:str|None = Field(alias="group")
 
 class SpkListSch(SpkSch):
@@ -44,7 +44,7 @@ class SpkSrcSch(SQLModel):
 class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
     created_name:str|None
-    last_modified_name:str|None
+    updated_name:str|None
 
     spk_beban_biayas:list[BidangKomponenBiayaSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenSch] | None

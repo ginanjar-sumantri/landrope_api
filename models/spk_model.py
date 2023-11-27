@@ -154,7 +154,7 @@ class Spk(SpkFullBase, table=True):
         return getattr(getattr(self, "worker", None), "name", None)
     
     @property
-    def last_modified_name(self) -> str | None:
+    def updated_name(self) -> str | None:
         return getattr(getattr(self, "worker_updated", None), "name", None)
 
 class SpkKelengkapanDokumenBase(SQLModel):

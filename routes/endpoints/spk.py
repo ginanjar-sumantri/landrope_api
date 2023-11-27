@@ -324,7 +324,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     obj_return.spk_beban_biayas = list_komponen_biaya
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
     obj_return.created_name = obj.created_name
-    obj_return.last_modified_name = obj.last_modified_name
+    obj_return.updated_name = obj.updated_name
 
     return obj_return
 

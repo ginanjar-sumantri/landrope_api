@@ -18,6 +18,9 @@ from uuid import UUID
 class BidangCreateSch(BidangBase):
     pass
 
+class BidangSch(BidangFullBase):
+    pass
+
 class BidangRawSch(BidangRawBase):
     pemilik_name:str|None = Field(alias='pemilik_name')
     project_name:str|None = Field(alias='project_name')
