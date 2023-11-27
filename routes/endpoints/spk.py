@@ -415,7 +415,12 @@ async def update(id:UUID, sch:SpkUpdateSch,
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)    
 
     #add history
-    await add_history(spk_id=id, meta_data=spk_history.json(), worker_id=current_worker.id, db_session=db_session)
+    sch_history = SpkHistoryCreateSch(spk_id=obj_current.id, 
+                                    meta_data=spk_history.json(), 
+                                    trans_at=spk_history.updated_at, 
+                                    trans_worker_id=spk_history.updated_by_id)
+    
+    await add_history(sch=sch_history, worker_id=current_worker.id, db_session=db_session)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -424,10 +429,9 @@ async def update(id:UUID, sch:SpkUpdateSch,
 
     return create_response(data=obj_updated)
 
-async def add_history(spk_id:UUID, meta_data:str, worker_id:UUID, db_session:AsyncSession):
+async def add_history(sch:SpkHistoryCreateSch, worker_id:UUID, db_session:AsyncSession):
     """Add History SPK"""
 
-    sch = SpkHistoryCreateSch(spk_id=spk_id, meta_data=meta_data)
     await crud.spk_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[SpkSch], status_code=status.HTTP_200_OK)

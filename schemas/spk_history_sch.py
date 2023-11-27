@@ -8,4 +8,4 @@ class SpkHistoryCreateSch(SpkHistoryBase):
     pass
 
 class SpkHistorySch(SpkHistoryFullBase):
-    pass
+    trans_worker_name:str|None = Field(alias="trans_worker_name")

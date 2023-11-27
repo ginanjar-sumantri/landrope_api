@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
+from datetime import datetime
 
 if TYPE_CHECKING:
     from models import Bidang, BundleDt, KjbTermin, Invoice, Worker
@@ -198,6 +199,8 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
 class SpkHistoryBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
     meta_data:str = Field(nullable=False)
+    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
+    trans_at:datetime = Field(nullable=False)
 
 class SpkHistoryFullBase(BaseUUIDModel, SpkHistoryBase):
     pass
@@ -210,3 +213,14 @@ class SpkHistory(SpkHistoryFullBase, table=True):
         },
         back_populates="spk_histories"
     )
+
+    trans_worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "SpkHistory.trans_worker_id==Worker.id",
+        }
+    )
+
+    @property
+    def trans_worker_name(self) -> str | None:
+        return getattr(getattr(self, "trans_worker", None), "name", None)
