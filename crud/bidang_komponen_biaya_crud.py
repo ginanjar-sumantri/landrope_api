@@ -432,11 +432,11 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
                     ) -> List[BebanBiaya] | None:
         
         db_session = db_session or db.session
-        if query is None:
-            query = select(self.model).where(and_(BidangKomponenBiaya.beban_biaya_id.in_(list_id), 
-                                                  BidangKomponenBiaya.is_add_pay == True,
-                                                  BidangKomponenBiaya.is_void != True,
-                                                  BidangKomponenBiaya.bidang_id == bidang_id))
+        
+        query = select(self.model).where(and_(BidangKomponenBiaya.beban_biaya_id.in_(list_id), 
+                                                BidangKomponenBiaya.is_add_pay == True,
+                                                BidangKomponenBiaya.is_void != True,
+                                                BidangKomponenBiaya.bidang_id == bidang_id))
 
         response =  await db_session.execute(query)
         return response.scalars().all()

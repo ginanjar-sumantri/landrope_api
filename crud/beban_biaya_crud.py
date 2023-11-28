@@ -20,8 +20,8 @@ class CRUDBebanBiaya(CRUDBase[BebanBiaya, BebanBiayaCreateSch, BebanBiayaUpdateS
                     ) -> List[BebanBiaya] | None:
         
         db_session = db_session or db.session
-        if query is None:
-            query = select(self.model).where(and_(BebanBiaya.id.in_(list_id), BebanBiaya.is_add_pay == True))
+        
+        query = select(self.model).where(and_(BebanBiaya.id.in_(list_id), BebanBiaya.is_add_pay == True))
 
         response =  await db_session.execute(query)
         return response.scalars().all()
