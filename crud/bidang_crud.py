@@ -45,7 +45,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.sales)
                                                         ).options(selectinload(Bidang.notaris)
                                                         ).options(selectinload(Bidang.bundlehd)
-                                                        ).options(selectinload(Bidang.hasil_peta_lokasi)
+                                                        ).options(selectinload(Bidang.hasil_peta_lokasi
+                                                                            ).options(selectinload(HasilPetaLokasi.kjb_dt))
                                                         ).options(selectinload(Bidang.sub_project)
                                                         ).options(selectinload(Bidang.invoices
                                                                 ).options(selectinload(Invoice.payment_details)
@@ -54,6 +55,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.komponen_biayas)
                                                         ).options(selectinload(Bidang.tahap_details
                                                                             ).options(selectinload(TahapDetail.tahap))
+                                                        ).options(selectinload(Bidang.bidang_histories)
                                                         )
            
            response = await db_session.execute(query)

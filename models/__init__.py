@@ -4,7 +4,7 @@ from .planing_model import Planing
 from .desa_model import Desa
 from .ptsk_model import Ptsk
 from .master_model import JenisLahan, BebanBiaya, JenisSurat
-from .bidang_model import Bidang 
+from .bidang_model import Bidang, BidangHistory
 from .bidang_overlap_model import BidangOverlap
 from .bidang_komponen_biaya_model import BidangKomponenBiaya
 from .mapping_model import (MappingBidangOverlap)

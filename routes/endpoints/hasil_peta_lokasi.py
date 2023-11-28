@@ -546,7 +546,7 @@ async def create(
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-    bidang_current = await crud.bidang.get(id=sch.bidang_id)
+    bidang_current = await crud.bidang.get_by_id(id=sch.bidang_id)
     if bidang_current.geom :
         if isinstance(bidang_current.geom, str):
             pass

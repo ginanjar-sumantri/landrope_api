@@ -13,6 +13,7 @@ from typing import Tuple
 from shapely import wkt, wkb
 import crud
 import json
+import pytz
 
 class HelperService:
 
@@ -301,6 +302,11 @@ class HelperService:
                 return str(field)
         
         return None
+
+    def no_timezone(self, date_time:datetime) -> datetime:
+        trans_at = date_time.astimezone(pytz.utc)
+        trans_at = trans_at.replace(tzinfo=None)
+        return trans_at
 
     async def bidang_update_status(self, bidang_ids:list[UUID]):
         for id in bidang_ids:

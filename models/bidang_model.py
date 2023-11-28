@@ -1,15 +1,13 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
-from models.base_model import BaseUUIDModel, BaseGeoModel
+from models.base_model import BaseUUIDModel, BaseGeoModel, BaseHistoryModel
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from decimal import Decimal
-from datetime import datetime
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
                          SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum)
-import numpy
 from geoalchemy2 import Geometry
 import json
 
@@ -501,11 +499,11 @@ class Bidang(BidangFullBase, table=True):
 
 class BidangHistoryBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
-    meta_data:str = Field(nullable=False)
-    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
-    trans_at:datetime = Field(nullable=False)
 
-class BidangHistoryFullBase(BaseUUIDModel, BidangHistoryBase):
+class BidangHistoryBaseExt(BidangHistoryBase, BaseHistoryModel):
+    pass
+
+class BidangHistoryFullBase(BaseUUIDModel, BidangHistoryBaseExt):
     pass
 
 class BidangHistory(BidangHistoryFullBase, table=True):
@@ -523,3 +521,7 @@ class BidangHistory(BidangHistoryFullBase, table=True):
             "primaryjoin": "BidangHistory.trans_worker_id==Worker.id",
         }
     )
+
+    @property
+    def trans_worker_name(self) -> str | None:
+        return getattr(getattr(self, "trans_worker", None), "name", None)

@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, String
-from models.base_model import BaseUUIDModel
+from models.base_model import BaseUUIDModel, BaseHistoryModel
 from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum
 from uuid import UUID
 from pydantic import condecimal
@@ -198,11 +198,11 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
 
 class SpkHistoryBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
-    meta_data:str = Field(nullable=False)
-    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
-    trans_at:datetime = Field(nullable=False)
 
-class SpkHistoryFullBase(BaseUUIDModel, SpkHistoryBase):
+class SpkHistoryBaseExt(SpkHistoryBase, BaseHistoryModel):
+    pass
+
+class SpkHistoryFullBase(BaseUUIDModel, SpkHistoryBaseExt):
     pass
 
 class SpkHistory(SpkHistoryFullBase, table=True):

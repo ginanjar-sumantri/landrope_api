@@ -22,6 +22,7 @@ from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
+from services.history_service import HistoryService
 from jinja2 import Environment, FileSystemLoader
 from datetime import date
 import crud
@@ -343,6 +344,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
     
     #schema for history
     spk_history = await get_by_id_spk(id=id)
+    await HistoryService().create_history_spk(spk=spk_history, worker_id=current_worker.id, db_session=db_session)
 
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
@@ -413,18 +415,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
         else:
             kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
             kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
-            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)    
-
-    #add history
-    trans_at = spk_history.updated_at.astimezone(pytz.utc)
-
-    trans_at = trans_at.replace(tzinfo=None)
-    sch_history = SpkHistoryCreateSch(spk_id=obj_current.id, 
-                                    meta_data=spk_history.json(), 
-                                    trans_at=trans_at, 
-                                    trans_worker_id=spk_history.updated_by_id)
-    
-    await add_history(sch=sch_history, worker_id=current_worker.id, db_session=db_session)
+            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -432,11 +423,6 @@ async def update(id:UUID, sch:SpkUpdateSch,
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
-
-async def add_history(sch:SpkHistoryCreateSch, worker_id:UUID, db_session:AsyncSession):
-    """Add History SPK"""
-
-    await crud.spk_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[SpkSch], status_code=status.HTTP_200_OK)
 async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):

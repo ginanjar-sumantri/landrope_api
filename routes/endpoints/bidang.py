@@ -16,6 +16,7 @@ from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCl
 from schemas.import_log_error_sch import ImportLogErrorSch
 from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch,
                                 BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
+from schemas.bidang_history_sch import MetaDataSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException,
@@ -27,11 +28,13 @@ from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
+from services.history_service import HistoryService
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
 from datetime import datetime
 from itertools import islice
+
 
 
 router = APIRouter()
@@ -131,7 +134,6 @@ async def get_list_for_order_gu(params:Params = Depends(),
 
     return create_response(data=objs)
     
-
 @router.get("/{id}", response_model=GetResponseBaseSch[BidangByIdSch])
 async def get_by_id(id:UUID):
 
@@ -167,12 +169,15 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
         obj_current = await crud.bidang.get_by_id(id=id)
         if not obj_current:
             raise IdNotFoundException(Bidang, id)
-        
+
         if obj_current.geom :
             obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
 
         if obj_current.geom_ori :
             obj_current.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
+
+        #add history
+        await HistoryService().create_history_bidang(bidang=obj_current, obj_current=obj_current, worker_id=current_worker.id, db_session=db_session)
 
         jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
         if jenis_surat is None:
@@ -195,10 +200,8 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
             sch = BidangSch(**sch.dict())
             sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
-            obj_current.geom = None
 
-
-        obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+        obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
         obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
         
         return create_response(data=obj_updated)

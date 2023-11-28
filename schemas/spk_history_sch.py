@@ -1,10 +1,10 @@
-from models.spk_model import SpkHistoryBase, SpkHistoryFullBase
+from models.spk_model import SpkHistoryBase, SpkHistoryFullBase, SpkHistoryBaseExt
 from common.partial import optional
 from sqlmodel import Field, SQLModel
 from uuid import UUID
 
 
-class SpkHistoryCreateSch(SpkHistoryBase):
+class SpkHistoryCreateSch(SpkHistoryBaseExt):
     pass
 
 class SpkHistorySch(SpkHistoryFullBase):

@@ -4,8 +4,9 @@ from sqlalchemy.orm import declared_attr
 from stringcase import snakecase
 from uuid import UUID, uuid4
 from geoalchemy2 import Geometry
-import pytz
 from pydantic import validator
+import pytz
+import shapely.wkb
 
 from dateutil import tz
 
@@ -37,6 +38,27 @@ class BaseUUIDModel(SQLModel):
             to_zone = tz.tzlocal()
             return value.astimezone(to_zone)
         return value
+    
+    def created_at_no_timezone(cls):
+        if cls.created_at is not None:
+            trans_at = cls.created_at.astimezone(pytz.utc)
+            trans_at = trans_at.replace(tzinfo=None)
+            return trans_at
+        
+        return datetime.now()
+    
+    def updated_at_no_timezone(cls):
+        if cls.created_at is not None:
+            trans_at = cls.updated_at.astimezone(pytz.utc)
+            trans_at = trans_at.replace(tzinfo=None)
+            return trans_at
+        
+        return datetime.now()
 
 class BaseGeoModel(_SQLModel):
     geom:str | None = Field(sa_column=Column(Geometry))
+
+class BaseHistoryModel(_SQLModel):
+    meta_data:str = Field(nullable=False)
+    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
+    trans_at:datetime = Field(nullable=False)
