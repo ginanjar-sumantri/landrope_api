@@ -96,3 +96,6 @@ class TerminBidangIDSch(SQLModel):
     bidangs:list[BidangIDOfTerminSch]
     manager_id:UUID | None
 
+class TerminIdSch(SQLModel):
+    termin_ids:list[UUID]
+

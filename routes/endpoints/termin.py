@@ -1,15 +1,17 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, Request, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
+from sqlalchemy.orm import selectinload
 import crud
-from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar
+from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar, PaymentDetail, Payment, Planing
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
-                                TerminBidangIDSch,
+                                TerminBidangIDSch, TerminIdSch,
                                 TerminBebanBiayaForPrintOutExt)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
@@ -39,9 +41,11 @@ from decimal import Decimal
 from services.pdf_service import PdfService
 from jinja2 import Environment, FileSystemLoader
 from datetime import date, datetime
+from io import BytesIO
 import json
 import numpy
 import roman
+import pandas as pd
 
 router = APIRouter()
 
@@ -775,6 +779,59 @@ async def printout(id:UUID | str,
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+@router.post("/export/excel")
+async def get_report(
+                termin_ids:TerminIdSch, 
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    filename:str = ''
+    query = select(Termin).where(Termin.id.in_(termin_ids.termin_ids))
+
+    query = query.distinct()
+    query = query.options(selectinload(Termin.invoices
+                                ).options(selectinload(Invoice.bidang
+                                                    ).options(selectinload(Bidang.pemilik)
+                                                    ).options(selectinload(Bidang.planing
+                                                                ).options(selectinload(Planing.project)
+                                                                ).options(selectinload(Planing.desa))
+                                                    )
+                                ).options(selectinload(Invoice.payment_details
+                                                    ).options(selectinload(PaymentDetail.payment
+                                                                ).options(selectinload(Payment.giro))
+                                                    )
+                                ).options(selectinload(Invoice.termin)
+                                )
+                )
+
+    objs = await crud.termin.get_multi_no_page(query=query)
+
+    data = [{"Nomor Memo" : invoice.termin.nomor_memo,
+             "Id Bidang" : invoice.id_bidang, 
+             "Group" : invoice.bidang.group,
+             "Pemilik" : invoice.bidang.pemilik_name,
+             "Alashak" : invoice.alashak,
+             "Project" : invoice.bidang.project_name, 
+             "Desa" : invoice.bidang.desa_name,
+             "Luas Surat" : invoice.bidang.luas_surat, 
+             "Luas Bayar" : invoice.bidang.luas_bayar, 
+             "Jenis Bayar" : invoice.jenis_bayar,
+             "Harga Transaksi" : invoice.bidang.luas_bayar, 
+             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {payment_detail.amount}' for payment_detail in invoice.payment_details])} 
+             for termin in objs for invoice in termin.invoices]
+
+    
+    df = pd.DataFrame(data=data)
+
+    output = BytesIO()
+    df.to_excel(output, index=False, sheet_name=f'SPK')
+
+    output.seek(0)
+
+    return StreamingResponse(BytesIO(output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=spk_data.xlsx"})
 
 # @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[TahapForTerminByIdSch])
 # async def get_list_spk_by_tahap_id(
