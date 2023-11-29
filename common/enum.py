@@ -135,6 +135,7 @@ class TanggunganBiayaEnum(str, Enum):
 class PaymentMethodEnum(str, Enum):
     Giro = "Giro"
     Cek = "Cek"
+    Tunai = "Tunai"
 
 class KategoriOverlapEnum(str, Enum):
     A = "A" #alashak

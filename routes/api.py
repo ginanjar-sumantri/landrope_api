@@ -4,7 +4,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               draft, draft_detail, draft_report_map, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, 
                               bundle_hd, bundle_dt, checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, 
                               marketing, pemilik, beban_biaya,
-                              kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment,
+                              kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment, utj_khusus,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
                               hasil_peta_lokasi_detail, import_log, order_gambar_ukur,
@@ -53,12 +53,14 @@ api_router.include_router(request_peta_lokasi.router, prefix="/requestpetalokasi
 api_router.include_router(hasil_peta_lokasi.router, prefix="/hasilpetalokasi", tags=["hasilpetalokasi"])
 api_router.include_router(hasil_peta_lokasi_detail.router, prefix="/hasilpetalokasidetail", tags=["hasilpetalokasidetail"])
 api_router.include_router(order_gambar_ukur.router, prefix="/ordergambarukur", tags=["ordergambarukur"])
+
 api_router.include_router(spk.router, prefix="/spk", tags=["spk"])
 api_router.include_router(spk_history.router, prefix="/spk_history", tags=["spk_history"])
 api_router.include_router(tahap.router, prefix="/tahap", tags=["tahap"])
 api_router.include_router(termin.router, prefix="/termin", tags=["termin"])
 api_router.include_router(invoice.router, prefix="/invoice", tags=["invoice"])
 api_router.include_router(payment.router, prefix="/payment", tags=["payment"])
+api_router.include_router(utj_khusus.router, prefix="/utj_khusus", tags=["utj_khusus"])
 
 api_router.include_router(notaris.router, prefix="/notaris", tags=["notaris"])
 api_router.include_router(jenis_lahan.router, prefix="/jenislahan", tags=["jenislahan"])

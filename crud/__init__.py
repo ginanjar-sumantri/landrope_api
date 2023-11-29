@@ -72,6 +72,7 @@ from .termin_bayar_crud import termin_bayar
 from .invoice_crud import invoice
 from .invoice_detail_crud import invoice_detail
 
+from .utj_khusus_crud import utj_khusus
 from .payment_crud import payment
 from .payment_detail_crud import payment_detail
 
