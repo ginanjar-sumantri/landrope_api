@@ -781,13 +781,15 @@ async def printout(id:UUID | str,
 
 @router.post("/export/excel")
 async def get_report(
-                termin_ids:TerminIdSch, 
+                termin_ids:TerminIdSch|None = None, 
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
     filename:str = ''
-    query = select(Termin).where(Termin.id.in_(termin_ids.termin_ids))
+    query = select(Termin)
+    if termin_ids:
+        query = query.where(Termin.id.in_(termin_ids.termin_ids))
 
     query = query.distinct()
     query = query.options(selectinload(Termin.invoices
@@ -825,13 +827,13 @@ async def get_report(
     df = pd.DataFrame(data=data)
 
     output = BytesIO()
-    df.to_excel(output, index=False, sheet_name=f'SPK')
+    df.to_excel(output, index=False, sheet_name=f'Memo Pembayaran')
 
     output.seek(0)
 
     return StreamingResponse(BytesIO(output.getvalue()), 
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            headers={"Content-Disposition": "attachment;filename=spk_data.xlsx"})
+                            headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
 
 # @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[TahapForTerminByIdSch])
 # async def get_list_spk_by_tahap_id(
