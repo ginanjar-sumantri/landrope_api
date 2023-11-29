@@ -79,6 +79,9 @@ async def create(
             jns_byr = JenisBayarEnum.LUNAS.value
             code_counter = CodeCounterEnum.Lunas
             await make_sure_all_beban_penjual_is_used(sch=sch)
+        elif sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+            jns_byr = "BIAYA-LAIN"
+            code_counter = CodeCounterEnum.Biaya_Lain
         else:
             jns_byr = "PENGEMBALIAN"
             code_counter = CodeCounterEnum.Pengembalian_Beban_Penjual
