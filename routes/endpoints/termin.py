@@ -3,7 +3,8 @@ from fastapi import APIRouter, status, Depends, Request, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, func
+from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
 from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar, PaymentDetail, Payment, Planing
@@ -158,15 +159,14 @@ async def get_list(
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
     if keyword and keyword != '':
-        query = query.filter_by(
+        query = query.filter(
             or_(
                 Termin.code.ilike(f'%{keyword}%'),
                 Termin.jenis_bayar.ilike(f'%{keyword}%'),
-                Tahap.nomor_tahap == keyword,
+                cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
-                Bidang.alashak.ilike(f'%{keyword}%'),
-                Spk.code.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%')
             )
         )
 
@@ -788,7 +788,7 @@ async def get_report(
 
     filename:str = ''
     query = select(Termin)
-    if termin_ids:
+    if termin_ids.termin_ids:
         query = query.where(Termin.id.in_(termin_ids.termin_ids))
 
     query = query.distinct()

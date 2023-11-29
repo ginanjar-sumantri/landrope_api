@@ -97,5 +97,5 @@ class TerminBidangIDSch(SQLModel):
     manager_id:UUID | None
 
 class TerminIdSch(SQLModel):
-    termin_ids:list[UUID]
+    termin_ids:list[UUID]|None
 
