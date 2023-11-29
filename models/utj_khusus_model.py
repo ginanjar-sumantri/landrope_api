@@ -7,7 +7,7 @@ from decimal import Decimal
 from datetime import date
 
 if TYPE_CHECKING:
-    from models import KjbHd, Worker, Payment
+    from models import KjbHd, Worker, Payment, Termin
 
 class UtjKhususBase(SQLModel):
     amount:Decimal = Field(nullable=True)
@@ -18,6 +18,7 @@ class UtjKhususBase(SQLModel):
 
     kjb_hd_id:Optional[UUID] = Field(foreign_key="kjb_hd.id", nullable=True)
     payment_id:UUID|None = Field(foreign_key="payment.id", nullable=False)
+    termin_id:UUID|None = Field(foreign_key="termin.id", nullable=False)
 
 class UtjKhususFullBase(BaseUUIDModel, UtjKhususBase):
     pass
@@ -30,19 +31,26 @@ class UtjKhusus(UtjKhususFullBase, table=True):
         }
     ) 
 
-    worker: "Worker" = Relationship(  
-        sa_relationship_kwargs={
-            "lazy": "joined",
-            "primaryjoin": "UtjKhusus.updated_by_id==Worker.id",
-        }
-    ) 
-
     payment:"Payment" = Relationship(
         sa_relationship_kwargs=
         {
             "lazy" : "select"
         }
     )
+
+    termin:"Termin" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "UtjKhusus.updated_by_id==Worker.id",
+        }
+    ) 
 
     @property
     def updated_by_name(self) -> str | None:
@@ -51,3 +59,11 @@ class UtjKhusus(UtjKhususFullBase, table=True):
     @property
     def kjb_hd_code(self) -> str | None:
         return getattr(getattr(self, 'kjb_hd', None), 'code', None)
+    
+    @property
+    def utj_amount(self) -> Decimal | None:
+        return getattr(getattr(self, 'kjb_hd', None), 'utj_amount', None)
+    
+    @property
+    def termin_code(self) -> str | None:
+        return getattr(getattr(self, 'termin', None), 'code', None)

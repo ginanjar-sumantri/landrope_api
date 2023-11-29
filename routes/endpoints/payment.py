@@ -216,6 +216,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
+    await db_session.refresh(obj_updated)
 
     background_task.add_task(bidang_update_status, bidang_ids)
     

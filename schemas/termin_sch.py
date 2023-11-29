@@ -1,5 +1,5 @@
 from models.termin_model import Termin, TerminBase, TerminFullBase
-from schemas.invoice_sch import InvoiceExtSch, InvoiceSch, InvoiceInTerminSch
+from schemas.invoice_sch import InvoiceExtSch, InvoiceSch, InvoiceInTerminSch, InvoiceInTerminUtjKhususSch
 from schemas.termin_bayar_sch import TerminBayarExtSch, TerminBayarSch
 from common.partial import optional
 from common.enum import JenisBayarEnum, SatuanBayarEnum
@@ -10,8 +10,8 @@ from decimal import Decimal
 from datetime import datetime, date
 
 class TerminCreateSch(TerminBase):
-    termin_bayars:list[TerminBayarExtSch]
-    invoices:list[InvoiceExtSch]
+    termin_bayars:list[TerminBayarExtSch]|None
+    invoices:list[InvoiceExtSch]|None
 
 class TerminSch(TerminFullBase):
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
@@ -36,10 +36,13 @@ class TerminByIdSch(TerminFullBase):
     termin_bayars:list[TerminBayarSch]
     invoices:list[InvoiceInTerminSch]
 
+class TerminByIdUtjKhususSch(TerminFullBase):
+    invoices:list[InvoiceInTerminUtjKhususSch]
+
 @optional
 class TerminUpdateSch(TerminBase):
-    termin_bayars:list[TerminBayarExtSch]
-    invoices:list[InvoiceExtSch]
+    termin_bayars:list[TerminBayarExtSch]|None
+    invoices:list[InvoiceExtSch]|None
 
 class TerminByIdForPrintOut(SQLModel):
     id:Optional[UUID]

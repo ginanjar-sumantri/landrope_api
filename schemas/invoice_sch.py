@@ -19,7 +19,7 @@ class InvoiceExtSch(SQLModel):
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
     use_utj:Optional[bool]
-    details:list[InvoiceDetailExtSch]
+    details:list[InvoiceDetailExtSch]|None
 
 class InvoiceSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
@@ -48,6 +48,9 @@ class InvoiceInTerminSch(InvoiceSch):
     harga_transaksi:Optional[Decimal] = Field(alias="harga_transaksi")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
+
+class InvoiceInTerminUtjKhususSch(InvoiceFullBase):
+    pass
 
 class InvoiceByIdSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
