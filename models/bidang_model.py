@@ -425,7 +425,7 @@ class Bidang(BidangFullBase, table=True):
             total_payment = Decimal(sum(payments))
         
         if len(self.komponen_biayas) > 0:
-            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True]
+            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True and x.is_retur != True]
             total_beban_penjual = Decimal(sum(beban_biayas))
 
         return Decimal(total_payment + total_beban_penjual)
