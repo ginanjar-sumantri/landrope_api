@@ -421,7 +421,7 @@ class Bidang(BidangFullBase, table=True):
         total_beban_penjual:Decimal = 0
 
         if len(self.invoices) > 0:
-            payments = [payment.amount for invoice in self.invoices if invoice.is_void != True for payment in invoice.payment_details if payment.is_void != True]
+            payments = [payment.amount for invoice in self.invoices if invoice.is_void != True and invoice.jenis_bayar != JenisBayarEnum.BIAYA_LAIN for payment in invoice.payment_details if payment.is_void != True]
             total_payment = Decimal(sum(payments))
         
         if len(self.komponen_biayas) > 0:
