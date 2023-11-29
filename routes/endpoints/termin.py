@@ -153,6 +153,7 @@ async def get_list(
         jenis_bayars.append(JenisBayarEnum.LUNAS.value)
         jenis_bayars.append(JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value)
         jenis_bayars.append(JenisBayarEnum.BEGINNING_BALANCE.value)
+        jenis_bayars.append(JenisBayarEnum.BIAYA_LAIN.value)
 
     query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
