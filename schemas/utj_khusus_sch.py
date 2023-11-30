@@ -11,12 +11,16 @@ class UtjKhususCreateSch(UtjKhususBase):
 
 class UtjKhususSch(UtjKhususFullBase):
     kjb_hd_code:str|None = Field(alias="kjb_hd_code")
+    kjb_hd_group:str|None = Field(alias="kjb_hd_group")
     utj_amount:str|None = Field(alias="utj_amount")
     termin_code:str|None = Field(alias="termin_code")
+    jumlah_alashak:int|None = Field(alias="jumlah_alashak")
+    total:Decimal|None = Field(alias="total")
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class UtjKhususByIdSch(UtjKhususFullBase):
     kjb_hd_code:str|None = Field(alias="kjb_hd_code")
+    kjb_hd_group:str|None = Field(alias="kjb_hd_group")
     utj_amount:str|None = Field(alias="utj_amount")
     termin_code:str|None = Field(alias="termin_code")
     termin:TerminByIdUtjKhususSch | None

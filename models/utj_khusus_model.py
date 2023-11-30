@@ -61,9 +61,29 @@ class UtjKhusus(UtjKhususFullBase, table=True):
         return getattr(getattr(self, 'kjb_hd', None), 'code', None)
     
     @property
+    def kjb_hd_group(self) -> str | None:
+        return getattr(getattr(self, 'kjb_hd', None), 'nama_group', None)
+    
+    @property
     def utj_amount(self) -> Decimal | None:
         return getattr(getattr(self, 'kjb_hd', None), 'utj_amount', None)
     
     @property
     def termin_code(self) -> str | None:
         return getattr(getattr(self, 'termin', None), 'code', None)
+    
+    @property
+    def jumlah_alashak(self) -> int | None:
+        if self.termin:
+            invoices = [invoice for invoice in self.termin.invoices if invoice.is_void != True]
+            return int(len(invoices))
+        
+        return 0
+    
+    @property
+    def total(self) -> Decimal | None:
+        if self.termin:
+            invoices = [invoice.amount for invoice in self.termin.invoices if invoice.is_void != True]
+            return Decimal(sum(invoices))
+        
+        return 0

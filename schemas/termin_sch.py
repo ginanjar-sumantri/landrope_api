@@ -16,6 +16,7 @@ class TerminCreateSch(TerminBase):
 class TerminSch(TerminFullBase):
     nomor_tahap:Optional[int] = Field(alias="nomor_tahap")
     kjb_hd_code:Optional[str] = Field(alias="kjb_hd_code")
+    kjb_hd_group:Optional[str] = Field(alias="kjb_hd_group")
     total_amount:Optional[Decimal] = Field(alias="total_amount")
     updated_by_name:str|None = Field(alias="updated_by_name")
     notaris_name:str|None = Field(alias="notaris_name")
