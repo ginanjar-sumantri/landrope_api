@@ -83,3 +83,11 @@ class KjbDtForCloud(SQLModel):
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
     bundle_hd_id:Optional[UUID]
+
+class KjbDtForUtjKhususSch(SQLModel):
+    id:UUID
+    id_bidang:Optional[str]
+    alashak:Optional[str]
+    luas_bayar:Optional[Decimal]
+    luas_surat:Optional[Decimal]
+    luas_surat_by_ttn:Optional[Decimal]

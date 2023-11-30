@@ -73,6 +73,7 @@ from .invoice_crud import invoice
 from .invoice_detail_crud import invoice_detail
 
 from .utj_khusus_crud import utj_khusus
+from .utj_khusus_detail_crud import utj_khusus_detail
 from .payment_crud import payment
 from .payment_detail_crud import payment_detail
 

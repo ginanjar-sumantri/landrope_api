@@ -1,5 +1,5 @@
 from models.kjb_model import KjbHdBase, KjbHdFullBase
-from schemas.kjb_dt_sch import KjbDtSch
+from schemas.kjb_dt_sch import KjbDtSch, KjbDtForUtjKhususSch
 from schemas.kjb_termin_sch import KjbTerminSch
 from schemas.kjb_rekening_sch import KjbRekeningCreateExtSch, KjbRekeningSch
 from schemas.kjb_harga_sch import KjbHargaCreateExtSch, KjbHargaExtSch
@@ -58,6 +58,13 @@ class KjbHdForTerminByIdSch(SQLModel):
     nama_group:Optional[str]
     utj_amount:Optional[Decimal]
     bidangs:list[BidangForUtjSch] | None
+
+class KjbHdForUtjKhususByIdSch(SQLModel):
+    id:UUID
+    code:Optional[str]
+    nama_group:Optional[str]
+    utj_amount:Optional[Decimal]
+    kjb_dts:list[KjbDtForUtjKhususSch] | None
 
 class KjbHdForCloud(SQLModel):
     id:UUID

@@ -173,7 +173,10 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                 ) -> List[Invoice] | None:
         
         db_session = db_session or db.session
-        query = select(self.model).where(and_(~self.model.id.in_(list_ids), self.model.termin_id == termin_id)).options(selectinload(Invoice.payment_details))
+        query = select(self.model).where(and_(~self.model.id.in_(list_ids), 
+                                              self.model.termin_id == termin_id)
+                                              ).options(selectinload(Invoice.payment_details))
+        
         response =  await db_session.execute(query)
         return response.scalars().all()
     

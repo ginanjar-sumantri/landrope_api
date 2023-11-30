@@ -7,7 +7,7 @@ from decimal import Decimal
 from datetime import date
 
 if TYPE_CHECKING:
-    from models import KjbHd, Worker, Payment, Termin
+    from models import KjbHd, Worker, Payment, Termin, KjbDt, Invoice
 
 class UtjKhususBase(SQLModel):
     amount:Decimal = Field(nullable=True)
@@ -24,6 +24,14 @@ class UtjKhususFullBase(BaseUUIDModel, UtjKhususBase):
     pass
 
 class UtjKhusus(UtjKhususFullBase, table=True):
+    details:list["UtjKhususDetail"] = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="utj_khusus"
+    )
+
     kjb_hd:"KjbHd" = Relationship(
         sa_relationship_kwargs=
         {
@@ -74,16 +82,59 @@ class UtjKhusus(UtjKhususFullBase, table=True):
     
     @property
     def jumlah_alashak(self) -> int | None:
-        if self.termin:
-            invoices = [invoice for invoice in self.termin.invoices if invoice.is_void != True]
-            return int(len(invoices))
-        
-        return 0
+        return int(len(self.details))
     
     @property
     def total(self) -> Decimal | None:
-        if self.termin:
-            invoices = [invoice.amount for invoice in self.termin.invoices if invoice.is_void != True]
-            return Decimal(sum(invoices))
-        
-        return 0
+        dt = [detail.amount for detail in self.details]
+        return Decimal(sum(dt))
+    
+class UtjKhususDetailBase(SQLModel):
+    utj_khusus_id:UUID|None = Field(foreign_key="utj_khusus.id", nullable=False)
+    kjb_dt_id:UUID|None = Field(foreign_key="kjb_dt.id", nullable=False)
+    invoice_id:UUID|None = Field(foreign_key="invoice.id", nullable=True)
+    amount:Decimal|None = Field(nullable=True)
+
+class UtjKhususDetailFullBase(BaseUUIDModel, UtjKhususDetailBase):
+    pass
+
+class UtjKhususDetail(UtjKhususDetailFullBase, table=True):
+    utj_khusus:"UtjKhusus" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        },
+        back_populates="details"
+    )
+
+    kjb_dt:"KjbDt" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+
+    invoice:"Invoice" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+
+    @property
+    def alashak(self) -> str | None:
+        return getattr(getattr(self, 'kjb_dt', None), 'alashak', None)
+    
+    @property
+    def luas_surat(self) -> Decimal | None:
+        luas:Decimal = 0
+        if self.kjb_dt:
+            luas = self.kjb_dt.luas_surat if self.kjb_dt.luas_surat_by_ttn is None else self.kjb_dt.luas_surat_by_ttn
+
+        return luas
+
+    @property
+    def luas_bayar(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, 'kjb_dt', None), 'hasil_peta_lokasi', None), 'bidang', None), 'luas_bayar', None)
+
+
