@@ -218,6 +218,8 @@ class BidangForTreeReportSch(SQLModel):
 class BidangForUtjSch(SQLModel):
     bidang_id:UUID
     id_bidang:Optional[str]
+    alashak:Optional[str]
+    luas_bayar:Optional[Decimal]
     luas_surat:Optional[Decimal]
     project_name:Optional[str]
     desa_name:Optional[str]

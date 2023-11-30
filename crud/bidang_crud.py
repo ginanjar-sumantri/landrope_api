@@ -212,6 +212,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         query = select(Bidang.id.label("bidang_id"),
                        Bidang.id_bidang,
+                       Bidang.alashak,
+                       Bidang.luas_bayar,
                        Bidang.luas_surat,
                        Project.name.label("project_name"),
                        Desa.name.label("desa_name")
