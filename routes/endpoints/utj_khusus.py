@@ -240,7 +240,7 @@ async def update(id:UUID, sch:UtjKhususUpdateSch,
                 payment_detail_sch = PaymentDetailCreateSch(payment_id=payment.id, invoice_id=invoice.id, amount=invoice.amount, is_void=False)
                 await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-            utj_khusus_detail_sch = UtjKhususDetailCreateSch(**dt.dict(), utj_khusus_id=obj_updated.created_by_id)
+            utj_khusus_detail_sch = UtjKhususDetailCreateSch(**dt.dict(), utj_khusus_id=obj_updated.id)
             await crud.utj_khusus_detail.create(obj_in=utj_khusus_detail_sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     #endregion
