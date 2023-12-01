@@ -177,7 +177,7 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
             obj_current.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
 
         #add history
-        await HistoryService().create_history_bidang(bidang=obj_current, obj_current=obj_current, worker_id=current_worker.id, db_session=db_session)
+        await HistoryService().create_history_bidang(obj_current=obj_current, obj_current=obj_current, worker_id=current_worker.id, db_session=db_session)
 
         jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
         if jenis_surat is None:
