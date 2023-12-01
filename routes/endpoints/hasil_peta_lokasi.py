@@ -154,6 +154,9 @@ async def create(
     #         raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
 
     for dt in sch.hasilpetalokasidetails:
+        if dt.bidang_id is None:
+            continue
+
         bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
         if dt.luas_overlap > sch.luas_ukur:
             raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
@@ -528,7 +531,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
             payment_detail_sch = PaymentDetailCreateSch(payment_id=utj_khusus_detail.payment_id, invoice_id=invoice.id, amount=invoice.amount, is_void=False)
             await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=utj_khusus_detail.create_by_id, db_session=db_session, with_commit=False)
 
-            utj_khusus_detail_updated = UtjKhususDetailUpdateSch(**utj_khusus_detail.dict(exclude={"invoice_id"}), invoice_id=invoice.id)
+            utj_khusus_detail_updated = UtjKhususDetailUpdateSch(**utj_khusus_detail.dict(exclude={"invoice_id", "created_at", "updated_at"}), invoice_id=invoice.id)
             await crud.utj_khusus_detail.update(obj_current=utj_khusus_detail, obj_new=utj_khusus_detail_updated, db_session=db_session, with_commit=False)
         else:
             if utj_khusus_detail.invoice.bidang_id != payload.bidang_id:

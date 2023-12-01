@@ -26,6 +26,7 @@ async def create(
     kjb_harga = await crud.kjb_harga.get(id=sch.kjb_harga_id)
     kjb_hd = await crud.kjb_hd.get(id=kjb_harga.kjb_hd_id)
     
+    kjb_termin_lunas = None
     total:Decimal = 0
     if kjb_hd.satuan_bayar == SatuanBayarEnum.Percentage:
         kjb_termins = await crud.kjb_termin.get_multi_by_kjb_harga_id(kjb_harga_id=sch.kjb_harga_id)
@@ -37,7 +38,7 @@ async def create(
         raise HTTPException(status_code=422, detail="Failed create! Detail : Nilai Percentage lebih dari 100%")
     
     if kjb_termin_lunas:
-        kjb_termin_lunas_updated = KjbTerminUpdateSch(**kjb_termin_lunas.dict(exclude={"nilai"}), nilai=sch.nilai_lunas)
+        kjb_termin_lunas_updated = KjbTerminUpdateSch(**kjb_termin_lunas.dict(exclude={"nilai", "created_at", "updated_at"}), nilai=sch.nilai_lunas)
         await crud.kjb_termin.update(obj_current=kjb_termin_lunas, obj_new=kjb_termin_lunas_updated, updated_by_id=current_worker.id,
                                     db_session=db_session, with_commit=False)
 
