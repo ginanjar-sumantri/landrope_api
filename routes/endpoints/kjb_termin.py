@@ -1,12 +1,13 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
+from fastapi_async_sqlalchemy import db
 from models.kjb_model import KjbTermin
 from models.worker_model import Worker
 from schemas.kjb_termin_sch import (KjbTerminSch, KjbTerminCreateSch, KjbTerminUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.enum import SatuanBayarEnum
+from common.enum import SatuanBayarEnum, JenisBayarEnum
 from decimal import Decimal
 import crud
 
@@ -20,21 +21,28 @@ async def create(
     
     """Create a new object"""
 
+    db_session = db.session
+
     kjb_harga = await crud.kjb_harga.get(id=sch.kjb_harga_id)
     kjb_hd = await crud.kjb_hd.get(id=kjb_harga.kjb_hd_id)
     
     total:Decimal = 0
     if kjb_hd.satuan_bayar == SatuanBayarEnum.Percentage:
         kjb_termins = await crud.kjb_termin.get_multi_by_kjb_harga_id(kjb_harga_id=sch.kjb_harga_id)
-        total_current_percentage = sum([kjb_termin.nilai for kjb_termin in kjb_termins])
-        total = sch.nilai + total_current_percentage
+        kjb_termin_lunas = next((kjb_termin for kjb_termin in kjb_termins if kjb_termin.jenis_bayar == JenisBayarEnum.LUNAS), None)
+        total_current_percentage = sum([kjb_termin.nilai for kjb_termin in kjb_termins if kjb_termin.jenis_bayar != JenisBayarEnum.LUNAS])
+        total = sch.nilai + total_current_percentage + sch.nilai_lunas
     
     if total > 100:
         raise HTTPException(status_code=422, detail="Failed create! Detail : Nilai Percentage lebih dari 100%")
+    
+    if kjb_termin_lunas:
+        kjb_termin_lunas_updated = KjbTerminUpdateSch(**kjb_termin_lunas.dict(exclude={"nilai"}), nilai=sch.nilai_lunas)
+        await crud.kjb_termin.update(obj_current=kjb_termin_lunas, obj_new=kjb_termin_lunas_updated, updated_by_id=current_worker.id,
+                                    db_session=db_session, with_commit=False)
 
 
-    new_obj = await crud.kjb_termin.create(obj_in=sch, created_by_id=current_worker.id)
-
+    new_obj = await crud.kjb_termin.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     new_obj = await crud.kjb_termin.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)

@@ -8,7 +8,7 @@ from common.enum import JenisBayarEnum
 from decimal import Decimal
 
 class KjbTerminCreateSch(KjbTerminBase):
-    pass
+    nilai_lunas:Decimal|None = Field(default=0)
 
 class KjbTerminCreateExtSch(BaseModel):
     jenis_bayar:JenisBayarEnum
