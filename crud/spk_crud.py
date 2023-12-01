@@ -155,8 +155,9 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
                             ).join(TahapDetail, TahapDetail.bidang_id == Bidang.id
                             ).join(Tahap, Tahap.id == TahapDetail.tahap_id
-                            ).outerjoin(Invoice, Invoice.spk_id == Spk.id)
+                            ).outerjoin(Invoice, and_(Invoice.spk_id == Spk.id, Invoice.is_void == False))
         
+
         if tahap_id == None and termin_id == None:
              query = query.where(and_(
                                         Spk.jenis_bayar != JenisBayarEnum.PAJAK,
@@ -166,7 +167,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                         )
                                     )
                                 )
-
+        
         if tahap_id and jenis_bayar == None and termin_id == None:
              query = query.where(and_(
                                         Spk.jenis_bayar != JenisBayarEnum.PAJAK,
@@ -176,6 +177,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                              Invoice.is_void == True
                                         )
                                     ))
+             
 
         if tahap_id and jenis_bayar and termin_id == None:
              query = query.where(and_(
@@ -186,6 +188,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                              Invoice.is_void == True
                                         )
                                     ))
+             
 
         if termin_id:
              query = query.outerjoin(Termin, Termin.id == Invoice.termin_id)
@@ -194,7 +197,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                         Spk.jenis_bayar == jenis_bayar,
                                         Tahap.id == tahap_id,
                                         Termin.id == termin_id,
-                                        Invoice != True
+                                        Invoice.is_void != True
                                       ))
         
         if keyword:
