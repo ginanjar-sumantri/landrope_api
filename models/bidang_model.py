@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from models.base_model import BaseUUIDModel, BaseGeoModel, BaseHistoryModel
+from sqlalchemy import Column, String
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
@@ -16,8 +17,8 @@ if TYPE_CHECKING:
                         Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice, TahapDetail)
     
 class BidangBase(SQLModel):
-    id_bidang:Optional[str] = Field(nullable=False, max_length=150)
-    id_bidang_lama:Optional[str] = Field(nullable=True)
+    id_bidang:Optional[str] = Field(nullable=False, max_length=150, sa_column=(Column("id_bidang", String, unique=True)))
+    id_bidang_lama:Optional[str] = Field(nullable=True, sa_column=(Column("id_bidang_lama", String, unique=True)))
     no_peta:Optional[str] = Field(nullable=True)
     pemilik_id:Optional[UUID] = Field(nullable=True, foreign_key="pemilik.id")
     jenis_bidang:JenisBidangEnum | None = Field(nullable=True)
