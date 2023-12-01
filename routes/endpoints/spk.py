@@ -528,6 +528,7 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
                                     kelengkapan_dokumens=kelengkapan_dokumen,
                                     ktp=ktp_value,
                                     npwp=npwp_value,
+                                    sisa_pelunasan=obj.sisa_pelunasan,
                                     termins=termins,
                                     percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     

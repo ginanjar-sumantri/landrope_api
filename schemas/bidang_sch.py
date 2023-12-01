@@ -120,6 +120,7 @@ class BidangForSPKByIdSch(SQLModel):
     ktp:str | None
     npwp:str | None
     percentage_lunas:Optional[int]
+    sisa_pelunasan:Decimal | None
     jenis_alashak:JenisAlashakEnum | None
     termins:list[KjbTerminInSpkSch] | None
 
