@@ -1,11 +1,13 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from models.kjb_model import KjbTermin
 from models.worker_model import Worker
 from schemas.kjb_termin_sch import (KjbTerminSch, KjbTerminCreateSch, KjbTerminUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
+from common.enum import SatuanBayarEnum
+from decimal import Decimal
 import crud
 
 
@@ -17,8 +19,22 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-        
+
+    kjb_harga = await crud.kjb_harga.get(id=sch.kjb_harga_id)
+    kjb_hd = await crud.kjb_hd.get(id=kjb_harga.kjb_hd_id)
+    
+    total:Decimal = 0
+    if kjb_hd.satuan_bayar == SatuanBayarEnum.Percentage:
+        kjb_termins = await crud.kjb_termin.get_multi_by_kjb_harga_id(kjb_harga_id=sch.kjb_harga_id)
+        total_current_percentage = sum([kjb_termin.nilai for kjb_termin in kjb_termins])
+        total = sch.nilai + total_current_percentage
+    
+    if total > 100:
+        raise HTTPException(status_code=422, detail="Failed create! Detail : Nilai Percentage lebih dari 100%")
+
+
     new_obj = await crud.kjb_termin.create(obj_in=sch, created_by_id=current_worker.id)
+
     new_obj = await crud.kjb_termin.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
