@@ -155,7 +155,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = select(Spk).outerjoin(Bidang, Bidang.id == Spk.bidang_id
                             ).join(TahapDetail, TahapDetail.bidang_id == Bidang.id
                             ).join(Tahap, Tahap.id == TahapDetail.tahap_id
-                            ).outerjoin(Invoice, and_(Invoice.spk_id == Spk.id, Invoice.is_void == False))
+                            ).outerjoin(Invoice, Invoice.spk_id == Spk.id)
         
 
         if tahap_id == None and termin_id == None:
