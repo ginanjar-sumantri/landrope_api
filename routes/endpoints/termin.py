@@ -485,6 +485,7 @@ async def get_list_spk_by_tahap_id(
 
     if tahap_id == None and termin_id == None:
         objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
+        objs = [spk for spk in objs if len([invoice for invoice in spk.invoices if invoice.is_void == False]) == 0]
 
     if tahap_id and termin_id == None:
         objs_with_tahap = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword, 

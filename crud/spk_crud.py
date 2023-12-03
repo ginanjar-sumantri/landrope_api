@@ -208,7 +208,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                   Spk.code.ilike(f"%{keyword}%")
              ))
 
-        query = query.options(selectinload(Spk.bidang))
+        query = query.options(selectinload(Spk.bidang)
+                    ).options(selectinload(Spk.invoices))
         query = query.distinct()
 
         response =  await db_session.execute(query)
