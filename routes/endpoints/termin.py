@@ -82,6 +82,9 @@ async def create(
         elif sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
             jns_byr = "BIAYA-LAIN"
             code_counter = CodeCounterEnum.Biaya_Lain
+        elif sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+            jns_byr = "SISA-PELUNASAN"
+            code_counter = CodeCounterEnum.Sisa_Pelunasan
         else:
             jns_byr = "PENGEMBALIAN"
             code_counter = CodeCounterEnum.Pengembalian_Beban_Penjual
@@ -146,15 +149,15 @@ async def get_list(
 
     jenis_bayars = []
     if is_utj:
-        jenis_bayars.append(JenisBayarEnum.UTJ.value)
-        jenis_bayars.append(JenisBayarEnum.UTJ_KHUSUS.value)
+        jenis_bayars = [JenisBayarEnum.UTJ.value, 
+                        JenisBayarEnum.UTJ_KHUSUS.value]
     else:
-        jenis_bayars.append(JenisBayarEnum.DP.value)
-        jenis_bayars.append(JenisBayarEnum.LUNAS.value)
-        jenis_bayars.append(JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value)
-        jenis_bayars.append(JenisBayarEnum.BEGINNING_BALANCE.value)
-        jenis_bayars.append(JenisBayarEnum.BIAYA_LAIN.value)
-        jenis_bayars.append(JenisBayarEnum.SISA_PELUNASAN.value)
+        jenis_bayars = [JenisBayarEnum.DP.value, 
+                        JenisBayarEnum.LUNAS.value, 
+                        JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value, 
+                        JenisBayarEnum.BEGINNING_BALANCE.value, 
+                        JenisBayarEnum.BIAYA_LAIN.value, 
+                        JenisBayarEnum.SISA_PELUNASAN.value]
 
     query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
