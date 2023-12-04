@@ -395,6 +395,7 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
     if invoice.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         pengembalian = True
     
+    biaya_lain = False
     if invoice.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
         biaya_lain = True
     
