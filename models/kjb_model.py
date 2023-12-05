@@ -231,13 +231,22 @@ class KjbDt(KjbDtFullBase, table=True):
             return self.luas_surat_by_ttn
     
     @property
-    def file_path_alashak(self) -> str | None:
+    def bundle_dt_alashak_id(self) -> UUID | None:
         if self.bundlehd:
             alashak = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "ALAS HAK"), None)
             if alashak:
-                return alashak.file_path
+                return alashak.id
         
         return None
+    
+    @property
+    def bundle_dt_alashak_file_exists(self) -> bool | None:
+        if self.bundlehd:
+            alashak = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "ALAS HAK"), None)
+            if alashak:
+                return alashak.file_exists
+        
+        return False
 
 ##########################################################################
 
