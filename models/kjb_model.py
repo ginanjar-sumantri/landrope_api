@@ -229,6 +229,15 @@ class KjbDt(KjbDtFullBase, table=True):
             return self.hasil_peta_lokasi.bidang.luas_surat
         else:
             return self.luas_surat_by_ttn
+    
+    @property
+    def file_path_alashak(self) -> str | None:
+        if self.bundlehd:
+            alashak = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "ALAS HAK"), None)
+            if alashak:
+                return alashak.file_path
+        
+        return None
 
 ##########################################################################
 

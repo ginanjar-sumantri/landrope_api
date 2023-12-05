@@ -37,6 +37,7 @@ class KjbDtSch(KjbDtFullBase):
 
 class KjbDtListRequestPetlokSch(KjbDtSch):
     has_input_petlok:bool | None = Field(alias="has_input_petlok")
+    file_path_alashak:str | None
 
 class KjbDtListSch(SQLModel):
     kjb_code:str|None
