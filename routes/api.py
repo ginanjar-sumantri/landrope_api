@@ -7,7 +7,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment, utj_khusus,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
-                              hasil_peta_lokasi_detail, import_log, order_gambar_ukur,
+                              hasil_peta_lokasi_detail, hasil_peta_lokasi_history, import_log, order_gambar_ukur,
                               report_map)
 
 api_router = APIRouter()
@@ -52,6 +52,7 @@ api_router.include_router(tanda_terima_notaris_dt.router, prefix="/tandaterimano
 api_router.include_router(request_peta_lokasi.router, prefix="/requestpetalokasi", tags=["requestpetalokasi"])
 api_router.include_router(hasil_peta_lokasi.router, prefix="/hasilpetalokasi", tags=["hasilpetalokasi"])
 api_router.include_router(hasil_peta_lokasi_detail.router, prefix="/hasilpetalokasidetail", tags=["hasilpetalokasidetail"])
+api_router.include_router(hasil_peta_lokasi_history.router, prefix="/hasilpetalokasihistory", tags=["hasilpetalokasihistory"])
 api_router.include_router(order_gambar_ukur.router, prefix="/ordergambarukur", tags=["ordergambarukur"])
 
 api_router.include_router(spk.router, prefix="/spk", tags=["spk"])
