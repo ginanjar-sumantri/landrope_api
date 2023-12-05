@@ -8,6 +8,7 @@ from schemas.jenis_surat_sch import (JenisSuratSch, JenisSuratCreateSch, JenisSu
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
+from common.ordered import OrderEnumSch
 
 router = APIRouter()
 
@@ -30,11 +31,12 @@ async def get_list(
                 order_by:str = None, 
                 keyword:str = None, 
                 filter_query:str=None,
+                order: OrderEnumSch | None = OrderEnumSch.descendent,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.jenissurat.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    objs = await crud.jenissurat.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query, order=order)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[JenisSuratSch])
