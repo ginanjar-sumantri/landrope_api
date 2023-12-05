@@ -146,13 +146,7 @@ async def create(
     db_session = db.session
 
     draft = await crud.draft.get_by_id(id=sch.draft_id)
-    # for dt in draft.details:
-    #     if dt.luas > sch.luas_ukur:
-    #         raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
-
-    #     if dt.luas > dt.bidang.luas_surat:
-    #         raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
-
+    
     for dt in sch.hasilpetalokasidetails:
         if dt.bidang_id is None:
             continue
@@ -198,17 +192,17 @@ async def create(
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
     details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
-                                               bidang_id=str(x.bidang_id),
-                                               luas_overlap=str(x.luas_overlap),
+                                               bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
+                                               luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
                                                keterangan=x.keterangan,
-                                               draft_detail_id=str(x.draft_detail_id),
+                                               draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
                                                status_luas=x.status_luas) 
                for x in sch.hasilpetalokasidetails]
 
-    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(new_obj.bidang_id),
-                                              hasil_peta_lokasi_id=str(new_obj.id),
-                                              kjb_dt_id=str(new_obj.kjb_dt_id),
-                                              draft_id=str(sch.draft_id),
+    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(new_obj.bidang_id) if new_obj.bidang_id is not None else new_obj.bidang_id,
+                                              hasil_peta_lokasi_id=str(new_obj.id) if new_obj.id is not None else new_obj.id,
+                                              kjb_dt_id=str(new_obj.kjb_dt_id) if new_obj.kjb_dt_id is not None else new_obj.kjb_dt_id,
+                                              draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
                                               from_updated=False,
                                               details=details)
     
@@ -245,14 +239,17 @@ async def update(
     db_session = db.session
 
     draft = await crud.draft.get_by_id(id=sch.draft_id)
-    for dt in draft.details:
-        if dt.luas > sch.luas_ukur:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
-
-        if dt.luas > dt.bidang.luas_surat:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {dt.bidang.id_bidang} tidak boleh lebih besar dari luas suratnya {dt.bidang.luas_surat}")
-    
     for dt in sch.hasilpetalokasidetails:
+        if dt.bidang_id is None:
+            continue
+
+        bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
+        if dt.luas_overlap > sch.luas_ukur:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
+        
+        if dt.luas_overlap > bidang_overlap.luas_surat:
+            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
+        
         if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
             raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
         
@@ -260,11 +257,13 @@ async def update(
             raise HTTPException(status_code=422, detail=f"Apabila Bintang lanjut pada overlap, maka status luas harus Tidak Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
 
     obj_current = await crud.hasil_peta_lokasi.get_by_id(id=id)
+
     if not obj_current:
         raise IdNotFoundException(HasilPetaLokasi, id)
     
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
     if obj_current.bidang_id != sch.bidang_id:
+
         url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
         payload = {"bidang_id" : str(obj_current.bidang_id)}
         GCloudTaskService().create_task(payload=payload, base_url=url)
@@ -296,17 +295,17 @@ async def update(
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
     details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
-                                               bidang_id=str(x.bidang_id),
-                                               luas_overlap=str(x.luas_overlap),
+                                               bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
+                                               luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
                                                keterangan=x.keterangan,
-                                               draft_detail_id=str(x.draft_detail_id),
+                                               draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
                                                status_luas=x.status_luas) 
                for x in sch.hasilpetalokasidetails]
-    
-    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(obj_updated.bidang_id),
-                                              hasil_peta_lokasi_id=str(obj_updated.id),
-                                              kjb_dt_id=str(obj_updated.kjb_dt_id),
-                                              draft_id=str(sch.draft_id),
+
+    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(obj_updated.bidang_id) if obj_updated.bidang_id is not None else obj_updated.bidang_id,
+                                              hasil_peta_lokasi_id=str(obj_updated.id) if obj_updated.id is not None else obj_updated.id,
+                                              kjb_dt_id=str(obj_updated.kjb_dt_id) if obj_updated.kjb_dt_id is not None else obj_updated.kjb_dt_id,
+                                              draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
                                               from_updated=True,
                                               details=details)
     
@@ -480,9 +479,15 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
         jenis_bidang = JenisBidangEnum.Overlap
     
-    bidang_current = await crud.bidang.get(id=payload.bidang_id)
+    bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
     if bidang_current.geom :
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+    
+    if bidang_current.geom_ori :
+        bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+    
+    if bidang_current.status == StatusBidangEnum.Bebas:
+        status_bidang = bidang_current.status
 
     bidang_updated = BidangSch(
         jenis_bidang=jenis_bidang,
@@ -528,8 +533,10 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
             bidang_ids.append(invoice.bidang_id)
 
             #add payment detail
-            payment_detail_sch = PaymentDetailCreateSch(payment_id=utj_khusus_detail.payment_id, invoice_id=invoice.id, amount=invoice.amount, is_void=False)
-            await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=utj_khusus_detail.create_by_id, db_session=db_session, with_commit=False)
+            payment_detail_sch = PaymentDetailCreateSch(payment_id=utj_khusus_detail.utj_khusus.payment_id, 
+                                                        invoice_id=invoice.id, 
+                                                        amount=invoice.amount, is_void=False)
+            await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=utj_khusus_detail.created_by_id, db_session=db_session, with_commit=False)
 
             utj_khusus_detail_updated = UtjKhususDetailUpdateSch(**utj_khusus_detail.dict(exclude={"invoice_id", "created_at", "updated_at"}), invoice_id=invoice.id)
             await crud.utj_khusus_detail.update(obj_current=utj_khusus_detail, obj_new=utj_khusus_detail_updated, db_session=db_session, with_commit=False)

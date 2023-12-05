@@ -26,7 +26,7 @@ class BidangKomponenBiayaBase(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
-    # amount_calculate:Optional[Decimal] = Field(nullable=True)
+    paid_amount:Optional[Decimal] = Field(nullable=True)
     
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
