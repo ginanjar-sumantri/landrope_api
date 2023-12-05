@@ -31,6 +31,7 @@ from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
 from services.geom_service import GeomService
 from services.helper_service import HelperService
+from services.history_service import HistoryService
 from shapely import wkb, to_wkt, wkt
 from decimal import Decimal
 from datetime import date
@@ -265,7 +266,7 @@ async def update(
     if obj_current.bidang_id != sch.bidang_id:
 
         url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
-        payload = {"bidang_id" : str(obj_current.bidang_id)}
+        payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
         GCloudTaskService().create_task(payload=payload, base_url=url)
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
@@ -342,7 +343,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
         # kalau dia update, merge dulu semua geom hasil irisan di table bidang overlap dengan geom curent bidang bintang yg terkena overlap
         # agar geom current bintangnya kembali seperti sebelum terpotong
         # dengan kondisi yang tipe overlapnya bintang batal dan status luasnya menambah luas
-        await merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id=payload.hasil_peta_lokasi_id)
+        await merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id=payload.hasil_peta_lokasi_id, worker_id=hasil_peta_lokasi_current.updated_by_id)
 
         # setelah itu hapus existing data hasil peta lokasi detail dan bidang overlap
         #remove existing data detail dan overlap
@@ -614,7 +615,7 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     return {"message":"successfully"} 
 
 @router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
-async def remove_link_bidang_and_kelengkapan(bidang_id:UUID):
+async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
 
     """Task Remove link bundle and remove existing kelengkapan dokumen"""
 
@@ -637,12 +638,12 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID):
     #kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
 
-    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id)
+    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session)
 
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
 
 
-async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID):
+async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID, worker_id:UUID):
     
     bidang_overlaps = await crud.bidangoverlap.get_multi_kulit_bintang_batal_by_petlok_id(hasil_peta_lokasi_id=hasil_peta_lokasi_id)
 
@@ -655,7 +656,7 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
         ov_series = gpd.GeoSeries.from_wkt([overlap.geom])
         ov_gdf = gpd.GeoDataFrame(geometry=ov_series)
 
-        bidang_bintang = await crud.bidang.get(id=overlap.parent_bidang_intersect_id)
+        bidang_bintang = await crud.bidang.get_by_id(id=overlap.parent_bidang_intersect_id)
         if bidang_bintang.geom:
             bidang_bintang.geom = wkt.dumps(wkb.loads(bidang_bintang.geom.data, hex=True))
         

@@ -15,14 +15,12 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
+from services.history_service import HistoryService
 from shapely import wkb, wkt
 from io import BytesIO
-from datetime import date
 import crud
 import json
 import pandas as pd
-from openpyxl import Workbook
-from openpyxl.styles import Font
 
 router = APIRouter()
 
@@ -63,10 +61,13 @@ async def create(
         dt_sch = TahapDetailCreateSch(tahap_id=new_obj.id, bidang_id=dt.bidang_id, is_void=False)
         await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
-        bidang_current = await crud.bidang.get(id=dt.bidang_id)
+        bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
         if bidang_current.geom :
             bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        bidang_updated = bidang_current
+        if bidang_current.geom_ori:
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        
+        bidang_updated = Bidang.from_orm(bidang_current)
         bidang_updated.luas_bayar = dt.luas_bayar
         bidang_updated.harga_akta = dt.harga_akta
         bidang_updated.harga_transaksi = dt.harga_transaksi
@@ -215,10 +216,15 @@ async def update(
         bidang_current = await crud.bidang.get(id=dt.bidang_id)
         if bidang_current.geom :
             bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        bidang_updated = BidangUpdateSch(**bidang_current.dict())
+        
+        if bidang_current.geom_ori :
+            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+        
+        bidang_updated = Bidang.from_orm(bidang_current)
         bidang_updated.luas_bayar = dt.luas_bayar
         bidang_updated.harga_akta = dt.harga_akta
         bidang_updated.harga_transaksi = dt.harga_transaksi
+
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
                                   with_commit=False, db_session=db_session, 
                                   updated_by_id=current_worker.id)

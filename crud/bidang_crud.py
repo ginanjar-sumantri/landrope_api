@@ -1,12 +1,13 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi.encoders import jsonable_encoder
 from sqlmodel import select, and_, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
-from typing import List
+from typing import List, Any, Dict
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap)
@@ -14,17 +15,48 @@ from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercenta
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
-from services.gcloud_storage_service import GCStorageService
-from services.geom_service import GeomService
+from services.history_service import HistoryService
 from io import BytesIO
 from uuid import UUID
 from geoalchemy2 import functions
-from shapely.geometry import shape
-from geoalchemy2.shape import from_shape
-from shapely  import wkt, wkb
+from datetime import datetime
 
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
+    async def update(self, 
+                     *, 
+                     obj_current : Bidang, 
+                     obj_new : BidangUpdateSch | Dict[str, Any] | Bidang,
+                     updated_by_id: UUID | str | None = None,
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True) -> Bidang :
+        db_session =  db_session or db.session
+
+        #add history
+        await HistoryService().create_history_bidang(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
+
+        obj_data = jsonable_encoder(obj_current)
+
+        if isinstance(obj_new, dict):
+            update_data =  obj_new
+        else:
+            update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
+        
+        for field in obj_data:
+            if field in update_data:
+                setattr(obj_current, field, update_data[field])
+            if field == "updated_at":
+                setattr(obj_current, field, datetime.utcnow())
+        
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
+            
+        db_session.add(obj_current)
+        if with_commit:
+            await db_session.commit()
+            await db_session.refresh(obj_current)
+        return obj_current
+    
     async def get_by_id(
                   self,
                   *,
