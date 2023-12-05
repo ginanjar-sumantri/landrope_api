@@ -53,7 +53,7 @@ class HistoryService:
                                                worker_id:UUID|None = None,
                                                db_session:AsyncSession | None = None):
         
-        meta_data_current = HasilPetaLokasiByIdSch.from_orm(HasilPetaLokasi)
+        meta_data_current = HasilPetaLokasiByIdSch.from_orm(obj_current)
 
         sch = HasilPetaLokasiHistoryCreateSch(hasil_peta_lokasi_id=obj_current.id,
                                               meta_data=meta_data_current.json(),
