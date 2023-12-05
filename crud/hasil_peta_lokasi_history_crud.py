@@ -1,0 +1,8 @@
+from crud.base_crud import CRUDBase
+from models.hasil_peta_lokasi_model import HasilPetaLokasiHistory
+from schemas.hasil_peta_lokasi_history_sch import HasilPetaLokasiHistoryCreateSch
+
+class CRUDHasilPetaLokasiHistory(CRUDBase[HasilPetaLokasiHistory, HasilPetaLokasiHistoryCreateSch, HasilPetaLokasiHistoryCreateSch]):
+    pass
+
+hasil_peta_lokasi_history = CRUDHasilPetaLokasiHistory(HasilPetaLokasiHistory)

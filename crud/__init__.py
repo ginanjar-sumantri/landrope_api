@@ -44,6 +44,7 @@ from .tanda_terima_notaris_dt_crud import tandaterimanotaris_dt
 from .request_peta_lokasi_crud import request_peta_lokasi
 from .hasil_peta_lokasi_crud import hasil_peta_lokasi
 from .hasil_peta_lokasi_detail_crud import hasil_peta_lokasi_detail
+from .hasil_peta_lokasi_history_crud import hasil_peta_lokasi_history
 
 from .pemilik_crud import pemilik, kontak, rekening
 from .harga_standard_crud import harga_standard

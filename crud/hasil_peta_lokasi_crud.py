@@ -8,7 +8,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt
+from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt, Bidang
 from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, HasilPetaLokasiCreateExtSch, HasilPetaLokasiUpdateCloud
 from typing import List
 from uuid import UUID
@@ -25,8 +25,10 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
         
         query = select(HasilPetaLokasi).where(HasilPetaLokasi.id == id
                                                     ).options(selectinload(HasilPetaLokasi.details
-                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang)
-                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap))
+                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang
+                                                                                            ).options(selectinload(Bidang.pemilik))
+                                                                            ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap)
+                                                                            )
                                                     ).options(selectinload(HasilPetaLokasi.bidang)
                                                     ).options(selectinload(HasilPetaLokasi.kjb_dt)
                                                     ).options(selectinload(HasilPetaLokasi.request_peta_lokasi)

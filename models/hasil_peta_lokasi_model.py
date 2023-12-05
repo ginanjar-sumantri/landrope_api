@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseUUIDModel
+from models.base_model import BaseUUIDModel, BaseHistoryModel
 from common.enum import JenisAlashakEnum
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -42,6 +42,14 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
                         {
                             "lazy" : "select"
                         }
+    )
+
+    hasil_peta_lokasi_histories: list["HasilPetaLokasiHistory"] = Relationship(
+        back_populates="hasil_peta_lokasi",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
     )
 
     bidang: "Bidang" = Relationship(
@@ -213,3 +221,31 @@ class HasilPetaLokasiDetail(HasilPetaLokasiDetailFullBase, table=True):
 
 ##########################################################
 
+class HasilPetaLokasiHistoryBase(SQLModel):
+    hasil_peta_lokasi_id:UUID = Field(foreign_key="hasil_peta_lokasi.id", nullable=False)
+
+class HasilPetaLokasiHistoryBaseExt(HasilPetaLokasiHistoryBase, BaseHistoryModel):
+    pass
+
+class HasilPetaLokasiHistoryFullBase(BaseUUIDModel, HasilPetaLokasiHistoryBaseExt):
+    pass
+
+class HasilPetaLokasiHistory(HasilPetaLokasiHistoryFullBase, table=True):
+    hasil_peta_lokasi:"HasilPetaLokasi" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="hasil_peta_lokasi_histories"
+    )
+
+    trans_worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "HasilPetaLokasiHistory.trans_worker_id==Worker.id",
+        }
+    )
+
+    @property
+    def trans_worker_name(self) -> str | None:
+        return getattr(getattr(self, "trans_worker", None), "name", None)

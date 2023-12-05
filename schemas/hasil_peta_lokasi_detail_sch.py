@@ -29,6 +29,7 @@ class HasilPetaLokasiDetailTaskUpdate(SQLModel):
 class HasilPetaLokasiDetailSch(HasilPetaLokasiDetailFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
     alashak:str|None = Field(alias="alashak")
+    pemilik_name:str|None = Field(alias="pemilik_name")
 
 @optional
 class HasilPetaLokasiDetailUpdateSch(HasilPetaLokasiDetailBase):

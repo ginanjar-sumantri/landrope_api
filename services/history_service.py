@@ -1,10 +1,12 @@
 from fastapi import Depends
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
-from models import Worker, Bidang
+from models import Worker, Bidang, HasilPetaLokasi
 from schemas.bidang_sch import BidangSch
 from schemas.bidang_history_sch import BidangHistoryCreateSch, MetaDataSch
 from schemas.spk_history_sch import SpkHistoryCreateSch
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiByIdSch
+from schemas.hasil_peta_lokasi_history_sch import HasilPetaLokasiHistoryCreateSch
 from schemas.spk_sch import SpkByIdSch
 from services.helper_service import HelperService
 from shapely import wkt, wkb
@@ -37,7 +39,7 @@ class HistoryService:
     
     async def create_history_spk(self, spk:SpkByIdSch,
                                 worker_id:UUID|None = None,
-                                db_session:AsyncSession | None = None,):
+                                db_session:AsyncSession | None = None):
 
         sch = SpkHistoryCreateSch(spk_id=spk.id, 
                                     meta_data=spk.json(), 
@@ -46,5 +48,20 @@ class HistoryService:
         
 
         await crud.spk_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
+    
+    async def create_history_hasil_peta_lokasi(self, obj_current:HasilPetaLokasi,
+                                               worker_id:UUID|None = None,
+                                               db_session:AsyncSession | None = None):
+        
+        meta_data_current = HasilPetaLokasiByIdSch.from_orm(HasilPetaLokasi)
+
+        sch = HasilPetaLokasiHistoryCreateSch(hasil_peta_lokasi_id=obj_current.id,
+                                              meta_data=meta_data_current.json(),
+                                              trans_at=HelperService().no_timezone(obj_current.updated_at),
+                                              trans_worker_id=obj_current.updated_by_id)
+        
+        await crud.hasil_peta_lokasi_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
+
+        
         
 
