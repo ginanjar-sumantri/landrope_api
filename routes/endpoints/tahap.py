@@ -67,7 +67,7 @@ async def create(
         if bidang_current.geom_ori:
             bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
         
-        bidang_updated = Bidang.from_orm(bidang_current)
+        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
         bidang_updated.luas_bayar = dt.luas_bayar
         bidang_updated.harga_akta = dt.harga_akta
         bidang_updated.harga_transaksi = dt.harga_transaksi
@@ -213,14 +213,14 @@ async def update(
                                            with_commit=False, db_session=db_session,
                                              updated_by_id=current_worker.id)
         
-        bidang_current = await crud.bidang.get(id=dt.bidang_id)
+        bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
         if bidang_current.geom :
             bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
         
         if bidang_current.geom_ori :
             bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
         
-        bidang_updated = Bidang.from_orm(bidang_current)
+        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
         bidang_updated.luas_bayar = dt.luas_bayar
         bidang_updated.harga_akta = dt.harga_akta
         bidang_updated.harga_transaksi = dt.harga_transaksi
