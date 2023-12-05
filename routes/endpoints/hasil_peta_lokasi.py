@@ -439,7 +439,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
         
         #input detail hasil peta lokasi
         detail_sch = HasilPetaLokasiDetailCreateSch(tipe_overlap=dt.tipe_overlap, 
-                                                    bidang_id=UUID(dt.bidang_id), 
+                                                    bidang_id=UUID(dt.bidang_id) if dt.bidang_id is not None else dt.bidang_id, 
                                                     luas_overlap=Decimal(dt.luas_overlap),
                                                     keterangan=dt.keterangan, status_luas=dt.status_luas)
         
