@@ -39,6 +39,7 @@ class KjbDtListRequestPetlokSch(KjbDtSch):
     has_input_petlok:bool | None = Field(alias="has_input_petlok")
     bundle_dt_alashak_id:UUID | None
     bundle_dt_alashak_file_exists:bool | None
+    bundle_dt_alashak_file_path:str | None
 
 class KjbDtListSch(SQLModel):
     kjb_code:str|None

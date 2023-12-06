@@ -247,6 +247,15 @@ class KjbDt(KjbDtFullBase, table=True):
                 return alashak.file_exists
         
         return False
+    
+    @property
+    def bundle_dt_alashak_file_path(self) -> str | None:
+        if self.bundlehd:
+            alashak = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "ALAS HAK"), None)
+            if alashak:
+                return alashak.file_path
+        
+        return None
 
 ##########################################################################
 
