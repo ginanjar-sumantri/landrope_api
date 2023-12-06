@@ -31,7 +31,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
     
     async def get_multi_header_paginated(self, *, params: Params | None = Params(),
                                   order: OrderEnumSch | None = OrderEnumSch.descendent,
-                                  keyword:str | None,
+                                  keyword:str | None = None,
+                                  filter:str|None = None,
                                   db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiHdSch]:
         db_session = db_session or db.session
 
@@ -61,6 +62,10 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     Desa.name.ilike(f'%{keyword}%'),
                 )
             )
+        
+        # if filter == "outstanding":
+        #     query = query.outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id)
+        #     query = query.filter()
             
         if filter_clause is not None:        
             query = query.filter(filter_clause)
