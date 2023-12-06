@@ -1,10 +1,12 @@
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, String
 from models.base_model import BaseUUIDModel
+from common.enum import PaymentMethodEnum
 from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING
 from decimal import Decimal
+from datetime import date
 import numpy
 
 if TYPE_CHECKING:
@@ -16,6 +18,11 @@ class GiroBase(SQLModel):
     amount:condecimal(decimal_places=2)|None = Field(nullable=False, default=0)
     is_active:bool|None = Field(default=True)
     from_master:bool|None = Field(nullable=True) #create from
+
+    tanggal:date|None = Field(nullable=True)
+    bank_code:str|None = Field(nullable=True)
+    payment_method:PaymentMethodEnum|None = Field(nullable=True)
+
 
 class GiroFullBase(BaseUUIDModel, GiroBase):
     pass

@@ -60,7 +60,7 @@ async def generate_code_bundle(planing_id:UUID | None) -> str:
    
 async def generate_code(entity:CodeCounterEnum,
                         db_session : AsyncSession | None = None,
-                        with_commit: bool | None = True):
+                        with_commit: bool | None = True) -> str:
 
     obj_current = await crud.codecounter.get_by_entity(entity=entity)
 

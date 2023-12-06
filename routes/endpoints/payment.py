@@ -33,24 +33,23 @@ async def create(
     """Create a new object"""
     db_session = db.session
 
+    amount_dtls = [dt.amount for dt in sch.details]
+
+    if (sch.amount - sum(amount_dtls)) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+
     giro_current = None
-    if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
-        giro_current = await crud.giro.get_by_nomor_giro(nomor_giro=sch.nomor_giro)
+
+    if sch.giro_id is None and sch.payment_method != PaymentMethodEnum.Tunai:
+        giro_current = await crud.giro.get_by_nomor_giro_and_payment_method(nomor_giro=sch.nomor_giro, payment_method=sch.payment_method)
         if giro_current is None:
-            last_number_giro = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
-            code_giro = f"BG/{last_number_giro}"
+            entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
+            last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
+            code_giro = f"{sch.payment_method.value}/{last_number_giro}"
             sch_giro = GiroCreateSch(code=code_giro, nomor_giro=sch.nomor_giro, amount=sch.amount, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
         sch.giro_id = giro_current.id      
-
-    amount_dtls = [dt.amount for dt in sch.details]
-    if giro_current:
-        if giro_current.amount - sum(amount_dtls) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
-    else:
-        if (sch.amount - sum(amount_dtls)) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
 
     last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
     sch.code = f"PAY/{last_number}"
@@ -144,10 +143,24 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
+    amount_dtls = []
+
+    for dt in sch.details:
+        if dt.id:
+            dt_current = next((x for x in obj_current.details if x.id == dt.id), None)
+            if dt_current.is_void != True:
+                amount_dtls.append(dt_current.amount)
+        else:
+            amount_dtls.append(dt.amount)
+    
+    if (sch.amount - sum(amount_dtls)) < 0:
+            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    
     giro_current = None
-    if sch.giro_id is None and sch.payment_method == PaymentMethodEnum.Giro:
+    if sch.giro_id is None and sch.payment_method != PaymentMethodEnum.Tunai:
         giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
         if giro_current is None:
+            entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
             last_number_giro = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
             code_giro = f"BG/{last_number_giro}"
             sch_giro = GiroCreateSch(code=code_giro, nomor_giro=sch.nomor_giro, amount=sch.amount, is_active=True, from_master=False)
@@ -156,22 +169,6 @@ async def update(id:UUID, sch:PaymentUpdateSch,
         sch.giro_id = giro_current.id 
     elif sch.giro_id:
         giro_current = await crud.giro.get_by_id(id=sch.giro_id)     
-    
-    amount_dtls = []
-    for dt in sch.details:
-        if dt.id:
-            dt_current = await crud.payment_detail.get(id=dt.id)
-            if dt_current.is_void != True:
-                amount_dtls.append(dt_current.amount)
-        else:
-            amount_dtls.append(dt.amount)
-
-    if giro_current:
-        if giro_current.amount - sum(amount_dtls) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
-    else:
-        if (sch.amount - sum(amount_dtls)) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
     
     sch.is_void = obj_current.is_void
     

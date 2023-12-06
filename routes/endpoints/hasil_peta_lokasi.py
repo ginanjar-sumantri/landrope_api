@@ -189,7 +189,7 @@ async def create(
             bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
 
-    bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+    bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
     details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
@@ -211,6 +211,9 @@ async def create(
     # background_task.add_task(update_bidang_override, payload)
     # background_task.add_task(generate_kelengkapan_bidang_override, payload)
 
+    await db_session.commit()
+    await db_session.refresh(new_obj)
+
     url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
     GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
@@ -219,9 +222,6 @@ async def create(
 
     url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
     GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
-
-    await db_session.commit()
-    await db_session.refresh(new_obj)
 
     new_obj = await crud.hasil_peta_lokasi.get_by_id(id=new_obj.id)
 
@@ -295,7 +295,7 @@ async def update(
         else:
             bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-    bidang_geom_updated = BidangUpdateSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+    bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
     details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
@@ -318,6 +318,9 @@ async def update(
     # background_task.add_task(update_bidang_override, payload)
     # background_task.add_task(generate_kelengkapan_bidang_override, payload)
 
+    await db_session.commit()
+    await db_session.refresh(obj_updated)
+
     url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
     GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
@@ -326,9 +329,6 @@ async def update(
 
     url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
     GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
-
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
 
     obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
 

@@ -67,8 +67,12 @@ class Payment(PaymentFullBase, table=True):
         return getattr(getattr(self, "giro", None), "code", None)
     
     @property
-    def nomor_giro(self) -> Decimal | None:
+    def nomor_giro(self) -> str | None:
         return getattr(getattr(self, "giro", None), "nomor_giro", None)
+    
+    @property
+    def bank_code(self) -> str | None:
+        return getattr(getattr(self, "giro", None), "bank_code", None)
     
     @property
     def payment_outstanding(self) -> Decimal | None:
