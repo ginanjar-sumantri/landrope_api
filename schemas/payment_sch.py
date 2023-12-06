@@ -4,10 +4,12 @@ from common.partial import optional
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
 from uuid import UUID
+from datetime import date
 
 class PaymentCreateSch(PaymentBase):
     nomor_giro:str|None
     bank_code:str|None
+    tanggal:date|None
     details:list[PaymentDetailExtSch]|None
 
 class PaymentSch(PaymentFullBase):
@@ -36,5 +38,7 @@ class PaymentVoidExtSch(SQLModel):
 
 @optional
 class PaymentUpdateSch(PaymentBase):
+    bank_code:str|None
+    tanggal:date|None
     nomor_giro:str|None
     details:list[PaymentDetailExtSch]|None

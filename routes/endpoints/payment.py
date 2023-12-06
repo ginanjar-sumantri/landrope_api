@@ -46,7 +46,8 @@ async def create(
             entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
             last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
             code_giro = f"{sch.payment_method.value}/{last_number_giro}"
-            sch_giro = GiroCreateSch(code=code_giro, nomor_giro=sch.nomor_giro, amount=sch.amount, is_active=True, from_master=False)
+            sch_giro = GiroCreateSch(**sch.dict(), code=code_giro, is_active=True, from_master=False)
+            
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
         sch.giro_id = giro_current.id      
@@ -161,14 +162,12 @@ async def update(id:UUID, sch:PaymentUpdateSch,
         giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
         if giro_current is None:
             entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
-            last_number_giro = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
-            code_giro = f"BG/{last_number_giro}"
-            sch_giro = GiroCreateSch(code=code_giro, nomor_giro=sch.nomor_giro, amount=sch.amount, is_active=True, from_master=False)
+            last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
+            code_giro = f"{sch.payment_method.value}/{last_number_giro}"
+            sch_giro = GiroCreateSch(**sch.dict(), code=code_giro, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
-        sch.giro_id = giro_current.id 
-    elif sch.giro_id:
-        giro_current = await crud.giro.get_by_id(id=sch.giro_id)     
+        sch.giro_id = giro_current.id    
     
     sch.is_void = obj_current.is_void
     
