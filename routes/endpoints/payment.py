@@ -46,7 +46,7 @@ async def create(
             entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
             last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
             code_giro = f"{sch.payment_method.value}/{last_number_giro}"
-            sch_giro = GiroCreateSch(**sch.dict(), code=code_giro, is_active=True, from_master=False)
+            sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
             
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
@@ -164,7 +164,7 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
             last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
             code_giro = f"{sch.payment_method.value}/{last_number_giro}"
-            sch_giro = GiroCreateSch(**sch.dict(), code=code_giro, is_active=True, from_master=False)
+            sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
         sch.giro_id = giro_current.id    

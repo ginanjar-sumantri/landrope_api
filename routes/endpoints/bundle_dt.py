@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, UploadFile, Response
+from fastapi import APIRouter, Depends, UploadFile, Response, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -10,12 +10,15 @@ from models.dokumen_model import Dokumen, KategoriDokumen
 from models.worker_model import Worker
 from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaDynSch)
 from schemas.dokumen_sch import RiwayatSch
+from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
 from datetime import datetime
+from decimal import Decimal
+from shapely import wkt, wkb
 import crud
 import json
 
@@ -88,6 +91,7 @@ async def get_by_id(id:UUID):
 
 @router.put("/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def update(id:UUID, 
+                 background_task:BackgroundTasks,
                  sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
                  file:UploadFile = None,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -151,16 +155,40 @@ async def update(id:UUID,
 
     obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)
 
+    if obj_updated.dokumen_name == "SPPT PBB NOP":
+        background_task.add_task(update_nilai_njop_bidang, obj_updated, obj_updated.meta_data)
+
     return create_response(data=obj_updated)
 
+async def update_nilai_njop_bidang(bundle_dt:BundleDt, meta_data:str|None):
+    """Mengupdate Nilai NJOP di Bidang"""
+
+    if bundle_dt.bundlehd.bidang:
+        bidang_current = await crud.bidang.get_by_id(id=bundle_dt.bundlehd.bidang.id)
+        if bidang_current.geom :
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+        if bidang_current.geom_ori :
+            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
+        metadata_dict = json.loads(meta_data.replace("'", "\""))
+        value = metadata_dict.get('NJOP', None)
+        if value:
+            value = Decimal(value)
+            bidang_updated = BidangUpdateSch(njop=value)
+
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
+
+
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
-async def update_riwayat(id:UUID, 
+async def update_riwayat(id:UUID,
+                        background_task:BackgroundTasks,
                         sch:RiwayatSch = Depends(RiwayatSch.as_form), 
                         file:UploadFile = None,
                         current_worker:Worker = Depends(crud.worker.get_current_user)
                         ):
     
-    obj_current = await crud.bundledt.get(id=id)
+    obj_current = await crud.bundledt.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
@@ -191,11 +219,15 @@ async def update_riwayat(id:UUID,
     obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, db_session=db_session, with_commit=True, updated_by_id=current_worker.id)
     obj = await crud.bundledt.get_by_id(id=obj.id)
 
+    if sch.is_default and obj.dokumen_name == "SPPT PBB NOP":
+        background_task.add_task(update_nilai_njop_bidang, obj, obj.meta_data)
+
     return create_response(data=obj)
 
 @router.put("/delete-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def delete_riwayat(id:UUID, 
                         sch:RiwayatSch,
+                        background_task:BackgroundTasks,
                         current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     obj_current = await crud.bundledt.get(id=id)
@@ -224,6 +256,10 @@ async def delete_riwayat(id:UUID,
 
     obj = await crud.bundledt.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
     obj = await crud.bundledt.get_by_id(id=obj.id)
+
+    if obj.dokumen_name == "SPPT PBB NOP":
+        background_task.add_task(update_nilai_njop_bidang, obj, obj.meta_data)
+
     return create_response(data=obj)
     
 @router.get("/download-file/{id}")

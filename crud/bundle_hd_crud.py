@@ -66,7 +66,11 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
     
     async def get_by_keyword(self, *, keyword: str, db_session: AsyncSession | None = None) -> BundleHd | None:
         db_session = db_session or db.session
-        query = select(self.model).where(self.model.keyword.ilike(f'%{keyword}%'))
+        query = select(self.model).where(self.model.keyword.ilike(f'%{keyword}%')
+                                ).options(selectinload(self.model.kjb_dt)
+                                ).options(selectinload(self.model.bidang)
+                                )
+        
         response = await db_session.execute(query)
 
         return response.scalars().first()

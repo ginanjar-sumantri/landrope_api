@@ -17,7 +17,9 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
         
         db_session = db_session or db.session
         
-        query = select(BundleDt).where(BundleDt.id == id).options(selectinload(BundleDt.bundlehd)
+        query = select(BundleDt).where(BundleDt.id == id).options(selectinload(BundleDt.bundlehd
+                                                                    ).options(selectinload(BundleHd.bidang)
+                                                                    ).options(selectinload(BundleHd.kjb_dt))
                                                         ).options(selectinload(BundleDt.dokumen).options(selectinload(Dokumen.kategori_dokumen)))
 
         response = await db_session.execute(query)

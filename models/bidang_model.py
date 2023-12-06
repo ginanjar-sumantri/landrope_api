@@ -54,6 +54,7 @@ class BidangBase(SQLModel):
     harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
+    njop:Decimal|None = Field(nullable=True)
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
