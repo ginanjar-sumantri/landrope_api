@@ -372,7 +372,7 @@ async def get_list(
     
     """Gets all list objects"""
 
-    objs = await crud.invoice.get_multi_src_invoice(keyword=keyword)
+    objs = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
     
     return create_response(data=objs)
 

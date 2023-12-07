@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_
+from sqlmodel import select, or_, func, case, cast, Float, and_
 from sqlalchemy.orm import selectinload
 from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
 from models.code_counter_model import CodeCounterEnum
@@ -78,6 +78,60 @@ async def get_list(
                 query = query.where(getattr(Invoice, key) == value)
 
     query = query.distinct()
+
+    objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
+    return create_response(data=objs)
+
+@router.get("/ext", response_model=GetResponsePaginatedSch[InvoiceSch])
+async def get_list(
+                params: Params=Depends(), 
+                order_by:str = None, 
+                keyword:str = None,
+                outstanding:bool|None = False,
+                filter_query:str=None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
+                            ).outerjoin(Termin, Termin.id == Invoice.termin_id)
+        
+    if keyword:
+        query = query.filter(
+            or_(
+                Bidang.id_bidang.ilike(f'%{keyword}%'),
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Termin.code.ilike(f'%{keyword}%'),
+                Invoice.code.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Invoice, key) == value)
+
+    if outstanding:
+        invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice()
+        ids = [inv.id for inv in invoice_outstandings]
+
+        query = query.filter(Invoice.id.in_(ids))
+
+    query = query.distinct()
+    query = query.options(selectinload(Invoice.bidang
+                                    ).options(selectinload(Bidang.skpt
+                                                    ).options(selectinload(Skpt.ptsk))
+                                    ).options(selectinload(Bidang.penampung)
+                                    )
+                ).options(selectinload(Invoice.details
+                                    ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                        ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                    )
+                ).options(selectinload(Invoice.payment_details
+                                    ).options(selectinload(PaymentDetail.payment
+                                                        ).options(selectinload(Payment.giro))
+                                    )
+                )
 
     objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)

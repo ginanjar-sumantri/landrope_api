@@ -277,7 +277,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
         return response.scalars().all()
 
-    async def get_multi_src_invoice(self, 
+    async def get_multi_outstanding_invoice(self, 
                   *, 
                   keyword: str | None = None,
                   db_session: AsyncSession | None = None
@@ -336,7 +336,9 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                 inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
                                 inner join bidang b on b.id = kb.bidang_id
                                 where idt.invoice_id = i.id
-                                and kb.beban_pembeli = false)) != 0 {filter}
+                                and kb.beban_pembeli = false)) > 0
+                                and i.is_void != true
+                    {filter}
         """)
 
         query = query.options(selectinload(Invoice.bidang)
