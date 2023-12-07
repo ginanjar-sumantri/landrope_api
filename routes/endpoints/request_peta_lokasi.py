@@ -83,13 +83,13 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
 async def get_list_header(
                     params: Params=Depends(), 
                     keyword:str|None = None,
-                    filter:str|None = None,
+                    outstanding:bool|None = False,
                     current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
     
 
-    objs = await crud.request_peta_lokasi.get_multi_header_paginated(params=params, keyword=keyword)
+    objs = await crud.request_peta_lokasi.get_multi_header_paginated(params=params, keyword=keyword, outstanding=outstanding)
     return create_response(data=objs)
 
 @router.get("", response_model=GetResponsePaginatedSch[RequestPetaLokasiForInputHasilSch])

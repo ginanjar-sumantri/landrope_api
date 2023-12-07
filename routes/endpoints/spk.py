@@ -5,7 +5,7 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_, text, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import cast, Date
+from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin, Planing)
 from models.code_counter_model import CodeCounterEnum
@@ -53,7 +53,7 @@ async def create(
 
     #EndFilter
 
-    bidang = await crud.bidang.get(id=sch.bidang_id)
+    bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
     code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
     sch.code = f"SPK-{sch.jenis_bayar.value.replace('_', ' ')}/{code}/{bidang.id_bidang}"
     
@@ -128,6 +128,7 @@ async def filter_sisa_pelunasan(bidang_id:UUID):
 async def get_list(
                 start_date:date|None = None,
                 end_date:date|None = None,
+                outstanding:bool|None = False,
                 params: Params=Depends(), 
                 order_by:str = None, 
                 keyword:str = None, 
@@ -155,6 +156,17 @@ async def get_list(
     
     if start_date and end_date:
         query = query.filter(cast(Spk.created_at, Date).between(start_date, end_date))
+    
+    if filter:
+        subquery = (
+            select(Invoice.spk_id)
+            .join(Termin, Termin.id == Invoice.termin_id)
+            .filter(Invoice.is_void != True, ~Termin.jenis_bayar.in_(['UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE']))
+            .distinct()
+        )
+        query = query.filter(~Spk.jenis_bayar.in_(['BEGINNING_BALANCE', 'PAJAK']))
+        query = query.filter(~Spk.id.in_(subquery))
+
 
     query = query.distinct()
 
@@ -221,7 +233,6 @@ async def get_report(
     return StreamingResponse(BytesIO(output.getvalue()), 
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=spk_data.xlsx"})
-    
    
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def get_by_id(id:UUID):

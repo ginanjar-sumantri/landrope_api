@@ -38,7 +38,8 @@ async def create(
 async def get_list(
                 params: Params=Depends(), 
                 order_by:str = None, 
-                keyword:str = None, 
+                keyword:str = None,
+                outstanding:bool|None = False,
                 filter_query:str=None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -80,7 +81,6 @@ async def get_list(
 
     objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
-
 
 @router.get("/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
 async def get_by_id(id:UUID):

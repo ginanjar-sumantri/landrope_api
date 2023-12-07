@@ -73,12 +73,20 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def amount_calculate(self) -> Decimal | None:
         total_amount:Decimal = 0
-        if self.satuan_bayar == SatuanBayarEnum.Percentage and self.satuan_harga == SatuanHargaEnum.PerMeter2:
-            total_amount = (self.amount or 0) * ((self.bidang.luas_bayar or self.bidang.luas_surat) * (self.bidang.harga_transaksi or 0)/100)
-        elif self.satuan_bayar == SatuanBayarEnum.Amount and self.satuan_harga == SatuanHargaEnum.PerMeter2:
-            total_amount = (self.amount or 0) * (self.bidang.luas_bayar or self.bidang.luas_surat)
+        if self.beban_biaya.is_njop:
+            harga_akta = self.bidang.harga_akta * self.bidang.luas_surat
+            harga_njop = self.bidang.njop * self.bidang.luas_surat
+
+            harga_terbesar = max(harga_akta, harga_njop)
+
+            total_amount = (self.amount * harga_terbesar)/100
         else:
-            total_amount = (self.amount or 0)
+            if self.satuan_bayar == SatuanBayarEnum.Percentage and self.satuan_harga == SatuanHargaEnum.PerMeter2:
+                total_amount = (self.amount or 0) * ((self.bidang.luas_bayar or self.bidang.luas_surat) * (self.bidang.harga_transaksi or 0)/100)
+            elif self.satuan_bayar == SatuanBayarEnum.Amount and self.satuan_harga == SatuanHargaEnum.PerMeter2:
+                total_amount = (self.amount or 0) * (self.bidang.luas_bayar or self.bidang.luas_surat)
+            else:
+                total_amount = (self.amount or 0)
         
         return total_amount
     
