@@ -65,7 +65,6 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return response.scalar_one_or_none()
     
-
     async def get_by_id_for_printout(self, 
                   *, 
                   id: UUID | str, db_session: AsyncSession | None = None
@@ -112,7 +111,6 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return response.fetchone()
 
-
     async def get_invoice_by_id_for_printout(self, 
                                             *, 
                                             id: UUID | str, 
@@ -154,20 +152,28 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         case
                                 when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(BEBAN PEMBELI)'
                                 when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(PENGEMBALIAN BEBAN PENJUAL)'
-				else '(BEBAN PENJUAL)'
+                        else '(BEBAN PENJUAL)'
                         end as tanggungan,
                         CASE
-                                WHEN bkb.satuan_bayar = 'Percentage' and bkb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                                WHEN b.luas_bayar is Null Then ROUND((bkb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                                ELSE ROUND((bkb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                End
-                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Per_Meter2' Then
-                                Case
-                                                WHEN b.luas_bayar is Null Then ROUND((bkb.amount * b.luas_surat), 2)
-                                                ELSE ROUND((bkb.amount * b.luas_bayar), 2)
-                                End
-                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Lumpsum' Then bkb.amount
+                                WHEN bb.is_njop = True Then 
+                                        CASE
+                                                WHEN (b.harga_akta * b.luas_surat) > (b.njop * b.luas_surat) Then ROUND(((b.harga_akta * b.luas_surat) * bkb.amount)/100, 2)
+                                                ELSE ROUND(((b.njop * b.luas_surat) * bkb.amount)/100, 2)
+                                        END
+                                ELSE
+                                        CASE
+                                                WHEN bkb.satuan_bayar = 'Percentage' and bkb.satuan_harga = 'Per_Meter2' Then
+                                                Case
+                                                        WHEN b.luas_bayar is Null Then ROUND((bkb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                                        ELSE ROUND((bkb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                                End
+                                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Per_Meter2' Then
+                                                Case
+                                                        WHEN b.luas_bayar is Null Then ROUND((bkb.amount * b.luas_surat), 2)
+                                                        ELSE ROUND((bkb.amount * b.luas_bayar), 2)
+                                                End
+                                                When bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Lumpsum' Then bkb.amount
+                                        End
                         END As amount,
                         bkb.beban_pembeli,
                         bkb.is_void
@@ -181,7 +187,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         i.is_void != true
                         and bkb.is_void != true
                         {filter_by_jenis_bayar}
-                        and t.id = '{str(id)}')
+                        and t.id = '{str(id)}'
+                        )
                         Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli, is_void
                         from subquery
                         group by beban_biaya_name, tanggungan, beban_pembeli, is_void

@@ -157,7 +157,7 @@ async def get_list(
     if start_date and end_date:
         query = query.filter(cast(Spk.created_at, Date).between(start_date, end_date))
     
-    if filter:
+    if outstanding:
         subquery = (
             select(Invoice.spk_id)
             .join(Termin, Termin.id == Invoice.termin_id)

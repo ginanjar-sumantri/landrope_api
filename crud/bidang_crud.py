@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from typing import List, Any, Dict
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice,
-                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap)
+                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
@@ -84,7 +84,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                                 ).options(selectinload(Invoice.payment_details)
                                                                 ).options(selectinload(Invoice.termin))
                                                         ).options(selectinload(Bidang.overlaps)
-                                                        ).options(selectinload(Bidang.komponen_biayas)
+                                                        ).options(selectinload(Bidang.komponen_biayas
+                                                                ).options(selectinload(BidangKomponenBiaya.bidang))
                                                         ).options(selectinload(Bidang.tahap_details
                                                                             ).options(selectinload(TahapDetail.tahap))
                                                         ).options(selectinload(Bidang.bidang_histories)
@@ -117,7 +118,9 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                         ).options(selectinload(Bidang.invoices
                                                                             ).options(selectinload(Invoice.payment_details)
                                                                             ).options(selectinload(Invoice.termin))
-                                                        ).options(selectinload(Bidang.komponen_biayas))
+                                                        ).options(selectinload(Bidang.komponen_biayas
+                                                                            ).options(selectinload(BidangKomponenBiaya.bidang))
+                                                        )
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()
@@ -135,7 +138,9 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                                     ).options(selectinload(Invoice.termin)
                                                                     ).options(selectinload(Invoice.payment_details))
                                                         ).options(selectinload(Bidang.overlaps)
-                                                        ).options(selectinload(Bidang.komponen_biayas))
+                                                        ).options(selectinload(Bidang.komponen_biayas
+                                                                    ).options(selectinload(BidangKomponenBiaya.bidang))
+                                                        )
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()
@@ -188,7 +193,8 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                                                                 ).options(selectinload(Invoice.payment_details)
                                                                 ).options(selectinload(Invoice.termin))
                                                         ).options(selectinload(Bidang.overlaps)
-                                                        ).options(selectinload(Bidang.komponen_biayas)
+                                                        ).options(selectinload(Bidang.komponen_biayas
+                                                                ).options(selectinload(BidangKomponenBiaya.bidang))
                                                         ).options(selectinload(Bidang.tahap_details
                                                                             ).options(selectinload(TahapDetail.tahap))
                                                         ).options(selectinload(Bidang.bidang_histories)

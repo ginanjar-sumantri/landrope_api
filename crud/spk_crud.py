@@ -522,19 +522,4 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
             return response.fetchall()
     
-    # async def get_spk_lunas_by_id(self, 
-    #               *, 
-    #               id: UUID | str | None = None,
-    #               db_session: AsyncSession | None = None
-    #               ) -> Spk | None:
-        
-    #     db_session = db_session or db.session
-        
-    #     query = select(Spk)
-    #     query = query.filter(sp)
-
-    #     response = await db_session.execute(query)
-
-    #     return response.scalar_one_or_none() 
-    
 spk = CRUDSpk(Spk)
