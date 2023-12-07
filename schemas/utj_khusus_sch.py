@@ -22,9 +22,18 @@ class UtjKhususSch(UtjKhususFullBase):
 class UtjKhususByIdSch(UtjKhususFullBase):
     kjb_hd_code:str|None = Field(alias="kjb_hd_code")
     kjb_hd_group:str|None = Field(alias="kjb_hd_group")
+    kjb_hd_mediator:str|None
     utj_amount:Decimal|None = Field(alias="utj_amount")
     termin_code:str|None = Field(alias="termin_code")
+    desa_name:str|None
+    luas_kjb:Decimal|None
     details:list[UtjKhususDetailSch] | None
+
+class UtjKhususPrintOutSch(SQLModel):
+    desa_name:str|None
+    amountExt:str|None
+    luas_suratExt:str|None
+    mediator:str|None
 
 @optional
 class UtjKhususUpdateSch(UtjKhususBase):

@@ -15,9 +15,17 @@ class UtjKhususDetailExtSch(SQLModel):
 
 
 class UtjKhususDetailSch(UtjKhususDetailFullBase):
+    id_bidang:str|None
+    no_peta:str|None
+    mediator:str|None
     alashak:str|None = Field(alias="alashak")
     luas_surat:Decimal|None = Field(alias="luas_surat")
     luas_bayar:Decimal|None = Field(alias="luas_bayar")
+    luas_suratExt:str|None
+    amountExt:str|None
+    desa_name:str|None
+    project_name:str|None
+    pemilik_name:str|None
 
 @optional
 class UtjKhususDetailUpdateSch(UtjKhususDetailBase):

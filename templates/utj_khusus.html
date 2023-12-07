@@ -103,7 +103,7 @@
         </tr>
         {% for item in data %}
         <tr>
-          <td align="center">{{ item.no }}</td>
+          <td align="center">{{ loop.index }}</td>
           <td>{{ item.pemilik_name }}</td>
           <td>{{ item.mediator }}</td>
           <td>{{ item.alashak }}</td>

@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import UtjKhusus, Termin, UtjKhususDetail, KjbDt, HasilPetaLokasi
+from models import UtjKhusus, Termin, UtjKhususDetail, KjbDt, HasilPetaLokasi, KjbHd
 from schemas.utj_khusus_sch import UtjKhususCreateSch, UtjKhususUpdateSch
 from uuid import UUID
 
@@ -17,7 +17,8 @@ class CRUDUtjKhusus(CRUDBase[UtjKhusus, UtjKhususCreateSch, UtjKhususUpdateSch])
         db_session = db_session or db.session
         
         query = select(UtjKhusus).where(UtjKhusus.id == id
-                                ).options(selectinload(UtjKhusus.kjb_hd)
+                                ).options(selectinload(UtjKhusus.kjb_hd
+                                                ).options(selectinload(KjbHd.desa))
                                 ).options(selectinload(UtjKhusus.payment)
                                 ).options(selectinload(UtjKhusus.termin
                                                 ).options(selectinload(Termin.invoices))

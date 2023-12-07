@@ -1,10 +1,10 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select
 from models import UtjKhusus, UtjKhususDetail, Worker, KjbDt, Invoice, PaymentDetail, KjbHd, Termin
-from schemas.utj_khusus_sch import (UtjKhususSch, UtjKhususCreateSch, UtjKhususUpdateSch, UtjKhususByIdSch)
+from schemas.utj_khusus_sch import (UtjKhususSch, UtjKhususCreateSch, UtjKhususUpdateSch, UtjKhususByIdSch, UtjKhususPrintOutSch)
 from schemas.utj_khusus_detail_sch import (UtjKhususDetailCreateSch, UtjKhususDetailUpdateSch)
 from schemas.termin_sch import TerminCreateSch
 from schemas.payment_sch import PaymentCreateSch, PaymentUpdateSch
@@ -17,6 +17,8 @@ from common.exceptions import (IdNotFoundException, ContentNoChangeException)
 from common.generator import generate_code, generate_code_month
 from common.enum import PaymentMethodEnum, JenisBayarEnum
 from services.helper_service import HelperService
+from services.pdf_service import PdfService
+from jinja2 import Environment, FileSystemLoader
 from models.code_counter_model import CodeCounterEnum
 from datetime import date
 import roman
@@ -299,60 +301,50 @@ async def get_list_bidang_by_kjb_hd_id(
 
     return create_response(data=obj_return)
 
-# @router.get("/print-out/utj/{id}")
-# async def printout(id:UUID | str,
-#                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
+@router.get("/print-out/utj/{id}")
+async def printout(id:UUID | str,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-#     """Print out UTJ"""
-#     try :
-#         obj = await crud.utj_khusus.get_by_id(id=id)
-#         if obj is None:
-#             raise IdNotFoundException(Termin, id)
+    """Print out UTJ"""
+    # try :
+    obj_current = await crud.utj_khusus.get_by_id(id=id)
+    if obj_current is None:
+        raise IdNotFoundException(Termin, id)
+    
+    utj_khusus = UtjKhususByIdSch.from_orm(obj_current)
 
-#         data =  []
-#         no:int = 1
-#         invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id, jenis_bayar=termin_header.jenis_bayar)
-#         for inv in invoices:
-#             invoice = InvoiceForPrintOutUtj(**dict(inv))
-#             invoice.amountExt = "{:,.0f}".format(invoice.amount)
-#             invoice.luas_suratExt = "{:,.0f}".format(invoice.luas_surat)
-#             keterangan:str = ""
-#             keterangans = await crud.hasil_peta_lokasi_detail.get_keterangan_by_bidang_id_for_printout_utj(bidang_id=inv.bidang_id)
-#             for k in keterangans:
-#                 kt = HasilPetaLokasiDetailForUtj(**dict(k))
-#                 if kt.keterangan is not None and kt.keterangan != '':
-#                     keterangan += f'{kt.keterangan}, '
-#             keterangan = keterangan[0:-2]
-#             invoice.keterangan = keterangan
-#             invoice.no = no
-#             no = no + 1
+    total_luas_surat = "{:,.0f}".format(sum([dt.luas_surat for dt in utj_khusus.details]))
+    total_amount = "{:,.0f}".format(sum([dt.amount for dt in utj_khusus.details]))
 
-#             data.append(invoice)
+    data = []
+    if len(utj_khusus.details) == 0:
+        total_luas_surat = "{:,.0f}".format(utj_khusus.luas_kjb)
+        total_amount = "{:,.0f}".format(utj_khusus.utj_amount)
 
-#         array_total_luas_surat = numpy.array([b.luas_surat for b in invoices])
-#         total_luas_surat = numpy.sum(array_total_luas_surat)
-#         total_luas_surat = "{:,.0f}".format(total_luas_surat)
+        data_dummy = UtjKhususPrintOutSch(desa_name=utj_khusus.desa_name,
+                                            amountExt=total_amount,
+                                            luas_suratExt=total_luas_surat,
+                                            mediator=utj_khusus.kjb_hd_mediator)
+        data.append(data_dummy)
+    else:
+        data = utj_khusus.details
 
-#         array_total_amount = numpy.array([b.amount for b in invoices])
-#         total_amount = numpy.sum(array_total_amount)
-#         total_amount = "{:,.0f}".format(total_amount)
+    filename:str = "utj_khusus.html"
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template(filename)
 
-#         filename:str = "utj.html" if termin_header.jenis_bayar == "UTJ" else "utj_khusus.html"
-#         env = Environment(loader=FileSystemLoader("templates"))
-#         template = env.get_template(filename)
-
-#         render_template = template.render(code=termin_header.code,
-#                                         data=data,
-#                                         total_luas_surat=total_luas_surat,
-#                                         total_amount=total_amount)
-        
-#         try:
-#             doc = await PdfService().get_pdf(render_template)
-#         except Exception as e:
-#             raise HTTPException(status_code=500, detail="Failed generate document")
-        
-#         response = Response(doc, media_type='application/pdf')
-#         response.headers["Content-Disposition"] = f"attachment; filename={termin_header.code}.pdf"
-#         return response
-#     except Exception as e:
-#         raise HTTPException(status_code=422, detail=str(e))
+    render_template = template.render(code=utj_khusus.code,
+                                    data=data,
+                                    total_luas_surat=total_luas_surat,
+                                    total_amount=total_amount)
+    
+    try:
+        doc = await PdfService().get_pdf(render_template)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={utj_khusus.code}.pdf"
+    return response
+    # except Exception as e:
+    #     raise HTTPException(status_code=422, detail=str(e))
