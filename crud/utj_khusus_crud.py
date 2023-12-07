@@ -25,7 +25,8 @@ class CRUDUtjKhusus(CRUDBase[UtjKhusus, UtjKhususCreateSch, UtjKhususUpdateSch])
                                                 ).options(selectinload(UtjKhususDetail.kjb_dt
                                                                 ).options(selectinload(KjbDt.hasil_peta_lokasi
                                                                                 ).options(selectinload(HasilPetaLokasi.bidang))
-                                                                )
+                                                                ).options(selectinload(KjbDt.desa)
+                                                                ).options(selectinload(KjbDt.pemilik))
                                                 )
                                 )
         

@@ -48,20 +48,29 @@ async def dashboard_outstanding():
                 ) + (
                     Select 
                         Coalesce(SUM(CASE
-                                WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
-                                    Case
-                                        WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                        ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                    End
-                                WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
-                                    Case
-                                        WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
-                                        ELSE ROUND((kb.amount * b.luas_bayar), 2)
-                                    End
-                                WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                                WHEN bb.is_njop = True Then 
+                                    CASE
+                                        WHEN (b.harga_akta * b.luas_surat) > (b.njop * b.luas_surat) Then ROUND(((b.harga_akta * b.luas_surat) * kb.amount)/100, 2)
+                                        ELSE ROUND(((b.njop * b.luas_surat) * kb.amount)/100, 2)
+                                    END
+                                ELSE
+                                    CASE
+                                        WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
+                                            Case
+                                                WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                                ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                            End
+                                        WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
+                                            Case
+                                                WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                                ELSE ROUND((kb.amount * b.luas_bayar), 2)
+                                            End
+                                        WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                                    END
                             END), 0)
                         from invoice_detail idt
                         inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
+                        inner join beban_biaya bb on bb.id = kb.beban_biaya_id
                         inner join bidang b on b.id = kb.bidang_id
                         where idt.invoice_id = i.id
                         and kb.beban_pembeli = false)

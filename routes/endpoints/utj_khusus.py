@@ -63,6 +63,7 @@ async def create(
 
     sch.termin_id = termin.id
     sch.payment_id = payment.id
+    sch.code = termin_code
     new_obj = await crud.utj_khusus.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     # region add invoice and payment detail
@@ -297,3 +298,61 @@ async def get_list_bidang_by_kjb_hd_id(
     obj_return.kjb_dts = kjbdts
 
     return create_response(data=obj_return)
+
+# @router.get("/print-out/utj/{id}")
+# async def printout(id:UUID | str,
+#                         current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Print out UTJ"""
+#     try :
+#         obj = await crud.utj_khusus.get_by_id(id=id)
+#         if obj is None:
+#             raise IdNotFoundException(Termin, id)
+
+#         data =  []
+#         no:int = 1
+#         invoices = await crud.invoice.get_invoice_by_termin_id_for_printout_utj(termin_id=id, jenis_bayar=termin_header.jenis_bayar)
+#         for inv in invoices:
+#             invoice = InvoiceForPrintOutUtj(**dict(inv))
+#             invoice.amountExt = "{:,.0f}".format(invoice.amount)
+#             invoice.luas_suratExt = "{:,.0f}".format(invoice.luas_surat)
+#             keterangan:str = ""
+#             keterangans = await crud.hasil_peta_lokasi_detail.get_keterangan_by_bidang_id_for_printout_utj(bidang_id=inv.bidang_id)
+#             for k in keterangans:
+#                 kt = HasilPetaLokasiDetailForUtj(**dict(k))
+#                 if kt.keterangan is not None and kt.keterangan != '':
+#                     keterangan += f'{kt.keterangan}, '
+#             keterangan = keterangan[0:-2]
+#             invoice.keterangan = keterangan
+#             invoice.no = no
+#             no = no + 1
+
+#             data.append(invoice)
+
+#         array_total_luas_surat = numpy.array([b.luas_surat for b in invoices])
+#         total_luas_surat = numpy.sum(array_total_luas_surat)
+#         total_luas_surat = "{:,.0f}".format(total_luas_surat)
+
+#         array_total_amount = numpy.array([b.amount for b in invoices])
+#         total_amount = numpy.sum(array_total_amount)
+#         total_amount = "{:,.0f}".format(total_amount)
+
+#         filename:str = "utj.html" if termin_header.jenis_bayar == "UTJ" else "utj_khusus.html"
+#         env = Environment(loader=FileSystemLoader("templates"))
+#         template = env.get_template(filename)
+
+#         render_template = template.render(code=termin_header.code,
+#                                         data=data,
+#                                         total_luas_surat=total_luas_surat,
+#                                         total_amount=total_amount)
+        
+#         try:
+#             doc = await PdfService().get_pdf(render_template)
+#         except Exception as e:
+#             raise HTTPException(status_code=500, detail="Failed generate document")
+        
+#         response = Response(doc, media_type='application/pdf')
+#         response.headers["Content-Disposition"] = f"attachment; filename={termin_header.code}.pdf"
+#         return response
+#     except Exception as e:
+#         raise HTTPException(status_code=422, detail=str(e))

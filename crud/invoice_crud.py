@@ -326,17 +326,19 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                                 ELSE ROUND(((b.njop * b.luas_surat) * bkb.amount)/100, 2)
                                             END
                                         ELSE
-                                            WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
-                                                Case
-                                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                                    ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                                End
-                                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
-                                                Case
-                                                    WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
-                                                    ELSE ROUND((kb.amount * b.luas_bayar), 2)
-                                                End
-                                            WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                                            CASE
+                                                WHEN kb.satuan_bayar = 'Percentage' and kb.satuan_harga = 'Per_Meter2' Then
+                                                    Case
+                                                        WHEN b.luas_bayar is Null Then ROUND((kb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
+                                                        ELSE ROUND((kb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
+                                                    End
+                                                WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Per_Meter2' Then
+                                                    Case
+                                                        WHEN b.luas_bayar is Null Then ROUND((kb.amount * b.luas_surat), 2)
+                                                        ELSE ROUND((kb.amount * b.luas_bayar), 2)
+                                                    End
+                                                WHEN kb.satuan_bayar = 'Amount' and kb.satuan_harga = 'Lumpsum' Then kb.amount
+                                            END
                                     END), 0)
                                 from invoice_detail idt
                                 inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id

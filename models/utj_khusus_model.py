@@ -126,6 +126,14 @@ class UtjKhususDetail(UtjKhususDetailFullBase, table=True):
         return getattr(getattr(self, 'kjb_dt', None), 'alashak', None)
     
     @property
+    def pemilik_name(self) -> str | None:
+        return getattr(getattr(self, 'kjb_dt', None), 'pemilik_name', None)
+    
+    @property
+    def desa_name(self) -> str | None:
+        return getattr(getattr(self, 'kjb_dt', None), 'desa_name', None)
+    
+    @property
     def luas_surat(self) -> Decimal | None:
         luas:Decimal = 0
         if self.kjb_dt:
