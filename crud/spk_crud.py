@@ -316,7 +316,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 s.satuan_bayar,
                 mng.name As manager_name,
                 sls.name As sales_name,
-				w.name as worker_name
+				w.name as worker_name,
+                s.remark
                 from spk s
                 left join bidang b on s.bidang_id = b.id
                 left join hasil_peta_lokasi hpl on b.id = hpl.bidang_id

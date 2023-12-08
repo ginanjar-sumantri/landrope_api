@@ -389,9 +389,10 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             
             on_proc = "[get by name sales]"
             sales = None
-            sls = await crud.sales.get_by_name(name=shp_data.sales)
-            if sls:
-                sales = sls.id
+            if manager:
+                sls = await crud.sales.get_by_name_and_manager_id(name=shp_data.sales, manager_id=manager)
+                if sls:
+                    sales = sls.id
 
             on_proc = "[get by name project]"
             project = await crud.project.get_by_name(name=shp_data.project)

@@ -672,7 +672,8 @@ async def printout(id:UUID | str,
                                       nop=nop_value,
                                       npwp=npwp_value,
                                       ktp=ktp_value,
-                                      kk=kk_value)
+                                      kk=kk_value,
+                                      remark=spk_header.remark)
     
     try:
         doc = await PdfService().get_pdf(render_template)

@@ -78,6 +78,7 @@ class SpkPrintOut(SQLModel):
     notaris_name:Optional[str]
     status_il:Optional[StatusSKEnum]
     worker_name:Optional[str]
+    remark:Optional[str]
 
 class SpkDetailPrintOut(SQLModel):
     no:Optional[int]

@@ -830,7 +830,7 @@ async def get_report(
              "Luas Bayar" : invoice.bidang.luas_bayar, 
              "Jenis Bayar" : invoice.jenis_bayar,
              "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi)), 
-             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {payment_detail.amount}' for payment_detail in invoice.payment_details])} 
+             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
              for termin in objs for invoice in termin.invoices]
 
     
