@@ -322,8 +322,8 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                 Coalesce(SUM(CASE
                                         WHEN bb.is_njop = True Then 
                                             CASE
-                                                WHEN (b.harga_akta * b.luas_surat) > (b.njop * b.luas_surat) Then ROUND(((b.harga_akta * b.luas_surat) * bkb.amount)/100, 2)
-                                                ELSE ROUND(((b.njop * b.luas_surat) * bkb.amount)/100, 2)
+                                                WHEN (b.harga_akta * b.luas_surat) > (b.njop * b.luas_surat) Then ROUND(((b.harga_akta * b.luas_surat) * kb.amount)/100, 2)
+                                                ELSE ROUND(((b.njop * b.luas_surat) * kb.amount)/100, 2)
                                             END
                                         ELSE
                                             CASE

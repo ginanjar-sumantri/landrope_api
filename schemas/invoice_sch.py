@@ -38,8 +38,8 @@ class InvoiceSch(InvoiceFullBase):
 
     # payment_methods:Optional[str] = Field(alias="payment_methods")
 
-    payment_details:list[PaymentDetailSch]
-    details:list[InvoiceDetailSch]
+    payment_details:list[PaymentDetailSch]|None
+    details:list[InvoiceDetailSch]|None
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class InvoiceInTerminSch(InvoiceSch):
