@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException, Response
+from fastapi import APIRouter, status, Depends, HTTPException, Response, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
@@ -22,7 +22,7 @@ from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
-from services.history_service import HistoryService
+from services.history_service import HistoryService, HelperService
 from jinja2 import Environment, FileSystemLoader
 from datetime import date
 import crud
@@ -36,6 +36,7 @@ router = APIRouter()
 @router.post("/create", response_model=PostResponseBaseSch[SpkSch], status_code=status.HTTP_201_CREATED)
 async def create(
             sch: SpkCreateSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -59,9 +60,12 @@ async def create(
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
+    beban_biaya = None
     for komponen_biaya in sch.spk_beban_biayas:
+        
         komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=new_obj.bidang_id, 
                                                                                                       beban_biaya_id=komponen_biaya.beban_biaya_id)
+        
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
@@ -72,6 +76,9 @@ async def create(
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
+            
+            beban_biaya = komponen_biaya_current.beban_biaya
+            
         else:
             beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
@@ -88,6 +95,12 @@ async def create(
                                                         amount=beban_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+
+        if beban_biaya.is_njop:
+            bundle_hd_current = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
+            bundle_dt_current = next((bundle_dt for bundle_dt in bundle_hd_current.bundledts if bundle_dt.dokumen_name == "SPPT PBB NOP"), None)
+
+            background_task.add_task(HelperService().update_nilai_njop_bidang, bundle_dt_current, bundle_dt_current.meta_data)
 
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
@@ -342,7 +355,9 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     return obj_return
 
 @router.put("/{id}", response_model=PutResponseBaseSch[SpkSch])
-async def update(id:UUID, sch:SpkUpdateSch,
+async def update(id:UUID, 
+                 sch:SpkUpdateSch,
+                 background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -380,6 +395,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
         list_obj = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj_current.bidang_id)
         await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=list_obj, db_session=db_session)
 
+    beban_biaya = None
     for komponen_biaya in sch.spk_beban_biayas:
         komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=obj_updated.bidang_id, 
                                                                                                       beban_biaya_id=komponen_biaya.beban_biaya_id)
@@ -390,6 +406,7 @@ async def update(id:UUID, sch:SpkUpdateSch,
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
+            beban_biaya = komponen_biaya_current.beban_biaya
         else:
             beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
@@ -406,6 +423,12 @@ async def update(id:UUID, sch:SpkUpdateSch,
                                                         amount=beban_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+        
+        if beban_biaya.is_njop:
+            bundle_hd_current = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
+            bundle_dt_current = next((bundle_dt for bundle_dt in bundle_hd_current.bundledts if bundle_dt.dokumen_name == "SPPT PBB NOP"), None)
+
+            background_task.add_task(HelperService().update_nilai_njop_bidang, bundle_dt_current, bundle_dt_current.meta_data)
 
 
     #remove kelengkapan dokumen 

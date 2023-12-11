@@ -29,7 +29,9 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
         query = select(BundleHd).where(BundleHd.id == id).options(selectinload(BundleHd.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
                                                         ).options(selectinload(BundleHd.kjb_dt)
                                                         ).options(selectinload(BundleHd.bidang)
-                                                        ).options(selectinload(BundleHd.bundledts))
+                                                        ).options(selectinload(BundleHd.bundledts
+                                                                    ).options(selectinload(BundleDt.dokumen))
+                                                        )
 
         response = await db_session.execute(query)
 

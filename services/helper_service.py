@@ -9,6 +9,7 @@ from common.exceptions import ContentNoChangeException
 from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
 from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
+from decimal import Decimal
 from typing import Tuple
 from shapely import wkt, wkb
 import crud
@@ -366,3 +367,26 @@ class HelperService:
                 return None
         else:
             return None
+        
+    
+    async def update_nilai_njop_bidang(self, bundle_dt:BundleDt, meta_data:str|None = None):
+        """Mengupdate Nilai NJOP di Bidang"""
+
+        if meta_data is None:
+            return None
+
+        if bundle_dt.bundlehd.bidang:
+            bidang_current = await crud.bidang.get_by_id(id=bundle_dt.bundlehd.bidang.id)
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+            if bidang_current.geom_ori :
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
+            metadata_dict = json.loads(meta_data.replace("'", "\""))
+            value = metadata_dict.get('NJOP', None)
+            if value:
+                value = Decimal(value)
+                bidang_updated = BidangUpdateSch(njop=value)
+
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)

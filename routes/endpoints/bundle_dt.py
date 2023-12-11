@@ -156,28 +156,9 @@ async def update(id:UUID,
     obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)
 
     if obj_updated.dokumen_name == "SPPT PBB NOP":
-        background_task.add_task(update_nilai_njop_bidang, obj_updated, obj_updated.meta_data)
+        background_task.add_task(HelperService().update_nilai_njop_bidang, obj_updated, obj_updated.meta_data)
 
     return create_response(data=obj_updated)
-
-async def update_nilai_njop_bidang(bundle_dt:BundleDt, meta_data:str|None):
-    """Mengupdate Nilai NJOP di Bidang"""
-
-    if bundle_dt.bundlehd.bidang:
-        bidang_current = await crud.bidang.get_by_id(id=bundle_dt.bundlehd.bidang.id)
-        if bidang_current.geom :
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-
-        if bidang_current.geom_ori :
-            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-
-        metadata_dict = json.loads(meta_data.replace("'", "\""))
-        value = metadata_dict.get('NJOP', None)
-        if value:
-            value = Decimal(value)
-            bidang_updated = BidangUpdateSch(njop=value)
-
-            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
 
 
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
@@ -220,7 +201,7 @@ async def update_riwayat(id:UUID,
     obj = await crud.bundledt.get_by_id(id=obj.id)
 
     if sch.is_default and obj.dokumen_name == "SPPT PBB NOP":
-        background_task.add_task(update_nilai_njop_bidang, obj, obj.meta_data)
+        background_task.add_task(HelperService().update_nilai_njop_bidang, obj, obj.meta_data)
 
     return create_response(data=obj)
 
@@ -258,7 +239,7 @@ async def delete_riwayat(id:UUID,
     obj = await crud.bundledt.get_by_id(id=obj.id)
 
     if obj.dokumen_name == "SPPT PBB NOP":
-        background_task.add_task(update_nilai_njop_bidang, obj, obj.meta_data)
+        background_task.add_task(HelperService().update_nilai_njop_bidang, obj, obj.meta_data)
 
     return create_response(data=obj)
     
