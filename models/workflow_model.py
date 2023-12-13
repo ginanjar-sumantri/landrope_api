@@ -1,0 +1,52 @@
+# from sqlmodel import SQLModel, Field, Relationship
+# from common.enum import WorkflowLastStatusEnum
+# from models.base_model import BaseUUIDModel
+# from uuid import UUID
+# from datetime import datetime
+
+# class WorkflowBase(SQLModel):
+#     reference_id:UUID = Field(nullable=False) #id object (spk, memo tanah dll)
+#     step_name:str | None = Field(nullable=True)
+#     last_status:WorkflowLastStatusEnum|None = Field(nullable=True)
+#     last_status_at:datetime|None = Field(nullable=True)
+#     last_step_app_email:str|None = Field(nullable=True)
+#     last_step_app_name:str|None = Field(nullable=True)
+#     last_step_app_action:str|None = Field(nullable=True)
+#     last_step_app_action_at:datetime|None = Field(nullable=True)
+#     last_step_app_action_remarks:str|None = Field(nullable=True)
+
+# class WorkflowFullBase(BaseUUIDModel, WorkflowBase):
+#     pass
+
+# class Workflow(WorkflowFullBase, table=True):
+#     workflow_histories:list["WorkflowHistory"] = Relationship(
+#         sa_relationship_kwargs=
+#         {
+#             "lazy":"select"
+#         },
+#         back_populates="workflow"
+#     )
+
+
+# class WorkflowHistoryBase(SQLModel):
+#     workflow_id:UUID = Field(foreign_key="workflow.id")
+#     step_name:str | None = Field(nullable=True)
+#     last_status:WorkflowLastStatusEnum|None = Field(nullable=True)
+#     last_status_at:datetime|None = Field(nullable=True)
+#     last_step_app_email:str|None = Field(nullable=True)
+#     last_step_app_name:str|None = Field(nullable=True)
+#     last_step_app_action:str|None = Field(nullable=True)
+#     last_step_app_action_at:datetime|None = Field(nullable=True)
+#     last_step_app_action_remarks:str|None = Field(nullable=True)
+
+# class WorkflowHistoryFullBase(BaseUUIDModel, WorkflowHistoryBase):
+#     pass
+
+# class WorkflowHistory(WorkflowHistoryFullBase, table=True):
+#     workflow:"Workflow" = Relationship(
+#         sa_relationship_kwargs=
+#         {
+#             "lazy":"select"
+#         },
+#         back_populates="workflow_histories"
+#     )

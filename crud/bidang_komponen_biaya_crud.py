@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import BidangKomponenBiaya, BebanBiaya
+from models import BidangKomponenBiaya, BebanBiaya, Bidang, Invoice
 from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, 
                                                BidangKomponenBiayaBebanPenjualSch)
 from schemas.beban_biaya_sch import BebanBiayaForSpkSch
@@ -23,7 +23,12 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             db_session: AsyncSession | None = None) -> BidangKomponenBiaya | None:
         db_session = db_session or db.session
         query = select(self.model).where(self.model.id == id
-            ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+            ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+            ).options(selectinload(BidangKomponenBiaya.bidang
+                            ).options(selectinload(Bidang.invoices
+                                            ).options(selectinload(Invoice.termin))
+                            )
+            )
         
         response = await db_session.execute(query)
 

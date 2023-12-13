@@ -57,12 +57,15 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
     
     """Update a obj by its id"""
 
-    obj_current = await crud.bidang_komponen_biaya.get(id=id)
+    obj_current = await crud.bidang_komponen_biaya.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(BidangKomponenBiaya, id)
     
-    # sch.is_void = obj_current.is_void
+    if obj_current.is_void == False and sch.is_void == True and obj_current.has_invoice_lunas:
+        raise HTTPException(status_code=422, detail="Failed updated. Detail : Bidang sudah memiliki pelunasan, komponen tidak dapet divoid.")
+        
+
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
