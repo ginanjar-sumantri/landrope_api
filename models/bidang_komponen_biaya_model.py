@@ -75,7 +75,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
         total_amount:Decimal = 0
         if self.beban_biaya.is_njop:
             harga_akta = self.bidang.harga_akta * self.bidang.luas_surat
-            harga_njop = self.bidang.njop * self.bidang.luas_surat
+            harga_njop = (self.bidang.njop or 0) * self.bidang.luas_surat
 
             harga_terbesar = max(harga_akta, harga_njop)
 
@@ -93,7 +93,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def amount_biaya_lain(self) -> Decimal | None:
         if self.is_add_pay and self.is_void != True and self.beban_pembeli:
-            return self.amount
+            return self.amount or 0
         
         return 0
     
