@@ -16,6 +16,7 @@ from schemas.spk_history_sch import SpkHistoryCreateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
+from schemas.workflow_sch import WorkflowCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum
 from common.ordered import OrderEnumSch
@@ -101,6 +102,8 @@ async def create(
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
+
+   
     
     await db_session.commit()
     await db_session.refresh(new_obj)

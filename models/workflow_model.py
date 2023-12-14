@@ -52,3 +52,11 @@ class WorkflowHistory(WorkflowHistoryFullBase, table=True):
         },
         back_populates="workflow_histories"
     )
+
+
+class WorkflowTemplateBase(SQLModel):
+    entity:WorkflowEntityEnum | None
+    flow_id:str | None
+
+class WorkflowTemplateFullBase(WorkflowTemplateBase, BaseUUIDModel):
+    pass
