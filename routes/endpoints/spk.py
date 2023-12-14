@@ -106,7 +106,7 @@ async def create(
     template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
     workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
     workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
-    await crud.workflow.create(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
+    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
     await db_session.refresh(new_obj)

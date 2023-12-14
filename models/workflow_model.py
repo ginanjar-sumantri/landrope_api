@@ -31,7 +31,7 @@ class Workflow(WorkflowFullBase, table=True):
 
 
 class WorkflowHistoryBase(SQLModel):
-    workflow_id:UUID = Field(foreign_key="workflow.id")
+    workflow_id:UUID|None = Field(foreign_key="workflow.id", nullable=False)
     step_name:str | None = Field(nullable=True)
     last_status:WorkflowLastStatusEnum|None = Field(nullable=True)
     last_status_at:datetime|None = Field(nullable=True)

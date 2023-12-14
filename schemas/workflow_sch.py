@@ -33,3 +33,23 @@ class WorkflowCreateResponseSch(SQLModel):
     id:str
     last_status:WorkflowLastStatusEnum|None
     updated_at:datetime
+
+class WorkflowSystemApproverSch(SQLModel):
+    email: str|None
+    name: str|None
+    status: str|None
+    confirm_at: datetime|None
+    confirm_remarks: str|None
+
+class WorkflowSystemNextApproverSch(SQLModel):
+    email: str|None
+    name: str|None
+
+class WorkflowSystemCallbackSch(SQLModel):
+    client_reff_no:str|None
+    txn_id: str|None
+    last_status_enum: str|None
+    step_name: str|None
+    last_status_at: datetime|None
+    last_step_approver: WorkflowSystemApproverSch|None
+    next_approver: list[WorkflowSystemNextApproverSch]|None

@@ -29,5 +29,21 @@ class CRUDWorkflowTemplate(CRUDBase[WorkflowTemplate, WorkflowTemplateCreateSch,
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_by_flow_id(self, 
+                  *, 
+                  flow_id: str | None = None,
+                  query : WorkflowTemplate | Select[WorkflowTemplate] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> WorkflowTemplate | None:
+        
+        db_session = db_session or db.session
+
+        if query == None:
+            query = select(self.model).where(self.model.flow_id == flow_id)
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 workflow_template = CRUDWorkflowTemplate(WorkflowTemplate)

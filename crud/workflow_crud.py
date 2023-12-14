@@ -18,7 +18,7 @@ from uuid import UUID
 from datetime import datetime
 
 class CRUDWorkflow(CRUDBase[Workflow, WorkflowCreateSch, WorkflowUpdateSch]):
-    async def create(self, *, 
+    async def create_(self, *, 
                      obj_in: WorkflowCreateSch | Workflow, 
                      obj_wf: WorkflowSystemCreateSch,
                      created_by_id : UUID | str | None = None, 
@@ -51,5 +51,21 @@ class CRUDWorkflow(CRUDBase[Workflow, WorkflowCreateSch, WorkflowUpdateSch]):
         if with_commit:
             await db_session.refresh(db_obj)
         return db_obj
+    
+    async def get_by_reference_id(self, 
+                  *, 
+                  reference_id: UUID | str | None = None,
+                  query : Workflow | Select[Workflow] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Workflow | None:
+        
+        db_session = db_session or db.session
+
+        if query == None:
+            query = select(self.model).where(self.model.reference_id == reference_id)
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 workflow = CRUDWorkflow(Workflow)
