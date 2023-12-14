@@ -412,7 +412,7 @@ async def update(id:UUID,
         
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.is_use, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya_current.is_use, komponen_biaya.beban_pembeli, komponen_biaya.remark]
+            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya.beban_pembeli, komponen_biaya.remark]
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
