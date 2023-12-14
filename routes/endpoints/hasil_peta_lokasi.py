@@ -30,7 +30,7 @@ from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidang
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
 from services.geom_service import GeomService
-from services.helper_service import HelperService
+from services.helper_service import HelperService, KomponenBiayaHelper
 from services.history_service import HistoryService
 from shapely import wkb, to_wkt, wkt
 from decimal import Decimal
@@ -133,7 +133,6 @@ async def get_list(
 
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
-
 
 @router.post("/create", response_model=PostResponseBaseSch[HasilPetaLokasiSch], status_code=status.HTTP_201_CREATED)
 async def create(
@@ -551,6 +550,8 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
 
     await db_session.commit()
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [bidang_current.id])
+
     return {"message":"successfully"} 
 
 @router.post("/cloud-task-generate-kelengkapan")
@@ -644,7 +645,6 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
     await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session)
 
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
-
 
 async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id:UUID, worker_id:UUID):
     

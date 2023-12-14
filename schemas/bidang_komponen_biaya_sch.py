@@ -25,6 +25,11 @@ class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")
     beban_biaya_name:Optional[str] = Field(alias="beban_biaya_name")
     is_edit:Optional[bool] = Field(alias="is_edit")
+    is_tax:Optional[bool] = Field(alias="is_tax")
+    komponen_biaya_outstanding:Optional[Decimal] = Field(alias="komponen_biaya_outstanding")
+    invoice_detail_amount:Optional[Decimal] = Field(alias="invoice_detail_amount")
+
+    
 
 class BidangKomponenBiayaListSch(BidangKomponenBiayaSch):
     amount_calculate:Decimal|None = Field(alias="amount_calculate")
@@ -48,9 +53,10 @@ class BidangKomponenBiayaBebanPenjualSch(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum]
     beban_biaya_amount:Optional[Decimal]
     total_beban:Optional[Decimal]
-    is_use:Optional[bool]
     is_void:Optional[bool]
     is_retur:Optional[bool]
     is_add_pay:Optional[bool]
+    estimasi_amount:Optional[Decimal]
+    paid_amount:Optional[Decimal]
 
 

@@ -82,6 +82,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         tr.tanggal_rencana_transaksi,
                         (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
                         t.nomor_tahap,
+                        tr.nomor_memo,
                         SUM(i.amount) as amount,
                         pr.name as project_name,
                         ds.name as desa_name,
@@ -154,27 +155,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                 when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(PENGEMBALIAN BEBAN PENJUAL)'
                         else '(BEBAN PENJUAL)'
                         end as tanggungan,
-                        CASE
-                                WHEN bb.is_njop = True Then 
-                                        CASE
-                                                WHEN (b.harga_akta * b.luas_surat) > (b.njop * b.luas_surat) Then ROUND(((b.harga_akta * b.luas_surat) * bkb.amount)/100, 2)
-                                                ELSE ROUND(((b.njop * b.luas_surat) * bkb.amount)/100, 2)
-                                        END
-                                ELSE
-                                        CASE
-                                                WHEN bkb.satuan_bayar = 'Percentage' and bkb.satuan_harga = 'Per_Meter2' Then
-                                                Case
-                                                        WHEN b.luas_bayar is Null Then ROUND((bkb.amount * (b.luas_surat * b.harga_transaksi))/100, 2)
-                                                        ELSE ROUND((bkb.amount * (b.luas_bayar * b.harga_transaksi))/100, 2)
-                                                End
-                                                WHEN bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Per_Meter2' Then
-                                                Case
-                                                        WHEN b.luas_bayar is Null Then ROUND((bkb.amount * b.luas_surat), 2)
-                                                        ELSE ROUND((bkb.amount * b.luas_bayar), 2)
-                                                End
-                                                When bkb.satuan_bayar = 'Amount' and bkb.satuan_harga = 'Lumpsum' Then bkb.amount
-                                        End
-                        END As amount,
+                        idt.amount As amount,
                         bkb.beban_pembeli,
                         bkb.is_void
                         from termin t

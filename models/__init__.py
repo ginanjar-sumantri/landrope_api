@@ -36,3 +36,5 @@ from .utj_khusus_model import UtjKhusus, UtjKhususDetail
 from .invoice_model import Invoice, InvoiceDetail
 from .payment_model import Payment, PaymentDetail
 
+from .workflow_model import Workflow, WorkflowHistory
+

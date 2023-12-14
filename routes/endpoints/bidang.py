@@ -2,7 +2,7 @@ import json
 import crud
 import time
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request
+from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
@@ -27,8 +27,7 @@ from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, Jenis
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
-from services.helper_service import HelperService
-from services.history_service import HistoryService
+from services.helper_service import HelperService, KomponenBiayaHelper
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
@@ -159,7 +158,10 @@ async def get_for_order_gu_by_id(id:UUID):
     return create_response(data=obj_return)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[BidangRawSch])
-async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), file:UploadFile = None,
+async def update(id:UUID,
+                 background_task:BackgroundTasks,
+                 sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form), 
+                 file:UploadFile = None,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     """Update a obj by its id"""
@@ -197,9 +199,10 @@ async def update(id:UUID, sch:BidangUpdateSch = Depends(BidangUpdateSch.as_form)
             sch = BidangSch(**sch.dict())
             sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
 
-
         obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
         obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
+
+        background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_ids=[obj_updated.id]))
         
         return create_response(data=obj_updated)
     except Exception as e:
@@ -538,7 +541,6 @@ async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,
         return True, count
     
     return False, count
-
 
 @router.get("/export/shp", response_class=Response)
 async def export(

@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     PROJECT_NAME:str
     PDF_URL:str
 
+    WF_BASE_URL:str
+    WF_SIGN_PRIVATE_KEY:str
+    WF_SIGN_PUBLIC_KEY:str
+    WF_CLIENT_ID:str
+
     class Config:
         env_file = ".env"
 

@@ -1,9 +1,11 @@
 from fastapi import UploadFile
+from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
 from models.bundle_model import BundleDt, BundleHd
 from schemas.dokumen_sch import RiwayatSch
 from schemas.bidang_sch import BidangUpdateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
 from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
@@ -17,7 +19,6 @@ import json
 import pytz
 
 class HelperService:
-
     def extract_metadata_for_history(self, meta_data:str | None = None,
                                 current_history:str | None = None) -> str:
 
@@ -389,4 +390,38 @@ class HelperService:
                 value = Decimal(value)
                 bidang_updated = BidangUpdateSch(njop=value)
 
-                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
+                obj_updated = await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
+
+                await KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_id=[obj_updated.id])
+
+class KomponenBiayaHelper:
+
+    async def get_estimated_amount(self, formula:str | None = None) -> Decimal | None:
+
+        """Calculate estimated amount from formula"""
+
+        db_session = db.session
+
+        if formula is None:
+            return 0
+
+        query = f"""select  
+                {formula} As estimated_amount
+                from bidang
+                inner join bidang_komponen_biaya ON bidang.id = bidang_komponen_biaya.bidang_id"""
+    
+        response = await db_session.execute(query)
+        result = response.fetchone()
+ 
+        return result.estimated_amount
+    
+    async def calculated_all_komponen_biaya(self, bidang_ids:list[UUID]):
+        """Calculated all komponen bidang when created or updated spk"""
+
+        komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_ids(list_bidang_id=bidang_ids)
+
+        for komponen_biaya in komponen_biayas:
+            sch_updated = BidangKomponenBiayaUpdateSch.from_orm(komponen_biaya)
+            sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula)
+
+            await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)

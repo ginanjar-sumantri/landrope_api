@@ -48,6 +48,7 @@ class TerminUpdateSch(TerminBase):
 class TerminByIdForPrintOut(SQLModel):
     id:Optional[UUID]
     code:Optional[str]
+    nomor_memo:Optional[str]
     tahap_id:Optional[UUID]
     created_at:Optional[datetime]
     nomor_tahap:Optional[int]

@@ -22,7 +22,9 @@ from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
-from services.history_service import HistoryService, HelperService
+from services.history_service import HistoryService
+from services.helper_service import HelperService, KomponenBiayaHelper
+from services.workflow_service import WorkflowService
 from jinja2 import Environment, FileSystemLoader
 from datetime import date
 import crud
@@ -96,12 +98,6 @@ async def create(
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
-        if beban_biaya.is_njop:
-            bundle_hd_current = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
-            bundle_dt_current = next((bundle_dt for bundle_dt in bundle_hd_current.bundledts if bundle_dt.dokumen_name == "SPPT PBB NOP"), None)
-
-            background_task.add_task(HelperService().update_nilai_njop_bidang, bundle_dt_current, bundle_dt_current.meta_data)
-
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
@@ -110,6 +106,8 @@ async def create(
     await db_session.refresh(new_obj)
 
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
+
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [new_obj.bidang_id])
     
     return create_response(data=new_obj)
 
@@ -190,6 +188,7 @@ async def get_list(
 async def get_report(
                 start_date:date|None = None,
                 end_date:date|None = None,
+                outstanding:bool|None = False,
                 keyword:str = None, 
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -211,6 +210,16 @@ async def get_report(
     if start_date and end_date:
         query = query.filter(cast(Spk.created_at, Date).between(start_date, end_date))
         filename = str(filename)
+
+    if outstanding:
+        subquery = (
+            select(Invoice.spk_id)
+            .join(Termin, Termin.id == Invoice.termin_id)
+            .filter(Invoice.is_void != True, ~Termin.jenis_bayar.in_(['UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE']))
+            .distinct()
+        )
+        query = query.filter(~Spk.jenis_bayar.in_(['BEGINNING_BALANCE', 'PAJAK']))
+        query = query.filter(~Spk.id.in_(subquery))
 
     query = query.distinct()
     query = query.options(selectinload(Spk.bidang
@@ -423,13 +432,6 @@ async def update(id:UUID,
                                                         amount=beban_biaya.amount)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
-        
-        if beban_biaya.is_njop:
-            bundle_hd_current = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
-            bundle_dt_current = next((bundle_dt for bundle_dt in bundle_hd_current.bundledts if bundle_dt.dokumen_name == "SPPT PBB NOP"), None)
-
-            background_task.add_task(HelperService().update_nilai_njop_bidang, bundle_dt_current, bundle_dt_current.meta_data)
-
 
     #remove kelengkapan dokumen 
     list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
@@ -455,6 +457,8 @@ async def update(id:UUID,
     await db_session.refresh(obj_updated)
 
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
+
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [obj_updated.bidang_id])
 
     return create_response(data=obj_updated)
 
@@ -705,4 +709,21 @@ async def printout(id:UUID | str,
     
     response = Response(doc, media_type='application/pdf')
     response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
+    return response
+
+
+@router.post("/workflow")
+async def create_workflow():
+
+    body = {
+        "client_id": "01HHEH1R23EXMBEKQHHFRZV9Y1",
+        "client_ref_no": "2a7bd3dc-50b8-4b99-aecb-364ee7bff6cc",
+        "flow_id": "01HHGRBWDZS7ET737MTSP738QV",
+        "additional_info": {},
+        "descs": "",
+        "attachments": []
+    }
+
+    response, msg = await WorkflowService().create_workflow(body=body)
+
     return response

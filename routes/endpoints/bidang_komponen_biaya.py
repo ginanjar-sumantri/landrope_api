@@ -7,8 +7,8 @@ from models.worker_model import Worker
 from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaSch, BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaListSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.generator import generate_code
-from models.code_counter_model import CodeCounterEnum
+from common.enum import SatuanBayarEnum, SatuanHargaEnum
+from services.helper_service import KomponenBiayaHelper
 import crud
 
 
@@ -45,7 +45,7 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bidang_komponen_biaya.get(id=id)
+    obj = await crud.bidang_komponen_biaya.get_by_id(id=id)
     if obj:
         return create_response(data=obj)
     else:
@@ -64,42 +64,17 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
     
     if obj_current.is_void == False and sch.is_void == True and obj_current.has_invoice_lunas:
         raise HTTPException(status_code=422, detail="Failed updated. Detail : Bidang sudah memiliki pelunasan, komponen tidak dapet divoid.")
+    
+    if sch.satuan_bayar == SatuanBayarEnum.Amount and sch.satuan_harga == SatuanHargaEnum.Lumpsum:
+        sch.estimated_amount = sch.amount
+    else:
+        sch.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=obj_current.formula)
+        
+    
         
 
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-@router.post("/cloud-task-is-use")
-async def update_komponen_is_use(id:UUID):
 
-    """Task Update Komponen Biaya Is Use"""
-
-    obj_current = await crud.bidang_komponen_biaya.get(id=id)
-
-    if not obj_current:
-        raise IdNotFoundException(BidangKomponenBiaya, id)
-    
-    sch = BidangKomponenBiayaUpdateSch(**obj_current.dict())
-    sch.is_use = True
-    
-    await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch)
-    
-    return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
-
-@router.post("/cloud-task-is-not-use")
-async def update_komponen_is_use(id:UUID):
-
-    """Task Update Komponen Biaya Is Use"""
-
-    obj_current = await crud.bidang_komponen_biaya.get(id=id)
-
-    if not obj_current:
-        raise IdNotFoundException(BidangKomponenBiaya, id)
-    
-    sch = BidangKomponenBiayaUpdateSch(**obj_current.dict())
-    sch.is_use = False
-    
-    await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch)
-    
-    return {"message" : "successfully remove link bidang and kelengkapan dokumen"} 
    

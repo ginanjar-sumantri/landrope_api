@@ -21,7 +21,7 @@ from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpda
 from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaBebanPenjualSch, BidangKomponenBiayaUpdateSch
+from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
 from schemas.kjb_harga_sch import KjbHargaAktaSch
@@ -78,7 +78,7 @@ async def create(
         elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
             jns_byr = JenisBayarEnum.LUNAS.value
             code_counter = CodeCounterEnum.Lunas
-            await make_sure_all_beban_penjual_is_used(sch=sch)
+            await make_sure_all_komponen_biaya_not_outstanding(sch=sch)
         elif sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
             jns_byr = "BIAYA-LAIN"
             code_counter = CodeCounterEnum.Biaya_Lain
@@ -110,10 +110,10 @@ async def create(
             invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
             await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
             
-            bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-            sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
-            sch_komponen_biaya.is_use = True
-            await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
+            # bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
+            # sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
+            # sch_komponen_biaya.is_use = True
+            # await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
     
     #add termin bayar
     for termin_bayar in sch.termin_bayars:
@@ -127,14 +127,22 @@ async def create(
 
     return create_response(data=new_obj)
 
-async def make_sure_all_beban_penjual_is_used(sch: TerminCreateSch):
+async def make_sure_all_komponen_biaya_not_outstanding(sch: TerminCreateSch):
     bidang_ids = [x.bidang_id for x in sch.invoices]
-    bidang_komponen_biaya_ids = [x.bidang_komponen_biaya_id for inv in sch.invoices for x in inv.details]
+    invoice_details = [y for x in sch.invoices for y in x.details]
 
-    bidang_komponen_biaya_not_in_use = await crud.bidang_komponen_biaya.get_multi_beban_penjual_not_use(list_bidang_id=bidang_ids, list_komponen_id=bidang_komponen_biaya_ids)
+    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_ids(list_bidang_id=bidang_ids)
     
-    if len(bidang_komponen_biaya_not_in_use) > 0:
-        raise HTTPException(status_code=422, detail="Failed create termin. Detail : Ada bidang yang beban penjualnya belum dipakai dimanapun!")
+    for komponen_biaya in komponen_biayas:
+        outstanding:Decimal = 0
+        invoice_detail = next((inv for inv in invoice_details if inv.bidang_komponen_biaya_id == komponen_biaya.id), None)
+        if invoice_detail:
+            outstanding = komponen_biaya.estimated_amount - (sum([inv_dtl.amount for inv_dtl in komponen_biaya.invoice_details if inv_dtl.invoice.is_void != True]) + invoice_detail.amount)
+        else:
+            outstanding = komponen_biaya.estimated_amount - sum([inv_dtl.amount for inv_dtl in komponen_biaya.invoice_details if inv_dtl.invoice.is_void != True])
+
+        if outstanding > 0:
+            raise HTTPException(status_code=422, detail="Failed create Termin. Detail : Ada bidang yang komponen biayanya masih memiliki outstanding!")
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
 async def get_list(
@@ -231,7 +239,7 @@ async def update(
             jns_byr = JenisBayarEnum.DP.value
         elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
             jns_byr = JenisBayarEnum.LUNAS.value
-            await make_sure_all_beban_penjual_is_used(sch=sch)
+            await make_sure_all_komponen_biaya_not_outstanding(sch=sch)
         else:
             jns_byr = "PENGEMBALIAN"
     
@@ -288,13 +296,6 @@ async def update(
                         invoice_dtl_current = await crud.invoice_detail.get(id=dt.id)
                         invoice_dtl_updated_sch = InvoiceDetailUpdateSch(**dt.dict(), invoice_id=invoice_updated.id)
                         await crud.invoice_detail.update(obj_current=invoice_dtl_current, obj_new=invoice_dtl_updated_sch, db_session=db_session, with_commit=False)
-                    
-                    if invoice_current.is_void != True:
-                        bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-                        sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
-                        sch_komponen_biaya.is_use = True
-                        await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
-                
             else:
                 raise ContentNoChangeException(detail="data invoice tidak ditemukan")
         else:
@@ -308,15 +309,6 @@ async def update(
             for dt in invoice.details:
                 invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
                 await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-                
-                bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-                sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
-                sch_komponen_biaya.is_use = True
-                await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
-    
-                # payload = {"id" : dt.bidang_komponen_biaya_id}
-                # url = f'{request.base_url}landrope/bidang_komponen_biaya/cloud-task-is-use'
-                # GCloudTaskService().create_task(payload=payload, base_url=url)
     
     list_id_termin_bayar = [bayar.id for bayar in sch.termin_bayars if bayar.id != None]
     if len(list_id_termin_bayar) > 0:
@@ -334,7 +326,6 @@ async def update(
         else:
             termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -383,7 +374,7 @@ async def get_list_bidang_by_kjb_hd_id(
 
     return create_response(data=obj_return)
 
-@router.get("/search/komponen_biaya", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
+@router.get("/search/komponen_biaya", response_model=GetResponseBaseSch[list[BidangKomponenBiayaSch]])
 async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
                 bidang_id:UUID,
                 invoice_id:UUID,
@@ -406,7 +397,7 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
 
     return create_response(data=objs)
 
-@router.get("/search/komponen_biaya/bidang/{spk_id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaBebanPenjualSch]])
+@router.get("/search/komponen_biaya/bidang/{spk_id}", response_model=GetResponseBaseSch[list[BidangKomponenBiayaSch]])
 async def get_list_komponen_biaya_by_spk_id(
                 spk_id:UUID,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -418,7 +409,7 @@ async def get_list_komponen_biaya_by_spk_id(
     objs = []
     if spk.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         objs = await crud.bidang_komponen_biaya.get_multi_pengembalian_beban_by_bidang_id(bidang_id=spk.bidang_id)
-    if spk.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+    elif spk.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
         objs = await crud.bidang_komponen_biaya.get_multi_beban_biaya_lain_by_bidang_id(bidang_id=spk.bidang_id)
     else:
         objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
@@ -672,7 +663,7 @@ async def printout(id:UUID | str,
         env = Environment(loader=FileSystemLoader("templates"))
         template = env.get_template(filename)
 
-        render_template = template.render(code=termin_header.code or "",
+        render_template = template.render(code=termin_header.nomor_memo or "",
                                         created_at=termin_header.created_at.date(),
                                         nomor_tahap=termin_header.nomor_tahap,
                                         project_name=termin_header.project_name,
@@ -799,7 +790,9 @@ async def get_report(
     filename:str = ''
     query = select(Termin)
     if termin_ids.termin_ids:
-        query = query.where(Termin.id.in_(termin_ids.termin_ids))
+        query = query.filter(Termin.id.in_(termin_ids.termin_ids))
+    
+    query = query.filter(~Termin.jenis_bayar.in_([JenisBayarEnum.UTJ.value, JenisBayarEnum.UTJ_KHUSUS.value]))
 
     query = query.distinct()
     query = query.options(selectinload(Termin.invoices
@@ -845,36 +838,3 @@ async def get_report(
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
 
-# @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[TahapForTerminByIdSch])
-# async def get_list_spk_by_tahap_id(
-#                 id:UUID,
-#                 jenis_bayar:JenisBayarEnum,
-#                 termin_id:UUID | None = None,
-#                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-#     """Gets a paginated list objects"""
-
-#     tahap = await crud.tahap.get_by_id_for_termin(id=id)
-#     obj_return = TahapForTerminByIdSch(**dict(tahap))
-
-#     spk_details = await crud.spk.get_multi_by_tahap_id(tahap_id=id, jenis_bayar=jenis_bayar)
-#     if termin_id:
-#         exists_spk_details = await crud.spk.get_multi_by_tahap_id_and_termin_id(tahap_id=id, jenis_bayar=jenis_bayar, termin_id=termin_id)
-#         spk_details = spk_details + exists_spk_details
-        
-#     spkts = []
-#     for s in spk_details:
-#         spk = SpkInTerminSch(spk_id=s.id, spk_code=s.code, spk_amount=s.amount, spk_satuan_bayar=s.satuan_bayar,
-#                             bidang_id=s.bidang_id, id_bidang=s.id_bidang, alashak=s.alashak, group=s.bidang.group,
-#                             luas_bayar=s.bidang.luas_bayar, harga_transaksi=s.bidang.harga_transaksi, harga_akta=s.bidang.harga_akta,
-#                             total_harga=s.bidang.total_harga_transaksi, total_invoice=s.bidang.total_invoice, total_payment=s.bidang.total_payment, 
-#                             sisa_pelunasan=s.bidang.sisa_pelunasan, amount=round(s.spk_amount,0), utj_amount=s.utj_amount
-#                             )
-
-#         if jenis_bayar == JenisBayarEnum.LUNAS or jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-#             spk.amount = spk.sisa_pelunasan
-
-#         spkts.append(spk)
-
-#     obj_return.spkts = spkts
-#     return create_response(data=obj_return)

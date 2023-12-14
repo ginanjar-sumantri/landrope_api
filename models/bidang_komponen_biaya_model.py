@@ -8,15 +8,12 @@ from pydantic import condecimal
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from bidang_model import Bidang
-    from master_model import BebanBiaya
-    from worker_model import Worker
+    from models import Bidang, BebanBiaya, Worker, InvoiceDetail
 
 class BidangKomponenBiayaBase(SQLModel):
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     beban_biaya_id:UUID = Field(foreign_key="beban_biaya.id", nullable=False)
     beban_pembeli:Optional[bool] = Field(nullable=True)
-    is_use:Optional[bool] = Field(nullable=True)
     tanggal_bayar:Optional[date] = Field(nullable=True)
     is_paid:Optional[bool] = Field(nullable=True)
     is_void:Optional[bool] = Field(nullable=True)
@@ -27,7 +24,8 @@ class BidangKomponenBiayaBase(SQLModel):
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
     amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
     paid_amount:Optional[Decimal] = Field(nullable=True)
-    
+    estimated_amount:Optional[Decimal] = Field(nullable=True)
+    formula:Optional[str] = Field(nullable=True)
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass
@@ -41,6 +39,14 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     )
 
     beban_biaya:"BebanBiaya" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "selectin"
+        }
+    )
+
+    invoice_details:list["InvoiceDetail"] = Relationship(
+        back_populates="bidang_komponen_biaya",
         sa_relationship_kwargs=
         {
             "lazy" : "selectin"
@@ -71,24 +77,17 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
         return getattr(getattr(self, 'beban_biaya', False), 'is_edit', False)
     
     @property
-    def amount_calculate(self) -> Decimal | None:
-        total_amount:Decimal = 0
-        if self.beban_biaya.is_njop:
-            harga_akta = self.bidang.harga_akta * self.bidang.luas_surat
-            harga_njop = (self.bidang.njop or 0) * self.bidang.luas_surat
-
-            harga_terbesar = max(harga_akta, harga_njop)
-
-            total_amount = (self.amount * harga_terbesar)/100
-        else:
-            if self.satuan_bayar == SatuanBayarEnum.Percentage and self.satuan_harga == SatuanHargaEnum.PerMeter2:
-                total_amount = (self.amount or 0) * ((self.bidang.luas_bayar or self.bidang.luas_surat) * (self.bidang.harga_transaksi or 0)/100)
-            elif self.satuan_bayar == SatuanBayarEnum.Amount and self.satuan_harga == SatuanHargaEnum.PerMeter2:
-                total_amount = (self.amount or 0) * (self.bidang.luas_bayar or self.bidang.luas_surat)
-            else:
-                total_amount = (self.amount or 0)
+    def komponen_biaya_outstanding(self) -> Decimal | None:
+        outstanding:Decimal = 0
+        outstanding = self.estimated_amount - self.invoice_detail_amount
         
-        return total_amount
+        return outstanding
+    
+    @property
+    def invoice_detail_amount(self) -> Decimal | None:
+        invoice_detail_amounts = [(inv_dtl.amount or 0) for inv_dtl in self.invoice_details if inv_dtl.invoice.is_void != True]
+
+        return sum(invoice_detail_amounts)
     
     @property
     def amount_biaya_lain(self) -> Decimal | None:
@@ -100,5 +99,29 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def has_invoice_lunas(self) -> bool | None:
         return getattr(getattr(self, "bidang", False), "has_invoice_lunas", False)
+    
+    #region NOT USE
+    # @property
+    # def amount_calculate(self) -> Decimal | None:
+    #     total_amount:Decimal = 0
+    #     if self.beban_biaya.is_njop:
+    #         harga_akta = self.bidang.harga_akta * self.bidang.luas_surat
+    #         harga_njop = self.bidang.njop * self.bidang.luas_surat
+
+    #         harga_terbesar = max(harga_akta, harga_njop)
+
+    #         total_amount = (self.amount * harga_terbesar)/100
+    #     else:
+    #         if self.satuan_bayar == SatuanBayarEnum.Percentage and self.satuan_harga == SatuanHargaEnum.PerMeter2:
+    #             total_amount = (self.amount or 0) * ((self.bidang.luas_bayar or self.bidang.luas_surat) * (self.bidang.harga_transaksi or 0)/100)
+    #         elif self.satuan_bayar == SatuanBayarEnum.Amount and self.satuan_harga == SatuanHargaEnum.PerMeter2:
+    #             total_amount = (self.amount or 0) * (self.bidang.luas_bayar or self.bidang.luas_surat)
+    #         else:
+    #             total_amount = (self.amount or 0)
+        
+    #     return total_amount
+    #endregion
+
+    
 
 

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
@@ -15,7 +15,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
-from services.history_service import HistoryService
+from services.helper_service import KomponenBiayaHelper
 from shapely import wkb, wkt
 from io import BytesIO
 import crud
@@ -27,6 +27,7 @@ router = APIRouter()
 @router.post("/create", response_model=PostResponseBaseSch[TahapSch], status_code=status.HTTP_201_CREATED)
 async def create(
             sch: TahapCreateSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -75,6 +76,7 @@ async def create(
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
                                   with_commit=False, db_session=db_session, 
                                   updated_by_id=current_worker.id)
+
         
         for ov in dt.overlaps:
             bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
@@ -95,6 +97,9 @@ async def create(
     await db_session.refresh(new_obj)
 
     new_obj = await crud.tahap.get_by_id(id=new_obj.id)
+
+    bidang_ids = [dt.bidang_id for dt in new_obj.details]
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
     return create_response(data=new_obj)
 
@@ -166,6 +171,7 @@ async def get_by_id(id:UUID):
 async def update(
             id:UUID, 
             sch:TahapUpdateSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -249,6 +255,9 @@ async def update(
     await db_session.refresh(obj_updated)
 
     obj_updated = await crud.tahap.get_by_id(id=obj_updated.id)
+
+    bidang_ids = [dt.bidang_id for dt in obj_updated.details]
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
     return create_response(data=obj_updated)
 

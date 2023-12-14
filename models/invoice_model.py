@@ -167,8 +167,9 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def amount_beban(self) -> Decimal | None:
-        amount_beban_biayas = [dt.amount_beban_penjual for dt in self.details]
-        return sum(amount_beban_biayas)
+        beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False])
+        
+        return beban_penjual
     
     @property
     def has_payment(self) -> bool | None:
@@ -194,21 +195,14 @@ class Invoice(InvoiceFullBase, table=True):
         utj = 0
         if self.use_utj:
             utj = self.bidang.utj_amount
-            # utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
-            #                     if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-            #                     and invoice_utj.is_void != True), None)
-            
-            # if utj_current:
-            #     amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
-            #     utj = sum(amount_payment_details) or 0
-        
+
         return Decimal(utj)
 
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
     bidang_komponen_biaya_id:Optional[UUID] = Field(foreign_key="bidang_komponen_biaya.id")
-    # amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    amount:Optional[Decimal] = Field(nullable=True)
 
 class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):
     pass
@@ -223,6 +217,7 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     )
 
     bidang_komponen_biaya:"BidangKomponenBiaya" = Relationship(
+        back_populates="invoice_details",
         sa_relationship_kwargs=
         {
             "lazy" : "select"
@@ -238,20 +233,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'is_void', None)
     
     @property
-    def amount(self) -> Decimal|None:
-        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'amount_calculate', None)
-    
-    @property
     def amount_beban_penjual(self) -> Decimal | None:
         amount = 0
         if self.invoice.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
             if self.bidang_komponen_biaya.beban_pembeli == False:
-                # if self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Percentage and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                #         amount = (self.bidang_komponen_biaya.amount or 0) * ((self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat) * (self.bidang_komponen_biaya.bidang.harga_transaksi or 0)/100)
-                # elif self.bidang_komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and self.bidang_komponen_biaya.satuan_harga == SatuanHargaEnum.PerMeter2:
-                #     amount = (self.bidang_komponen_biaya.amount or 0) * (self.bidang_komponen_biaya.bidang.luas_bayar or self.bidang_komponen_biaya.bidang.luas_surat)
-                # else:
-                #     amount = self.bidang_komponen_biaya.amount or 0
-                amount = self.bidang_komponen_biaya.amount_calculate or 0
+                amount = self.amount
         
         return round(amount, 0)
