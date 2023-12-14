@@ -22,7 +22,7 @@ class WorkflowService:
         try:
 
             response = requests.post(url_create_workflow, json=body, headers=headers)
-            if response.status_code == 201:
+            if response.status_code == 200:
                 data = response.json()['data']
                 return WorkflowCreateResponseSch(**data), "OK"
             else:

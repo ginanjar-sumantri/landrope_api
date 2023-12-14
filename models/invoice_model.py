@@ -237,6 +237,6 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
         amount = 0
         if self.invoice.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
             if self.bidang_komponen_biaya.beban_pembeli == False:
-                amount = self.amount
+                amount = self.amount or 0
         
         return round(amount, 0)
