@@ -371,19 +371,9 @@ class Bidang(BidangFullBase, table=True):
     def total_pengembalian_beban_penjual(self) -> Decimal | None:
         total_pengembalian:Decimal = 0
         if len(self.komponen_biayas) > 0:
-            calculate = []
-            komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_retur == True]
-            for beban in komponen_biaya_beban_penjual:
-                if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
-                elif beban.satuan_bayar == SatuanBayarEnum.Amount and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * (self.luas_bayar or self.luas_surat)
-                else:
-                    amount = beban.amount or 0
-                
-                calculate.append(Decimal(amount))
-            
-            total_pengembalian = sum(calculate) or 0
+            komponen_biaya_beban_penjual = [kb.invoice_detail_amount for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_retur == True]
+
+            total_pengembalian = (sum(komponen_biaya_beban_penjual) or 0)
         
         return Decimal(total_pengembalian)
             
@@ -427,7 +417,7 @@ class Bidang(BidangFullBase, table=True):
             total_payment = Decimal(sum(payments))
         
         if len(self.komponen_biayas) > 0:
-            beban_biayas = [x.amount_calculate for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True and x.is_retur != True]
+            beban_biayas = [x.invoice_detail_amount for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True and x.is_retur != True]
             total_beban_penjual = Decimal(sum(beban_biayas))
 
         return Decimal(total_payment + total_beban_penjual)
@@ -442,7 +432,7 @@ class Bidang(BidangFullBase, table=True):
         total_biaya_lain:Decimal = 0
         if len(self.komponen_biayas) > 0:
             calculate = []
-            calculate = [x.amount_biaya_lain for x in self.komponen_biayas if x.is_use == False]
+            calculate = [x.amount_biaya_lain for x in self.komponen_biayas]
             total_biaya_lain = sum(calculate)
         
         return Decimal(total_biaya_lain)
