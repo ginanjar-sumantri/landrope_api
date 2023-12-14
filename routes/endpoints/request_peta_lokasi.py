@@ -102,7 +102,7 @@ async def get_list_for_input_hasil_petlok(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(
+    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(outstanding=outstanding,
         params=params, 
         keyword=keyword)
     

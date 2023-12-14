@@ -29,11 +29,12 @@ from schemas.payment_detail_sch import PaymentDetailForPrintout
 from schemas.marketing_sch import ManagerSrcSch, SalesSrcSch
 from schemas.rekening_sch import RekeningSch
 from schemas.notaris_sch import NotarisSrcSch
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
-from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, WorkflowEntityEnum
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
@@ -119,6 +120,12 @@ async def create(
     for termin_bayar in sch.termin_bayars:
         termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=new_obj.id)
         await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
+    #workflow
+    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+    workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=template.flow_id)
+    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
+    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
