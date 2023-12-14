@@ -23,9 +23,9 @@ class WorkflowSystemCreateSch(SQLModel):
     client_id:str | None = Field(default=settings.WF_CLIENT_ID)
     client_ref_no:str | None
     flow_id :str | None
-    additional_info:dict
+    additional_info:dict|None = Field(default={})
     descs:str | None
-    attachments:list[WorkflowSystemAttachment]
+    attachments:list[WorkflowSystemAttachment] | None
 
 
 class WorkflowCreateResponseSch(SQLModel):

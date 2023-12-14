@@ -27,6 +27,6 @@ class WorkflowService:
                 return WorkflowCreateResponseSch(**data), "OK"
             else:
                 print(f'{response.status_code}:{response.reason}')
-                return None, ""
+                return None, response.reason
         except:
             return None, self.CONNECTION_FAILED
