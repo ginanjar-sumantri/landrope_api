@@ -84,3 +84,4 @@ from .import_log_error_crud import import_log_error
 
 from .workflow_crud import workflow
 from .workflow_history_crud import workflow_history
+from .workflow_template_crud import workflow_template

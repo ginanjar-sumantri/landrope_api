@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Response, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from models.desa_model import Desa
+from sqlmodel import select, or_
+from models import Desa, Planing, Project
 from models.import_log_model import ImportLog
 from models.worker_model import Worker
 from models.code_counter_model import CodeCounterEnum
@@ -25,6 +26,7 @@ from uuid import UUID
 from itertools import islice
 import crud
 import time
+import json
 
 router = APIRouter()
 
@@ -63,6 +65,7 @@ async def create(
 
 @router.get("", response_model=GetResponsePaginatedSch[DesaRawSch])
 async def get_list(
+            project_id:UUID|None = None,
             params:Params = Depends(), 
             order_by:str=None, 
             keyword:str=None, 
@@ -71,7 +74,27 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.desa.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(Desa)
+    
+    if project_id:
+        query = query.join(Planing, Planing.desa_id == Desa.id
+                    ).join(Project, Project.id == Planing.project_id
+                    ).where(Project.id == project_id)
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Desa.code.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Desa, key) == value)
+
+    objs = await crud.desa.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[DesaRawSch])

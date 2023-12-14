@@ -16,9 +16,9 @@ from schemas.spk_history_sch import SpkHistoryCreateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
-from schemas.workflow_sch import WorkflowCreateSch
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
@@ -26,6 +26,7 @@ from services.pdf_service import PdfService
 from services.history_service import HistoryService
 from services.helper_service import HelperService, KomponenBiayaHelper
 from services.workflow_service import WorkflowService
+from configs.config import settings
 from jinja2 import Environment, FileSystemLoader
 from datetime import date
 import crud
@@ -101,7 +102,11 @@ async def create(
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
-   
+    #workflow
+    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+    workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
+    await crud.workflow.create(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
