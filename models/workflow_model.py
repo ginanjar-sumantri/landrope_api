@@ -60,3 +60,6 @@ class WorkflowTemplateBase(SQLModel):
 
 class WorkflowTemplateFullBase(WorkflowTemplateBase, BaseUUIDModel):
     pass
+
+class WorkflowTemplate(WorkflowTemplateFullBase, table=True):
+    pass

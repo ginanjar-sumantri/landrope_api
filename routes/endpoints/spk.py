@@ -80,7 +80,6 @@ async def create(
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
             
-            beban_biaya = komponen_biaya_current.beban_biaya
             
         else:
             beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
