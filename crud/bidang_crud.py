@@ -128,7 +128,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                             ).options(selectinload(BidangKomponenBiaya.invoice_details
                                         ).options(selectinload(InvoiceDetail.invoice))
                             )
-                    )
+                    ).options(selectinload(Bidang.pemilik))
            
            response = await db_session.execute(query)
            return response.scalar_one_or_none()
