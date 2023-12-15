@@ -396,7 +396,7 @@ class HelperService:
 
 class KomponenBiayaHelper:
 
-    async def get_estimated_amount(self, formula:str | None = None) -> Decimal | None:
+    async def get_estimated_amount(self, bidang_id:UUID, bidang_komponen_biaya_id:UUID, formula:str | None = None) -> Decimal | None:
 
         """Calculate estimated amount from formula"""
 
@@ -408,7 +408,9 @@ class KomponenBiayaHelper:
         query = f"""select  
                 {formula} As estimated_amount
                 from bidang
-                inner join bidang_komponen_biaya ON bidang.id = bidang_komponen_biaya.bidang_id"""
+                inner join bidang_komponen_biaya ON bidang.id = bidang_komponen_biaya.bidang_id
+                where bidang.id = '{bidang_id}'
+                and bidang_komponen_biaya.id = '{bidang_komponen_biaya_id}'"""
     
         response = await db_session.execute(query)
         result = response.fetchone()
@@ -422,6 +424,6 @@ class KomponenBiayaHelper:
 
         for komponen_biaya in komponen_biayas:
             sch_updated = BidangKomponenBiayaUpdateSch.from_orm(komponen_biaya)
-            sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula)
+            sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula, bidang_id=komponen_biaya.bidang_id, bidang_komponen_biaya_id=komponen_biaya.id)
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
