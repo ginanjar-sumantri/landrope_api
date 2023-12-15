@@ -130,10 +130,7 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     
     @property
     def sub_project_exists(self) -> bool | None:
-        if self.sub_project:
-            return True
-        
-        return False
+        return getattr(getattr(getattr(self, 'planing', False), 'project', False), 'sub_project_exists', False)
     
     @property
     def project_id(self) -> UUID | None:
