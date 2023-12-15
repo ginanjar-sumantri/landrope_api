@@ -157,7 +157,7 @@ async def create_bulking_task(
 
     """Create a new object"""
 
-    field_values = ["code", "name", "project", "desa", "kecamatan", "kota" "luas"]
+    field_values = ["code", "name", "project", "desa", "kecamatan", "kota", "luas"]
     
     try:
         geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
