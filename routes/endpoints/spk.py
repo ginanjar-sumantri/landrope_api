@@ -467,7 +467,10 @@ async def update(id:UUID,
 
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
-    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [obj_updated.bidang_id])
+    bidang_ids = []
+    bidang_ids.append(bidang_current.id)
+
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
     return create_response(data=obj_updated)
 
