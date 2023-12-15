@@ -86,7 +86,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def invoice_detail_amount(self) -> Decimal | None:
         amount:Decimal = 0
-        if self.is_retur != True and self.is_void != True:
+        if self.is_void != True:
             invoice_detail_amounts = [(inv_dtl.amount or 0) for inv_dtl in self.invoice_details if inv_dtl.invoice.is_void != True]
             amount = sum(invoice_detail_amounts)
        
