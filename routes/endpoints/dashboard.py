@@ -47,10 +47,7 @@ async def dashboard_outstanding():
                 and py.is_void != true
                 ) + (
                     Select 
-                        Coalesce(SUM(Case
-							When kb.is_retur = FALSE Then idt.amount
-							else 0
-						end), 0)
+                        Coalesce(SUM(idt.amount), 0)
                         from invoice_detail idt
                         inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
                         inner join beban_biaya bb on bb.id = kb.beban_biaya_id
