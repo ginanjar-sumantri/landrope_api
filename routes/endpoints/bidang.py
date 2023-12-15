@@ -575,6 +575,8 @@ async def export(
                            no_peta=data.no_peta,
                            desa=data.desa_name,
                            project=data.project_name,
+                           kecamatan=data.kecamatan,
+                           kota=data.kota,
                            geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)))
 
         schemas.append(sch)
