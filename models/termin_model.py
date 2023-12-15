@@ -1,5 +1,7 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, select
+from sqlalchemy.orm import column_property, declared_attr, aliased
 from models.base_model import BaseUUIDModel
+from models.workflow_model import Workflow
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum, PaymentMethodEnum
@@ -142,6 +144,18 @@ class Termin(TerminFullBase, table=True):
         array_total = [invoice.amount for invoice in self.invoices if invoice.is_void != True]
         total = sum(array_total)
         return total
+    
+    @declared_attr
+    def status_workflow(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.step_name
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )
     
 class TerminBayarBase(SQLModel):
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
