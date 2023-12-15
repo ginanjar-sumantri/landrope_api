@@ -465,7 +465,9 @@ async def export_shp(
                       section=data.section_name,
                       code_desa=data.desa_code,
                       project=data.project_name,
-                      desa=data.desa_name)
+                      desa=data.desa_name,
+                      kota=data.kota,
+                      kecamatan=data.kecamatan)
         schemas.append(sch)
 
     if results:
