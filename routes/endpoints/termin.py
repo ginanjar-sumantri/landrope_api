@@ -34,7 +34,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
-from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, WorkflowEntityEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, WorkflowEntityEnum, WorkflowLastStatusEnum
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
@@ -499,6 +499,9 @@ async def get_list_spk_by_tahap_id(
                                                                                             jenis_bayar=jenis_bayar)
         objs = objs + objs_with_tahap_termin
 
+    
+    objs = [obj for obj in objs if obj.status_workflow == WorkflowLastStatusEnum.COMPLETED]
+
     return create_response(data=objs)
 
 @router.get("/search/spk/{id}", response_model=GetResponseBaseSch[SpkInTerminSch])
@@ -508,6 +511,9 @@ async def get_by_id(id:UUID,
     """Get an object by id"""
 
     obj = await crud.spk.get_by_id_in_termin(id=id)
+
+    if obj.status_workflow != WorkflowLastStatusEnum.COMPLETED:
+        raise HTTPException(status_code=422, detail="SPK must completed approval")
 
     spk = SpkInTerminSch(spk_id=obj.id, spk_code=obj.code, spk_amount=obj.amount, spk_satuan_bayar=obj.satuan_bayar,
                             bidang_id=obj.bidang_id, id_bidang=obj.id_bidang, alashak=obj.alashak, group=obj.bidang.group,
