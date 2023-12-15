@@ -220,7 +220,7 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                     END AS status,
                     COALESCE(SUM(CASE
                             WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_clear/10000::numeric,2)
                             WHEN bidang.status = 'Bebas' THEN
                                 CASE
                                     WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
