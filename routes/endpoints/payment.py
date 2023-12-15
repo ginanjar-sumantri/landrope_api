@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, BackgroundTasks
+from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_, text
@@ -15,7 +15,7 @@ from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -361,7 +361,7 @@ async def get_list(
     query = query.order_by(text("created_at desc"))
 
     objs = await crud.invoice.get_multi_no_page(query=query)
-    objs = [inv for inv in objs if inv.invoice_outstanding > 0]
+    objs = [inv for inv in objs if inv.invoice_outstanding > 0 and inv.termin.status_workflow == WorkflowLastStatusEnum.COMPLETED]
     return create_response(data=objs)
 
 
@@ -382,6 +382,10 @@ async def get_by_id(id:UUID):
     """Get an object by id"""
 
     obj = await crud.invoice.get_by_id(id=id)
+
+    if obj.termin.status_workflow != WorkflowLastStatusEnum.COMPLETED:
+        raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
+    
     if obj:
         return create_response(data=obj)
     else:
