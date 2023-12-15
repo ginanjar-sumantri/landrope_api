@@ -8,7 +8,7 @@ from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
-from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum
+from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum
 from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from decimal import Decimal
@@ -424,6 +424,9 @@ class KomponenBiayaHelper:
 
         for komponen_biaya in komponen_biayas:
             sch_updated = BidangKomponenBiayaUpdateSch.from_orm(komponen_biaya)
-            sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula, bidang_id=komponen_biaya.bidang_id, bidang_komponen_biaya_id=komponen_biaya.id)
+            if komponen_biaya.satuan_bayar == SatuanBayarEnum.Amount and komponen_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
+                sch_updated.estimated_amount = sch_updated.amount
+            else:
+                sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula, bidang_id=komponen_biaya.bidang_id, bidang_komponen_biaya_id=komponen_biaya.id)
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
