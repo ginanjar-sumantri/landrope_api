@@ -27,6 +27,7 @@ class SpkListSch(SpkSch):
     has_termin:bool|None = Field(alias="has_termin")
     nomor_memo:str|None = Field(alias="nomor_memo")
     has_on_tahap:bool|None = Field(alias="has_on_tahap")
+    status_workflow:str|None
 
 class SpkHistorySch(SpkFullBase):
     id_bidang:str | None = Field(alias="id_bidang")
