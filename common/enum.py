@@ -144,13 +144,13 @@ class KategoriOverlapEnum(str, Enum):
     D = "D" #SHM
     
 class WorkflowLastStatusEnum(str, Enum):
-    COMPLETED = 'COMPLETED'
-    REJECTED = 'REJECTED'
-    NEED_DATA_UPDATE = 'NEED_DATA_UPDATE'
-    WAITING_APPROVAL = 'WAITING_APPROVAL'
+    COMPLETED = "COMPLETED"
+    REJECTED = "REJECTED"
+    NEED_DATA_UPDATE = "NEED_DATA_UPDATE"
+    WAITING_APPROVAL = "WAITING_APPROVAL"
 
 class WorkflowEntityEnum(str, Enum):
-    SPK = 'SPK'
-    TERMIN = 'TERMIN'
+    SPK = "SPK"
+    TERMIN = "TERMIN"
 
     

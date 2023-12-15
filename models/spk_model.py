@@ -1,5 +1,7 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, select
 from sqlalchemy import Column, String
+from sqlalchemy.orm import column_property, declared_attr, aliased
+from models.workflow_model import Workflow
 from models.base_model import BaseUUIDModel, BaseHistoryModel
 from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum
 from uuid import UUID
@@ -116,13 +118,6 @@ class Spk(SpkFullBase, table=True):
         utj_is_used = any(invoice.use_utj == True for invoice in self.bidang.invoices if invoice.is_void != True)
         if utj_is_used == False:
             utj = self.bidang.utj_amount
-            # utj_current = next((invoice_utj for invoice_utj in self.bidang.invoices 
-            #                     if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
-            #                     and invoice_utj.is_void != True))
-            
-            # if utj_current:
-            #     amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True]
-            #     utj = sum(amount_payment_details) or 0
         
         return Decimal(utj)
     
@@ -157,6 +152,18 @@ class Spk(SpkFullBase, table=True):
     @property
     def updated_name(self) -> str | None:
         return getattr(getattr(self, "worker_updated", None), "name", None)
+    
+    @declared_attr
+    def status_workflow(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.step_name
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )
 
 class SpkKelengkapanDokumenBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)

@@ -48,7 +48,7 @@ class WorkflowSystemNextApproverSch(SQLModel):
 class WorkflowSystemCallbackSch(SQLModel):
     client_reff_no:str|None
     txn_id: str|None
-    last_status_enum: str|None
+    last_status_enum:str|None
     step_name: str|None
     last_status_at: datetime|None
     last_step_approver: WorkflowSystemApproverSch|None
