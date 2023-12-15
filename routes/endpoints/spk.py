@@ -114,7 +114,10 @@ async def create(
 
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
 
-    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [new_obj.bidang_id])
+    bidang_ids = []
+    bidang_ids.append(new_obj.bidang_id)
+
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
     
     return create_response(data=new_obj)
 
