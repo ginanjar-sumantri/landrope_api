@@ -383,7 +383,9 @@ async def export_shp(
                       code=data.code,
                       project=data.project_name,
                       desa=data.desa_name,
-                      section=data.section_name)
+                      section=data.section_name,
+                      kota=data.kota,
+                      kecamatan=data.kecamatan)
 
         schemas.append(sch)
 

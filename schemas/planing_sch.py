@@ -35,6 +35,8 @@ class PlaningShpSch(BaseGeoModel):
     desa:str | None
     section:str | None
     luas:Decimal | None
+    kota:str|None
+    kecamatan:str|None
 
 @as_form
 @optional
