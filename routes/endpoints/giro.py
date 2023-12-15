@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
@@ -14,11 +15,14 @@ from common.exceptions import (IdNotFoundException, NameExistException, ContentN
 from common.generator import generate_code
 from common.enum import PaymentMethodEnum
 from models.code_counter_model import CodeCounterEnum
+from services.gcloud_storage_service import GCStorageService
 from decimal import Decimal
 from datetime import date
+from io import BytesIO
 import crud
 import pandas
 import json
+
 
 
 router = APIRouter()
@@ -125,11 +129,11 @@ async def extract_excel(file:UploadFile,
     rows, commit, row = [len(df), False, 1]
 
     for i, data in df.iterrows():
-        sch = GiroCreateSch(nomor_giro=data.get("nomor_giro", None), 
-                            amount=Decimal(data.get("amount", 0)),
-                            tanggal=date(data.get("tanggal", date.today())),
-                            bank_name=data.get("bank_name", None),
-                            payment_method=GetPaymentMethod(payment_method=str(data.get("payment_method", ''))),
+        sch = GiroCreateSch(nomor_giro=data.get("Nomor", None), 
+                            amount=Decimal(data.get("Amount", 0)),
+                            tanggal=date(data.get("Tanggal", date.today())),
+                            bank_name=data.get("Bank", None),
+                            payment_method=GetPaymentMethod(payment_method=str(data.get("Payment Method", ''))),
                             is_active=True,
                             from_master=True)
         
@@ -164,6 +168,22 @@ async def extract_excel(file:UploadFile,
         row = row + 1
     
     return {'message' : 'successfully import'}
+
+@router.get("/export/template")
+async def extract_excel(current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Get Excel Template object"""
+
+    file = await GCStorageService().download_file("template_file/giro_template.xlsx")
+    if not file:
+        raise HTTPException(status_code=422, detail="File not found")
+    
+    file.seek(0)
+
+    return StreamingResponse(BytesIO(file.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=giro_template.xlsx"})
+    
 
 def GetPaymentMethod(payment_method:str) -> PaymentMethodEnum | None:
     if payment_method.lower().replace(' ', '') == PaymentMethodEnum.Giro.value.lower():
