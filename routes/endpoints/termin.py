@@ -110,11 +110,6 @@ async def create(
         for dt in invoice.details:
             invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
             await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-            
-            # bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-            # sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**bidang_komponen_biaya_current.dict())
-            # sch_komponen_biaya.is_use = True
-            # await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=sch_komponen_biaya, with_commit=False, db_session=db_session)
     
     #add termin bayar
     for termin_bayar in sch.termin_bayars:

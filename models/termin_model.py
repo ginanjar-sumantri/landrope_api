@@ -146,10 +146,22 @@ class Termin(TerminFullBase, table=True):
         return total
     
     @declared_attr
-    def status_workflow(self) -> column_property:
+    def step_name_workflow(self) -> column_property:
         return column_property(
             select(
                 Workflow.step_name
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )
+    
+    @declared_attr
+    def status_workflow(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.last_status
             )
             .select_from(
                 Workflow)

@@ -87,8 +87,6 @@ async def get_list(
                 )
 
     objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
-    for obj in objs:
-        ret = InvoiceSch.from_orm(obj)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
