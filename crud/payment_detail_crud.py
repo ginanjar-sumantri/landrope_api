@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import PaymentDetail, Payment, Invoice, Termin, Giro
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch, PaymentDetailForPrintout
+from common.enum import JenisBayarEnum
 from uuid import UUID
 from typing import List
 
@@ -57,8 +58,10 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         
         query = select(PaymentDetail)
         query = query.join(PaymentDetail.invoice)
+        query = query.join(Invoice.termin)
         query = query.filter(PaymentDetail.is_void != True)
         query = query.filter(Invoice.bidang_id == bidang_id)
+        query = query.filter(~Termin.jenis_bayar.in_([JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]))
         
         query = query.options(selectinload(PaymentDetail.invoice
                                         ).options(selectinload(Invoice.termin)

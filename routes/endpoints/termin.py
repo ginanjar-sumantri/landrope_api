@@ -846,3 +846,52 @@ async def get_report(
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
 
+
+
+@router.get("/export/excel/memo")
+async def export_excel():
+
+    data_rumah = {
+    'id': [1, 2, 3, 4],
+    'luas': [100, 120, 80, 150],
+    'harga': [200000, 250000, 180000, 300000],
+    }
+
+    data_pembayaran = {
+        'property_id': [1, 2, 1, 3, 1, 2],
+        'id_rumah': ['A', 'B', 'C', 'D', 'A', 'B'],
+        'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
+        'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
+        'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
+    }
+
+    df_rumah = pd.DataFrame(data_rumah)
+    df_pembayaran = pd.DataFrame(data_pembayaran)
+
+    # Gabungkan data berdasarkan property_id
+    df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='property_id', right_on='id', how='right')
+
+    # Ubah kolom tanggal_pembayaran menjadi datetime
+    df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
+
+    # Pivot table untuk pembayaran
+    df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
+
+    # Mengatasi kolom yang memiliki multi-level
+    df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
+
+    # Reset index agar index menjadi kolom biasa
+    df_pivot.reset_index(inplace=True)
+
+    try:
+        # Simpan DataFrame ke file Excel
+        excel_output = BytesIO()
+        df_pivot.to_excel(excel_output, index=False)
+        
+        excel_output.seek(0)
+
+        return StreamingResponse(BytesIO(excel_output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

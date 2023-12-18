@@ -387,7 +387,6 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
                     where s.id = '{str(id)}'
                     and bkb.is_void != true
-                    and bkb.is_use = true
                     and bkb.is_retur = true
                     """)
 
