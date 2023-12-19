@@ -254,3 +254,9 @@ class ReportBidangBintang(SQLModel):
     sudah_claim:Decimal|None #percentage
     belum_claim:Decimal|None #percentage
     sisa_bintang:Decimal|None
+
+class BidangExcelSch(SQLModel):
+    id:UUID | None
+    id_bidang:str | None
+    alashak:str | None
+    luas_surat:str | None

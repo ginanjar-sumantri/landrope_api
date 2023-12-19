@@ -376,7 +376,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
             #- status peta lokasi LANJUT
             #- hasil peta lokasi detail MENAMBAH LUAS
             #- bidang yg tertimpa adalah KULIT BINTANG
-            bidang_intersects_current = await crud.bidang.get(id=dt.bidang_id)
+            bidang_intersects_current = await crud.bidang.get_by_id(id=dt.bidang_id)
             if bidang_intersects_current.geom :
                 bidang_intersects_current.geom = wkt.dumps(wkb.loads(bidang_intersects_current.geom.data, hex=True))
             if bidang_intersects_current.geom_ori :

@@ -454,21 +454,6 @@ async def bidang_update_status(bidang_ids:list[UUID]):
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
 
-async def bidang_komponen_biaya_add_pay_update_is_paid(bidang_ids:list[UUID]):
-    for id in bidang_ids:
-        payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
-        
-        for payment in payment_details:
-            if payment.invoice.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
-                bidang = await crud.bidang.get_by_id(id=id)
-                if bidang.biaya_lain == 0:
-                    bidang_komponen_biayas = [add_pay for add_pay in bidang.komponen_biayas if add_pay.is_add_pay and add_pay.is_void != True and add_pay.is_use]
-                    for komponen_biaya in bidang_komponen_biayas:
-                        bidang_komponen_biaya_update = BidangKomponenBiayaUpdateSch(*komponen_biaya.dict(exclude={"is_paid", "tanggal_bayar"}))
-                        bidang_komponen_biaya_update.is_paid = True
-                        bidang_komponen_biaya_update.tanggal_bayar = date(payment.created_at)
-
-                        await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=bidang_komponen_biaya_update)
 
 
 

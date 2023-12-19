@@ -103,3 +103,10 @@ class TerminBidangIDSch(SQLModel):
 class TerminIdSch(SQLModel):
     termin_ids:list[UUID]|None
 
+class TerminExcelSch(SQLModel):
+    bidang_id:UUID|None
+    id_bidang:str|None
+    jenis_bayar:str|None
+    percentage:Decimal|None
+    amount:Decimal|None
+

@@ -737,8 +737,8 @@ async def create_workflow():
     }
 
     template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    workflow_sch = WorkflowCreateSch(reference_id='4e0a3adb-7a49-43bd-b529-9c2e11479fe4', entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
-    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str('4e0a3adb-7a49-43bd-b529-9c2e11479fe4'), flow_id=template.flow_id, descs=f"Need Approval", attachments=[])
+    workflow_sch = WorkflowCreateSch(reference_id='1fa2aa0e-2ecf-4897-883d-873061dce49f', entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str('1fa2aa0e-2ecf-4897-883d-873061dce49f'), flow_id=template.flow_id, descs=f"Need Approval", attachments=[])
     await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch)
 
     return {"result" : "Successfully"}

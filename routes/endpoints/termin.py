@@ -20,7 +20,7 @@ from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForP
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
-from schemas.bidang_sch import BidangForUtjSch
+from schemas.bidang_sch import BidangForUtjSch, BidangExcelSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
@@ -282,7 +282,7 @@ async def update(
                 for inv_dt in list_invoice_detail:
                     d_bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=inv_dt.bidang_komponen_biaya_id)
                     d_sch_komponen_biaya = BidangKomponenBiayaUpdateSch(**d_bidang_komponen_biaya_current.dict())
-                    d_sch_komponen_biaya.is_use = False
+            
                     await crud.bidang_komponen_biaya.update(obj_current=d_bidang_komponen_biaya_current, obj_new=d_sch_komponen_biaya, with_commit=False, db_session=db_session)
             
 
@@ -848,40 +848,108 @@ async def get_report(
 
 
 
+# @router.get("/export/excel/memo")
+# async def export_excel():
+
+#     data_rumah = {
+#     'id': [1, 2, 3, 4],
+#     'luas': [100, 120, 80, 150],
+#     'harga': [200000, 250000, 180000, 300000],
+#     }
+
+#     data_pembayaran = {
+#         'property_id': [1, 2, 1, 3, 1, 2],
+#         'id_rumah': ['A', 'B', 'C', 'D', 'A', 'B'],
+#         'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
+#         'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
+#         'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
+#     }
+
+#     df_rumah = pd.DataFrame(data_rumah)
+#     df_pembayaran = pd.DataFrame(data_pembayaran)
+
+#     # Gabungkan data berdasarkan property_id
+#     df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='property_id', right_on='id', how='right')
+
+#     # Ubah kolom tanggal_pembayaran menjadi datetime
+#     df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
+
+#     # Pivot table untuk pembayaran
+#     df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
+
+#     # Mengatasi kolom yang memiliki multi-level
+#     df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
+
+#     # Reset index agar index menjadi kolom biasa
+#     df_pivot.reset_index(inplace=True)
+
+#     try:
+#         # Simpan DataFrame ke file Excel
+#         excel_output = BytesIO()
+#         df_pivot.to_excel(excel_output, index=False)
+        
+#         excel_output.seek(0)
+
+#         return StreamingResponse(BytesIO(excel_output.getvalue()), 
+#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+#                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+    
+
 @router.get("/export/excel/memo")
-async def export_excel():
+async def export_excel(tahap_id:UUID):
 
-    data_rumah = {
-    'id': [1, 2, 3, 4],
-    'luas': [100, 120, 80, 150],
-    'harga': [200000, 250000, 180000, 300000],
-    }
+    data_tahap = await crud.tahap.get_by_id(id=tahap_id)
+    list_id = [thp.bidang_id for thp in data_tahap.details]
+    data_pembayaran = await crud.termin.get_termin_by_bidang_ids_for_excel(list_id=list_id)
 
-    data_pembayaran = {
-        'property_id': [1, 2, 1, 3, 1, 2],
-        'id_rumah': ['A', 'B', 'C', 'D', 'A', 'B'],
-        'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
-        'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
-        'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
-    }
+    bidangs = await crud.bidang.get_by_ids(list_ids=list_id)
+    data_bidang = []
+    for data in bidangs:
+        bidang = BidangExcelSch(id=data.id, id_bidang=data.id_bidang, alashak=data.alashak, luas_surat=data.luas_surat)
+        data_bidang.append(bidang)
 
-    df_rumah = pd.DataFrame(data_rumah)
-    df_pembayaran = pd.DataFrame(data_pembayaran)
+    df_bidang = pd.DataFrame([bidang.dict() for bidang in data_bidang])
+    df_pembayaran = pd.DataFrame([bayar.dict() for bayar in data_pembayaran])
 
-    # Gabungkan data berdasarkan property_id
-    df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='property_id', right_on='id', how='right')
-
-    # Ubah kolom tanggal_pembayaran menjadi datetime
-    df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
-
-    # Pivot table untuk pembayaran
-    df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
-
-    # Mengatasi kolom yang memiliki multi-level
-    df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
-
-    # Reset index agar index menjadi kolom biasa
+    df_gabung = pd.merge(df_pembayaran, df_bidang, left_on='bidang_id', right_on='id', how='right')
+    df_pivot = df_gabung.pivot_table(index=['id', 'id_bidang', 'alashak', 'luas_surat'], columns=['jenis_bayar', 'percentage'], values='amount', aggfunc='sum')
+    df_pivot.columns = ['{} {}'.format(col[0], str(col[1])) for col in df_pivot.columns]
     df_pivot.reset_index(inplace=True)
+    
+
+    # data_rumah = {
+    # 'id': [1, 2, 3, 4],
+    # 'luas': [100, 120, 80, 150],
+    # 'harga': [200000, 250000, 180000, 300000],
+    # }
+
+    # data_pembayaran = {
+    #     'property_id': [1, 2, 1, 3, 1, 2],
+    #     'id_rumah': ['A', 'B', 'C', 'D', 'A', 'B'],
+    #     'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
+    #     'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
+    #     'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
+    # }
+
+    # df_rumah = pd.DataFrame(data_rumah)
+    # df_pembayaran = pd.DataFrame(data_pembayaran)
+
+    # # Gabungkan data berdasarkan property_id
+    # df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='property_id', right_on='id', how='right')
+
+    # # Ubah kolom tanggal_pembayaran menjadi datetime
+    # df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
+
+    # # Pivot table untuk pembayaran
+    # df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
+
+    # # Mengatasi kolom yang memiliki multi-level
+    # df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
+
+    # # Reset index agar index menjadi kolom biasa
+    # df_pivot.reset_index(inplace=True)
 
     try:
         # Simpan DataFrame ke file Excel

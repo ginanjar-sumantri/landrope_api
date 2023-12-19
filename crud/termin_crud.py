@@ -10,7 +10,7 @@ from common.enum import JenisBayarEnum
 from crud.base_crud import CRUDBase
 from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment, Planing, InvoiceDetail, BidangKomponenBiaya, Spk
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
-                                TerminInvoiceforPrintOut,
+                                TerminInvoiceforPrintOut, TerminExcelSch,
                                 TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
 from typing import List
 from uuid import UUID
@@ -179,5 +179,38 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchall()
+    
+    async def get_termin_by_bidang_ids_for_excel(self, *, list_id:list[UUID]) -> list[TerminExcelSch]:
+         
+        db_session = db.session
+
+        ids:str = ""
+        for bidang_id in list_id:
+             ids += f"'{bidang_id}',"
+        
+        ids = ids[0:-1]
+
+        query = text(f"""
+                        select
+                        i.bidang_id as bidang_id,
+                        b.id_bidang as id_bidang,
+                        tr.jenis_bayar as jenis_bayar,
+                        Coalesce(s.amount, 0) as percentage,
+                        i.amount as amount
+                        from termin tr
+                        inner join invoice i on i.termin_id = tr.id
+                        inner join bidang b on i.bidang_id = b.id
+                        left outer join spk s on s.id = i.spk_id
+                        where i.bidang_id in ({ids});
+                """)
+        
+        response = await db_session.execute(query)
+
+        result = response.fetchall()
+
+        result_return = [TerminExcelSch(**dict(tr)) for tr in result]
+
+        return result_return
+
 
 termin = CRUDTermin(Termin)
