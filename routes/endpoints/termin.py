@@ -224,6 +224,11 @@ async def update(
     obj_current = await crud.termin.get_by_id(id=id)
     if not obj_current:
         raise IdNotFoundException(Termin, id)
+
+    msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+    
+    if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+        raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
     
     sch.is_void = obj_current.is_void
 
@@ -328,6 +333,12 @@ async def update(
         else:
             termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
+    #workflow
+    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+    workflow_sch = WorkflowCreateSch(reference_id=obj_current.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
+    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)

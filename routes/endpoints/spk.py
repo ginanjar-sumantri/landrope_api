@@ -18,7 +18,7 @@ from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKBy
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
@@ -387,6 +387,11 @@ async def update(id:UUID,
     if not obj_current:
         raise IdNotFoundException(Spk, id)
     
+    msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+    
+    if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+        raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+    
     #schema for history
     spk_history = await get_by_id_spk(id=id)
     await HistoryService().create_history_spk(spk=spk_history, worker_id=current_worker.id, db_session=db_session)
@@ -461,6 +466,12 @@ async def update(id:UUID,
             kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
             kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
+
+    #workflow
+    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+    workflow_sch = WorkflowCreateSch(reference_id=obj_current.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
+    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)

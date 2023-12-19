@@ -102,8 +102,8 @@ async def search_for_map(keyword:str | None,
             INNER JOIN Project ON Planing.project_id = Project.id
             WHERE
                 LOWER(TRIM(REPLACE(bidang.id_bidang, ' ', ''))) LIKE {keyword} 
-                OR LOWER(TRIM(REPLACE(bidang.alashak, ' ', ''))) LIKE {keyword})
-                OR LOWER(TRIM(REPLACE(bidang.id_bidang, ' ', ''))) LIKE {keyword}
+                OR LOWER(TRIM(REPLACE(bidang.alashak, ' ', ''))) LIKE {keyword}
+                OR LOWER(TRIM(REPLACE(bidang.id_bidang, ' ', ''))) LIKE {keyword})
             ORDER BY
                 project_id, project_name, desa_id, desa_name, ptsk_id, ptsk_name, bidang_id, id_bidang, alashak
             LIMIT {size}
