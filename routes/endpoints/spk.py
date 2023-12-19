@@ -744,6 +744,7 @@ async def void(id:UUID,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
+    db_session = db.session
 
     obj_current = await crud.spk.get_by_id(id=id)
 
@@ -753,13 +754,17 @@ async def void(id:UUID,
     if obj_current.has_invoice_active:
         raise HTTPException(status_code=422, detail="Failed void. Detail : Spk have invoice active in Memo Pembayaran!")
     
-    obj_updated = obj_current
+    #schema for history
+    spk_history = await get_by_id_spk(id=id)
+    await HistoryService().create_history_spk(spk=spk_history, worker_id=current_worker.id, db_session=db_session)
+    
+    obj_updated = SpkUpdateSch.from_orm(obj_current)
     obj_updated.is_void = True
     obj_updated.void_reason = sch.void_reason
     obj_updated.void_by_id = current_worker.id
     obj_updated.void_at = date.today()
 
-    obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+    obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session)
 
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated) 

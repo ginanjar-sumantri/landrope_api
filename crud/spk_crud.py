@@ -47,7 +47,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                         ).options(selectinload(SpkKelengkapanDokumen.bundledt
                                                                             ).options(selectinload(BundleDt.dokumen))
                                                         )
-                                    )
+                                    ).options(selectinload(Spk.invoices))
 
         response = await db_session.execute(query)
 
