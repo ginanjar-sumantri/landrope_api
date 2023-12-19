@@ -36,6 +36,9 @@ class InvoiceSch(InvoiceFullBase):
     has_payment:Optional[bool] = Field(alias="has_payment")
     amount_nett:Optional[Decimal] = Field(alias="amount_nett")
 
+    step_name_workflow:Optional[str] = Field(alias="step_name_workflow")
+    status_workflow:Optional[str] = Field(alias="status_workflow")
+
     # payment_methods:Optional[str] = Field(alias="payment_methods")
 
     payment_details:list[PaymentDetailSch]|None

@@ -79,7 +79,10 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def komponen_biaya_outstanding(self) -> Decimal | None:
         outstanding:Decimal = 0
-        outstanding = (self.estimated_amount or 0) - self.invoice_detail_amount
+        if self.is_retur:
+            outstanding = self.invoice_detail_amount
+        else:
+            outstanding = (self.estimated_amount or 0) - self.invoice_detail_amount
         
         return outstanding
     

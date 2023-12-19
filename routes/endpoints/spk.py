@@ -404,6 +404,8 @@ async def update(id:UUID,
         beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
         await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
     
+    sch.is_void = obj_current.is_void
+    
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
     #remove beban biaya
@@ -746,7 +748,7 @@ async def void(id:UUID,
     obj_current = await crud.spk.get_by_id(id=id)
 
     if not obj_current:
-        raise IdNotFoundException(Invoice, id)
+        raise IdNotFoundException(Spk, id)
     
     if obj_current.has_invoice_active:
         raise HTTPException(status_code=422, detail="Failed void. Detail : Spk have invoice active in Memo Pembayaran!")

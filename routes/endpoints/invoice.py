@@ -12,7 +12,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch,
                                   PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code_month
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, WorkflowLastStatusEnum
 from services.helper_service import HelperService
 from datetime import date
 import crud
@@ -140,9 +140,16 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     if not obj_current:
         raise IdNotFoundException(Invoice, id)
     
+    if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+        msg_error_wf = "Memo Approval for this invoice Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval for this invoice Need Approval!"
+        
+        if obj_current.termin.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+            raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+
+    
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
     if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:
-            raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
+        raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
     
     obj_updated = obj_current
     obj_updated.is_void = True

@@ -133,6 +133,14 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
     
     @property
+    def step_name_workflow(self) -> int | None:
+        return getattr(getattr(self, "termin", None), "step_name_workflow", None)
+    
+    @property
+    def status_workflow(self) -> int | None:
+        return getattr(getattr(self, "termin", None), "status_workflow", None)
+    
+    @property
     def spk_code(self) -> Decimal | None:
         return getattr(getattr(self, "spk", None), "code", None)
     
@@ -197,7 +205,7 @@ class Invoice(InvoiceFullBase, table=True):
             utj = self.bidang.utj_amount
 
         return Decimal(utj)
-
+    
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
