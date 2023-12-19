@@ -48,14 +48,12 @@ async def create(
     db_session = db.session
 
     #Filter
-
     if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
         beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
         await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
     
     if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
         await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
-
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
@@ -104,10 +102,11 @@ async def create(
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
     #workflow
-    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
-    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
-    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
+    if sch.jenis_bayar != JenisBayarEnum.PAJAK:
+        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+        workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
+        await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
@@ -473,13 +472,14 @@ async def update(id:UUID,
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     #workflow
-    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
-    body = vars(workflow_system_sch)
-    response, msg = await WorkflowService().create_workflow(body=body)
+    if obj_current.jenis_bayar != JenisBayarEnum.PAJAK:
+        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
+        body = vars(workflow_system_sch)
+        response, msg = await WorkflowService().create_workflow(body=body)
 
-    if response is None:
-        raise HTTPException(status_code=422, detail=msg)
+        if response is None:
+            raise HTTPException(status_code=422, detail=msg)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
