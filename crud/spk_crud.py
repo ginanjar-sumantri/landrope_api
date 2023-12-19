@@ -370,6 +370,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     case
                         when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                         when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                        when bkb.beban_pembeli = false and bkb.is_paid = true Then 'SUDAH DIBAYAR'
                         else 'DITANGGUNG PENJUAL'
                     end as tanggapan,
                     bb.name
