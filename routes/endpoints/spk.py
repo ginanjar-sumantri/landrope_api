@@ -297,8 +297,8 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
                 spk = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_obj.id, kjb_termin_id=tr.id)
                 if spk:
                     termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk.id, spk_code=spk.code)
-
-                termin = KjbTerminInSpkSch(**tr.dict())
+                else:
+                    termin = KjbTerminInSpkSch(**tr.dict())
                 termins.append(termin)
 
     ktp_value:str = ""

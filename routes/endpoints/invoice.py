@@ -141,10 +141,8 @@ async def void(id:UUID, sch:InvoiceVoidSch,
         raise IdNotFoundException(Invoice, id)
     
     if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        msg_error_wf = "Memo Approval for this invoice Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval for this invoice Need Approval!"
-        
-        if obj_current.termin.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-            raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+        if obj_current.termin.status_workflow == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
+            raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
 
     
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)

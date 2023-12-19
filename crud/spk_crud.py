@@ -92,7 +92,11 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         
         db_session = db_session or db.session
         
-        query = select(Spk).where(and_(Spk.bidang_id == bidang_id, Spk.kjb_termin_id == kjb_termin_id))
+        query = select(Spk).where(and_(
+                        Spk.bidang_id == bidang_id, 
+                        Spk.kjb_termin_id == kjb_termin_id, 
+                        or_(Spk.is_void != True, Spk.is_void == None))
+                        )
         
         response = await db_session.execute(query)
 
@@ -129,7 +133,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         db_session = db_session or db.session
         
         query = select(Spk)
-        query = query.where(and_(Spk.bidang_id == bidang_id, Spk.is_void != True))
+        query = query.where(and_(Spk.bidang_id == bidang_id, or_(Spk.is_void == False, Spk.is_void == None)))
         
         response = await db_session.execute(query)
 
