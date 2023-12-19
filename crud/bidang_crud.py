@@ -378,6 +378,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                     (100 - SUM(amount)) as percentage_lunas
                     from spk
                     where bidang_id = '{str(bidang_id)}'
+                    and (is_void = false or is_void is null)
                     group by bidang_id
                     """)
 
