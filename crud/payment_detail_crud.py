@@ -70,6 +70,22 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
 
         response =  await db_session.execute(query)
         return response.scalars().all()
-    # pass
+    
+    async def get_multi_payment_actived_by_invoice_id(self, 
+                                *, 
+                                list_ids: List[UUID | str],
+                                db_session : AsyncSession | None = None
+                                ) -> List[PaymentDetail] | None:
+        
+        db_session = db_session or db.session
+        query = select(PaymentDetail)
+        query = query.where(and_(
+            PaymentDetail.invoice_id.in_(list_ids),
+            PaymentDetail.is_void != True
+            )
+        )
+        
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 
 payment_detail = CRUDPaymentDetail(PaymentDetail)

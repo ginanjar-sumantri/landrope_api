@@ -27,6 +27,9 @@ class TerminBase(SQLModel):
     sales_id:Optional[UUID] = Field(nullable=True, foreign_key="sales.id")
     mediator:Optional[str] = Field(nullable=True)
     remark:Optional[str] = Field(nullable=True)
+    void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    void_reason:Optional[str] = Field(nullable=True)
+    void_at:Optional[date] = Field(nullable=True)
 
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
@@ -88,6 +91,13 @@ class Termin(TerminFullBase, table=True):
         sa_relationship_kwargs={
             "lazy": "joined",
             "primaryjoin": "Termin.updated_by_id==Worker.id",
+        }
+    )
+
+    worker_do_void: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Termin.void_by_id==Worker.id",
         }
     )
 

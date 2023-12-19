@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, Request, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, and_, func
+from sqlmodel import select, or_, and_, func, update
 from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
@@ -13,7 +13,7 @@ from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
                                 TerminBidangIDSch, TerminIdSch,
-                                TerminBebanBiayaForPrintOutExt)
+                                TerminBebanBiayaForPrintOutExt, TerminVoidSch)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
                                  InvoiceHistoryInTermin)
@@ -213,7 +213,7 @@ async def get_by_id(id:UUID,
         raise IdNotFoundException(Termin, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[TerminSch])
-async def update(
+async def update_(
             id:UUID,
             request:Request,
             sch:TerminUpdateSch,
@@ -862,6 +862,41 @@ async def get_report(
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
 
+@router.put("/void/{id}", response_model=GetResponseBaseSch[TerminByIdSch])
+async def void(id:UUID, 
+            sch:TerminVoidSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """void a obj by its ids"""
+    db_session = db.session
+
+    obj_current = await crud.termin.get_by_id(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(Termin, id)
+    
+    invoice_ids = [inv.id for inv in obj_current.invoices if inv.is_void != True]
+    payment_actived = await crud.payment_detail.get_multi_payment_actived_by_invoice_id(list_ids=invoice_ids)
+
+    if len(payment_actived) > 0:
+        raise HTTPException(status_code=422, detail="Failed void. Detail : Invoice di dalam Termin memiliki payment yang sedang aktif ")
+    
+    obj_updated = TerminUpdateSch.from_orm(obj_current)
+    obj_updated.is_void = True
+    obj_updated.void_reason = sch.void_reason
+    obj_updated.void_by_id = current_worker.id
+    obj_updated.void_at = date.today()
+
+    obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+    update_query = update(Invoice).where(and_(Invoice.id.in_(invoice_ids), Invoice.termin_id == obj_current.id)
+                                        ).values(is_void=True, void_reason=sch.void_reason, void_by_id=current_worker.id, void_at=date.today())
+    
+    await db_session.execute(update_query)
+    await db_session.commit()
+
+    obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
+    return create_response(data=obj_updated) 
 
 
 # @router.get("/export/excel/memo")

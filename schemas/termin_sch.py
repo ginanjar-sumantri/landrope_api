@@ -110,3 +110,6 @@ class TerminExcelSch(SQLModel):
     percentage:Decimal|None
     amount:Decimal|None
 
+class TerminVoidSch(SQLModel):
+    void_reason:str
+
