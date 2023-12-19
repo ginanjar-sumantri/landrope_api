@@ -9,7 +9,7 @@ from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin, Planing)
 from models.code_counter_model import CodeCounterEnum
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch,
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
 from schemas.spk_kelengkapan_dokumen_sch import (SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch)
 from schemas.spk_history_sch import SpkHistoryCreateSch
@@ -158,8 +158,7 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Spk).select_from(Spk
-                    ).join(Bidang, Spk.bidang_id == Bidang.id)
+    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id)
     
     if keyword:
         query = query.filter(
@@ -469,9 +468,12 @@ async def update(id:UUID,
 
     #workflow
     template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    workflow_sch = WorkflowCreateSch(reference_id=obj_current.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
     workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
-    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
+    body = vars(workflow_system_sch)
+    response, msg = await WorkflowService().create_workflow(body=body)
+
+    if response is None:
+        raise HTTPException(status_code=422, detail=msg)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -733,6 +735,32 @@ async def printout(id:UUID | str,
     response = Response(doc, media_type='application/pdf')
     response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
     return response
+
+@router.put("/void/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
+async def void(id:UUID, 
+            sch:SpkVoidSch,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """void a obj by its ids"""
+
+    obj_current = await crud.spk.get_by_id(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(Invoice, id)
+    
+    if obj_current.has_invoice_active:
+        raise HTTPException(status_code=422, detail="Failed void. Detail : Spk have invoice active in Memo Pembayaran!")
+    
+    obj_updated = obj_current
+    obj_updated.is_void = True
+    obj_updated.void_reason = sch.void_reason
+    obj_updated.void_by_id = current_worker.id
+    obj_updated.void_at = date.today()
+
+    obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+
+    obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
+    return create_response(data=obj_updated) 
 
 @router.post("/workflow")
 async def create_workflow():

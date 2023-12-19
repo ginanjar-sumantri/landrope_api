@@ -176,5 +176,5 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
 
-    obj_updated = await crud.invoice.get(id=obj_updated.id)
+    obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated) 

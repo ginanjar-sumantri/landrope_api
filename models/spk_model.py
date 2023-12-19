@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING, Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 if TYPE_CHECKING:
     from models import Bidang, BundleDt, KjbTermin, Invoice, Worker
@@ -21,6 +21,10 @@ class SpkBase(SQLModel):
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
     kjb_termin_id:Optional[UUID] = Field(nullable=True, foreign_key="kjb_termin.id")
     remark:Optional[str] = Field(nullable=True)
+    is_void:Optional[bool] = Field(nullable=True, default=False)
+    void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
+    void_reason:Optional[str] = Field(nullable=True)
+    void_at:Optional[date] = Field(nullable=True)
 
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
@@ -68,6 +72,13 @@ class Spk(SpkFullBase, table=True):
         sa_relationship_kwargs={
             "lazy": "joined",
             "primaryjoin": "Spk.updated_by_id==Worker.id",
+        }
+    )
+
+    worker_do_void: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Spk.void_by_id==Worker.id",
         }
     )
 
@@ -152,6 +163,14 @@ class Spk(SpkFullBase, table=True):
     @property
     def updated_name(self) -> str | None:
         return getattr(getattr(self, "worker_updated", None), "name", None)
+    
+    @property
+    def has_invoice_active(self) -> bool | None:
+        invoice = next((x for x in self.invoices if x.is_void != True), None)
+        if invoice:
+            return True
+        
+        return False
     
     @declared_attr
     def step_name_workflow(self) -> column_property:

@@ -39,6 +39,7 @@ from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
 from services.helper_service import HelperService
+from services.workflow_service import WorkflowService
 from decimal import Decimal
 from services.pdf_service import PdfService
 from jinja2 import Environment, FileSystemLoader
@@ -241,9 +242,7 @@ async def update(
 
     if sch.jenis_bayar == JenisBayarEnum.UTJ or sch.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS:
         jns_byr = JenisBayarEnum.UTJ.value
-        
     else:
-        
         if sch.jenis_bayar == JenisBayarEnum.DP:
             jns_byr = JenisBayarEnum.DP.value
         elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
@@ -338,10 +337,13 @@ async def update(
 
     #workflow
     if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        workflow_sch = WorkflowCreateSch(reference_id=obj_current.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
+        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
-        await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
+        body = vars(workflow_system_sch)
+        response, msg = await WorkflowService().create_workflow(body=body)
+
+        if response is None:
+            raise HTTPException(status_code=422, detail=msg)
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -497,7 +499,7 @@ async def get_list_spk_by_tahap_id(
 
     if tahap_id == None and termin_id == None:
         objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
-        objs = [spk for spk in objs if len([invoice for invoice in spk.invoices if invoice.is_void == False]) == 0]
+        objs = [spk for spk in objs if len([invoice for invoice in spk.invoices if invoice.is_void == False]) == 0 and spk.is_void != True]
 
     if tahap_id and termin_id == None:
         objs_with_tahap = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword, 

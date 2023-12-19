@@ -133,6 +133,9 @@ class SpkInTerminSch(SQLModel):
     notaris_name:Optional[str]
     mediator:Optional[str]
 
+class SpkVoidSch(SQLModel):
+    void_reason:str
+
 
     
 
