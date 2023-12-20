@@ -38,6 +38,7 @@ class CRUDOrderGambarUkur(CRUDBase[OrderGambarUkur, OrderGambarUkurCreateSch, Or
                                                                                             ).options(selectinload(KjbDt.jenis_surat)
                                                                                             ).options(selectinload(KjbDt.kjb_hd
                                                                                                                     ).options(selectinload(KjbHd.sales))
+                                                                                            ).options(selectinload(KjbDt.pemilik)
                                                                                             )
                                                                         )
                                                 ).options(selectinload(OrderGambarUkur.tembusans))

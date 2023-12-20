@@ -964,8 +964,8 @@ async def export_excel(tahap_id:UUID):
     df_bidang = pd.DataFrame([bidang.dict() for bidang in data_bidang])
     df_pembayaran = pd.DataFrame([bayar.dict() for bayar in data_pembayaran])
 
-    df_gabung = pd.merge(df_pembayaran, df_bidang, left_on='bidang_id', right_on='id', how='right')
-    df_pivot = df_gabung.pivot_table(index=['id', 'id_bidang', 'alashak', 'luas_surat'], columns=['jenis_bayar', 'percentage'], values='amount', aggfunc='sum')
+    df_gabung = pd.merge(df_pembayaran, df_bidang, left_on='id_bidang', right_on='id_bidang', how='right')
+    df_pivot = df_gabung.pivot_table(index=['id_bidang', 'alashak', 'luas_surat'], columns=['jenis_bayar', 'percentage'], values='amount', aggfunc='sum')
     df_pivot.columns = ['{} {}'.format(col[0], str(col[1])) for col in df_pivot.columns]
     df_pivot.reset_index(inplace=True)
     
