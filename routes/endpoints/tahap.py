@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
+from sqlalchemy import String, cast
 from sqlalchemy.orm import selectinload
 from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin, BidangOverlap
 from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
@@ -133,7 +134,7 @@ async def get_list(
     if keyword:
         query = query.filter(
             or_(
-                Tahap.nomor_tahap == int(keyword),
+                cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
                 Tahap.group.ilike(f'%{keyword}%')
