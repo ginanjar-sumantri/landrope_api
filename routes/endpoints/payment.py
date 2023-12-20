@@ -386,7 +386,7 @@ async def get_by_id(id:UUID):
 
     obj = await crud.invoice.get_by_id(id=id)
 
-    if obj.termin.status_workflow != WorkflowLastStatusEnum.COMPLETED:
+    if obj.termin.status_workflow != WorkflowLastStatusEnum.COMPLETED and obj.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
     
     if obj:
