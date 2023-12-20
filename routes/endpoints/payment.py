@@ -361,7 +361,10 @@ async def get_list(
     query = query.order_by(text("created_at desc"))
 
     objs = await crud.invoice.get_multi_no_page(query=query)
-    objs = [inv for inv in objs if inv.invoice_outstanding > 0 and inv.termin.status_workflow == WorkflowLastStatusEnum.COMPLETED]
+    objs = [inv for inv in objs if inv.invoice_outstanding > 0 
+            and ((inv.termin.status_workflow == WorkflowLastStatusEnum.COMPLETED 
+                  and inv.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]) or inv.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS])]
+    
     return create_response(data=objs)
 
 
