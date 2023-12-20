@@ -368,7 +368,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     list_komponen_biaya = []
     for kb in komponen_biayas:
-        komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
+        komponen_biaya_sch = BidangKomponenBiayaSch.from_orm(kb)
         komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
         list_komponen_biaya.append(komponen_biaya_sch)
     

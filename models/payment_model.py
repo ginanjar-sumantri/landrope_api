@@ -14,6 +14,7 @@ class PaymentBase(SQLModel):
     payment_method:PaymentMethodEnum = Field(nullable=False)
     amount:Decimal = Field(nullable=True)
     giro_id:Optional[UUID] = Field(foreign_key="giro.id", nullable=True)
+    bank_code:Optional[str] = Field(nullable=True)
     code:Optional[str] = Field(nullable=True)
     pay_to: str = Field(nullable=False)
     remark:str | None = Field(nullable=True)
