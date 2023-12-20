@@ -137,7 +137,10 @@ async def get_list(
                 cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
-                Tahap.group.ilike(f'%{keyword}%')
+                Tahap.group.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%'),
+                Ptsk.name.ilike(f'%{keyword}%')
             )
         )
 
