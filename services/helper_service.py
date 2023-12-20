@@ -406,7 +406,7 @@ class KomponenBiayaHelper:
             return 0
 
         query = f"""select  
-                round({formula}, 2) As estimated_amount
+                coalesce(round({formula}, 2), 0) As estimated_amount
                 from bidang
                 inner join bidang_komponen_biaya ON bidang.id = bidang_komponen_biaya.bidang_id
                 where bidang.id = '{bidang_id}'

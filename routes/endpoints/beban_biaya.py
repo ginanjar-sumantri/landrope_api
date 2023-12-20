@@ -35,7 +35,7 @@ async def get_list(params: Params=Depends(),
 
     if keyword:
         query = query.filter(or_(
-            BebanBiaya.name.ilike(f"%keyword%")
+            BebanBiaya.name.ilike(f"%{keyword}%")
 
         ))
 
