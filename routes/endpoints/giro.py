@@ -132,7 +132,7 @@ async def extract_excel(file:UploadFile,
         sch = GiroCreateSch(nomor_giro=data.get("Nomor", None), 
                             amount=Decimal(data.get("Amount", 0)),
                             tanggal=data.get("Tanggal", date.today()),
-                            bank_name=data.get("Bank", None),
+                            bank_code=data.get("Bank", None),
                             payment_method=GetPaymentMethod(payment_method=str(data.get("Payment Method", ''))),
                             is_active=True,
                             from_master=True)
