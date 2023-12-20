@@ -435,7 +435,9 @@ async def get_list(
         for key, value in filter_query.items():
                 query = query.where(getattr(Giro, key) == value)
     
-    query = query.options(selectinload(Giro.payment))
+    query = query.options(selectinload(Giro.payment
+                                    ).options(selectinload(Payment.details))
+                    )
     query = query.distinct()
 
     objs = await crud.giro.get_multi_no_page(query=query)
