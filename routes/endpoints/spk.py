@@ -54,6 +54,11 @@ async def create(
     
     if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
         await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
+
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
+        bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+        await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
@@ -143,6 +148,13 @@ async def filter_sisa_pelunasan(bidang_id:UUID):
     
     if bidang.sisa_pelunasan == 0:
         raise HTTPException(status_code=422, detail="Bidang tidak memiliki sisa pelunasan")
+
+async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
+    bundle_dts = await crud.bundledt.get_by_ids(list_ids=bundle_dt_ids)
+
+    bundle_dt_no_have_metadata = next((bundle_dt for bundle_dt in bundle_dts if bundle_dt.file_exists == False), None)
+    if bundle_dt_no_have_metadata is None:
+        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
@@ -388,11 +400,19 @@ async def update(id:UUID,
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
-    
-    msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
-    
-    if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-        raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+        
+    #workflow
+    if sch.jenis_bayar != JenisBayarEnum.PAJAK:
+        msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+        
+        if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+            raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+        
+    #filter
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
+        bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+        await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+    #end filter
     
     #schema for history
     spk_history = await get_by_id_spk(id=id)
