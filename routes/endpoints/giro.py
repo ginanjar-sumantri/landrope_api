@@ -163,6 +163,10 @@ async def extract_excel(file:UploadFile,
 
             await crud.giro.update(obj_current=obj_current, obj_new=sch, with_commit=commit, db_session=db_session, updated_by_id=current_worker.id)
         else:
+            entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
+            last_number = await generate_code(entity=entity, db_session=db_session, with_commit=True)
+
+            sch.code = f"{sch.payment_method.value}/{last_number}"
             await crud.giro.create(obj_in=sch, created_by_id=current_worker.id, with_commit=commit, db_session=db_session)
 
         row = row + 1
