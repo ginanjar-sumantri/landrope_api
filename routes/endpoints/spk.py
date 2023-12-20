@@ -153,7 +153,7 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
     bundle_dts = await crud.bundledt.get_by_ids(list_ids=bundle_dt_ids)
 
     bundle_dt_no_have_metadata = next((bundle_dt for bundle_dt in bundle_dts if bundle_dt.file_exists == False), None)
-    if bundle_dt_no_have_metadata is None:
+    if bundle_dt_no_have_metadata:
         raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
