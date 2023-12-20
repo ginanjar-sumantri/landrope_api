@@ -94,6 +94,8 @@ async def get_list(
     query = select(Bidang)
     query = query.outerjoin(Bidang.planing)
     query = query.outerjoin(Bidang.pemilik)
+    query = query.outerjoin(Planing.desa)
+    query = query.outerjoin(Planing.project)
 
     if keyword:
         query = query.filter(
@@ -101,7 +103,9 @@ async def get_list(
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.id_bidang_lama.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
-                Bidang.group.ilike(f'%{keyword}%')
+                Bidang.group.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%')
             )
         )
     
