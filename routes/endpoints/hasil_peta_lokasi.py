@@ -495,7 +495,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     bidang_updated = BidangSch(
         jenis_bidang=jenis_bidang,
         status=status_bidang,
-        group=kjb_hd_current.nama_group,
+        group=kjb_dt_current.group,
         jenis_alashak=kjb_dt_current.jenis_alashak,
         jenis_surat_id=kjb_dt_current.jenis_surat_id,
         alashak=kjb_dt_current.alashak,

@@ -9,6 +9,7 @@ from models.worker_model import Worker
 from models.notaris_model import Notaris
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
+from schemas.kjb_dt_sch import KjbDtUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, 
                                ImportFailedException, DocumentFileNotFoundException)
@@ -45,7 +46,7 @@ async def create(
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{sch.nomor_tanda_terima}-{sch.tanggal_tanda_terima}')
         sch.file_path = file_path
     
-    kjb_dt_update = kjb_dt
+    kjb_dt_update = KjbDtUpdateSch.from_orm(kjb_dt)
 
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
     if kjb_dt.bundle_hd_id is None and sch.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi :
@@ -93,6 +94,7 @@ async def create(
     kjb_dt_update.project_by_ttn_id = sch.project_id if sch.project_id != None else kjb_dt_update.project_by_ttn_id
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi if sch.status_peta_lokasi != None else kjb_dt_update.status_peta_lokasi
     kjb_dt_update.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+    kjb_dt_update.group = sch.group if sch.group != None else kjb_dt_update.group
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
@@ -171,7 +173,7 @@ async def update(id:UUID,
     db_session = db.session
     obj_updated = await crud.tandaterimanotaris_hd.update(obj_current=obj_current, obj_new=sch, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
     
-    kjb_dt_update = kjb_dt
+    kjb_dt_update = KjbDtUpdateSch.from_orm(kjb_dt)
     ## if kjb detail is not match with bundle, then match bundle with kjb detail
     if kjb_dt.bundle_hd_id is None :
         ## Match bundle with kjb detail by alashak
@@ -196,6 +198,7 @@ async def update(id:UUID,
     kjb_dt_update.project_by_ttn_id = sch.project_id if sch.project_id != None else kjb_dt_update.project_by_ttn_id
     kjb_dt_update.status_peta_lokasi = sch.status_peta_lokasi if sch.status_peta_lokasi != None else kjb_dt_update.status_peta_lokasi
     kjb_dt_update.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+    kjb_dt_update.group = sch.group if sch.group != None else kjb_dt_update.group
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 

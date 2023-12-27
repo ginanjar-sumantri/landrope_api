@@ -109,6 +109,7 @@ class KjbDtBase(SQLModel):
     luas_surat:Decimal
     luas_surat_by_ttn:Decimal | None = Field(nullable=True)
     status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
+    group:str|None = Field(nullable=True)
 
     desa_id:Optional[UUID] = Field(foreign_key="desa.id", nullable=True)
     desa_by_ttn_id:Optional[UUID] = Field(foreign_key="desa.id", nullable=True)

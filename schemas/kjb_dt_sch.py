@@ -80,6 +80,7 @@ class KjbDtForOrderGUById(SQLModel):
 class KjbDtForCloud(SQLModel):
     id:UUID
     kjb_hd_id:Optional[UUID]
+    group:Optional[str]
     jenis_alashak:Optional[JenisAlashakEnum]
     jenis_surat_id:Optional[UUID]
     alashak:Optional[str]
