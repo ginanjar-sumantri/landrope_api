@@ -25,7 +25,7 @@ class GpsBase(SQLModel):
     status:StatusGpsEnum|None = Field(nullable=True)
     skpt_id:UUID|None = Field(default=None, nullable=True, foreign_key="skpt.id")
     tanggal:date|None = Field(nullable=True)
-    desa_id:UUID|None = Field(nullable=True, foreign_key="desa.id")
+    planing_id:UUID|None = Field(nullable=True, foreign_key="planing.id")
     remark:str|None = Field(nullable=True)
 
 class GpsRawBase(BaseUUIDModel, GpsBase):

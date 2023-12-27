@@ -18,6 +18,7 @@ class DraftBase(SQLModel):
     rincik_id:UUID | None = Field(nullable=True)
     skpt_id:UUID | None = Field(nullable=True)
     planing_id:UUID | None = Field(nullable=True)
+    gps_id:UUID | None = Field(nullable=True)
 
 class DraftRawBase(BaseUUIDModel, DraftBase):
     pass

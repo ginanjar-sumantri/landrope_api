@@ -6,15 +6,15 @@ from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPExcept
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_
-from sqlalchemy import text
-from models import Bidang, Planing, Project, Desa
+from sqlalchemy import text, cast, String
+from models import Bidang, Planing, Project, Desa, Pemilik, Tahap, TahapDetail
 from models.worker_model import Worker
 from models.master_model import JenisSurat
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch,
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch, BidangFilterJson,
                                 BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
 from schemas.bidang_history_sch import MetaDataSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
@@ -85,8 +85,9 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 async def get_list(
         params:Params = Depends(), 
         order_by:str = None, 
-        keyword:str = None, 
-        filter_query:str = None,
+        keyword:str | None= None, 
+        filter_query:str | None = None,
+        filter_json:str | None = None,
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Gets a paginated list objects"""
@@ -96,6 +97,8 @@ async def get_list(
     query = query.outerjoin(Bidang.pemilik)
     query = query.outerjoin(Planing.desa)
     query = query.outerjoin(Planing.project)
+    query = query.outerjoin(TahapDetail, and_(TahapDetail.bidang_id == Bidang.id, TahapDetail.is_void != True))
+    query = query.outerjoin(Tahap, Tahap.id == TahapDetail.tahap_id)
 
     if keyword:
         query = query.filter(
@@ -109,6 +112,24 @@ async def get_list(
             )
         )
     
+    if filter_json:
+        json_loads = json.loads(filter_json)
+        bidang_filter_json = BidangFilterJson(**json_loads.dict())
+
+        if bidang_filter_json.id_bidang:
+            query = query.filter(or_(Bidang.id_bidang.ilike(f'%{bidang_filter_json.id_bidang}%')))
+        if bidang_filter_json.id_bidang_lama:
+            query = query.filter(or_(Bidang.id_bidang_lama.ilike(f'%{bidang_filter_json.id_bidang_lama}%')))
+        if bidang_filter_json.alashak:
+            query = query.filter(or_(Bidang.alashak.ilike(f'%{bidang_filter_json.alashak}%')))
+        if bidang_filter_json.pemilik_name:
+            query = query.filter(or_(Pemilik.name.ilike(f'%{bidang_filter_json.pemilik_name}%')))
+        if bidang_filter_json.no_peta:
+            query = query.filter(or_(Bidang.no_peta.ilike(f'%{bidang_filter_json.no_peta}%')))
+        if bidang_filter_json.nomor_tahap:
+            query = query.filter(or_(cast(Tahap.nomor_tahap, String).ilike(f'%{bidang_filter_json.nomor_tahap}%')))
+        
+
     if filter_query:
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
