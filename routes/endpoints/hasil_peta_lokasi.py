@@ -151,12 +151,12 @@ async def create(
         if dt.bidang_id is None:
             continue
 
-        bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
-        if dt.luas_overlap > sch.luas_ukur:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
+        # bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
+        # if dt.luas_overlap > sch.luas_ukur:
+        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
         
-        if dt.luas_overlap > bidang_overlap.luas_surat:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
+        # if dt.luas_overlap > bidang_overlap.luas_surat:
+        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
         
         if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
             raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
@@ -243,12 +243,12 @@ async def update(
         if dt.bidang_id is None:
             continue
 
-        bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
-        if dt.luas_overlap > sch.luas_ukur:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
+        # bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
+        # if dt.luas_overlap > sch.luas_ukur:
+        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
         
-        if dt.luas_overlap > bidang_overlap.luas_surat:
-            raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
+        # if dt.luas_overlap > bidang_overlap.luas_surat:
+        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
         
         if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
             raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")

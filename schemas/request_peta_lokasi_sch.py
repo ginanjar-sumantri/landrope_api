@@ -49,6 +49,7 @@ class RequestPetaLokasiForInputHasilSch(SQLModel):
     hasil_peta_lokasi_id:UUID | None
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None
     status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum | None
+    desa_name:str | None
     remark:str | None
 
 class RequestPetaLokasiSch(RequestPetaLokasiFullBase):

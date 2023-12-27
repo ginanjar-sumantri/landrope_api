@@ -11,6 +11,8 @@ from models.desa_model import Desa
 from models.pemilik_model import Pemilik
 from models.bidang_model import Bidang
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
+from models.planing_model import Planing
+from models.desa_model import Desa
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, 
                                             RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch)
 from typing import List
@@ -100,13 +102,16 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             HasilPetaLokasi.id.label("hasil_peta_lokasi_id"),
             HasilPetaLokasi.hasil_analisa_peta_lokasi,
             HasilPetaLokasi.status_hasil_peta_lokasi,
-            HasilPetaLokasi.remark
+            HasilPetaLokasi.remark,
+            Desa.name.label("desa_name")
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
                     ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
-                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id)
+                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
+                    ).outerjoin(Planing, Planing.id == HasilPetaLokasi.planing_id
+                    ).outerjoin(Desa, Desa.id == Planing.desa_id)
 
         filter_clause = None
 
