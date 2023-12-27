@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from datetime import date
 
 if TYPE_CHECKING:
-    from models import Skpt, Worker, Desa
+    from models import Skpt, Worker, Planing
 
 class StatusGpsEnum(str, Enum):
     Masuk_SK_Clear = "Masuk_SK_Clear"
@@ -42,7 +42,7 @@ class Gps(GpsFullBase, table=True):
         }
     )
 
-    desa:"Desa" = Relationship(
+    planing:"Planing" = Relationship(
         sa_relationship_kwargs=
         {
             "lazy":"select"
@@ -69,4 +69,4 @@ class Gps(GpsFullBase, table=True):
     
     @property
     def desa_name(self)-> str:
-        return getattr(getattr(self, 'desa', None), 'name', None)
+        return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'name', None)

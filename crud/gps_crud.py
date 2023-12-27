@@ -1,5 +1,5 @@
 from crud.base_crud import CRUDBase
-from models import Gps, Skpt
+from models import Gps, Skpt, Planing
 from schemas.gps_sch import GpsCreateSch, GpsUpdateSch
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
@@ -27,7 +27,8 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
         query = select(Gps).where(Gps.id == id)
         query = query.options(selectinload(Gps.skpt
                                         ).options(selectinload(Skpt.ptsk))
-                    ).options(selectinload(Gps.desa)
+                    ).options(selectinload(Gps.planing
+                                        ).options(selectinload(Planing.desa))
                     )
         
         response = await db_session.execute(query)
