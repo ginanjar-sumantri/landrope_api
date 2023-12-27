@@ -4,10 +4,10 @@ from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 from typing import TYPE_CHECKING
+from datetime import date
 
 if TYPE_CHECKING:
-    from models.skpt_model import Skpt
-    from models.worker_model import Worker
+    from models import Skpt, Worker, Desa
 
 class StatusGpsEnum(str, Enum):
     Masuk_SK_Clear = "Masuk_SK_Clear"
@@ -16,15 +16,17 @@ class StatusGpsEnum(str, Enum):
     Tidak_Masuk_SK_Overlap = "Tidak_Masuk_SK_Overlap"
 
 class GpsBase(SQLModel):
-    nama:str|None
-    alas_hak:str|None
-    luas:Decimal|None
-    desa:str|None
-    penunjuk:str|None
-    pic:str|None
-    group:str|None
-    status:StatusGpsEnum|None
+    nama:str|None = Field(nullable=True) #pemilik
+    alashak:str|None = Field(nullable=True) #surat
+    luas:Decimal|None = Field(nullable=True)
+    penunjuk:str|None = Field(nullable=True)
+    pic:str|None = Field(nullable=True)
+    group:str|None = Field(nullable=True)
+    status:StatusGpsEnum|None = Field(nullable=True)
     skpt_id:UUID|None = Field(default=None, nullable=True, foreign_key="skpt.id")
+    tanggal:date|None = Field(nullable=True)
+    desa_id:UUID|None = Field(nullable=True, foreign_key="desa.id")
+    remark:str|None = Field(nullable=True)
 
 class GpsRawBase(BaseUUIDModel, GpsBase):
     pass
@@ -33,7 +35,20 @@ class GpsFullBase(BaseGeoModel, GpsRawBase):
     pass
 
 class Gps(GpsFullBase, table=True):
-    skpt:"Skpt"=Relationship(back_populates="gpsts", sa_relationship_kwargs={'lazy':'select'})
+    skpt:"Skpt" = Relationship(
+        sa_relationship_kwargs=
+        {
+            'lazy':'select'
+        }
+    )
+
+    desa:"Desa" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+    
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",
@@ -45,9 +60,13 @@ class Gps(GpsFullBase, table=True):
         return getattr(getattr(self, 'worker', None), 'name', None)
 
     @property
-    def ptsk_name(self)-> str:
-        return self.skpt.ptsk.name
+    def ptsk_name(self)-> str | None:
+        return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'name', None)
     
     @property
     def nomor_sk(self)-> str:
-        return self.skpt.nomor_sk
+        return getattr(getattr(self, 'skpt', None), 'nomor_sk', None)
+    
+    @property
+    def desa_name(self)-> str:
+        return getattr(getattr(self, 'desa', None), 'name', None)

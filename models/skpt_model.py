@@ -31,8 +31,6 @@ class Skpt(SkptFullBase, table=True):
     skpt_planings:list["SkptDt"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
     ptsk:"Ptsk" = Relationship(back_populates="skpts", sa_relationship_kwargs={'lazy':'select'})
     bidangs: list["Bidang"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
-    gpsts:list["Gps"] = Relationship(back_populates="skpt", sa_relationship_kwargs={'lazy':'select'})
-
 
     @property
     def ptsk_name(self)-> str:

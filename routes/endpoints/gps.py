@@ -23,43 +23,24 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[GpsRawSch], status_code=status.HTTP_201_CREATED)
 async def create(
-            sch:GpsCreateSch=Depends(GpsCreateSch.as_form), 
-            file:UploadFile = File(),
+            sch:GpsCreateSch,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-    if file is None:
-        ImportFailedException()
 
-    field_values = ["pemilik", "alashak", "luas_surat", "desa", "petunjuk_b", "pic", "group"]
+    draft = await crud.draft.get(id=sch.draft_id)
     
-    geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-    error_message = HelperService().CheckField(gdf=geo_dataframe, field_values=field_values)
-    if error_message:
-        raise HTTPException(status_code=422, detail=f"field '{error_message}' tidak eksis dalam file, field tersebut dibutuhkan untuk import data")
+    geom = None
+    if draft:
+        geom = wkt.dumps(wkb.loads(draft.geom.data, hex=True))
 
-    # geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-
-    if geo_dataframe.geometry[0].geom_type == "LineString":
-        polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
-        geo_dataframe['geometry'] = polygon.geometry
-
-
-    sch = GpsSch(nama=geo_dataframe['pemilik'][0],
-                alas_hak=geo_dataframe['alas_hak'][0],
-                luas=RoundTwo(Decimal(geo_dataframe['luas_surat'][0])),
-                desa=geo_dataframe['desa'][0],
-                petunjuk=geo_dataframe['penunjuk_b'][0],
-                pic=geo_dataframe['pic'][0],
-                group=geo_dataframe['group'][0],
-                status=sch.status,
-                skpt_id=sch.skpt_id,
-                geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-        )
+    obj_new = GpsSch(**sch.dict(), geom=geom)
         
-    new_obj = await crud.gps.create(obj_in=sch, created_by_id=current_worker.id)
-
+    new_obj = await crud.gps.create(obj_in=obj_new, created_by_id=current_worker.id)
     new_obj = await crud.gps.get_by_id(id=new_obj.id)
+
+    await crud.draft.remove(id=draft.id)
+
     return create_response(data=new_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[GpsRawSch])
@@ -87,38 +68,31 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Gps, id)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[GpsRawSch])
-async def update(id:UUID, sch:GpsUpdateSch=Depends(GpsUpdateSch.as_form), file:UploadFile = None,
-                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
+async def update(id:UUID, 
+                sch:GpsUpdateSch,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
     """Update a obj by its id"""
 
-    obj_current = await crud.gps.get(id=id)
+    obj_current = await crud.gps.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Gps, id)
     
     if obj_current.geom :
         obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
-    
-    if file:
-        geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
 
-        if geo_dataframe.geometry[0].geom_type == "LineString":
-            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
-            geo_dataframe['geometry'] = polygon.geometry
-
-        sch = GpsSch(nama=sch.nama,
-                alas_hak=sch.alas_hak,
-                luas=RoundTwo(Decimal(sch.luas)),
-                desa=sch.desa,
-                petunjuk=sch.petunjuk,
-                pic=sch.pic,
-                group=sch.group,
-                status=sch.status,
-                skpt_id=sch.skpt_id,
-                geom=GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-        )
+    obj_updated = GpsSch(**sch.dict(), geom=obj_current.geom)
     
-    obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    draft = await crud.draft.get(id=sch.draft_id)
+    if draft:
+        obj_updated.geom = wkt.dumps(wkb.loads(draft.geom.data, hex=True))
+
+        
+    obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
     obj_updated = await crud.gps.get_by_id(id=obj_updated.id)
+
+    if draft:
+        await crud.draft.remove(id=draft.id)
+    
     return create_response(data=obj_updated)

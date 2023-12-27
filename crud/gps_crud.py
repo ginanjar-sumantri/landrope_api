@@ -24,10 +24,11 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
         
         db_session = db_session or db.session
         
-        query = select(Gps).where(Gps.id == id
-                                        ).options(selectinload(Gps.skpt
-                                                            ).options(selectinload(Skpt.ptsk))
-                                        )
+        query = select(Gps).where(Gps.id == id)
+        query = query.options(selectinload(Gps.skpt
+                                        ).options(selectinload(Skpt.ptsk))
+                    ).options(selectinload(Gps.desa)
+                    )
         
         response = await db_session.execute(query)
 
