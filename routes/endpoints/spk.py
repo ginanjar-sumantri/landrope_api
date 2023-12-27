@@ -110,7 +110,9 @@ async def create(
     if sch.jenis_bayar != JenisBayarEnum.PAJAK:
         template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
-        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
+        additional_info = {"jenis_bayar" : sch.jenis_bayar}
+        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, 
+                                                      descs=f"Need Approval {new_obj.code}", additional_info=additional_info, attachments=[])
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
@@ -494,7 +496,10 @@ async def update(id:UUID,
     #workflow
     if obj_current.jenis_bayar != JenisBayarEnum.PAJAK:
         template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=template.flow_id, descs=f"Need Approval {obj_current.code}", attachments=[])
+        additional_info = {"jenis_bayar" : sch.jenis_bayar}
+        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), 
+                                                flow_id=template.flow_id, additional_info=additional_info,
+                                                descs=f"Need Approval {obj_current.code}", attachments=[])
         body = vars(workflow_system_sch)
         response, msg = await WorkflowService().create_workflow(body=body)
 

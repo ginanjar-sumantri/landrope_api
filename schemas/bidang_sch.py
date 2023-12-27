@@ -276,6 +276,9 @@ class BidangFilterJson(SQLModel):
     id_bidang_lama:str|None
     alashak:str|None
     pemilik_name:str|None
+    project_name:str|None
+    desa_name:str|None
+    group:str|None
     no_peta:str|None
     nomor_tahap:str|None
     luas_surat:str|None

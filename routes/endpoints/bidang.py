@@ -161,6 +161,12 @@ async def get_list(
             query = query.filter(or_(Bidang.alashak.ilike(f'%{bidang_filter_json.alashak}%')))
         if bidang_filter_json.pemilik_name:
             query = query.filter(or_(Pemilik.name.ilike(f'%{bidang_filter_json.pemilik_name}%')))
+        if bidang_filter_json.project_name:
+            query = query.filter(or_(Project.name.ilike(f'%{bidang_filter_json.project_name}%')))
+        if bidang_filter_json.desa_name:
+            query = query.filter(or_(Desa.name.ilike(f'%{bidang_filter_json.desa_name}%')))
+        if bidang_filter_json.group:
+            query = query.filter(or_(Bidang.group.ilike(f'%{bidang_filter_json.group}%')))
         if bidang_filter_json.no_peta:
             query = query.filter(or_(Bidang.no_peta.ilike(f'%{bidang_filter_json.no_peta}%')))
         if bidang_filter_json.nomor_tahap:
