@@ -38,7 +38,7 @@ class KjbHdBase(SQLModel):
     manager_id:UUID = Field(foreign_key="manager.id")
     sales_id:UUID = Field(foreign_key="sales.id")
     mediator:str | None
-    telepon_mediator:str | None
+    telepon_mediator:str | None = Field(nullable=True)
     ada_utj:bool
     utj_amount:Decimal
     satuan_bayar:SatuanBayarEnum

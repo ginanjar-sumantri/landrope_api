@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
-from models import KjbDt, KjbHd
+from models import KjbDt, KjbHd, Pemilik, Manager, Sales
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch)
@@ -84,13 +84,23 @@ async def get_list(
     """Gets a paginated list objects"""
     query = select(KjbDt)
 
-    query = query.select_from(KjbDt
-                                     ).outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
-                                                 ).where(KjbDt.request_peta_lokasi == None)
+    query = query.select_from(KjbDt)
+    query = query.outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+                ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
+                ).join(Manager, Manager.id == KjbHd.manager_id
+                ).join(Sales, Sales.id == KjbHd.sales_id)
+    
+    query = query.where(KjbDt.request_peta_lokasi == None)
     
     if keyword and keyword != "":
         query = query.filter(
-                KjbDt.alashak.contains(keyword)
+                KjbDt.alashak.ilike(f'%{keyword}%'),
+                Pemilik.name.ilike(f'%{keyword}%'),
+                KjbHd.nama_group.ilike(f'%{keyword}%'),
+                KjbHd.mediator.ilike(f'%{keyword}%'),
+                Manager.name.ilike(f'%{keyword}%'),
+                Sales.name.ilike(f'%{keyword}%')
         )
 
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
