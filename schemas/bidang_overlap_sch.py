@@ -56,8 +56,20 @@ class BidangOverlapForPrintout(SQLModel):
     status_overlap:str|None
     nib:str|None
 
-class BidangOverlapExcelSch(SQLModel):
+class BidangOverlapImportExcelSch(SQLModel):
     id_bintang:str|None
     status:str|None
     id_bidang_damai:str|None
     luas_overlap:Decimal|None
+
+class BidangOverlapExcelSch(SQLModel):
+    id_bidang_parent:str|None
+    ket:str|None
+    nama:str|None
+    alashak:str|None
+    luas:str|None
+    luas_overlap:str|None
+    kat:str|None
+    no_nib:str|None
+    id_bidang:str|None
+

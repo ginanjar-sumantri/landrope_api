@@ -61,6 +61,7 @@ class TerminByIdForPrintOut(SQLModel):
     tanggal_transaksi:Optional[date]
     tanggal_rencana_transaksi:Optional[date]
     jenis_bayar:Optional[JenisBayarEnum]
+    jenis_bayar_ext:Optional[str]
     notaris_name:str|None 
     manager_name:str|None 
     sales_name:str|None 
@@ -104,11 +105,10 @@ class TerminIdSch(SQLModel):
     termin_ids:list[UUID]|None
 
 class TerminExcelSch(SQLModel):
-    bidang_id:UUID|None
     id_bidang:str|None
     jenis_bayar:str|None
-    percentage:Decimal|None
-    amount:Decimal|None
+    percentage:str|None
+    amount:str|None
 
 class TerminVoidSch(SQLModel):
     void_reason:str

@@ -1,10 +1,10 @@
 from models.tahap_model import TahapDetailBase, TahapDetailFullBase
-from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap, BidangOverlapRawSch
+from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap, BidangOverlapRawSch, BidangOverlapForPrintout
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from common.partial import optional
 from common.as_form import as_form
-from common.enum import HasilAnalisaPetaLokasiEnum
+from common.enum import HasilAnalisaPetaLokasiEnum, JenisBidangEnum
 from uuid import UUID
 from decimal import Decimal
 
@@ -91,3 +91,40 @@ class TahapDetailUpdateExtSch(SQLModel):
     luas_bayar:Optional[Decimal]
     is_void:Optional[bool] = Field(default=False)
     overlaps:list[BidangOverlapUpdateExtSch] | None
+
+class TahapDetailForPrintOut(SQLModel):
+    id:Optional[UUID]
+    bidang_id:Optional[UUID]
+    id_bidang:Optional[str]
+    group:Optional[str]
+    jenis_bidang:Optional[JenisBidangEnum]
+    lokasi:Optional[str]
+    ptsk_name:Optional[str]
+    status_il:Optional[str]
+    project_name:Optional[str]
+    desa_name:Optional[str]
+    pemilik_name:Optional[str]
+    alashak:Optional[str]
+    luas_surat:Optional[Decimal]
+    luas_ukur:Optional[Decimal]
+    luas_gu_perorangan:Optional[Decimal]
+    luas_nett:Optional[Decimal]
+    luas_pbt_perorangan:Optional[Decimal]
+    luas_bayar:Optional[Decimal]
+    no_peta:Optional[str]
+    harga_transaksi:Optional[Decimal]
+    total_harga:Optional[Decimal]
+
+    no:Optional[int]
+    harga_transaksiExt:Optional[str]
+    total_hargaExt:Optional[str]
+    luas_suratExt:Optional[str]
+    luas_ukurExt:Optional[str]
+    luas_gu_peroranganExt:Optional[str]
+    luas_nettExt:Optional[str]
+    luas_pbt_peroranganExt:Optional[str]
+    luas_bayarExt:Optional[str]
+
+    is_bold:Optional[bool]
+
+    overlaps:Optional[list[BidangOverlapForPrintout]]

@@ -9,7 +9,7 @@ from typing import List
 from common.ordered import OrderEnumSch
 from common.enum import StatusLuasOverlapEnum, TipeOverlapEnum
 from crud.base_crud import CRUDBase
-from models import BidangOverlap, HasilPetaLokasiDetail, HasilPetaLokasi
+from models import BidangOverlap, HasilPetaLokasiDetail, HasilPetaLokasi, Bidang
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapUpdateSch, BidangOverlapRawSch, BidangOverlapForPrintout
 from uuid import UUID
 from geoalchemy2 import functions
@@ -113,6 +113,20 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
         
         response =  await db_session.execute(query)
         
+        return response.scalars().all()
+    
+    async def get_multi_by_parent_bidang_ids(self, *, list_parent_id:list[UUID]) -> list[BidangOverlap] | None :
+
+        db_session = db.session
+
+        query = select(BidangOverlap)
+        query = query.where(BidangOverlap.parent_bidang_id.in_(list_parent_id))
+        query = query.options(selectinload(BidangOverlap.bidang)
+                    ).options(selectinload(BidangOverlap.bidang_intersect
+                                ).options(selectinload(Bidang.pemilik))
+                    )
+        
+        response = await db_session.execute(query)
         return response.scalars().all()
 
 bidangoverlap = CRUDBidangOverlap(BidangOverlap)

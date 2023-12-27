@@ -26,6 +26,8 @@ class HasilPetaLokasiBase(SQLModel):
     luas_clear:Decimal = Field(nullable=True)
     luas_gu_perorangan:Decimal | None = Field(nullable=True)
     luas_gu_pt:Decimal | None = Field(nullable=True)
+    luas_pbt_perorangan:Decimal | None = Field(nullable=True)
+    luas_pbt_pt:Decimal | None = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
     status_hasil_peta_lokasi:StatusHasilPetaLokasiEnum = Field(nullable=False)
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(nullable=True)

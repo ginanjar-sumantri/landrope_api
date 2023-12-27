@@ -80,7 +80,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         tr.created_at,
                         tr.tanggal_transaksi,
                         tr.tanggal_rencana_transaksi,
-                        (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar,
+                        (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar_ext,
                         t.nomor_tahap,
                         tr.nomor_memo,
                         SUM(i.amount) as amount,
@@ -195,8 +195,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         i.bidang_id as bidang_id,
                         b.id_bidang as id_bidang,
                         tr.jenis_bayar as jenis_bayar,
-                        Coalesce(s.amount, 0) as percentage,
-                        i.amount as amount
+                        Coalesce(round(s.amount, 0)::text, '') as percentage,
+                        i.amount::text as amount
                         from termin tr
                         inner join invoice i on i.termin_id = tr.id
                         inner join bidang b on i.bidang_id = b.id

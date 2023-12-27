@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 import crud
 from models import BidangOverlap, Worker, Bidang
 from schemas.bidang_overlap_sch import (BidangOverlapSch, BidangOverlapCreateSch, BidangOverlapRawSch, 
-                                       BidangOverlapUpdateSch, BidangOverlapExcelSch)
+                                       BidangOverlapUpdateSch, BidangOverlapImportExcelSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
@@ -103,7 +103,7 @@ async def extract_excel(file:UploadFile):
 
     datas = []
     for i, data in df.iterrows():
-        sch = BidangOverlapExcelSch(id_bintang=str(data.get('ID BINTANG', '')),
+        sch = BidangOverlapImportExcelSch(id_bintang=str(data.get('ID BINTANG', '')),
                                     status=str(data.get('STATUS', '')),
                                     id_bidang_damai=str(data.get('ID BID DAMAI', '')),
                                     luas_overlap=Decimal(data.get('LUAS OVERLAP', 0)))

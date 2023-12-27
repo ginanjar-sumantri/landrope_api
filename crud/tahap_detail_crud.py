@@ -5,7 +5,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import TahapDetail, Bidang, Planing, Skpt, BidangKomponenBiaya
-from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
+from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch, TahapDetailForPrintOut
 from typing import List
 from uuid import UUID
 
@@ -85,65 +85,58 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                                 ))
         response =  await db_session.execute(query)
         return response.fetchone()
-    
 
-    async def get_multi_by_tahap_id(self, 
-                                    *, 
-                                    tahap_id:UUID | str,
-                                    db_session : AsyncSession | None = None, 
-                                    query : TahapDetail | Select[TahapDetail]| None = None
-                                    ) -> List[TahapDetailExtSch] | None:
-        
-        db_session = db_session or db.session
-        
-        query = text(f"""
-                    select
-                    td.id,
-                    t.id as tahap_id,
-                    b.id as bidang_id,
-                    b.id_bidang,
-                    b.alashak,
-                    b.group,
-                    b.luas_surat,
-                    b.luas_ukur,
-                    b.luas_gu_perorangan,
-                    b.luas_gu_pt,
-                    b.luas_nett,
-                    b.luas_clear,
-                    b.luas_pbt_perorangan,
-                    b.luas_pbt_pt,
-                    b.luas_bayar,
-                    b.harga_akta,
-                    b.harga_transaksi,
-                    b.harga_akta,
-                    pr.name as project_name,
-                    ds.name as desa_name,
-                    pl.name as planing_name,
-                    pl.id as planing_id,
-                    Case
-                        When b.skpt_id is NULL Then pn.name
-                        ELSE pt.name
-                    End as ptsk_name,
-                    Case
-                        When b.skpt_id is NULL Then pn.id
-                        ELSE pt.id
-                    End as ptsk_id,
-                    (b.luas_bayar * b.harga_transaksi) as total_harga
-                    from tahap_detail td
-                    inner join bidang b on b.id = td.bidang_id
-                    inner join tahap t on t.id = td.tahap_id
-                    left outer join planing pl on pl.id = b.planing_id
-                    left outer join project pr on pr.id = pl.project_id
-                    left outer join desa ds on ds.id = pl.desa_id
-                    left outer join skpt sk on sk.id = b.skpt_id
-                    left outer join ptsk pt on pt.id = sk.ptsk_id
-                    left outer join ptsk pn on pn.id = b.penampung_id
-                    where 
-                    t.id = '{str(tahap_id)}'
-            """)
-            
-        response =  await db_session.execute(query)
-        return response.fetchall()
+    async def get_multi_by_tahap_id_for_printout(self, 
+                                            *, 
+                                            tahap_id: UUID | str, 
+                                            db_session: AsyncSession | None = None
+                                            ) -> List[TahapDetailForPrintOut] | None:
+            db_session = db_session or db.session
+            query = text(f"""
+                        select
+                        td.id,
+                        b.id as bidang_id,
+                        b.id_bidang,
+                        b.group,
+                        b.jenis_bidang,
+                        case
+                            when b.skpt_id is Null then ds.name || '-' || pr.name || '-' || pn.name || ' (PENAMPUNG)'
+                            else ds.name || '-' || pr.name || '-' || pt.name || ' (' || Replace(sk.status,  '_', ' ') || ')'
+                        end as lokasi,
+                        case
+                            when b.skpt_id is Null then pn.name
+                            else pt.name
+                        end as ptsk_name,
+                        sk.status as status_il,
+                        pr.name as project_name,
+                        ds.name as desa_name,
+                        COALESCE(pm.name, '') as pemilik_name,
+                        b.alashak,
+                        COALESCE(b.luas_surat,0) as luas_surat,
+                        COALESCE(b.luas_ukur,0) as luas_ukur,
+                        COALESCE(b.luas_gu_perorangan,0) as luas_gu_perorangan,
+                        COALESCE(b.luas_nett,0) as luas_nett,
+                        COALESCE(b.luas_pbt_perorangan,0) as luas_pbt_perorangan,
+                        COALESCE(b.luas_bayar,0) as luas_bayar,
+                        COALESCE(b.no_peta, '') as no_peta,
+                        COALESCE(b.harga_transaksi,0) as harga_transaksi,
+                        (b.harga_transaksi * b.luas_bayar) as total_harga
+                        from tahap_detail td
+                        inner join bidang b on b.id = td.bidang_id
+                        inner join planing pl on pl.id = b.planing_id
+                        inner join project pr on pr.id = pl.project_id
+                        inner join desa ds on ds.id = pl.desa_id
+                        left outer join skpt sk on sk.id = b.skpt_id
+                        left outer join ptsk pt on pt.id = sk.ptsk_id
+                        left outer join ptsk pn on pn.id = b.penampung_id
+                        left outer join pemilik pm on pm.id = b.pemilik_id
+                        where 
+                        td.tahap_id = '{str(tahap_id)}'
+                        """)
+
+            response = await db_session.execute(query)
+
+            return response.fetchall()
     
     async def get_multi_by_tahap(self, 
                                     *, 

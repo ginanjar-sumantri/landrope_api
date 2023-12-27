@@ -256,7 +256,17 @@ class ReportBidangBintang(SQLModel):
     sisa_bintang:Decimal|None
 
 class BidangExcelSch(SQLModel):
-    id:UUID | None
+    no:int | None
     id_bidang:str | None
+    alias:str | None
+    desa:str | None
+    project:str | None
+    ptsk:str | None
+    pemilik:str | None
     alashak:str | None
     luas_surat:str | None
+    luas_ukur:str | None
+    luas_pbt:str | None
+    luas_bayar:str | None
+    harga_transaksi:str | None
+    total_harga:str | None
