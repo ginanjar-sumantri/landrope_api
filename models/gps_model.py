@@ -64,8 +64,16 @@ class Gps(GpsFullBase, table=True):
         return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'name', None)
     
     @property
+    def ptsk_id(self)-> UUID | None:
+        return getattr(getattr(getattr(self, 'skpt', None), 'ptsk', None), 'id', None)
+    
+    @property
     def nomor_sk(self)-> str:
         return getattr(getattr(self, 'skpt', None), 'nomor_sk', None)
+    
+    @property
+    def planing_name(self)-> str:
+        return getattr(getattr(self, 'planing', None), 'name', None)
     
     @property
     def desa_name(self)-> str:

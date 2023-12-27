@@ -39,7 +39,8 @@ async def create(
     new_obj = await crud.gps.create(obj_in=obj_new, created_by_id=current_worker.id)
     new_obj = await crud.gps.get_by_id(id=new_obj.id)
 
-    await crud.draft.remove(id=draft.id)
+    if draft:
+        await crud.draft.remove(id=draft.id)
 
     return create_response(data=new_obj)
 

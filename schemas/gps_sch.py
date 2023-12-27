@@ -12,6 +12,8 @@ class GpsRawSch(GpsRawBase):
     nomor_sk:str|None = Field(alias='nomor_sk')
     updated_by_name:str|None = Field(alias="updated_by_name")
     desa_name:str|None
+    planing_name:str|None
+    ptsk_id:UUID|None
 
 class GpsSch(GpsFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")

@@ -5,9 +5,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, func
 from sqlalchemy import text, cast, String
-from models import Bidang, Planing, Project, Desa, Pemilik, Tahap, TahapDetail
+from models import Bidang, Planing, Project, Desa, Pemilik, Tahap, TahapDetail, Invoice, PaymentDetail, InvoiceDetail, BidangKomponenBiaya, Termin
 from models.worker_model import Worker
 from models.master_model import JenisSurat
 from models.hasil_peta_lokasi_model import HasilPetaLokasi
@@ -23,7 +23,7 @@ from common.exceptions import (IdNotFoundException, NameExistException, ContentN
                                ImportFailedException, DocumentFileNotFoundException)
 from common.generator import generate_id_bidang
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, JenisBayarEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
@@ -108,13 +108,50 @@ async def get_list(
                 Bidang.alashak.ilike(f'%{keyword}%'),
                 Bidang.group.ilike(f'%{keyword}%'),
                 Project.name.ilike(f'%{keyword}%'),
-                Desa.name.ilike(f'%{keyword}%')
+                Desa.name.ilike(f'%{keyword}%'),
+                Pemilik.name.ilike(f'%{keyword}%'),
+                Bidang.no_peta.ilike(f'%{keyword}%'),
+                Bidang.status.ilike(f'%{keyword}%'),
+                Bidang.group.ilike(f'%{keyword}%'),
+                cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%')
             )
         )
     
     if filter_json:
         json_loads = json.loads(filter_json)
-        bidang_filter_json = BidangFilterJson(**json_loads.dict())
+        bidang_filter_json = BidangFilterJson(**dict(json_loads))
+
+        if bidang_filter_json.total_payment or bidang_filter_json.sisa_pelunasan:
+
+            subquery_payment = (
+            select(func.coalesce(func.sum(PaymentDetail.amount), 0))
+            .join(Invoice, and_(Invoice.id == PaymentDetail.invoice_id, Invoice.is_void != True))
+            .join(Termin, and_(Termin.id == Invoice.termin_id, Termin.jenis_bayar != JenisBayarEnum.BIAYA_LAIN))
+            .filter(and_(Invoice.bidang_id == Bidang.id, PaymentDetail.is_void != True))
+            .scalar_subquery()  # Menggunakan scalar_subquery untuk hasil subquery sebagai skalar
+            )
+
+            subquery_beban_biaya = (
+                select(func.coalesce(func.sum(InvoiceDetail.amount), 0)
+                    ).join(BidangKomponenBiaya, BidangKomponenBiaya.id == InvoiceDetail.bidang_komponen_biaya_id
+                    ).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                    ).filter(and_(Invoice.bidang_id == Bidang.id, 
+                                  BidangKomponenBiaya.is_void != True, 
+                                  BidangKomponenBiaya.beban_pembeli == False,
+                                  BidangKomponenBiaya.is_paid == True,
+                                  BidangKomponenBiaya.is_add_pay != True,
+                                  BidangKomponenBiaya.is_retur != True))
+                    .scalar_subquery()
+            )
+
+            if bidang_filter_json.total_payment:
+                query = query.filter(or_(cast((subquery_payment + subquery_beban_biaya), String).ilike(f'%{bidang_filter_json.total_payment}%')))
+            
+            if bidang_filter_json.sisa_pelunasan:
+                query = query.filter(or_(
+                    cast((((func.coalesce(Bidang.luas_bayar, 0) * func.coalesce(Bidang.harga_transaksi, 0)) - subquery_payment) - subquery_beban_biaya), 
+                        String).ilike(f'%{bidang_filter_json.sisa_pelunasan}%'))
+                )
 
         if bidang_filter_json.id_bidang:
             query = query.filter(or_(Bidang.id_bidang.ilike(f'%{bidang_filter_json.id_bidang}%')))
@@ -128,6 +165,12 @@ async def get_list(
             query = query.filter(or_(Bidang.no_peta.ilike(f'%{bidang_filter_json.no_peta}%')))
         if bidang_filter_json.nomor_tahap:
             query = query.filter(or_(cast(Tahap.nomor_tahap, String).ilike(f'%{bidang_filter_json.nomor_tahap}%')))
+        if bidang_filter_json.luas_surat:
+            query = query.filter(or_(cast(Bidang.luas_surat, String).ilike(f'%{bidang_filter_json.luas_surat}%')))
+        if bidang_filter_json.status:
+            query = query.filter(or_(Bidang.status.ilike(f'%{bidang_filter_json.status}%')))
+        if bidang_filter_json.total_harga_transaksi:
+            query = query.filter(or_(cast((func.coalesce(Bidang.luas_bayar, 0) * func.coalesce(Bidang.harga_transaksi, 0)), String).ilike(f'%{bidang_filter_json.total_harga_transaksi}%')))
         
 
     if filter_query:
