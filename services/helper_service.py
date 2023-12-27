@@ -77,7 +77,8 @@ class HelperService:
 
             for i, item in enumerate(current_riwayat_obj["riwayat"]):
                 if item.get("key_value") == key_value and from_notaris == False:
-                    raise ContentNoChangeException(detail=f"{key_value} sudah ada dalam riwayat!")
+                    # raise ContentNoChangeException(detail=f"{key_value} sudah ada dalam riwayat!")
+                    current_riwayat_obj["riwayat"] = [item for item in current_riwayat_obj["riwayat"] if item["key_value"] != key_value]
                 #kalau dari tanda terima notaris, buang dulu yg current karena akan direplace dari tanda terima notaris
                 elif item.get("key_value") == key_value and from_notaris == True:
                     current_riwayat_obj["riwayat"] = [item for item in current_riwayat_obj["riwayat"] if item["key_value"] != key_value]
