@@ -299,8 +299,11 @@ class Bidang(BidangFullBase, table=True):
     @property
     def kjb_harga_transaksi(self) -> str:
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_transaksi", None)
-
     
+    @property
+    def kjb_no(self) -> str:
+        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "kjb_code", None)
+
     @property
     def hasil_analisa_peta_lokasi(self) -> HasilAnalisaPetaLokasiEnum | None:
         return getattr(getattr(self, "hasil_peta_lokasi", None), "hasil_analisa_peta_lokasi", None)

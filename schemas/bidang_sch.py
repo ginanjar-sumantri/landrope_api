@@ -112,6 +112,11 @@ class BidangForSPKByIdSch(SQLModel):
     project_name:str | None
     luas_surat:Decimal | None
     luas_ukur:Decimal | None
+    luas_gu_perorangan:Decimal | None
+    luas_gu_pt:Decimal | None
+    luas_pbt_perorangan:Decimal | None
+    luas_pbt_pt:Decimal | None
+    manager_name:str | None
     no_peta:str | None
     notaris_name:str | None
     ptsk_name:str | None

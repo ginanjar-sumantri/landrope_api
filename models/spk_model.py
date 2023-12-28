@@ -157,6 +157,10 @@ class Spk(SpkFullBase, table=True):
         return False
     
     @property
+    def manager_name(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "manager_name", None)
+    
+    @property
     def created_name(self) -> str | None:
         return getattr(getattr(self, "worker", None), "name", None)
     
