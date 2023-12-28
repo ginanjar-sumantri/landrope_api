@@ -179,7 +179,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         query = text(f"""
                     select
                     id,
-                    group,
+                    "group",
                     kjb_hd_id,
                     jenis_alashak,
                     jenis_surat_id,

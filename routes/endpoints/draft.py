@@ -29,7 +29,7 @@ router = APIRouter()
 @router.post("/create", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
 async def create(
                 sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
-                file:UploadFile | None = None,
+                file:UploadFile | None = File(default=None),
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""

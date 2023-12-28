@@ -211,6 +211,17 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         result_return = [TerminExcelSch(**dict(tr)) for tr in result]
 
         return result_return
+    
+    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID]) -> list[Termin]:
+        
+        db_session = db.session
+
+        query = select(Termin)
+        query = query.join(Invoice, and_(Invoice.termin_id == Termin.id, Invoice.is_void != True))
+        query = query.where(Invoice.bidang_id.in_(bidang_ids))
+        query = query.distinct()
+
+        response = await db
 
 
 termin = CRUDTermin(Termin)
