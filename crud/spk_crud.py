@@ -199,33 +199,44 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
              
 
         if tahap_id and jenis_bayar and termin_id == None:
-             query = query.where(and_(
-                                        Spk.jenis_bayar == jenis_bayar,
-                                        Tahap.id == tahap_id,
-                                        or_(
-                                             Invoice.spk_id == None,
-                                             Invoice.is_void == True
-                                        )
-                                    ))
-             
+            if jenis_bayar == JenisBayarEnum.DP or jenis_bayar == JenisBayarEnum.TAMBAHAN_DP:
+                jenis_bayar = [JenisBayarEnum.DP, JenisBayarEnum.TAMBAHAN_DP]
+            else:
+                jenis_bayar = [jenis_bayar]
+        
+            query = query.where(and_(
+                                    Spk.jenis_bayar.in_(jenis_bayar),
+                                    Tahap.id == tahap_id,
+                                    or_(
+                                            Invoice.spk_id == None,
+                                            Invoice.is_void == True
+                                    )
+                                ))
+            
 
         if termin_id:
-             query = query.outerjoin(Termin, Termin.id == Invoice.termin_id)
-             query = query.where(
-                                 and_(
-                                        Spk.jenis_bayar == jenis_bayar,
-                                        Tahap.id == tahap_id,
-                                        Termin.id == termin_id,
-                                        Invoice.is_void != True
-                                      ))
+            query = query.outerjoin(Termin, Termin.id == Invoice.termin_id)
+
+            if jenis_bayar == JenisBayarEnum.DP or jenis_bayar == JenisBayarEnum.TAMBAHAN_DP:
+                jenis_bayar = [JenisBayarEnum.DP, JenisBayarEnum.TAMBAHAN_DP]
+            else:
+                jenis_bayar = [jenis_bayar]
+
+            query = query.where(
+                                and_(
+                                    Spk.jenis_bayar.in_(jenis_bayar),
+                                    Tahap.id == tahap_id,
+                                    Termin.id == termin_id,
+                                    Invoice.is_void != True
+                                    ))
         
         if keyword:
-             query = query.filter(or_(
-                  Bidang.id_bidang.ilike(f"%{keyword}%"),
-                  Bidang.id_bidang_lama.ilike(f"%{keyword}%"),
-                  Bidang.alashak.ilike(f"%{keyword}%"),
-                  Spk.code.ilike(f"%{keyword}%")
-             ))
+            query = query.filter(or_(
+                Bidang.id_bidang.ilike(f"%{keyword}%"),
+                Bidang.id_bidang_lama.ilike(f"%{keyword}%"),
+                Bidang.alashak.ilike(f"%{keyword}%"),
+                Spk.code.ilike(f"%{keyword}%")
+            ))
 
         query = query.options(selectinload(Spk.bidang)
                     ).options(selectinload(Spk.invoices))

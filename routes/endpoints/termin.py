@@ -13,8 +13,8 @@ from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
-                                TerminBidangIDSch, TerminIdSch,
-                                TerminBebanBiayaForPrintOutExt, TerminVoidSch)
+                                TerminBidangIDSch, TerminIdSch, TerminHistoriesSch,
+                                TerminBebanBiayaForPrintOut, TerminVoidSch)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
                                  InvoiceHistoryInTermin)
@@ -667,7 +667,7 @@ async def printout(id:UUID | str,
 
         obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
         for bb in obj_komponen_biayas:
-            beban_biaya = TerminBebanBiayaForPrintOutExt(**dict(bb))
+            beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
             komponen_biayas.append(beban_biaya)
@@ -812,11 +812,20 @@ async def printout(id:UUID | str,
             history.amountExt = "{:,.0f}".format(history.amount)
             invoices_history.append(history)
 
-        komponen_biayas = []
+        termin_histories = []
+        current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id)
+        for termin in current_termin_histories:
+            
+            termin_history = TerminHistoriesSch(**termin.dict())
+            termin_history.amount = termin.total_amount
+            
 
+
+
+        komponen_biayas = []
         obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
         for bb in obj_komponen_biayas:
-            beban_biaya = TerminBebanBiayaForPrintOutExt(**dict(bb))
+            beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
             komponen_biayas.append(beban_biaya)

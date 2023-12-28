@@ -90,9 +90,8 @@ class TerminBebanBiayaForPrintOut(SQLModel):
     is_void:Optional[bool]
     tanggungan:Optional[str]
     amount:Optional[Decimal]
-
-class TerminBebanBiayaForPrintOutExt(TerminBebanBiayaForPrintOut):
     amountExt:Optional[str]
+    
 
 class BidangIDOfTerminSch(SQLModel):
     bidang_id:UUID
@@ -112,4 +111,14 @@ class TerminExcelSch(SQLModel):
 
 class TerminVoidSch(SQLModel):
     void_reason:str
+
+class TerminHistoriesSch(SQLModel):
+    id:UUID|None
+    tanggal_transaksi:date|None
+    jenis_bayar:JenisBayarEnum|None
+    str_jenis_bayar:str|None
+    amount:Decimal|None
+    str_amount:str|None
+    index_bidang:str|None
+    beban_biayas:list[TerminBebanBiayaForPrintOut]|None
 

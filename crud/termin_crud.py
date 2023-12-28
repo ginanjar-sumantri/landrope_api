@@ -24,42 +24,43 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         
         db_session = db_session or db.session
         
-        query = select(Termin).where(Termin.id == id).options(selectinload(Termin.tahap
-                                                                ).options(selectinload(Tahap.planing
-                                                                        ).options(selectinload(Planing.project))
-                                                                ).options(selectinload(Tahap.ptsk))
-                                                    ).options(selectinload(Termin.kjb_hd)
-                                                    ).options(selectinload(Termin.invoices
-                                                                ).options(selectinload(Invoice.details
-                                                                        ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                                                        ).options(selectinload(BidangKomponenBiaya.bidang)
-                                                                                        ).options(selectinload(BidangKomponenBiaya.beban_biaya))
-                                                                        )
-                                                                ).options(selectinload(Invoice.bidang
-                                                                        ).options(selectinload(Bidang.skpt
-                                                                                        ).options(selectinload(Skpt.ptsk)
-                                                                                        )
-                                                                        ).options(selectinload(Bidang.planing)
-                                                                        ).options(selectinload(Bidang.invoices
-                                                                                        ).options(selectinload(Invoice.termin)
-                                                                                        ).options(selectinload(Invoice.payment_details))
-                                                                        )
-                                                                ).options(selectinload(Invoice.payment_details
-                                                                        ).options(selectinload(PaymentDetail.payment
-                                                                                        ).options(selectinload(Payment.giro))
-                                                                        )
-                                                                ).options(selectinload(Invoice.spk
-                                                                                        ).options(selectinload(Spk.bidang
-                                                                                                        ).options(selectinload(Bidang.komponen_biayas))
-                                                                                        )
-                                                                )
-                                                    ).options(selectinload(Termin.notaris)
-                                                    ).options(selectinload(Termin.termin_bayars
-                                                                ).options(selectinload(TerminBayar.rekening)
-                                                                        )
-                                                    ).options(selectinload(Termin.manager)
-                                                    ).options(selectinload(Termin.sales)
-                                                    )
+        query = select(Termin).where(Termin.id == id)
+        query = query.options(selectinload(Termin.tahap
+                        ).options(selectinload(Tahap.planing
+                                ).options(selectinload(Planing.project))
+                        ).options(selectinload(Tahap.ptsk))
+                ).options(selectinload(Termin.kjb_hd)
+                ).options(selectinload(Termin.invoices
+                        ).options(selectinload(Invoice.details
+                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                ).options(selectinload(BidangKomponenBiaya.bidang)
+                                                ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                )
+                        ).options(selectinload(Invoice.bidang
+                                ).options(selectinload(Bidang.skpt
+                                                ).options(selectinload(Skpt.ptsk)
+                                                )
+                                ).options(selectinload(Bidang.planing)
+                                ).options(selectinload(Bidang.invoices
+                                                ).options(selectinload(Invoice.termin)
+                                                ).options(selectinload(Invoice.payment_details))
+                                )
+                        ).options(selectinload(Invoice.payment_details
+                                ).options(selectinload(PaymentDetail.payment
+                                                ).options(selectinload(Payment.giro))
+                                )
+                        ).options(selectinload(Invoice.spk
+                                                ).options(selectinload(Spk.bidang
+                                                                ).options(selectinload(Bidang.komponen_biayas))
+                                                )
+                        )
+                ).options(selectinload(Termin.notaris)
+                ).options(selectinload(Termin.termin_bayars
+                        ).options(selectinload(TerminBayar.rekening)
+                                )
+                ).options(selectinload(Termin.manager)
+                ).options(selectinload(Termin.sales)
+                )
         
         response = await db_session.execute(query)
 
@@ -212,16 +213,53 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return result_return
     
-    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID]) -> list[Termin]:
+    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID], current_termin_id:UUID) -> list[Termin]:
         
         db_session = db.session
 
         query = select(Termin)
         query = query.join(Invoice, and_(Invoice.termin_id == Termin.id, Invoice.is_void != True))
-        query = query.where(Invoice.bidang_id.in_(bidang_ids))
+        query = query.where(and_(Invoice.bidang_id.in_(bidang_ids), Termin.id != current_termin_id))
         query = query.distinct()
+        query = query.options(selectinload(Termin.tahap
+                        ).options(selectinload(Tahap.planing
+                                ).options(selectinload(Planing.project))
+                        ).options(selectinload(Tahap.ptsk))
+                ).options(selectinload(Termin.kjb_hd)
+                ).options(selectinload(Termin.invoices
+                        ).options(selectinload(Invoice.details
+                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                ).options(selectinload(BidangKomponenBiaya.bidang)
+                                                ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                )
+                        ).options(selectinload(Invoice.bidang
+                                ).options(selectinload(Bidang.skpt
+                                                ).options(selectinload(Skpt.ptsk)
+                                                )
+                                ).options(selectinload(Bidang.planing)
+                                ).options(selectinload(Bidang.invoices
+                                                ).options(selectinload(Invoice.termin)
+                                                ).options(selectinload(Invoice.payment_details))
+                                )
+                        ).options(selectinload(Invoice.payment_details
+                                ).options(selectinload(PaymentDetail.payment
+                                                ).options(selectinload(Payment.giro))
+                                )
+                        ).options(selectinload(Invoice.spk
+                                                ).options(selectinload(Spk.bidang
+                                                                ).options(selectinload(Bidang.komponen_biayas))
+                                                )
+                        )
+                ).options(selectinload(Termin.notaris)
+                ).options(selectinload(Termin.termin_bayars
+                        ).options(selectinload(TerminBayar.rekening)
+                                )
+                ).options(selectinload(Termin.manager)
+                ).options(selectinload(Termin.sales)
+                )
 
-        response = await db
+        response = await db_session.execute(query)
+        return response.scalars().all()
 
 
 termin = CRUDTermin(Termin)

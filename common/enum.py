@@ -76,6 +76,7 @@ class JenisBayarEnum(str, Enum):
     BEGINNING_BALANCE = "BEGINNING_BALANCE"
     BIAYA_LAIN = "BIAYA_LAIN"
     SISA_PELUNASAN = "SISA_PELUNASAN"
+    TAMBAHAN_DP = "TAMBAHAN_DP"
 
 class PosisiBidangEnum(str, Enum):
     Pinggir_Jalan = "Pinggir_Jalan"
