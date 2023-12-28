@@ -23,13 +23,14 @@ from shapely  import wkt, wkb
 from pyproj import CRS
 from geoalchemy2.shape import from_shape
 from geoalchemy2 import functions
+from typing import Any, Optional
 
 router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[DraftRawSch], status_code=status.HTTP_201_CREATED)
 async def create(
                 sch: DraftCreateSch = Depends(DraftCreateSch.as_form), 
-                file:UploadFile | None = File(default=None),
+                file: Optional[UploadFile] = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -44,9 +45,6 @@ async def create(
         
         sch = DraftSch(**sch.dict())
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-        
-    else:
-        raise ImportFailedException()
         
     new_obj = await crud.draft.create(obj_in=sch, created_by_id=current_worker.id)
     
