@@ -170,7 +170,8 @@ async def get_list(
                         JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value, 
                         JenisBayarEnum.BEGINNING_BALANCE.value, 
                         JenisBayarEnum.BIAYA_LAIN.value, 
-                        JenisBayarEnum.SISA_PELUNASAN.value]
+                        JenisBayarEnum.SISA_PELUNASAN.value,
+                        JenisBayarEnum.PELUNASAN.value]
 
     query = select(Termin).outerjoin(Invoice, Invoice.termin_id == Termin.id
                         ).outerjoin(Tahap, Tahap.id == Termin.tahap_id
@@ -795,36 +796,15 @@ async def printout(id:UUID | str,
         amount_utj = sum(amount_utj_used) or 0
             
         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
+
+        total_luas_surat = "{:,.0f}".format(sum([b.luas_surat for b in obj_bidangs]))
+        total_luas_ukur = "{:,.0f}".format(sum([b.luas_ukur for b in obj_bidangs]))
+        total_luas_gu_perorangan = "{:,.0f}".format(sum([b.luas_gu_perorangan for b in obj_bidangs]))
+        total_luas_nett = "{:,.0f}".format(sum([b.luas_nett for b in obj_bidangs]))
+        total_luas_pbt_perorangan = "{:,.0f}".format(sum([b.luas_pbt_perorangan for b in obj_bidangs]))
+        total_luas_bayar = "{:,.0f}".format(sum([b.luas_bayar for b in obj_bidangs]))
+        total_harga = "{:,.0f}".format(sum([b.total_harga for b in obj_bidangs]))
         
-        array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs])
-        total_luas_surat = numpy.sum(array_total_luas_surat)
-        total_luas_surat = "{:,.0f}".format(total_luas_surat)
-
-        array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs])
-        total_luas_ukur = numpy.sum(array_total_luas_ukur)
-        total_luas_ukur = "{:,.0f}".format(total_luas_ukur)
-
-        array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs])
-        total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
-        total_luas_gu_perorangan = "{:,.0f}".format(total_luas_gu_perorangan)
-
-        array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs])
-        total_luas_nett = numpy.sum(array_total_luas_nett)
-        total_luas_nett = "{:,.0f}".format(total_luas_nett)
-
-        array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs])
-        total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
-        total_luas_pbt_perorangan = "{:,.0f}".format(total_luas_pbt_perorangan)
-
-        array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs])
-        total_luas_bayar = numpy.sum(array_total_luas_bayar)
-        total_luas_bayar = "{:,.0f}".format(total_luas_bayar)
-
-        array_total_harga = numpy.array([b.total_harga for b in obj_bidangs])
-        total_harga = numpy.sum(array_total_harga)
-        total_harga = "{:,.0f}".format(total_harga)
-
-
         invoices_history = []
         obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
         for his in obj_invoices_history:
