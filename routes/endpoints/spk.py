@@ -24,7 +24,7 @@ from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
 from services.history_service import HistoryService
-from services.helper_service import HelperService, KomponenBiayaHelper
+from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper
 from services.workflow_service import WorkflowService
 from configs.config import settings
 from jinja2 import Environment, FileSystemLoader
@@ -314,33 +314,42 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
                     termin = KjbTerminInSpkSch(**tr.dict())
                 termins.append(termin)
 
-    ktp_value:str = ""
-    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
-    if ktp_meta_data:
-        if ktp_meta_data.meta_data is not None and ktp_meta_data.meta_data != "":
-            metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
-            ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
-
-    npwp_value:str = ""
-    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=bidang_obj.id)
-    if npwp_meta_data:
-        if npwp_meta_data.meta_data is not None and npwp_meta_data.meta_data != "": 
-            metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
-            npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
+    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
+    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=bidang_obj.id)
 
     percentage_lunas = None
     if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
         percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=bidang_obj.id)
     
-    bidang_sch = BidangForSPKByIdSch.from_orm(bidang_obj)
-    bidang_sch.satuan_bayar = obj.satuan_bayar
-    bidang_sch.group = obj.group
-    bidang_sch.ktp = ktp_value
-    bidang_sch.npwp = npwp_value
-    bidang_sch.termins = termins
-    bidang_sch.percentage_lunas = percentage_lunas.percentage_lunas if percentage_lunas else 0
+    bidang_sch = BidangForSPKByIdSch(id=bidang_obj.id,
+                                    jenis_alashak=bidang_obj.jenis_alashak,
+                                    id_bidang=bidang_obj.id_bidang,
+                                    hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
+                                    kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code if bidang_obj.hasil_peta_lokasi else None,
+                                    satuan_bayar=obj.satuan_bayar,
+                                    group=bidang_obj.group,
+                                    pemilik_name=bidang_obj.pemilik_name,
+                                    alashak=bidang_obj.alashak,
+                                    desa_name=bidang_obj.desa_name,
+                                    project_name=bidang_obj.project_name,
+                                    luas_surat=bidang_obj.luas_surat,
+                                    luas_ukur=bidang_obj.luas_ukur,
+                                    luas_gu_perorangan=bidang_obj.luas_gu_perorangan,
+                                    luas_gu_pt=bidang_obj.luas_gu_pt,
+                                    luas_pbt_perorangan=bidang_obj.luas_pbt_perorangan,
+                                    luas_pbt_pt=bidang_obj.luas_pbt_pt,
+                                    manager_name=bidang_obj.manager_name,
+                                    no_peta=bidang_obj.no_peta,
+                                    notaris_name=bidang_obj.notaris_name,
+                                    ptsk_name=bidang_obj.ptsk_name,
+                                    status_sk=bidang_obj.status_sk,
+                                    bundle_hd_id=bidang_obj.bundle_hd_id,
+                                    ktp=ktp_value,
+                                    npwp=npwp_value,
+                                    termins=termins,
+                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
-    obj_return = SpkByIdSch.from_orm(obj)
+    obj_return = SpkByIdSch(**obj.dict())
     obj_return.bidang = bidang_sch
 
     pengembalian = False
@@ -355,7 +364,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     list_komponen_biaya = []
     for kb in komponen_biayas:
-        komponen_biaya_sch = BidangKomponenBiayaSch.from_orm(kb)
+        komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
         komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
         list_komponen_biaya.append(komponen_biaya_sch)
     
@@ -535,7 +544,7 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExtSch])
-async def get_by_id(id:UUID, spk_id:UUID|None = None):
+async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
@@ -558,41 +567,48 @@ async def get_by_id(id:UUID, spk_id:UUID|None = None):
             termins.append(termin)
 
     beban = []
-    # if spk_id:
-    #     beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
-    # else:
-    #     beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
 
     beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
     if len(beban) == 0:
         beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
     
-    ktp_value:str = ""
-    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=obj.id)
-    if ktp_meta_data:
-        if ktp_meta_data.meta_data is not None and ktp_meta_data.meta_data != "":
-            metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
-            ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
-
-    npwp_value:str = ""
-    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=obj.id)
-    if npwp_meta_data:
-        if npwp_meta_data.meta_data is not None and npwp_meta_data.meta_data != "": 
-            metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
-            npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
+    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
+    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
     
     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
 
     percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=id)
     
-    obj_return = BidangForSPKByIdExtSch.from_orm(obj)
-    obj_return.satuan_bayar = kjb_dt_current.kjb_hd.satuan_bayar
-    obj_return.beban_biayas = beban
-    obj_return.kelengkapan_dokumens = kelengkapan_dokumen
-    obj_return.ktp = ktp_value
-    obj_return.npwp = npwp_value
-    obj_return.termins = termins
-    obj_return.percentage_lunas = percentage_lunas.percentage_lunas if percentage_lunas else 0
+    obj_return = BidangForSPKByIdExtSch(id=obj.id,
+                                    jenis_alashak=obj.jenis_alashak,
+                                    id_bidang=obj.id_bidang,
+                                    hasil_analisa_peta_lokasi=hasil_peta_lokasi_current.hasil_analisa_peta_lokasi,
+                                    kjb_no=kjb_dt_current.kjb_code,
+                                    satuan_bayar=kjb_dt_current.kjb_hd.satuan_bayar,
+                                    group=obj.group,
+                                    pemilik_name=obj.pemilik_name,
+                                    alashak=obj.alashak,
+                                    desa_name=obj.desa_name,
+                                    project_name=obj.project_name,
+                                    luas_surat=obj.luas_surat,
+                                    luas_ukur=obj.luas_ukur,
+                                    luas_gu_perorangan=obj.luas_gu_perorangan,
+                                    luas_gu_pt=obj.luas_gu_pt,
+                                    luas_pbt_perorangan=obj.luas_pbt_perorangan,
+                                    luas_pbt_pt=obj.luas_pbt_pt,
+                                    manager_name=obj.manager_name,
+                                    no_peta=obj.no_peta,
+                                    notaris_name=obj.notaris_name,
+                                    ptsk_name=obj.ptsk_name,
+                                    status_sk=obj.status_sk,
+                                    bundle_hd_id=obj.bundle_hd_id,
+                                    beban_biayas=beban,
+                                    kelengkapan_dokumens=kelengkapan_dokumen,
+                                    ktp=ktp_value,
+                                    npwp=npwp_value,
+                                    sisa_pelunasan=obj.sisa_pelunasan,
+                                    termins=termins,
+                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
     
     if obj:
         return create_response(data=obj_return)

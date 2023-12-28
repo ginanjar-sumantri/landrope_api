@@ -52,7 +52,7 @@ class CRUDChecklistKelengkapanDokumenDt(CRUDBase[ChecklistKelengkapanDokumenDt, 
                       *, 
                       bidang_id:UUID,
                       db_session : AsyncSession | None = None,
-                      query : Select[ChecklistKelengkapanDokumenDt] | None = None) -> List[ChecklistKelengkapanDokumenDtSch] | None:
+                      query : Select[ChecklistKelengkapanDokumenDt] | None = None) -> List[ChecklistKelengkapanDokumenDt] | None:
         
         db_session = db_session or db.session
 

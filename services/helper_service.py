@@ -370,7 +370,6 @@ class HelperService:
         else:
             return None
         
-    
     async def update_nilai_njop_bidang(self, bundle_dt:BundleDt, meta_data:str|None = None):
         """Mengupdate Nilai NJOP di Bidang"""
 
@@ -431,3 +430,15 @@ class KomponenBiayaHelper:
                 sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula, bidang_id=komponen_biaya.bidang_id, bidang_komponen_biaya_id=komponen_biaya.id)
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
+
+class BundleHelper:
+
+    async def get_key_value(self, dokumen_name:str, bidang_id:UUID) -> str | None:
+        value = None
+        bundle_dt_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name=dokumen_name, bidang_id=bidang_id)
+        if bundle_dt_meta_data:
+            if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":
+                metadata_dict = json.loads(bundle_dt_meta_data.meta_data.replace("'", "\""))
+                value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
+
+        return value
