@@ -112,7 +112,8 @@ async def create(
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, 
-                                                      descs=f"Need Approval {new_obj.code}", additional_info=additional_info, attachments=[])
+                                                      descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:\nTanggal: {new_obj.created_at.date()}\nDokumen: {new_obj.code}", 
+                                                      additional_info=additional_info, attachments=[])
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
@@ -495,7 +496,8 @@ async def update(id:UUID,
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), 
                                                 flow_id=template.flow_id, additional_info=additional_info,
-                                                descs=f"Need Approval {obj_current.code}", attachments=[])
+                                                descs=f"Dokumen {obj_updated.code} ini membutuhkan Approval Anda:\nTanggal: {obj_updated.created_at.date()}\nDokumen: {obj_updated.code}",
+                                                attachments=[])
         body = vars(workflow_system_sch)
         response, msg = await WorkflowService().create_workflow(body=body)
 
