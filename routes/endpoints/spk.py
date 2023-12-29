@@ -112,7 +112,7 @@ async def create(
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, 
-                                                      descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:\nTanggal: {new_obj.created_at.date()}\nDokumen: {new_obj.code}", 
+                                                      descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br>Tanggal: {new_obj.created_at.date()}<br>Dokumen: {new_obj.code}", 
                                                       additional_info=additional_info, attachments=[])
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
