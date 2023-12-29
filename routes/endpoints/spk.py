@@ -633,7 +633,7 @@ async def printout(id:UUID | str,
     
     spk_header = SpkPrintOut(**dict(obj))
     percentage_value:str = ""
-    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and (spk_header.jenis_bayar == JenisBayarEnum.DP or spk_header.jenis_bayar == JenisBayarEnum.LUNAS):
+    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and spk_header.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.TAMBAHAN_DP]:
         percentage_value = f" {spk_header.amount}%"
     
     ktp_value:str = ""
