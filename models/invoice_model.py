@@ -206,6 +206,15 @@ class Invoice(InvoiceFullBase, table=True):
 
         return Decimal(utj)
     
+    @property
+    def step_name_workflow(self) -> str | None:
+        return getattr(getattr(self, "termin", None), "step_name_workflow", None)
+    
+    @property
+    def status_workflow(self) -> str | None:
+        return getattr(getattr(self, "termin", None), "status_workflow", None)
+
+    
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")

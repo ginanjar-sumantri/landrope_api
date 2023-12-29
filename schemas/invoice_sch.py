@@ -157,6 +157,7 @@ class InvoiceForPrintOutExt(InvoiceForPrintOut):
     luas_bayarExt:Optional[str]
 
 class InvoiceHistoryforPrintOut(SQLModel):
+    id:UUID|None
     id_bidang:str|None 
     jenis_bayar:Optional[JenisBayarEnum]
     str_jenis_bayar:Optional[str]
@@ -166,6 +167,10 @@ class InvoiceHistoryforPrintOut(SQLModel):
 
 class InvoiceVoidSch(SQLModel):
     void_reason:str
+
+class InvoiceLuasBayarSch(SQLModel):
+    id:UUID|None
+    luas_bayar:Decimal|None = Field(default=0)
     
     
 

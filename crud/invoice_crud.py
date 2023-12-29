@@ -9,7 +9,7 @@ from common.ordered import OrderEnumSch
 from common.enum import JenisBayarEnum
 from crud.base_crud import CRUDBase
 from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin, Bidang, Skpt, Planing, Spk
-from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOut, InvoiceHistoryforPrintOut
+from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOut, InvoiceHistoryforPrintOut, InvoiceLuasBayarSch
 from typing import List
 from uuid import UUID
 
@@ -204,6 +204,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
             query = text(f"""
                             select 
+                            b.id,
                             b.id_bidang,
                             case
                                 when tr.jenis_bayar != 'UTJ' and tr.jenis_bayar != 'UTJ_KHUSUS' and tr.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then 
@@ -257,6 +258,38 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         query = query.filter(Invoice.is_void != True)
         
         query = query.distinct()
+
+        query = query.options(selectinload(Invoice.spk))
+        query = query.options(selectinload(Invoice.termin))
+        query = query.options(selectinload(Invoice.bidang
+                                ).options(selectinload(Bidang.invoices
+                                            ).options(selectinload(Invoice.termin)
+                                            ).options(selectinload(Invoice.payment_details))
+                                )
+                    )
+        query = query.options(selectinload(Invoice.details
+                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                            ).options(selectinload(BidangKomponenBiaya.bidang))
+                                )
+                    )
+        query = query.options(selectinload(Invoice.payment_details))
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+
+    async def get_multi_by_termin_id(self, 
+                  *, 
+                  termin_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Invoice] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Invoice)
+
+        query = query.filter(Invoice.termin_id == termin_id)
+        query = query.filter(Invoice.is_void != True)
 
         query = query.options(selectinload(Invoice.spk))
         query = query.options(selectinload(Invoice.termin))
@@ -349,4 +382,29 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
         return response.fetchall()
     
+    async def get_multi_invoice_id_luas_bayar_by_termin_id(self, 
+                  *, 
+                  termin_id: UUID,
+                  db_session: AsyncSession | None = None
+                  ) -> list[InvoiceLuasBayarSch] | None:
+        
+        db_session = db_session or db.session
+
+        query = text(f"""
+                        select i.id, b.luas_bayar 
+                        from invoice i
+                        inner join bidang b on i.bidang_id = b.id
+                        where i.termin_id = '{str(termin_id)}'
+                        and i.is_void != True
+                        and b.luas_bayar is not null
+        """)
+        
+        response = await db_session.execute(query)
+
+        result = response.fetchall()
+
+        return [InvoiceLuasBayarSch(**dict(ret)) for ret in result]
+    
+
+
 invoice = CRUDInvoice(Invoice)

@@ -122,6 +122,20 @@
                   <td>:</td>
                   <td>{{luas_ukur}}</td>
                 </tr>
+                {%if jenis_bayar == 'LUNAS' or jenis_bayar == 'PELUNASAN'}
+                <tr>
+                  <td>Luas GU Perorangan</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{luas_gu_perorangan}}</td>
+                </tr>
+                <tr>
+                  <td>Luas PBT Perorangan</td>
+                  <td>&emsp;&emsp;&emsp;&emsp;</td>
+                  <td>:</td>
+                  <td>{{luas_pbt_perorangan}}</td>
+                </tr>
+                {% endif %}
               </table>
             </td>
             <td valign="top">

@@ -1,0 +1,495 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="pdfkit-page-size" content="Legal" />
+    <meta name="pdfkit-orientation" content="Landscape" />
+    <title>Memo Tanah Overlap</title>
+    <style>
+      @page {
+        size: A4 landscape;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      /* CSS untuk header */
+      .header {
+        text-align: center;
+        width: 100%;
+      }
+
+      /* CSS untuk sub header */
+      .sub-header {
+        text-align: left;
+      }
+
+      .sub-header td {
+        font-size: 15px;
+      }
+
+      /* CSS untuk content */
+
+      .content {
+        align-self: center;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .content p {
+        font-size: 15px;
+      }
+
+      .content th {
+        border: 1px solid;
+        font-size: 15px;
+        background-color: #b0b0b0;
+      }
+
+      .content td {
+        border: 1px solid;
+        font-size: 14px;
+      }
+
+      /* CSS untuk footer */
+      .footer {
+        align-self: center;
+        padding-top: 50px;
+        font-size: 16px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .footer td {
+        font-size: 16px;
+      }
+
+      .blanko td {
+        font-size: 12px;
+      }
+
+      .spasi-banyak {
+        margin: 20px;
+        /* Atur jarak margin sebesar 20px */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="sub-header">
+        <table>
+          <tr>
+            <td>Desa</td>
+            <td>:</td>
+            <td>{{desa_name}}</td>
+          </tr>
+          <tr>
+            <td>Project</td>
+            <td>:</td>
+            <td>{{project_name}}</td>
+          </tr>
+          <tr>
+            <td>PT SK</td>
+            <td>:</td>
+            <td>{{ptsk_name}}</td>
+          </tr>
+          <tr>
+            <td>No.</td>
+            <td>:</td>
+            <td>{{code}}</td>
+          </tr>
+        </table>
+        <table width="100%">
+          <tr>
+            <td valign="top" align="left">
+              <table width="50%">
+                <tr>
+                  <td>Kepada Yth. Bapak Susanto Kusumo</td>
+                </tr>
+              </table>
+            </td>
+            <td valign="top" align="right">
+              <table width="50%">
+                <tr>
+                  <td>Jakarta, {{created_at}}</td>
+                </tr>
+                <tr>
+                  <td>THP {{nomor_tahap}}/{{project_name}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="content">
+      <table
+        align="center"
+        style="border-collapse: collapse; border: 1px solid; width: 100%"
+      >
+        <tr>
+          <th
+            style="background-color: white; border-left: none; border-top: none"
+            colspan="10"
+          ></th>
+          <th colspan="10">OVERLAP DAMAI</th>
+          <th
+            style="
+              background-color: white;
+              border-right: none;
+              border-top: none;
+            "
+            colspan="2"
+          ></th>
+        </tr>
+        <tr>
+          <th>NO</th>
+          <th>ID BID</th>
+          <th>ALIAS</th>
+          <!-- <th>LOKASI</th> -->
+          <th>PEMILIK</th>
+          <th>SURAT ASAL</th>
+          <th>L SURAT</th>
+          <th>L UKUR</th>
+          <th>L NETT</th>
+          <th>L BAYAR</th>
+          <th>NO PETA</th>
+          <th>KET</th>
+          <th>NAMA</th>
+          <th>ALASHAK</th>
+          <th>THP</th>
+          <th>LUAS</th>
+          <th>L.O</th>
+          <th>KAT</th>
+          <th>NO NIB</th>
+          <th>ID BID</th>
+          <th>STATUS</th>
+          <th>HARGA</th>
+          <th>JUMLAH</th>
+        </tr>
+        {% for item in data %} {% set overlap_count = item.overlaps|length %} {%
+        for overlap in item.overlaps %} {% if overlap_count > 0 %}
+        <tr>
+          {% if loop.index == 1 %}
+          <td align="center" rowspan="{{ overlap_count }}">{{ item.no }}</td>
+          <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.id_bidang }}
+          </td>
+          <td align="center" rowspan="{{ overlap_count }}">{{ item.group }}</td>
+          <!-- <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.lokasi }}
+          </td> -->
+          <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.pemilik_name }}
+          </td>
+          <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.alashak }}
+          </td>
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.luas_suratExt }}
+          </td>
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.luas_ukurExt }}
+          </td>
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.luas_nettExt }}
+          </td>
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.luas_bayarExt }}
+          </td>
+          <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.no_peta }}
+          </td>
+          {% endif %}
+          <!-- Sel-sel dalam kolom lainnya (tidak perlu rowspan) -->
+          <td align="center">{{ overlap.ket }}</td>
+          <td align="center">{{ overlap.nama }}</td>
+          <td align="center">{{ overlap.alashak }}</td>
+          <td align="center">{{ overlap.tahap }}</td>
+          <td align="center">{{ overlap.luasExt }}</td>
+          <td align="right">{{ overlap.luas_overlapExt }}</td>
+          <td align="right">{{ overlap.kat }}</td>
+          <td align="right">{{ overlap.nib }}</td>
+          <td align="right">{{ overlap.id_bidang }}</td>
+          <td align="center">{{ overlap.status_overlap }}</td>
+          {% if loop.index == 1 %}
+          <!-- ... kolom lainnya dalam kolom pertama ... -->
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.harga_transaksiExt }}
+          </td>
+          <td align="right" rowspan="{{ overlap_count }}">
+            {{ item.total_hargaExt }}
+          </td>
+          {% endif %}
+        </tr>
+        {% endif %} {% endfor %} {% if overlap_count == 0 %}
+        <tr>
+          <td align="center">{{ loop.index or '' }}</td>
+          <td align="center">{{ item.id_bidang or '' }}</td>
+          <td align="center">{{ item.group or '' }}</td>
+          <!-- <td align="center">{{ item.lokasi or '' }}</td> -->
+          <td align="center">{{ item.pemilik_name or '' }}</td>
+          <td align="center">{{ item.alashak or '' }}</td>
+          <td align="right">{{ item.luas_suratExt or '' }}</td>
+          <td align="right">{{ item.luas_ukurExt or '' }}</td>
+          <td align="right">{{ item.luas_nettExt or '' }}</td>
+          <td align="right">{{ item.luas_bayarExt or '' }}</td>
+          <td align="center">{{ item.no_peta or '' }}</td>
+          <td align="center"></td>
+          <td align="center"></td>
+          <td align="center"></td>
+          <td align="center"></td>
+          <td align="center"></td>
+          <td align="right"></td>
+          <td align="right"></td>
+          <td align="right"></td>
+          <td align="right"></td>
+          <td align="center"></td>
+          <td align="right">{{ item.harga_transaksiExt or '' }}</td>
+          <td align="right">{{ item.total_hargaExt or '' }}</td>
+        </tr>
+        {% endif %} {% endfor %}
+        <tr>
+          <td colspan="6"></td>
+          <td align="center">{{total_luas_surat}}</td>
+          <td align="center">{{total_luas_ukur}}</td>
+          <td align="center">{{total_luas_nett}}</td>
+          <td align="center">{{total_luas_bayar}}</td>
+          <td colspan="11">&nbsp;</td>
+          <td align="center">{{total_harga}}</td>
+        </tr>
+        <tr>
+          <td colspan="22">&nbsp;</td>
+        </tr>
+        {% if data_invoice_history|length > 0 %} {% for item2 in
+        data_invoice_history %} {% set beban_biaya_count =
+        item2.beban_biayas|length %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>{{item2.str_tanggal_transaksi}}</td>
+          <td>{{item2.str_jenis_bayar}}</td>
+          <td align="center" rowspan="{{ beban_biaya_count + 1 }}">
+            {{item2.index_bidang}}
+          </td>
+          <td colspan="17">&nbsp;</td>
+          <td align="right">{{item2.str_amount}}</td>
+        </tr>
+        {% for beban_biaya in item2.beban_biayas %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>{{ beban_biaya.beban_biaya_name }}</td>
+          <td colspan="17">&nbsp;</td>
+          <td align="right">{{beban_biaya.amountExt}}</td>
+        </tr>
+        {% endfor %} {% endfor %} {% endif %}
+        <tr>
+          <td colspan="22">&nbsp;</td>
+        </tr>
+        {% set komponen_biaya_count = data_beban_biaya|length %}
+        <tr>
+          <td>&nbsp;</td>
+          <td style="font-weight: bold">{{tanggal_transaksi}}</td>
+          <td style="font-weight: bold">{{jenis_bayar}}</td>
+          <td align="center" rowspan="{{ komponen_biaya_count + 1 }}">
+            {{nomor_urut_bidang}}
+          </td>
+          <td colspan="17">&nbsp;</td>
+          <td align="right" style="font-weight: bold">{{amount}}</td>
+        </tr>
+        {% for komponen_biaya in data_beban_biaya %}
+        <tr>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>{{ komponen_biaya.beban_biaya_name }}</td>
+          <td colspan="17">&nbsp;</td>
+          <td align="right">{{komponen_biaya.amountExt}}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="footer">
+      <table width="100%">
+        <tr>
+          <td width="50%">
+            <table>
+              <tr>
+                <td>Note :</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold">> KESEPAKATAN ADA TTD PAK ALI</td>
+              </tr>
+              {% for remark in remarks %}
+              <tr>
+                <td style="font-weight: bold">> {{remark}}</td>
+              </tr>
+              {% endfor %} {% for item4 in data_harga_akta %}
+              <tr>
+                <td>Nilai akte Rp {{item4.harga_aktaExt}}, -m2</td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td>
+                  Rencana transaksi hari {{hari_transaksi}},
+                  {{tanggal_rencana_transaksi}} di Kantor {{notaris_name}}
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold">Tolong disiapkan :</td>
+              </tr>
+              {% for item5 in data_payment %}
+              <tr>
+                <td style="font-weight: bold; font-size: 19px">
+                  {{ loop.index }}. {{item5.payment_method}} Senilai Rp
+                  {{item5.amountExt}},- a.n {{item5.nama_pemilik_rekening}},
+                  {{item5.bank_rekening}} {{item5.nomor_rekening}}
+                </td>
+              </tr>
+              {% endfor %}
+              <tr>
+                <td>
+                  Bilamana BG dan CEK sudah disiapkan, tolong agar dapat
+                  menghubungi Lena di 566 7272
+                </td>
+              </tr>
+              <tr>
+                <td>Terima kasih atas kerjasamanya</td>
+              </tr>
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>Hormat Kami,</td>
+              </tr>
+              <tr>
+                <td>&nbsp;</td>
+              </tr>
+              <tr>
+                <td>Merry</td>
+              </tr>
+              <tr>
+                <td>Cc : Bapak Denny, Ibu Lia, Ibu Lily</td>
+              </tr>
+            </table>
+          </td>
+          <td valign="Top" align="right" width="50%">
+            <table>
+              <tr>
+                <td>MNG : {{manager_name}}</td>
+              </tr>
+              <tr>
+                <td>SALES : {{sales_name}}</td>
+              </tr>
+              <tr>
+                <td>MED : {{mediator}}</td>
+              </tr>
+            </table>
+            <table
+              width="50%"
+              align="right"
+              style="border-collapse: collapse; border: 1px solid black"
+              class="blanko"
+            >
+              <tr>
+                <td style="border: 1px solid black" width="150px" rowspan="2">
+                  ID BIDANG & NO. PETA SUDAH SESUAI ANTARA MEMO & PETA
+                </td>
+                <td
+                  style="border: 1px solid black"
+                  width="50px"
+                  align="center"
+                  colspan="2"
+                >
+                  TTD
+                </td>
+                <td
+                  style="border: 1px solid black"
+                  width="50px"
+                  align="center"
+                  colspan="2"
+                >
+                  TTD
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid black" height="60px" colspan="2">
+                  &nbsp;
+                </td>
+                <td style="border: 1px solid black" height="60px" colspan="2">
+                  &nbsp;
+                </td>
+              </tr>
+              <tr>
+                <td>KASIH KE KASIR</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>LANDROPE DONE</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>TERIMA DARI ________</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>BALIK KE ___________</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>TTD ________________</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ____<sup>s/d</sup>____
+                </td>
+              </tr>
+              <tr>
+                <td>TERIMA PRA/ANALIS</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>KE PRA/ANALIS</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+              <tr>
+                <td>EMAIL IN</td>
+                <td>:</td>
+                <td>___/___/___</td>
+                <td align="right" style="border-right: 1px solid black">
+                  ________
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

@@ -11,7 +11,7 @@ from crud.base_crud import CRUDBase
 from models import Termin, Invoice, Tahap, Bidang, Skpt, TerminBayar, PaymentDetail, Payment, Planing, InvoiceDetail, BidangKomponenBiaya, Spk
 from schemas.termin_sch import (TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, 
                                 TerminInvoiceforPrintOut, TerminExcelSch,
-                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut)
+                                TerminBebanBiayaForPrintOut, TerminUtjHistoryForPrintOut, TerminHistoriesSch)
 from typing import List
 from uuid import UUID
 
@@ -152,9 +152,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         With subquery as (select
                         bb.name as beban_biaya_name,
                         case
-                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(BEBAN PEMBELI)'
-                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(PENGEMBALIAN BEBAN PENJUAL)'
-                        else '(BEBAN PENJUAL)'
+                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
+                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
+                        else '(Beban Penjual)'
                         end as tanggungan,
                         idt.amount As amount,
                         bkb.beban_pembeli,
@@ -213,53 +213,57 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return result_return
     
-    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID], current_termin_id:UUID) -> list[Termin]:
+    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID], current_termin_id:UUID
+                                      ) -> list[TerminHistoriesSch]:
         
         db_session = db.session
 
-        query = select(Termin)
-        query = query.join(Invoice, and_(Invoice.termin_id == Termin.id, Invoice.is_void != True))
-        query = query.where(and_(Invoice.bidang_id.in_(bidang_ids), Termin.id != current_termin_id))
-        query = query.distinct()
-        query = query.options(selectinload(Termin.tahap
-                        ).options(selectinload(Tahap.planing
-                                ).options(selectinload(Planing.project))
-                        ).options(selectinload(Tahap.ptsk))
-                ).options(selectinload(Termin.kjb_hd)
-                ).options(selectinload(Termin.invoices
-                        ).options(selectinload(Invoice.details
-                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                ).options(selectinload(BidangKomponenBiaya.bidang)
-                                                ).options(selectinload(BidangKomponenBiaya.beban_biaya))
-                                )
-                        ).options(selectinload(Invoice.bidang
-                                ).options(selectinload(Bidang.skpt
-                                                ).options(selectinload(Skpt.ptsk)
-                                                )
-                                ).options(selectinload(Bidang.planing)
-                                ).options(selectinload(Bidang.invoices
-                                                ).options(selectinload(Invoice.termin)
-                                                ).options(selectinload(Invoice.payment_details))
-                                )
-                        ).options(selectinload(Invoice.payment_details
-                                ).options(selectinload(PaymentDetail.payment
-                                                ).options(selectinload(Payment.giro))
-                                )
-                        ).options(selectinload(Invoice.spk
-                                                ).options(selectinload(Spk.bidang
-                                                                ).options(selectinload(Bidang.komponen_biayas))
-                                                )
-                        )
-                ).options(selectinload(Termin.notaris)
-                ).options(selectinload(Termin.termin_bayars
-                        ).options(selectinload(TerminBayar.rekening)
-                                )
-                ).options(selectinload(Termin.manager)
-                ).options(selectinload(Termin.sales)
-                )
+        ids:str = ""
+        for bidang_id in bidang_ids:
+                ids += f"'{bidang_id}',"
+        
+        ids = ids[0:-1]
+
+        query = text(f"""
+                with subquery as (select
+                tr.id,
+                case
+                        when tr.jenis_bayar != 'UTJ' and tr.jenis_bayar != 'UTJ_KHUSUS' and tr.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' and tr.jenis_bayar != 'BIAYA_LAIN' then 
+                                case 
+                                        when s.satuan_bayar = 'Percentage' then tr.jenis_bayar || ' ' || Coalesce(s.amount,0) || '%'
+                                        else tr.jenis_bayar || ' (' || s.amount || ')'
+                                end
+                        else Replace(tr.jenis_bayar, '_', ' ')
+                end as str_jenis_bayar,
+                case
+                        when tr.jenis_bayar = 'UTJ' then MAX(DATE(py.payment_date))
+                        else MAX(DATE(py.payment_date))
+                end tanggal_transaksi,
+                tr.jenis_bayar,
+                Sum(pd.amount) as amount,
+                tr.created_at
+                from termin tr
+                inner join invoice i on tr.id = i.termin_id
+                inner join payment_detail pd on i.id = pd.invoice_id
+                inner join payment py on py.id = pd.payment_id
+                left outer join spk s on s.id = i.spk_id
+                where tr.is_void != true
+                and i.is_void != true
+                and i.bidang_id in ({ids})
+                and pd.is_void != true
+                and py.is_void != true
+                and tr.id != '{current_termin_id}'
+                group by tr.id, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.amount
+                order by created_at asc)
+                select id, str_jenis_bayar, tanggal_transaksi, jenis_bayar, sum(amount) as amount, created_at from subquery
+                group by id, str_jenis_bayar, tanggal_transaksi, jenis_bayar, created_at
+                order by created_at
+                """)
+        
 
         response = await db_session.execute(query)
-        return response.scalars().all()
+
+        return response.fetchall()
 
 
 termin = CRUDTermin(Termin)

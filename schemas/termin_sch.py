@@ -115,6 +115,7 @@ class TerminVoidSch(SQLModel):
 class TerminHistoriesSch(SQLModel):
     id:UUID|None
     tanggal_transaksi:date|None
+    str_tanggal_transaksi:str|None
     jenis_bayar:JenisBayarEnum|None
     str_jenis_bayar:str|None
     amount:Decimal|None

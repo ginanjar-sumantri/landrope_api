@@ -250,6 +250,7 @@ async def get_report(
                                                 ).options(selectinload(Planing.project)
                                                 ).options(selectinload(Planing.desa)
                                                 )
+                                ).options(selectinload(Bidang.manager)
                                 )
                     )
 
@@ -263,6 +264,7 @@ async def get_report(
              "Desa" : spk.bidang.desa_name,
              "Luas Surat" : spk.bidang.luas_surat, 
              "Jenis Bayar" : spk.jenis_bayar,
+             "Manager" : spk.manager_name,
              "Tanggal Buat": spk.created_at, 
              "Created By" : spk.created_name} for spk in objs]
 
@@ -714,13 +716,15 @@ async def printout(id:UUID | str,
     akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
 
     render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
-                                      jenisbayar=f'{spk_header.jenis_bayar.value}{percentage_value}'.replace("_", " "),
+                                      jenisbayar=f'{spk_header.jenis_bayar.value if spk_header.jenis_bayar != JenisBayarEnum.SISA_PELUNASAN else "KURANG BAYAR"}{percentage_value}'.replace("_", " "),
                                       group=spk_header.group, 
                                       pemilik_name=spk_header.pemilik_name,
                                       alashak=spk_header.alashak,
                                       desa_name=spk_header.desa_name,
-                                      luas_surat="{:,.0f}".format(spk_header.luas_surat),
-                                      luas_ukur="{:,.0f}".format(spk_header.luas_ukur), 
+                                      luas_surat="{:,.0f}".format(spk_header.luas_surat or 0),
+                                      luas_ukur="{:,.0f}".format(spk_header.luas_ukur or 0),
+                                      luas_gu_perorangan="{:,.0f}".format(spk_header.luas_gu_perorangan or 0),
+                                      luas_pbt_perorangan="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0), 
                                       id_bidang=spk_header.id_bidang,
                                       no_peta=spk_header.no_peta,
                                       notaris_name=spk_header.notaris_name,

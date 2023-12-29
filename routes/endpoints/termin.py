@@ -17,7 +17,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
                                 TerminBebanBiayaForPrintOut, TerminVoidSch)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
-                                 InvoiceHistoryInTermin)
+                                 InvoiceHistoryInTermin, InvoiceLuasBayarSch)
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
@@ -567,327 +567,218 @@ async def printout(id:UUID | str,
                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Print out DP Pelunasan"""
-    try:
-        obj = await crud.termin.get_by_id_for_printout(id=id)
-        if obj is None:
-            raise IdNotFoundException(Termin, id)
-        
-        termin_header = TerminByIdForPrintOut(**dict(obj))
-        date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
-        nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
-        nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
-        tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
+    # try:
+    obj = await crud.termin.get_by_id_for_printout(id=id)
+    if obj is None:
+        raise IdNotFoundException(Termin, id)
     
-        day_of_week = date_obj.strftime("%A")
-        hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
-        
-        obj_bidangs = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
+    termin_header = TerminByIdForPrintOut(**dict(obj))
+    obj_tanggal_transaksi = datetime.strptime(str(termin_header.tanggal_transaksi), "%Y-%m-%d")
+    tanggal_transaksi = obj_tanggal_transaksi.strftime("%d-%m-%Y")
+
+    obj_created_at = datetime.strptime(str(termin_header.created_at.date()), "%Y-%m-%d")
+    bulan_created_en = obj_created_at.strftime('%B')
+    bulan_created_id = bulan_dict.get(bulan_created_en, bulan_created_en)
+    created_at = obj_created_at.strftime(f'%d {bulan_created_id} %Y')
+
+    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
+    nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
+    nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
+    tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
+    day_of_week = date_obj.strftime("%A")
+    hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
+
+    remarks = termin_header.remark.split("\\n")
+
+    #perhitungan utj (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
+    amount_utj_used = []
+    termin_invoices:list[InvoiceForPrintOutExt] = []
+    obj_invoices = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
+    for inv in obj_invoices:
+        iv = InvoiceForPrintOutExt(**dict(inv))
+        invoice_curr = await crud.invoice.get_utj_amount_by_id(id=iv.id)
+        amount_utj_used.append(invoice_curr.utj_amount)
+        termin_invoices.append(iv)
     
-        bidangs = []
-        overlap_exists = False
-        amount_utj_used = []
-        for bd in obj_bidangs:
-            bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
-                                        harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
-                                        luas_suratExt = "{:,.0f}".format(bd.luas_surat),
-                                        luas_nettExt = "{:,.0f}".format(bd.luas_nett),
-                                        luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
-                                        luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
-                                        luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-                                        luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
-            
-            invoice_curr = await crud.invoice.get_utj_amount_by_id(id=bd.id)
-            
-            amount_utj_used.append(invoice_curr.utj_amount)
+    amount_utj = sum(amount_utj_used) or 0
 
-            overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
-            list_overlap = []
-            for ov in overlaps:
-                overlap = BidangOverlapForPrintout(**dict(ov))
-                bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
-                if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
-                    nib_perorangan:str = ""
-                    nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
-                    if nib_perorangan_meta_data:
-                        if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
-                            metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
-                            nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
-                    overlap.nib = nib_perorangan
+    #untuk list bidang dalam 1 tahap
+    obj_bidangs = await crud.tahap_detail.get_multi_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id)
 
-                list_overlap.append(overlap)
+    bidangs:list[TahapDetailForPrintOut] = []
+    nomor_urut_bidang = []
+    overlap_exists = False
+    no = 1
+    for bd in obj_bidangs:
+        bidang = TahapDetailForPrintOut(**dict(bd),
+                                    no=no,
+                                    total_hargaExt="{:,.0f}".format(bd.total_harga),
+                                    harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
+                                    luas_suratExt = "{:,.0f}".format(bd.luas_surat),
+                                    luas_nettExt = "{:,.0f}".format(bd.luas_nett),
+                                    luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
+                                    luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
+                                    luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
+                                    luas_bayarExt = "{:,.0f}".format(bd.luas_bayar),
+                                    is_bold=False)
+         
 
-            bidang.overlaps = list_overlap
+        bidang_in_termin = next((bd_in_termin for bd_in_termin in termin_invoices if bd_in_termin.bidang_id == bidang.bidang_id), None)
+        if bidang_in_termin:
+            bidang.is_bold = True
+            nomor_urut_bidang.append(bidang.no)
 
-            if len(bidang.overlaps) > 0:
-                overlap_exists = True
+        overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+        list_overlap = []
+        for ov in overlaps:
+            overlap = BidangOverlapForPrintout(**dict(ov))
+            bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
+            if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
+                nib_perorangan:str = ""
+                nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
+                if nib_perorangan_meta_data:
+                    if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
+                        metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
+                        nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
+                overlap.nib = nib_perorangan
 
-            bidangs.append(bidang)
-        
-        amount_utj = sum(amount_utj_used) or 0
-            
-        list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
-        
-        array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs])
-        total_luas_surat = numpy.sum(array_total_luas_surat)
-        total_luas_surat = "{:,.0f}".format(total_luas_surat)
+            list_overlap.append(overlap)
 
-        array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs])
-        total_luas_ukur = numpy.sum(array_total_luas_ukur)
-        total_luas_ukur = "{:,.0f}".format(total_luas_ukur)
+        bidang.overlaps = list_overlap
 
-        array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs])
-        total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
-        total_luas_gu_perorangan = "{:,.0f}".format(total_luas_gu_perorangan)
+        if len(bidang.overlaps) > 0:
+            overlap_exists = True
 
-        array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs])
-        total_luas_nett = numpy.sum(array_total_luas_nett)
-        total_luas_nett = "{:,.0f}".format(total_luas_nett)
+        bidangs.append(bidang)
+        no = no + 1
+    
+    nomor_urut:str = ""
+    for no in nomor_urut_bidang:
+        nomor_urut += f"{no}, "
+    
+    nomor_urut = f"No. {nomor_urut[0:-2]}"
 
-        array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs])
-        total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
-        total_luas_pbt_perorangan = "{:,.0f}".format(total_luas_pbt_perorangan)
+    list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
 
-        array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs])
-        total_luas_bayar = numpy.sum(array_total_luas_bayar)
-        total_luas_bayar = "{:,.0f}".format(total_luas_bayar)
+    total_luas_surat = "{:,.0f}".format(sum([b.luas_surat for b in obj_bidangs]))
+    total_luas_ukur = "{:,.0f}".format(sum([b.luas_ukur for b in obj_bidangs]))
+    total_luas_gu_perorangan = "{:,.0f}".format(sum([b.luas_gu_perorangan for b in obj_bidangs]))
+    total_luas_nett = "{:,.0f}".format(sum([b.luas_nett for b in obj_bidangs]))
+    total_luas_pbt_perorangan = "{:,.0f}".format(sum([b.luas_pbt_perorangan for b in obj_bidangs]))
+    total_luas_bayar = "{:,.0f}".format(sum([b.luas_bayar for b in obj_bidangs]))
+    total_harga = "{:,.0f}".format(sum([b.total_harga for b in obj_bidangs]))
 
-        array_total_harga = numpy.array([b.total_harga for b in obj_bidangs])
-        total_harga = numpy.sum(array_total_harga)
-        total_harga = "{:,.0f}".format(total_harga)
+    termin_histories = []
+    current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id)
+    for termin in current_termin_histories:
+        termin_history = TerminHistoriesSch(**dict(termin))
+        obj_history_tanggal_transaksi = datetime.strptime(str(termin_history.tanggal_transaksi), "%Y-%m-%d")
+        termin_history.str_tanggal_transaksi = obj_history_tanggal_transaksi.strftime("%d-%m-%Y")
 
-
-        invoices_history = []
-        obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
-        for his in obj_invoices_history:
-            history = InvoiceHistoryforPrintOut(**dict(his))
-            history.amountExt = "{:,.0f}".format(history.amount)
-            invoices_history.append(history)
+        termin_history.str_amount = "{:,.0f}".format(termin.amount)
+        if termin_history.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+            invoice_in_termin_histories = await crud.invoice.get_multi_invoice_id_luas_bayar_by_termin_id(termin_id=termin_history.id)
+            count_bidang = len(invoice_in_termin_histories)
+            sum_luas_bayar = "{:,.0f}".format(sum([invoice_.luas_bayar or 0 for invoice_ in invoice_in_termin_histories if invoice_.luas_bayar is not None]))
+            termin_history.str_jenis_bayar = f"{termin_history.str_jenis_bayar} {count_bidang}BID luas {sum_luas_bayar}m2"
 
         komponen_biayas = []
-
-        obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
+        obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin.id, jenis_bayar=termin.jenis_bayar)
         for bb in obj_komponen_biayas:
             beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
             komponen_biayas.append(beban_biaya)
-        
-        amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
-        amount_beban_biaya = sum(amount_beban_biayas)
 
-        harga_aktas = []
-        obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
-        for hg in obj_kjb_hargas:
-            harga_akta = KjbHargaAktaSch(**dict(hg))
-            harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
-            harga_aktas.append(harga_akta)
+        termin_history.beban_biayas = komponen_biayas
+        invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
 
-        termin_bayars = []
-        no = 1
-        obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
-        filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
-        env = Environment(loader=FileSystemLoader("templates"))
-        template = env.get_template(filename)
+        nomor_uruts = []
+        for invoice in invoices:
+            nomor = next((bidang.no for bidang in bidangs if bidang.bidang_id == invoice.bidang_id), None)
+            if nomor:
+                nomor_uruts.append(nomor)
+        
+        index_no:str = ""
+        
+        nomor_uruts = sorted(nomor_uruts, key=lambda obj:obj)
+        for no in nomor_uruts:
+            index_no += f"{no}, "
+        
+        index_no = index_no[0:-2]
 
-        render_template = template.render(code=termin_header.nomor_memo or "",
-                                        created_at=termin_header.created_at.date(),
-                                        nomor_tahap=termin_header.nomor_tahap,
-                                        project_name=termin_header.project_name,
-                                        desa_name=termin_header.desa_name,
-                                        ptsk_name=termin_header.ptsk_name,
-                                        notaris_name=termin_header.notaris_name,
-                                        manager_name=termin_header.manager_name.upper(),
-                                        sales_name=termin_header.sales_name.upper(),
-                                        mediator=termin_header.mediator.upper(),
-                                        data=bidangs,
-                                        total_luas_surat=total_luas_surat,
-                                        total_luas_ukur=total_luas_ukur,
-                                        total_luas_gu_perorangan=total_luas_gu_perorangan,
-                                        total_luas_nett=total_luas_nett,
-                                        total_luas_pbt_perorangan=total_luas_pbt_perorangan,
-                                        total_luas_bayar=total_luas_bayar,
-                                        total_harga=total_harga,
-                                        data_invoice_history=invoices_history,
-                                        data_beban_biaya=komponen_biayas,
-                                        data_harga_akta=harga_aktas,
-                                        data_payment=obj_termin_bayar,
-                                        tanggal_transaksi=termin_header.tanggal_transaksi,
-                                        tanggal_rencana_transaksi=tanggal_hasil,
-                                        hari_transaksi=hari_transaksi,
-                                        jenis_bayar=termin_header.jenis_bayar.value.replace('_', ' '),
-                                        amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
-                                        remark=termin_header.remark
-                                        )
-        
-        try:
-            doc = await PdfService().get_pdf(render_template)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="Failed generate document")
-        
-        response = Response(doc, media_type='application/pdf')
-        response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
-        return response
+        termin_history.index_bidang = f"No. {index_no}"
+        termin_histories.append(termin_history)
+
+    komponen_biayas = []
+    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
+    for bb in obj_komponen_biayas:
+        beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
+        beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
+        beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
+        komponen_biayas.append(beban_biaya)
     
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e))
+    amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
+    amount_beban_biaya = sum(amount_beban_biayas)
 
-@router.get("/print-out-ext/{id}")
-async def printout(id:UUID | str,
-                   current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    harga_aktas = []
+    obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
+    for hg in obj_kjb_hargas:
+        harga_akta = KjbHargaAktaSch(**dict(hg))
+        harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
+        harga_aktas.append(harga_akta)
 
-    """Print out DP Pelunasan"""
+    
+    no = 1
+    obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
+    filename = "memo_tanah_overlap_ext.html" if overlap_exists else "memo_tanah_ext.html"
+    env = Environment(loader=FileSystemLoader("templates"))
+    template = env.get_template(filename)
+
+    render_template = template.render(code=termin_header.nomor_memo or "",
+                                    created_at=created_at,
+                                    nomor_tahap=termin_header.nomor_tahap,
+                                    project_name=termin_header.project_name,
+                                    desa_name=termin_header.desa_name,
+                                    ptsk_name=termin_header.ptsk_name,
+                                    notaris_name=termin_header.notaris_name,
+                                    manager_name=termin_header.manager_name.upper(),
+                                    sales_name=termin_header.sales_name.upper(),
+                                    mediator=termin_header.mediator.upper(),
+                                    data=bidangs,
+                                    total_luas_surat=total_luas_surat,
+                                    total_luas_ukur=total_luas_ukur,
+                                    total_luas_gu_perorangan=total_luas_gu_perorangan,
+                                    total_luas_nett=total_luas_nett,
+                                    total_luas_pbt_perorangan=total_luas_pbt_perorangan,
+                                    total_luas_bayar=total_luas_bayar,
+                                    total_harga=total_harga,
+                                    data_invoice_history=termin_histories,
+                                    data_beban_biaya=komponen_biayas,
+                                    data_harga_akta=harga_aktas,
+                                    data_payment=obj_termin_bayar,
+                                    nomor_urut_bidang=nomor_urut,
+                                    tanggal_transaksi=tanggal_transaksi,
+                                    tanggal_rencana_transaksi=tanggal_hasil,
+                                    hari_transaksi=hari_transaksi,
+                                    jenis_bayar=termin_header.jenis_bayar_ext.replace('_', ' '),
+                                    amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
+                                    remarks=remarks
+                                    )
+    
     try:
-        obj = await crud.termin.get_by_id_for_printout(id=id)
-        if obj is None:
-            raise IdNotFoundException(Termin, id)
-        
-        termin_header = TerminByIdForPrintOut(**dict(obj))
-        date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
-        nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
-        nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
-        tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
-        day_of_week = date_obj.strftime("%A")
-        hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
-        
-        obj_invoices = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
-        obj_bidangs = await crud.tahap_detail.get_multi_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id)
-    
-        bidangs = []
-        overlap_exists = False
-        amount_utj_used = []
-        for bd in obj_bidangs:
-            bidang = TahapDetailForPrintOut(**dict(bd), 
-                                        total_hargaExt="{:,.0f}".format(bd.total_harga),
-                                        harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
-                                        luas_suratExt = "{:,.0f}".format(bd.luas_surat),
-                                        luas_nettExt = "{:,.0f}".format(bd.luas_nett),
-                                        luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
-                                        luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
-                                        luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-                                        luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
-            
-            invoice_curr = await crud.invoice.get_utj_amount_by_id(id=bd.id)
-            
-            amount_utj_used.append(invoice_curr.utj_amount)
-
-            overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
-            list_overlap = []
-            for ov in overlaps:
-                overlap = BidangOverlapForPrintout(**dict(ov))
-                bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
-                if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
-                    nib_perorangan:str = ""
-                    nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
-                    if nib_perorangan_meta_data:
-                        if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
-                            metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
-                            nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
-                    overlap.nib = nib_perorangan
-
-                list_overlap.append(overlap)
-
-            bidang.overlaps = list_overlap
-
-            if len(bidang.overlaps) > 0:
-                overlap_exists = True
-
-            bidangs.append(bidang)
-        
-        amount_utj = sum(amount_utj_used) or 0
-            
-        list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
-
-        total_luas_surat = "{:,.0f}".format(sum([b.luas_surat for b in obj_bidangs]))
-        total_luas_ukur = "{:,.0f}".format(sum([b.luas_ukur for b in obj_bidangs]))
-        total_luas_gu_perorangan = "{:,.0f}".format(sum([b.luas_gu_perorangan for b in obj_bidangs]))
-        total_luas_nett = "{:,.0f}".format(sum([b.luas_nett for b in obj_bidangs]))
-        total_luas_pbt_perorangan = "{:,.0f}".format(sum([b.luas_pbt_perorangan for b in obj_bidangs]))
-        total_luas_bayar = "{:,.0f}".format(sum([b.luas_bayar for b in obj_bidangs]))
-        total_harga = "{:,.0f}".format(sum([b.total_harga for b in obj_bidangs]))
-        
-        invoices_history = []
-        obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
-        for his in obj_invoices_history:
-            history = InvoiceHistoryforPrintOut(**dict(his))
-            history.amountExt = "{:,.0f}".format(history.amount)
-            invoices_history.append(history)
-
-        termin_histories = []
-        current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id)
-        for termin in current_termin_histories:
-            
-            termin_history = TerminHistoriesSch(**termin.dict())
-            termin_history.amount = termin.total_amount
-            
-
-
-
-        komponen_biayas = []
-        obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
-        for bb in obj_komponen_biayas:
-            beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
-            beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
-            beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
-            komponen_biayas.append(beban_biaya)
-        
-        amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
-        amount_beban_biaya = sum(amount_beban_biayas)
-
-        harga_aktas = []
-        obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
-        for hg in obj_kjb_hargas:
-            harga_akta = KjbHargaAktaSch(**dict(hg))
-            harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
-            harga_aktas.append(harga_akta)
-
-        termin_bayars = []
-        no = 1
-        obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
-        filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
-        env = Environment(loader=FileSystemLoader("templates"))
-        template = env.get_template(filename)
-
-        render_template = template.render(code=termin_header.nomor_memo or "",
-                                        created_at=termin_header.created_at.date(),
-                                        nomor_tahap=termin_header.nomor_tahap,
-                                        project_name=termin_header.project_name,
-                                        desa_name=termin_header.desa_name,
-                                        ptsk_name=termin_header.ptsk_name,
-                                        notaris_name=termin_header.notaris_name,
-                                        manager_name=termin_header.manager_name.upper(),
-                                        sales_name=termin_header.sales_name.upper(),
-                                        mediator=termin_header.mediator.upper(),
-                                        data=bidangs,
-                                        total_luas_surat=total_luas_surat,
-                                        total_luas_ukur=total_luas_ukur,
-                                        total_luas_gu_perorangan=total_luas_gu_perorangan,
-                                        total_luas_nett=total_luas_nett,
-                                        total_luas_pbt_perorangan=total_luas_pbt_perorangan,
-                                        total_luas_bayar=total_luas_bayar,
-                                        total_harga=total_harga,
-                                        data_invoice_history=invoices_history,
-                                        data_beban_biaya=komponen_biayas,
-                                        data_harga_akta=harga_aktas,
-                                        data_payment=obj_termin_bayar,
-                                        tanggal_transaksi=termin_header.tanggal_transaksi,
-                                        tanggal_rencana_transaksi=tanggal_hasil,
-                                        hari_transaksi=hari_transaksi,
-                                        jenis_bayar=termin_header.jenis_bayar_ext.replace('_', ' '),
-                                        amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
-                                        remark=termin_header.remark
-                                        )
-        
-        try:
-            doc = await PdfService().get_pdf(render_template)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="Failed generate document")
-        
-        response = Response(doc, media_type='application/pdf')
-        response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
-        return response
-    
+        doc = await PdfService().get_pdf(render_template)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    response = Response(doc, media_type='application/pdf')
+    response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
+    return response
+    
+    # except Exception as e:
+    #     raise HTTPException(status_code=422, detail=str(e))
+    
+
 bulan_dict = {
     "January": "Januari",
     "February": "Februari",
@@ -1005,6 +896,7 @@ async def get_report(
              "Luas Surat" : invoice.bidang.luas_surat, 
              "Luas Bayar" : invoice.bidang.luas_bayar, 
              "Jenis Bayar" : invoice.jenis_bayar,
+             "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
              "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi)), 
              "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
              for termin in objs for invoice in termin.invoices]
@@ -1057,6 +949,176 @@ async def void(id:UUID,
     obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated) 
 
+# @router.get("/print-out/{id}")
+# async def printout(id:UUID | str,
+#                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+#     """Print out DP Pelunasan"""
+#     try:
+#         obj = await crud.termin.get_by_id_for_printout(id=id)
+#         if obj is None:
+#             raise IdNotFoundException(Termin, id)
+        
+#         termin_header = TerminByIdForPrintOut(**dict(obj))
+    
+
+#         date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
+#         nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
+#         nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
+#         tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
+    
+#         day_of_week = date_obj.strftime("%A")
+#         hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
+        
+#         obj_bidangs = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
+    
+#         bidangs = []
+#         overlap_exists = False
+#         amount_utj_used = []
+#         for bd in obj_bidangs:
+#             bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
+#                                         harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
+#                                         luas_suratExt = "{:,.0f}".format(bd.luas_surat),
+#                                         luas_nettExt = "{:,.0f}".format(bd.luas_nett),
+#                                         luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
+#                                         luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
+#                                         luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
+#                                         luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
+            
+#             invoice_curr = await crud.invoice.get_utj_amount_by_id(id=bd.id)
+            
+#             amount_utj_used.append(invoice_curr.utj_amount)
+
+#             overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
+#             list_overlap = []
+#             for ov in overlaps:
+#                 overlap = BidangOverlapForPrintout(**dict(ov))
+#                 bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
+#                 if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
+#                     nib_perorangan:str = ""
+#                     nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
+#                     if nib_perorangan_meta_data:
+#                         if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
+#                             metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
+#                             nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
+#                     overlap.nib = nib_perorangan
+
+#                 list_overlap.append(overlap)
+
+#             bidang.overlaps = list_overlap
+
+#             if len(bidang.overlaps) > 0:
+#                 overlap_exists = True
+
+#             bidangs.append(bidang)
+        
+#         amount_utj = sum(amount_utj_used) or 0
+            
+#         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
+        
+#         array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs])
+#         total_luas_surat = numpy.sum(array_total_luas_surat)
+#         total_luas_surat = "{:,.0f}".format(total_luas_surat)
+
+#         array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs])
+#         total_luas_ukur = numpy.sum(array_total_luas_ukur)
+#         total_luas_ukur = "{:,.0f}".format(total_luas_ukur)
+
+#         array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs])
+#         total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
+#         total_luas_gu_perorangan = "{:,.0f}".format(total_luas_gu_perorangan)
+
+#         array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs])
+#         total_luas_nett = numpy.sum(array_total_luas_nett)
+#         total_luas_nett = "{:,.0f}".format(total_luas_nett)
+
+#         array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs])
+#         total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
+#         total_luas_pbt_perorangan = "{:,.0f}".format(total_luas_pbt_perorangan)
+
+#         array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs])
+#         total_luas_bayar = numpy.sum(array_total_luas_bayar)
+#         total_luas_bayar = "{:,.0f}".format(total_luas_bayar)
+
+#         array_total_harga = numpy.array([b.total_harga for b in obj_bidangs])
+#         total_harga = numpy.sum(array_total_harga)
+#         total_harga = "{:,.0f}".format(total_harga)
+
+
+#         invoices_history = []
+#         obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
+#         for his in obj_invoices_history:
+#             history = InvoiceHistoryforPrintOut(**dict(his))
+#             history.amountExt = "{:,.0f}".format(history.amount)
+#             invoices_history.append(history)
+
+#         komponen_biayas = []
+
+#         obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
+#         for bb in obj_komponen_biayas:
+#             beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
+#             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
+#             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
+#             komponen_biayas.append(beban_biaya)
+        
+#         amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
+#         amount_beban_biaya = sum(amount_beban_biayas)
+
+#         harga_aktas = []
+#         obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
+#         for hg in obj_kjb_hargas:
+#             harga_akta = KjbHargaAktaSch(**dict(hg))
+#             harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
+#             harga_aktas.append(harga_akta)
+
+#         termin_bayars = []
+#         no = 1
+#         obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
+#         filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
+#         env = Environment(loader=FileSystemLoader("templates"))
+#         template = env.get_template(filename)
+
+#         render_template = template.render(code=termin_header.nomor_memo or "",
+#                                         created_at=termin_header.created_at.date(),
+#                                         nomor_tahap=termin_header.nomor_tahap,
+#                                         project_name=termin_header.project_name,
+#                                         desa_name=termin_header.desa_name,
+#                                         ptsk_name=termin_header.ptsk_name,
+#                                         notaris_name=termin_header.notaris_name,
+#                                         manager_name=termin_header.manager_name.upper(),
+#                                         sales_name=termin_header.sales_name.upper(),
+#                                         mediator=termin_header.mediator.upper(),
+#                                         data=bidangs,
+#                                         total_luas_surat=total_luas_surat,
+#                                         total_luas_ukur=total_luas_ukur,
+#                                         total_luas_gu_perorangan=total_luas_gu_perorangan,
+#                                         total_luas_nett=total_luas_nett,
+#                                         total_luas_pbt_perorangan=total_luas_pbt_perorangan,
+#                                         total_luas_bayar=total_luas_bayar,
+#                                         total_harga=total_harga,
+#                                         data_invoice_history=invoices_history,
+#                                         data_beban_biaya=komponen_biayas,
+#                                         data_harga_akta=harga_aktas,
+#                                         data_payment=obj_termin_bayar,
+#                                         tanggal_transaksi=termin_header.tanggal_transaksi,
+#                                         tanggal_rencana_transaksi=tanggal_hasil,
+#                                         hari_transaksi=hari_transaksi,
+#                                         jenis_bayar=termin_header.jenis_bayar.value.replace('_', ' '),
+#                                         amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
+#                                         remark=termin_header.remark
+#                                         )
+        
+#         try:
+#             doc = await PdfService().get_pdf(render_template)
+#         except Exception as e:
+#             raise HTTPException(status_code=500, detail="Failed generate document")
+        
+#         response = Response(doc, media_type='application/pdf')
+#         response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
+#         return response
+    
+#     except Exception as e:
+#         raise HTTPException(status_code=422, detail=str(e))
 
 # @router.get("/export/excel/memo")
 # async def export_excel():

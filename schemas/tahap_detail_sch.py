@@ -93,6 +93,7 @@ class TahapDetailUpdateExtSch(SQLModel):
     overlaps:list[BidangOverlapUpdateExtSch] | None
 
 class TahapDetailForPrintOut(SQLModel):
+    no:int|None
     id:Optional[UUID]
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
