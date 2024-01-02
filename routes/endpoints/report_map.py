@@ -37,7 +37,12 @@ async def search_for_map(keyword:str | None,
                 NULL as ptsk_name,
                 NULL as bidang_id,
                 NULL as id_bidang,
-                NULL as alashak
+                NULL as alashak,
+                NULL as id_bidang_lama,
+                NULL as pemilik_name,
+                NULL as group,
+                NULL as mediator,
+                NULL as luas
             FROM
                 project
             WHERE
@@ -53,7 +58,12 @@ async def search_for_map(keyword:str | None,
                 NULL as ptsk_name,
                 NULL as bidang_id,
                 NULL as id_bidang,
-                NULL as alashak
+                NULL as alashak,
+                NULL as id_bidang_lama,
+                NULL as pemilik_name,
+                NULL as group,
+                NULL as mediator,
+                NULL as luas
             FROM
                 desa
             INNER JOIN planing ON desa.id = planing.desa_id
@@ -71,7 +81,12 @@ async def search_for_map(keyword:str | None,
                 ptsk.name as ptsk_name,
                 NULL as bidang_id,
                 NULL as id_bidang,
-                NULL as alashak
+                NULL as alashak,
+                NULL as id_bidang_lama,
+                NULL as pemilik_name,
+                NULL as group,
+                NULL as mediator,
+                NULL as luas
             FROM
                 ptsk
             INNER JOIN skpt ON ptsk.id = skpt.ptsk_id
@@ -92,7 +107,12 @@ async def search_for_map(keyword:str | None,
                 ptsk.name as ptsk_name,
                 bidang.id::text as bidang_id,
                 bidang.id_bidang as id_bidang,
-                bidang.alashak as alashak
+                bidang.alashak as alashak,
+                bidang.id_bidang_lama as id_bidang_lama,
+                pemilik.name as pemilik_name,
+                bidang.group as group,
+                bidang.mediator as mediator,
+                bidang.luas_surat::text as luas
             FROM
                 Bidang
             LEFT OUTER JOIN Skpt ON Bidang.skpt_id = Skpt.id
@@ -107,7 +127,8 @@ async def search_for_map(keyword:str | None,
                 OR LOWER(TRIM(REPLACE(bidang.id_bidang_lama, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(bidang.group, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(bidang.mediator, ' ', ''))) LIKE {keyword}
-                OR LOWER(TRIM(REPLACE(pemilik.name, ' ', ''))) LIKE {keyword})
+                OR LOWER(TRIM(REPLACE(pemilik.name, ' ', ''))) LIKE {keyword}
+                OR LOWER(TRIM(REPLACE(bidang.luas_surat::text, ' ', ''))) LIKE {keyword}))
             ORDER BY
                 project_id, project_name, desa_id, desa_name, ptsk_id, ptsk_name, bidang_id, id_bidang, alashak
             LIMIT {size}
