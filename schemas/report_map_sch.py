@@ -15,6 +15,11 @@ class SearchMapObj(SQLModel):
     bidang_id:str | None
     id_bidang:str | None
     alashak:str | None
+    id_bidang_lama:str|None
+    pemilik_name:str|None
+    group:str|None
+    mediator:str|None
+    luas:Decimal|None
 
 class SummaryProject(SQLModel):
     project_id:UUID | None
