@@ -104,7 +104,7 @@ async def search_for_map(keyword:str | None,
             WHERE
                 LOWER(TRIM(REPLACE(bidang.id_bidang, ' ', ''))) LIKE {keyword} 
                 OR LOWER(TRIM(REPLACE(bidang.alashak, ' ', ''))) LIKE {keyword}
-                OR LOWER(TRIM(REPLACE(bidang.id_bidang, ' ', ''))) LIKE {keyword}
+                OR LOWER(TRIM(REPLACE(bidang.id_bidang_lama, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(bidang.group, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(bidang.mediator, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(pemilik.name, ' ', ''))) LIKE {keyword})
