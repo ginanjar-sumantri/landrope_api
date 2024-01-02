@@ -30,8 +30,8 @@ async def create(
     total:Decimal = 0
     if kjb_hd.satuan_bayar == SatuanBayarEnum.Percentage:
         kjb_termins = await crud.kjb_termin.get_multi_by_kjb_harga_id(kjb_harga_id=sch.kjb_harga_id)
-        kjb_termin_lunas = next((kjb_termin for kjb_termin in kjb_termins if kjb_termin.jenis_bayar == JenisBayarEnum.LUNAS), None)
-        total_current_percentage = sum([kjb_termin.nilai for kjb_termin in kjb_termins if kjb_termin.jenis_bayar != JenisBayarEnum.LUNAS])
+        kjb_termin_lunas = next((kjb_termin for kjb_termin in kjb_termins if kjb_termin.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
+        total_current_percentage = sum([kjb_termin.nilai for kjb_termin in kjb_termins if kjb_termin.jenis_bayar != JenisBayarEnum.PELUNASAN])
         total = sch.nilai + total_current_percentage + sch.nilai_lunas
     
     if total > 100:
