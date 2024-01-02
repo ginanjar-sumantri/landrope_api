@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_
+from sqlmodel import select, or_, and_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
@@ -68,8 +68,10 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
     
     async def get_by_keyword(self, *, keyword: str, db_session: AsyncSession | None = None) -> BundleHd | None:
         db_session = db_session or db.session
-        query = select(self.model).where(self.model.keyword.ilike(f'%{keyword}%')
-                                ).options(selectinload(self.model.kjb_dt)
+        query = select(self.model).where(and_(
+                                self.model.keyword.ilike(f'%{keyword}%'),
+                                BundleHd.kjb_dt == None
+                                )).options(selectinload(self.model.kjb_dt)
                                 ).options(selectinload(self.model.bidang)
                                 )
         
