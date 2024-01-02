@@ -1,14 +1,17 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
+from sqlmodel import select, or_, cast, String
 import crud
 from models.master_model import HargaStandard
+from models import Planing, Project, Desa
 from models.worker_model import Worker
 from schemas.harga_standard_sch import (HargaStandardSch, HargaStandardCreateSch, HargaStandardUpdateSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, DeleteResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
 from decimal import Decimal
+import json
 
 router = APIRouter()
 
@@ -35,7 +38,25 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.harga_standard.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(HargaStandard).outerjoin(HargaStandard.planing
+                                ).outerjoin(Planing.project
+                                ).outerjoin(Planing.desa)
+    if keyword:
+        query = query.filter(
+            or_(
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%'),
+                cast(HargaStandard.harga, String).ilike(f'%{keyword}%')
+            )
+        )
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(HargaStandard, key) == value)
+    
+    query = query.distinct()
+
+    objs = await crud.harga_standard.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[HargaStandardSch])

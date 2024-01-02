@@ -86,8 +86,14 @@ async def create(
             jns_byr = "BIAYA-LAIN"
             code_counter = CodeCounterEnum.Biaya_Lain
         elif sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
-            jns_byr = "SISA-PELUNASAN"
+            jns_byr = "KURANG-BAYAR"
             code_counter = CodeCounterEnum.Sisa_Pelunasan
+        elif sch.jenis_bayar == JenisBayarEnum.TAMBAHAN_DP:
+            jns_byr = "TAMBAHAN-DP"
+            code_counter = CodeCounterEnum.Tambahan_Dp
+        elif sch.jenis_bayar == JenisBayarEnum.PELUNASAN:
+            jns_byr = JenisBayarEnum.PELUNASAN.value
+            code_counter = CodeCounterEnum.Pelunasan
         else:
             jns_byr = "PENGEMBALIAN"
             code_counter = CodeCounterEnum.Pengembalian_Beban_Penjual
@@ -250,6 +256,14 @@ async def update_(
         elif sch.jenis_bayar == JenisBayarEnum.LUNAS:
             jns_byr = JenisBayarEnum.LUNAS.value
             await make_sure_all_komponen_biaya_not_outstanding(sch=sch)
+        elif sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+            jns_byr = "BIAYA-LAIN"
+        elif sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+            jns_byr = "KURANG-BAYAR"
+        elif sch.jenis_bayar == JenisBayarEnum.TAMBAHAN_DP:
+            jns_byr = "TAMBAHAN-DP"
+        elif sch.jenis_bayar == JenisBayarEnum.PELUNASAN:
+            jns_byr = JenisBayarEnum.PELUNASAN.value
         else:
             jns_byr = "PENGEMBALIAN"
     

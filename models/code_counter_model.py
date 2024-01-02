@@ -16,6 +16,8 @@ class CodeCounterEnum(str, Enum):
     Utj = "Utj"
     Dp = "Dp"
     Lunas = "Lunas"
+    Pelunasan = "Pelunasan"
+    Tambahan_Dp = "Tambahan_Dp"
     Pengembalian_Beban_Penjual = "Pengembalian_Beban_Penjual"
     Biaya_Lain = "Biaya_Lain"
     Sisa_Pelunasan = "Sisa_Pelunasan"

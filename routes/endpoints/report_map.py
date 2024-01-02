@@ -128,11 +128,10 @@ async def search_for_map(keyword:str | None,
                 OR LOWER(TRIM(REPLACE(bidang.group, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(bidang.mediator, ' ', ''))) LIKE {keyword}
                 OR LOWER(TRIM(REPLACE(pemilik.name, ' ', ''))) LIKE {keyword}
-                OR LOWER(TRIM(REPLACE(bidang.luas_surat::text, ' ', ''))) LIKE {keyword}))
+                OR LOWER(TRIM(REPLACE(bidang.luas_surat::text, ' ', ''))) LIKE {keyword})
             ORDER BY
                 project_id, project_name, desa_id, desa_name, ptsk_id, ptsk_name, bidang_id, id_bidang, alashak
             LIMIT {size}
-            
         """)
 
     result = await db_session.execute(query)

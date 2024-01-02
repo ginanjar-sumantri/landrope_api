@@ -97,3 +97,12 @@ async def update(id:UUID,
         await crud.draft.remove(id=draft.id)
     
     return create_response(data=obj_updated)
+
+@router.get("/validasi/alashak", response_model=GetResponseBaseSch[list[GpsRawSch]])
+async def get_by_id(alashak:str | None = None):
+
+    """Get an object by id"""
+
+    objs = await crud.gps.get_multi_by_alashak(alashak=alashak)
+    
+    return create_response(data=objs)

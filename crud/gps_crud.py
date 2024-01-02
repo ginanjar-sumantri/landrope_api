@@ -4,7 +4,7 @@ from schemas.gps_sch import GpsCreateSch, GpsUpdateSch
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_
+from sqlmodel import select, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
@@ -34,6 +34,26 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_multi_by_alashak(self, 
+                  *, 
+                  alashak: str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Gps] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Gps)
+        query = query.filter(func.replace(Gps.alashak, ' ', '').ilike(f"%{alashak.replace(' ', '')}%"))
+        query = query.options(selectinload(Gps.skpt
+                                        ).options(selectinload(Skpt.ptsk))
+                    ).options(selectinload(Gps.planing
+                                        ).options(selectinload(Planing.desa))
+                    )
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
     
     async def get_gps_geometry(self, *, db_session : AsyncSession | None = None) -> List[Gps] | None:
         db_session = db_session or db.session
