@@ -617,7 +617,7 @@ async def manipulation_import_log(i:int, log:ImportLog, error_m:str|None = None,
     return False, count
 
 @router.get("/export/shp", response_class=Response)
-async def export(
+async def export_shp(
             filter_query:str = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
@@ -663,6 +663,18 @@ async def export(
         return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+
+@router.get("/export/excel")
+async def export_excel(planing_id:UUID|None = None,
+                       project_id:UUID|None = None,
+                       filter_query:str | None = None,
+                       current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Export data to Excel"""
+
+    query = select(Bidang)
+    query = query.join(Bidang.planing)
+    query = query
 
 @router.get("/report/map", response_model=GetResponseBaseSch[list[BidangForTreeReportSch]])
 async def get_list_for_report_map(project_id:UUID,

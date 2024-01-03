@@ -291,3 +291,14 @@ class BidangFilterJson(SQLModel):
     total_harga_transaksi:Decimal|None
     total_payment:Decimal|None
     sisa_pelunasan:Decimal|None
+
+class BidangGpsValidator(SQLModel):
+    id_bidang:str|None
+    id_bidang_lama:str|None
+    alashak:str|None
+    pemilik_name:str|None
+    project_name:str|None
+    desa_name:str|None
+    group:str|None
+    no_peta:str|None
+    luas_surat:Decimal|None

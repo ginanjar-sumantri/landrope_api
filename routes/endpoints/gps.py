@@ -6,7 +6,8 @@ from sqlalchemy.orm import selectinload
 import crud
 from models.gps_model import Gps, StatusGpsEnum
 from models.worker_model import Worker
-from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch)
+from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch, GpsValidator)
+from schemas.bidang_sch import BidangGpsValidator
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
@@ -98,11 +99,17 @@ async def update(id:UUID,
     
     return create_response(data=obj_updated)
 
-@router.get("/validasi/alashak", response_model=GetResponseBaseSch[list[GpsRawSch]])
-async def get_by_id(alashak:str | None = None):
+@router.get("/validasi/alashak", response_model=GetResponseBaseSch[GpsValidator])
+async def get_by_alashak(alashak:str | None = None):
 
     """Get an object by id"""
 
-    objs = await crud.gps.get_multi_by_alashak(alashak=alashak)
+    gps_objs = await crud.gps.get_multi_by_alashak(alashak=alashak)
+    gps_objs = [GpsRawSch.from_orm(gps) for gps in gps_objs]
+
+    bidang_objs = await crud.bidang.get_multi_by_alashak(alashak=alashak)
+    bidang_objs = [BidangGpsValidator.from_orm(bidang) for bidang in bidang_objs]
+
+    obj = GpsValidator(bidang=bidang_objs, gps=gps_objs)
     
-    return create_response(data=objs)
+    return create_response(data=obj)

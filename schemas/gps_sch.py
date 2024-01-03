@@ -1,7 +1,8 @@
 from models.gps_model import GpsBase, GpsRawBase, GpsFullBase
+from schemas.bidang_sch import BidangGpsValidator
 from common.as_form import as_form
 from common.partial import optional
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 from uuid import UUID
 
 class GpsCreateSch(GpsBase):
@@ -21,3 +22,7 @@ class GpsSch(GpsFullBase):
 @optional
 class GpsUpdateSch(GpsBase):
     draft_id:UUID|None
+
+class GpsValidator(SQLModel):
+    gps:list[GpsRawSch]|None
+    bidang:list[BidangGpsValidator]|None

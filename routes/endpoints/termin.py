@@ -558,8 +558,9 @@ async def get_by_id(id:UUID,
                             notaris_name=obj.bidang.notaris_name, mediator=obj.bidang.mediator
                             )
 
-    # if obj.jenis_bayar == JenisBayarEnum.LUNAS or obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-    #     spk.amount = obj.bidang.sisa_pelunasan
+    if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+        bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+        spk.amount = bidang.sisa_pelunasan
 
     if obj:
         return create_response(data=spk)

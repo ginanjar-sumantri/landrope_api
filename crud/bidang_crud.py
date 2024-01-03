@@ -534,4 +534,42 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
     
         return await paginate(db_session, query, params)
 
+    #for gps
+    async def get_multi_by_alashak(self, alashak:str|None = None) -> list[Bidang] :
+        db_session = db.session
+
+        query = select(Bidang)
+        query = query.where(func.replace(Bidang.alashak, ' ', '').ilike(f"%{alashak.replace(' ', '')}%"))
+        query = query.options(selectinload(Bidang.pemilik)
+                        ).options(selectinload(Bidang.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
+                        ).options(selectinload(Bidang.jenis_surat)
+                        ).options(selectinload(Bidang.kategori)
+                        ).options(selectinload(Bidang.kategori_sub)
+                        ).options(selectinload(Bidang.kategori_proyek)
+                        ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+                        ).options(selectinload(Bidang.manager)
+                        ).options(selectinload(Bidang.sales)
+                        ).options(selectinload(Bidang.notaris)
+                        ).options(selectinload(Bidang.bundlehd)
+                        ).options(selectinload(Bidang.hasil_peta_lokasi
+                                            ).options(selectinload(HasilPetaLokasi.kjb_dt))
+                        ).options(selectinload(Bidang.sub_project)
+                        ).options(selectinload(Bidang.invoices
+                                ).options(selectinload(Invoice.payment_details)
+                                ).options(selectinload(Invoice.termin))
+                        ).options(selectinload(Bidang.overlaps)
+                        ).options(selectinload(Bidang.komponen_biayas
+                                ).options(selectinload(BidangKomponenBiaya.bidang)
+                                ).options(selectinload(BidangKomponenBiaya.invoice_details
+                                            ).options(selectinload(InvoiceDetail.invoice))
+                                )
+                        ).options(selectinload(Bidang.tahap_details
+                                            ).options(selectinload(TahapDetail.tahap))
+                        ).options(selectinload(Bidang.bidang_histories)
+                        )
+
+        response = await db_session.execute(query)
+        return response.scalars().all()
+
+
 bidang = CRUDBidang(Bidang)
