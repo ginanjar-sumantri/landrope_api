@@ -302,3 +302,8 @@ class BidangGpsValidator(SQLModel):
     group:str|None
     no_peta:str|None
     luas_surat:Decimal|None
+
+class BidangParameterDownload(SQLModel):
+    projects:list[UUID]|None
+    desas:list[UUID]|None
+    jenis_bidangs:list[str]|None

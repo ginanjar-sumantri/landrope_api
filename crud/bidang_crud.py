@@ -11,7 +11,7 @@ from typing import List, Any, Dict
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice, InvoiceDetail,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya)
-from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk,
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
@@ -571,5 +571,50 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response = await db_session.execute(query)
         return response.scalars().all()
 
+    async def get_multi_export(self, param:BidangParameterDownload|None = None) -> list[Bidang] : 
+        db_session = db.session
+
+        query = select(Bidang)
+        query = query.join(Bidang.planing)
+
+        if len(param.projects) > 0:
+            query = query.filter(Planing.project_id.in_(param.projects))
+        
+        if len(param.desas) > 0:
+            query = query.filter(Planing.desa_id.in_(param.desas))
+        
+        if len(param.jenis_bidangs) > 0:
+            query = query.filter(Bidang.jenis_bidang.in_(param.jenis_bidangs))
+        
+        query = query.options(selectinload(Bidang.pemilik)
+                        ).options(selectinload(Bidang.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
+                        ).options(selectinload(Bidang.jenis_surat)
+                        ).options(selectinload(Bidang.kategori)
+                        ).options(selectinload(Bidang.kategori_sub)
+                        ).options(selectinload(Bidang.kategori_proyek)
+                        ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+                        ).options(selectinload(Bidang.manager)
+                        ).options(selectinload(Bidang.sales)
+                        ).options(selectinload(Bidang.notaris)
+                        ).options(selectinload(Bidang.bundlehd)
+                        ).options(selectinload(Bidang.hasil_peta_lokasi
+                                            ).options(selectinload(HasilPetaLokasi.kjb_dt))
+                        ).options(selectinload(Bidang.sub_project)
+                        ).options(selectinload(Bidang.invoices
+                                ).options(selectinload(Invoice.payment_details)
+                                ).options(selectinload(Invoice.termin))
+                        ).options(selectinload(Bidang.overlaps)
+                        ).options(selectinload(Bidang.komponen_biayas
+                                ).options(selectinload(BidangKomponenBiaya.bidang)
+                                ).options(selectinload(BidangKomponenBiaya.invoice_details
+                                            ).options(selectinload(InvoiceDetail.invoice))
+                                )
+                        ).options(selectinload(Bidang.tahap_details
+                                            ).options(selectinload(TahapDetail.tahap))
+                        ).options(selectinload(Bidang.bidang_histories)
+                        )
+        
+        response = await db_session.execute(query)
+        return response.scalars().all()
 
 bidang = CRUDBidang(Bidang)

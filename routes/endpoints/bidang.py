@@ -3,6 +3,7 @@ import crud
 import time
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
@@ -14,7 +15,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.import_log_model import ImportLog
 from schemas.import_log_sch import ImportLogCreateSch, ImportLogSch, ImportLogCloudTaskSch
 from schemas.import_log_error_sch import ImportLogErrorSch
-from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch, BidangFilterJson,
+from schemas.bidang_sch import (BidangSch, BidangCreateSch, BidangUpdateSch, BidangListSch, BidangFilterJson, BidangParameterDownload,
                                 BidangRawSch, BidangShpSch, BidangByIdSch, BidangForOrderGUById, BidangForTreeReportSch)
 from schemas.bidang_history_sch import MetaDataSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
@@ -33,6 +34,8 @@ from shapely import wkt, wkb
 from decimal import Decimal
 from datetime import datetime
 from itertools import islice
+from io import BytesIO
+import pandas as pd
 
 
 
@@ -663,18 +666,122 @@ async def export_shp(
         return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+    
+@router.post("/export/bulk/shp", response_class=Response)
+async def export_shp(
+            param:BidangParameterDownload|None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-@router.get("/export/excel")
-async def export_excel(planing_id:UUID|None = None,
-                       project_id:UUID|None = None,
-                       filter_query:str | None = None,
+    results = await crud.bidang.get_multi_export(param=param)
+    schemas = []
+    for data in results:
+        sch = BidangShpSch(n_idbidang=data.id_bidang,
+                           o_idbidang=data.id_bidang_lama,
+                           pemilik=data.pemilik_name,
+                           code_desa=data.desa_code,
+                           dokumen=data.jenis_alashak,
+                           sub_surat=data.jenis_surat_name,
+                           alashak=data.alashak,
+                           luassurat=data.luas_surat,
+                           kat=data.kategori_name,
+                           kat_bidang=data.kategori_sub_name,
+                           kat_proyek=data.kategori_proyek_name,
+                           ptsk=data.ptsk_name,
+                           penampung=data.penampung_name,
+                           no_sk=data.no_sk,
+                           status_sk=data.status_sk,
+                           manager=data.manager_name,
+                           sales=data.sales_name,
+                           mediator=data.mediator,
+                           proses=data.jenis_bidang,
+                           status=data.status,
+                           group=data.group,
+                           no_peta=data.no_peta,
+                           desa=data.desa_name,
+                           project=data.project_name,
+                           kecamatan=data.kecamatan,
+                           kota=data.kota,
+                           geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)))
+
+        schemas.append(sch)
+
+    if results:
+        obj_name = results[0].__class__.__name__
+        if len(results) == 1:
+            obj_name = f"{obj_name}-{results[0].id_bidang}"
+
+        return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+    else:
+        raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+
+@router.post("/export/excel")
+async def export_excel(param:BidangParameterDownload|None = None,
                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Export data to Excel"""
 
-    query = select(Bidang)
-    query = query.join(Bidang.planing)
-    query = query
+    result = await crud.bidang.get_multi_export(param=param)
+
+    datas = [{"Id Bidang" : bidang.id_bidang,
+              "Id Bidang Lama" : bidang.id_bidang_lama,
+              "No Peta" : bidang.no_peta,
+              "Pemilik" : bidang.pemilik_name,
+              "Jenis Bidang" : bidang.jenis_bidang,
+              "Status" : bidang.status,
+              "Project" : bidang.project_name,
+              "Desa" : bidang.desa_name,
+              "Sub Project" : bidang.sub_project_name,
+              "Group" : bidang.group,
+              "Jenis Alashak" : bidang.jenis_alashak,
+              "Jenis Surat" : bidang.jenis_surat_name,
+              "Alashak" : bidang.alashak,
+              "Kategori" : bidang.kategori_name,
+              "Kategori Sub" : bidang.kategori_sub_name,
+              "Kategori Proyek" : bidang.kategori_proyek_name,
+              "Ptsk" : bidang.ptsk_name,
+              "No SK" : bidang.no_sk,
+              "Status SK" : bidang.status_sk,
+              "Penampung" : bidang.penampung_name,
+              "Manager" : bidang.manager_name,
+              "Sales" : bidang.sales_name,
+              "Mediator" : bidang.mediator,
+              "Telepon Mediator" : bidang.telepon_mediator,
+              "Notaris" : bidang.notaris_name,
+              "Tahap" : bidang.nomor_tahap,
+              "Luas Surat" : "{:,.2f}".format(bidang.luas_surat or 0),
+              "Luas Ukur" : "{:,.2f}".format(bidang.luas_ukur or 0),
+              "Luas GU Perorangan" : "{:,.2f}".format(bidang.luas_gu_perorangan or 0),
+              "Luas GU PT" : "{:,.2f}".format(bidang.luas_gu_pt or 0),
+              "Luas Nett" : "{:,.2f}".format(bidang.luas_nett or 0),
+              "Luas Clear" : "{:,.2f}".format(bidang.luas_clear or 0),
+              "Luas PBT Perorangan" : "{:,.2f}".format(bidang.luas_pbt_perorangan or 0),
+              "Luas PT PT" : "{:,.2f}".format(bidang.luas_pbt_pt or 0),
+              "Luas Bayar" : "{:,.2f}".format(bidang.luas_bayar or 0),
+              "Harga Akta" : "{:,.2f}".format(bidang.harga_akta or 0),
+              "Harga Transaksi" : "{:,.2f}".format(bidang.harga_transaksi or 0),
+              "NJOP" : "{:,.2f}".format(bidang.njop or 0),
+              "Total Harga" : "{:,.2f}".format(bidang.total_harga_transaksi or 0),
+              "Total Bayar" : "{:,.2f}".format(bidang.total_payment or 0),
+              "Sisa Pelunasan" : "{:,.2f}".format(bidang.sisa_pelunasan or 0)
+            } for bidang in result]
+    
+    df = pd.DataFrame(data=datas)
+
+    if current_worker.is_analyst:
+        df = df.drop(['Total Harga', 'Total Bayar', 'Sisa Pelunasan'])
+    
+    df = df.fillna('')
+
+    output = BytesIO()
+    df.to_excel(output, index=False, sheet_name=f'SPK')
+
+    output.seek(0)
+
+    return StreamingResponse(BytesIO(output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=bidang_data.xlsx"})
+
+    
 
 @router.get("/report/map", response_model=GetResponseBaseSch[list[BidangForTreeReportSch]])
 async def get_list_for_report_map(project_id:UUID,
