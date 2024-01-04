@@ -8,7 +8,7 @@ from sqlalchemy import text
 from models.bundle_model import BundleDt
 from models.dokumen_model import Dokumen, KategoriDokumen
 from models.worker_model import Worker
-from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaDynSch)
+from schemas.bundle_dt_sch import (BundleDtSch, BundleDtUpdateSch, BundleDtMetaDynSch, BundleDtMetaDokumenRepeatSch)
 from schemas.dokumen_sch import RiwayatSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -160,7 +160,6 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
-
 @router.put("/update-riwayat/{id}", response_model=PutResponseBaseSch[BundleDtSch])
 async def update_riwayat(id:UUID,
                         background_task:BackgroundTasks,
@@ -307,3 +306,31 @@ async def get_meta_data_and_dyn_form(kjb_id:UUID,
         return create_response(data=obj)
     else:
         raise IdNotFoundException(BundleDt, kjb_id)
+
+@router.get("/search/document-repeat", response_model=GetResponseBaseSch[list[BundleDtMetaDokumenRepeatSch]])
+async def search_document_repeat(keyword:str|None = None, 
+                                limit:int|None = None):
+
+    objs = await crud.bundledt.get_multi_by_meta_data(keyword=keyword, limit=limit)
+
+    datas:list[BundleDtMetaDokumenRepeatSch] = []
+    for bundle_dt in objs:
+        meta_data = json.loads(bundle_dt.meta_data.replace("'", "\""))
+        key_value = f"{meta_data.get(bundle_dt.dokumen.key_field, '')}"
+        additional_info = f"{meta_data.get('Nama', '')}{meta_data.get('Nama_Wajib_Pajak', '')}"
+
+        if next((a for a in datas if a.key_value == key_value), None):
+            continue
+
+        data = BundleDtMetaDokumenRepeatSch(id=bundle_dt.id,
+                                            key_value=key_value,
+                                            additional_info=additional_info,
+                                            dokumen_name=bundle_dt.dokumen_name)
+        
+        datas.append(data)
+
+    return create_response(data=datas)
+
+
+
+    

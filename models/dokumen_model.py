@@ -19,6 +19,7 @@ class DokumenBase(SQLModel):
     is_riwayat: Optional[bool] #apakah dokumen tersebut memiliki riwayat
     key_riwayat:Optional[str] #key unik yang dipakai untuk crud pada riwayat tersebut
     kategori_dokumen_id:UUID | None = Field(nullable=True, foreign_key="kategori_dokumen.id")
+    is_repeat:Optional[bool] = Field(nullable=True)
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass

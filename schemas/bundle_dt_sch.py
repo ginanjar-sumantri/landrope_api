@@ -19,6 +19,12 @@ class BundleDtMetaDynSch(SQLModel):
     meta_data:str|None
     dyn_form:str|None = Field(alias="dyn_form")
 
+class BundleDtMetaDokumenRepeatSch(SQLModel):
+    id:UUID|None
+    key_value:str|None
+    additional_info:str|None
+    dokumen_name:str|None
+
 @as_form
 @optional
 class BundleDtUpdateSch(BundleDtBase):
