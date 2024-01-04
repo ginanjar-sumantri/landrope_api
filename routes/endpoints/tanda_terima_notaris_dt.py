@@ -74,6 +74,8 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
+    else:
+        file_path = sch.file_path
     
     db_session = db.session
 

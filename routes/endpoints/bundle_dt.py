@@ -93,7 +93,7 @@ async def get_by_id(id:UUID):
 async def update(id:UUID, 
                  background_task:BackgroundTasks,
                  sch:BundleDtUpdateSch = Depends(BundleDtUpdateSch.as_form), 
-                 file:UploadFile = None,
+                 file:UploadFile|None = None,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -122,7 +122,7 @@ async def update(id:UUID,
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         sch.file_path = file_path
-    else:
+    elif file is None and sch.file_path is None:
         sch.file_path = obj_current.file_path
 
     if sch.meta_data is not None or sch.meta_data != "":
