@@ -101,8 +101,8 @@ async def update(id:UUID, sch:HargaStandardUpdateSch,
     if not obj_current:
         raise IdNotFoundException(HargaStandard, id)
     
-    obj_current = await crud.harga_standard.get_by_planing_id_jenis_alashak(planing_id=sch.planing_id, jenis_alashak=sch.jenis_alashak, id=id)
-    if obj_current:
+    obj = await crud.harga_standard.get_by_planing_id_jenis_alashak(planing_id=sch.planing_id, jenis_alashak=sch.jenis_alashak, id=id)
+    if obj:
         raise HTTPException(status_code=422, detail="Harga dengan planing dan jenis alashak yang sama, sudah ada di database")
     
     obj_updated = await crud.harga_standard.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
