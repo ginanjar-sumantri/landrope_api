@@ -308,16 +308,19 @@ async def get_meta_data_and_dyn_form(kjb_id:UUID,
         raise IdNotFoundException(BundleDt, kjb_id)
 
 @router.get("/search/document-repeat", response_model=GetResponseBaseSch[list[BundleDtMetaDokumenRepeatSch]])
-async def search_document_repeat(keyword:str|None = None, 
+async def search_document_repeat(keyword:str|None = None,
+                                dokumen_id:UUID|None = None,
                                 limit:int|None = None):
 
-    objs = await crud.bundledt.get_multi_by_meta_data(keyword=keyword, limit=limit)
+    objs = await crud.bundledt.get_multi_by_meta_data_and_dokumen_id(keyword=keyword,dokumen_id=dokumen_id, limit=limit)
 
     datas:list[BundleDtMetaDokumenRepeatSch] = []
     for bundle_dt in objs:
         meta_data = json.loads(bundle_dt.meta_data.replace("'", "\""))
         key_value = f"{meta_data.get(bundle_dt.dokumen.key_field, '')}"
-        additional_info = f"{meta_data.get('Nama', '')}{meta_data.get('Nama_Wajib_Pajak', '')}"
+        infoes = bundle_dt.dokumen.additional_info.split(',')
+        infoe_values = [meta_data.get(key, '') for key in infoes]
+        additional_info = "|".join(infoe_values) if len(infoe_values) > 1 else "".join(infoe_values)
 
         if next((a for a in datas if a.key_value == key_value), None):
             continue

@@ -119,13 +119,15 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
 
         return response.fetchone()
     
-    async def get_multi_by_meta_data(self, keyword:str|None = None, limit:int|None = 100) -> list[BundleDt]:
+    async def get_multi_by_meta_data_and_dokumen_id(self, keyword:str|None = None, 
+                                                dokumen_id:UUID|None=None,
+                                                limit:int|None = 100) -> list[BundleDt]:
 
         db_session = db.session
 
         query = select(BundleDt)
         query = query.join(BundleDt.dokumen)
-        query = query.where(and_(BundleDt.meta_data.ilike(f"%{keyword}%"), Dokumen.is_repeat == True))
+        query = query.where(and_(BundleDt.meta_data.ilike(f"%{keyword}%"), Dokumen.id == dokumen_id))
         query = query.order_by(BundleDt.updated_at.desc())
         query = query.limit(limit)
         query = query.options(selectinload(BundleDt.dokumen))

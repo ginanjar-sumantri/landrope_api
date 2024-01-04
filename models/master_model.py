@@ -60,6 +60,7 @@ class JenisSurat(BaseUUIDModel, JenisSuratBase, table=True):
 
 class HargaStandardBase(SQLModel):
     planing_id:UUID = Field(nullable=False, foreign_key="planing.id")
+    jenis_alashak:JenisAlashakEnum|None = Field(nullable=True)
     harga:Decimal | None
 
 class HargaStandardFullBase(HargaStandardBase, BaseUUIDModel):
