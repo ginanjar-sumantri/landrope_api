@@ -768,7 +768,7 @@ async def export_excel(param:BidangParameterDownload|None = None,
     df = pd.DataFrame(data=datas)
 
     if current_worker.is_analyst:
-        df = df.drop(['Total Harga', 'Total Bayar', 'Sisa Pelunasan'])
+        df = df.drop(['Luas Bayar','Harga Akta', 'Harga Transaksi', 'NJOP', 'Total Harga', 'Total Bayar', 'Sisa Pelunasan'], axis=1)
     
     df = df.fillna('')
 

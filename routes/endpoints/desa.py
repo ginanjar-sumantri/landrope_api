@@ -65,7 +65,7 @@ async def create(
 
 @router.get("", response_model=GetResponsePaginatedSch[DesaRawSch])
 async def get_list(
-            project_id:UUID|None = None,
+            project_id:str|None = None,
             params:Params = Depends(), 
             order_by:str=None, 
             keyword:str=None, 
@@ -77,9 +77,11 @@ async def get_list(
     query = select(Desa)
     
     if project_id:
+        project_ids = project_id.split(',')
+
         query = query.join(Planing, Planing.desa_id == Desa.id
                     ).join(Project, Project.id == Planing.project_id
-                    ).where(Project.id == project_id)
+                    ).where(Project.id.in_(project_ids))
     
     if keyword:
         query = query.filter(
@@ -93,6 +95,8 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
                 query = query.where(getattr(Desa, key) == value)
+    
+    query = query.distinct()
 
     objs = await crud.desa.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)

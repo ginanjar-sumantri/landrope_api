@@ -1,16 +1,17 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from fastapi_pagination import Params
-from sqlmodel import select
+from sqlmodel import select, or_
 from sqlalchemy.orm import selectinload
 import crud
-from models import Project, Section
+from models import Project, Section, Planing, Desa
 from models.worker_model import Worker
 from schemas.project_sch import (ProjectSch, ProjectCreateSch, ProjectUpdateSch, ProjectForTreeReportSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
 from services.geom_service import GeomService
+import json
 
 router = APIRouter()
 
@@ -33,6 +34,7 @@ async def create(
 
 @router.get("", response_model=GetResponsePaginatedSch[ProjectSch])
 async def get_list(
+                desa_id:str|None = None,
                 params:Params = Depends(), 
                 order_by:str = None, 
                 keyword:str = None, 
@@ -41,8 +43,31 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.project.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(Project)
     
+    if desa_id:
+        desa_ids = desa_id.split(',')
+
+        query = query.join(Planing, Planing.project_id == Project.id
+                    ).join(Desa, Desa.id == Planing.desa_id
+                    ).where(Desa.id.in_(desa_ids))
+    
+    if keyword:
+        query = query.filter(
+            or_(
+                Project.code.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%')
+            )
+        )
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+                query = query.where(getattr(Project, key) == value)
+    
+    query = query.distinct()
+
+    objs = await crud.project.get_multi_paginated_ordered(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ProjectSch])

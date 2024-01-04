@@ -58,4 +58,5 @@ class Worker(WorkerFullBase, table=True):
     
     @property
     def is_analyst(self) -> bool:
-        return True if "ANALYST_LEADER" in self.get_roles_name or "ANALYST_MASTER_DATA" in self.get_roles_name else False
+        return True if "ANALYST_LEADER" in self.get_roles_name or "ANALYST_MASTER_DATA" in self.get_roles_name or "ANALYST" in self.get_roles_name else False
+ 
