@@ -177,7 +177,7 @@ async def get_list(
         if bidang_filter_json.luas_surat:
             query = query.filter(or_(cast(Bidang.luas_surat, String).ilike(f'%{bidang_filter_json.luas_surat}%')))
         if bidang_filter_json.status:
-            query = query.filter(or_(Bidang.status.ilike(f'%{bidang_filter_json.status}%')))
+            query = query.filter(or_(func.replace(Bidang.status, '_', '').ilike(f'%{bidang_filter_json.status.replace(" ", "")}%')))
         if bidang_filter_json.total_harga_transaksi:
             query = query.filter(or_(cast((func.coalesce(Bidang.luas_bayar, 0) * func.coalesce(Bidang.harga_transaksi, 0)), String).ilike(f'%{bidang_filter_json.total_harga_transaksi}%')))
         
