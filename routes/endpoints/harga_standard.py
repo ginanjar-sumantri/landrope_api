@@ -22,9 +22,9 @@ async def create(sch: HargaStandardCreateSch,
     
     """Create a new object"""
 
-    obj_current = await crud.harga_standard.get_by_planing_id(planing_id=sch.planing_id)
+    obj_current = await crud.harga_standard.get_by_planing_id_jenis_alashak(planing_id=sch.planing_id, jenis_alashak=sch.jenis_alashak)
     if obj_current:
-        raise NameExistException(HargaStandard, name="harga standard")
+        raise HTTPException(status_code=422, detail="Harga dengan planing dan jenis alashak yang sama, sudah ada di database")
     
     new_obj = await crud.harga_standard.create(obj_in=sch, created_by_id=current_worker.id)
     return create_response(data=new_obj)
@@ -100,6 +100,10 @@ async def update(id:UUID, sch:HargaStandardUpdateSch,
     obj_current = await crud.harga_standard.get(id=id)
     if not obj_current:
         raise IdNotFoundException(HargaStandard, id)
+    
+    obj_current = await crud.harga_standard.get_by_planing_id_jenis_alashak(planing_id=sch.planing_id, jenis_alashak=sch.jenis_alashak, id=id)
+    if obj_current:
+        raise HTTPException(status_code=422, detail="Harga dengan planing dan jenis alashak yang sama, sudah ada di database")
     
     obj_updated = await crud.harga_standard.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
