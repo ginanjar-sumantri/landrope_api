@@ -6,10 +6,11 @@ import crud
 from models.master_model import HargaStandard
 from models import Planing, Project, Desa
 from models.worker_model import Worker
-from schemas.harga_standard_sch import (HargaStandardSch, HargaStandardCreateSch, HargaStandardUpdateSch)
+from schemas.harga_standard_sch import (HargaStandardSch, HargaStandardCreateSch, HargaStandardUpdateSch, HargaStandardKjbSch)
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, DeleteResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException)
+from common.enum import JenisAlashakEnum
 from decimal import Decimal
 import json
 
@@ -70,15 +71,25 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(HargaStandard, id)
 
-@router.get("/desa/{desa_id}", response_model=GetResponseBaseSch[HargaStandardSch])
+@router.get("/desa/{desa_id}", response_model=GetResponseBaseSch[list[HargaStandardKjbSch]])
 async def get_by_desa_id(desa_id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.harga_standard.get_by_desa_id(desa_id=desa_id)
-    if obj:
-        return create_response(data=obj)
-    return {}
+    objs = await crud.harga_standard.get_by_desa_id(desa_id=desa_id)
+
+    result:list[HargaStandardKjbSch] = []
+    harga_standard_girik = next((hg for hg in objs if hg.jenis_alashak == JenisAlashakEnum.Girik), None)
+    if harga_standard_girik:
+        girik = HargaStandardKjbSch(jenis_alashak=harga_standard_girik.jenis_alashak, harga=harga_standard_girik.harga)
+        result.append(girik)
+
+    harga_standard_shm = next((hg for hg in objs if hg.jenis_alashak == JenisAlashakEnum.Sertifikat), None)
+    if harga_standard_shm:
+        shm = HargaStandardKjbSch(jenis_alashak=harga_standard_shm.jenis_alashak, harga=harga_standard_shm.harga)
+        result.append(shm)
+    
+    return create_response(data=result)
     
 @router.put("/{id}", response_model=PutResponseBaseSch[HargaStandardSch])
 async def update(id:UUID, sch:HargaStandardUpdateSch,

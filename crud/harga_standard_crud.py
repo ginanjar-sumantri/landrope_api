@@ -17,15 +17,14 @@ class CRUDHargaStandard(CRUDBase[HargaStandard, HargaStandardCreateSch, HargaSta
 
         return response.scalar_one_or_none()
     
-    async def get_by_desa_id(self, *, desa_id: UUID | str, db_session: AsyncSession | None = None) -> HargaStandard | None:
+    async def get_by_desa_id(self, *, desa_id: UUID | str, db_session: AsyncSession | None = None) -> list[HargaStandard] | None:
         db_session = db_session or db.session
         query = select(HargaStandard
-        ).select_from(HargaStandard
-                      ).outerjoin(Planing, Planing.id == HargaStandard.planing_id
-                      ).where(Planing.desa_id == desa_id).order_by(HargaStandard.harga.asc())
+                    ).outerjoin(Planing, Planing.id == HargaStandard.planing_id
+                    ).where(Planing.desa_id == desa_id).order_by(HargaStandard.harga.asc())
         
         response = await db_session.execute(query)
 
-        return response.scalar_one_or_none()
+        return response.scalars().all()
 
 harga_standard = CRUDHargaStandard(HargaStandard)
