@@ -106,8 +106,6 @@ async def get_list(
     
     query = query.where(KjbDt.request_peta_lokasi == None)
     
-    
-
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
