@@ -719,6 +719,7 @@ async def printout(id:UUID | str,
 
     render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
                                       jenisbayar=f'{spk_header.jenis_bayar.value if spk_header.jenis_bayar != JenisBayarEnum.SISA_PELUNASAN else "KURANG BAYAR"}{percentage_value}'.replace("_", " "),
+                                      jenis_bayar=spk_header.jenis_bayar,
                                       group=spk_header.group, 
                                       pemilik_name=spk_header.pemilik_name,
                                       alashak=spk_header.alashak,
