@@ -666,6 +666,16 @@ async def printout(id:UUID | str,
     
     spk_details = []
     no = 1
+
+    obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
+
+    #alashak mesti nomor 1
+    alashak_kel = next((SpkDetailPrintOut(**dict(alashak)) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
+    if alashak_kel:
+        alashak_kel.no = 1
+        no = 2
+        spk_details.append(alashak_kel)
+    
     obj_beban_biayas = []
     if spk_header.jenis_bayar == JenisBayarEnum.PAJAK:
         obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
@@ -681,15 +691,17 @@ async def printout(id:UUID | str,
         beban_biaya.no = no
         spk_details.append(beban_biaya)
         no = no + 1
-
-    obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
+    
     for k in obj_kelengkapans:
         kelengkapan = SpkDetailPrintOut(**dict(k))
+        if kelengkapan.name == 'ALAS HAK':
+            continue
+
         kelengkapan.no = no
         kelengkapan.tanggapan = kelengkapan.tanggapan or ''
         spk_details.append(kelengkapan)
         no = no + 1
-    
+
     overlap_details = []
     if obj.jenis_bidang == JenisBidangEnum.Overlap:
         filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
