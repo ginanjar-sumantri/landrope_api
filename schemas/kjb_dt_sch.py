@@ -34,6 +34,7 @@ class KjbDtSch(KjbDtFullBase):
     pemilik_name:str | None = Field(alias="pemilik_name")
     nomor_telepon:List[str] | None = Field(alias="nomor_telepon")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    kjb_hd_group:str|None
 
 class KjbDtListRequestPetlokSch(KjbDtSch):
     has_input_petlok:bool | None = Field(alias="has_input_petlok")

@@ -257,6 +257,10 @@ class KjbDt(KjbDtFullBase, table=True):
                 return alashak.file_path
         
         return None
+    
+    @property
+    def kjb_hd_group(self) -> str | None:
+        return getattr(getattr(self, "kjb_hd", None), "nama_group", None)
 
 ##########################################################################
 
