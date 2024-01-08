@@ -53,14 +53,16 @@ async def create(
 @router.get("", response_model=GetResponsePaginatedSch[GiroSch])
 async def get_list(
                 params: Params=Depends(), 
-                order_by:str = None, 
-                keyword:str = None, 
-                filter_query:str=None,
+                order_by:str|None = None, 
+                keyword:str|None = None,
+                filter_query:str|None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
     query = select(Giro).options(selectinload(Giro.payment))
+
+    
 
     if keyword:
         query = query.filter(or_(

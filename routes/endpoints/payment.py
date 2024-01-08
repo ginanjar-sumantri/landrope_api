@@ -399,6 +399,7 @@ async def get_list(
                 keyword:str = None,
                 payment_id:UUID = None, 
                 filter_query:str=None,
+                payment_method:PaymentMethodEnum|None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -421,6 +422,9 @@ async def get_list(
         query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True))
     else:
         query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True, Payment.id == payment_id))
+
+    if payment_method:
+        query = query.filter(Giro.payment_method == payment_method)
     
     if keyword:
         query = query.filter(
