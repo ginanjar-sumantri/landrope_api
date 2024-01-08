@@ -170,7 +170,7 @@ async def create(
 
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if len(sch.hasilpetalokasidetails) > 0:
+    if len([dt for dt in sch.hasilpetalokasidetails if dt.bidang_id is not None]) > 0:
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
