@@ -52,8 +52,8 @@ async def create(
         beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
         await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
     
-    if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
-        await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
+    # if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+    #     await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
