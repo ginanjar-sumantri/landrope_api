@@ -72,11 +72,7 @@ async def create(
         
     new_obj = await crud.planing.create(obj_in=sch, created_by_id=current_worker.id)
 
-    query = select(Planing).where(Planing.id == new_obj.id
-                                ).options(selectinload(Planing.project)
-                                ).options(selectinload(Planing.desa))
-
-    new_obj = await crud.planing.get(query=query)
+    new_obj = await crud.planing.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
 
@@ -134,13 +130,8 @@ async def update(
         sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
     
     obj_updated = await crud.planing.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
-
-    query = select(Planing).where(Planing.id == obj_updated.id
-                                ).options(selectinload(Planing.project
-                                ).options(selectinload(Project.section))
-                                ).options(selectinload(Planing.desa))
     
-    obj_updated = await crud.planing.get(query=query)
+    obj_updated = await crud.planing.get_by_id(id=id)
 
     return create_response(data=obj_updated)
 
