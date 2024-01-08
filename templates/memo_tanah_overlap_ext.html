@@ -173,7 +173,119 @@
         {% for item in data %} {% set overlap_count = item.overlaps|length %} {%
         for overlap in item.overlaps %} {% if overlap_count > 0 %}
         <tr>
+          {% if item.is_bold %} {% if loop.index == 1 %}
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.no }}
+          </td>
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.id_bidang }}
+          </td>
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.group }}
+          </td>
+          <!-- <td align="center" rowspan="{{ overlap_count }}">
+            {{ item.lokasi }}
+          </td> -->
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.pemilik_name }}
+          </td>
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.alashak }}
+          </td>
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.luas_suratExt }}
+          </td>
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.luas_ukurExt }}
+          </td>
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.luas_nettExt }}
+          </td>
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.luas_bayarExt }}
+          </td>
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.no_peta }}
+          </td>
+          {% endif %}
+          <!-- Sel-sel dalam kolom lainnya (tidak perlu rowspan) -->
+          <td align="center" style="font-weight: bold">{{ overlap.ket }}</td>
+          <td align="center" style="font-weight: bold">{{ overlap.nama }}</td>
+          <td align="center" style="font-weight: bold">
+            {{ overlap.alashak }}
+          </td>
+          <td align="center" style="font-weight: bold">{{ overlap.tahap }}</td>
+          <td align="center" style="font-weight: bold">
+            {{ overlap.luasExt }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ overlap.luas_overlapExt }}
+          </td>
+          <td align="right" style="font-weight: bold">{{ overlap.kat }}</td>
+          <td align="right" style="font-weight: bold">{{ overlap.nib }}</td>
+          <td align="right" style="font-weight: bold">
+            {{ overlap.id_bidang }}
+          </td>
+          <td align="center" style="font-weight: bold">
+            {{ overlap.status_overlap }}
+          </td>
           {% if loop.index == 1 %}
+          <!-- ... kolom lainnya dalam kolom pertama ... -->
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.harga_transaksiExt }}
+          </td>
+          <td
+            align="right"
+            style="font-weight: bold"
+            rowspan="{{ overlap_count }}"
+          >
+            {{ item.total_hargaExt }}
+          </td>
+          {% endif %} {% else %} {% if loop.index == 1 %}
           <td align="center" rowspan="{{ overlap_count }}">{{ item.no }}</td>
           <td align="center" rowspan="{{ overlap_count }}">
             {{ item.id_bidang }}
@@ -223,10 +335,59 @@
           <td align="right" rowspan="{{ overlap_count }}">
             {{ item.total_hargaExt }}
           </td>
-          {% endif %}
+          {% endif %} {% endif %}
         </tr>
         {% endif %} {% endfor %} {% if overlap_count == 0 %}
         <tr>
+          {% if item.is_bold %}
+          <td align="center" style="font-weight: bold">
+            {{ loop.index or '' }}
+          </td>
+          <td align="center" style="font-weight: bold">
+            {{ item.id_bidang or '' }}
+          </td>
+          <td align="center" style="font-weight: bold">
+            {{ item.group or '' }}
+          </td>
+          <!-- <td align="center">{{ item.lokasi or '' }}</td> -->
+          <td align="center" style="font-weight: bold">
+            {{ item.pemilik_name or '' }}
+          </td>
+          <td align="center" style="font-weight: bold">
+            {{ item.alashak or '' }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.luas_suratExt or '' }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.luas_ukurExt or '' }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.luas_nettExt or '' }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.luas_bayarExt or '' }}
+          </td>
+          <td align="center" style="font-weight: bold">
+            {{ item.no_peta or '' }}
+          </td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="right" style="font-weight: bold">-</td>
+          <td align="right" style="font-weight: bold">-</td>
+          <td align="right" style="font-weight: bold">-</td>
+          <td align="right" style="font-weight: bold">-</td>
+          <td align="center" style="font-weight: bold">-</td>
+          <td align="right" style="font-weight: bold">
+            {{ item.harga_transaksiExt or '' }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.total_hargaExt or '' }}
+          </td>
+          {% else %}
           <td align="center">{{ loop.index or '' }}</td>
           <td align="center">{{ item.id_bidang or '' }}</td>
           <td align="center">{{ item.group or '' }}</td>
@@ -238,18 +399,19 @@
           <td align="right">{{ item.luas_nettExt or '' }}</td>
           <td align="right">{{ item.luas_bayarExt or '' }}</td>
           <td align="center">{{ item.no_peta or '' }}</td>
-          <td align="center"></td>
-          <td align="center"></td>
-          <td align="center"></td>
-          <td align="center"></td>
-          <td align="center"></td>
-          <td align="right"></td>
-          <td align="right"></td>
-          <td align="right"></td>
-          <td align="right"></td>
-          <td align="center"></td>
+          <td align="center">-</td>
+          <td align="center">-</td>
+          <td align="center">-</td>
+          <td align="center">-</td>
+          <td align="center">-</td>
+          <td align="right">-</td>
+          <td align="right">-</td>
+          <td align="right">-</td>
+          <td align="right">-</td>
+          <td align="center">-</td>
           <td align="right">{{ item.harga_transaksiExt or '' }}</td>
           <td align="right">{{ item.total_hargaExt or '' }}</td>
+          {% endif %}
         </tr>
         {% endif %} {% endfor %}
         <tr>
@@ -294,7 +456,11 @@
           <td>&nbsp;</td>
           <td style="font-weight: bold">{{tanggal_transaksi}}</td>
           <td style="font-weight: bold">{{jenis_bayar}}</td>
-          <td align="center" rowspan="{{ komponen_biaya_count + 1 }}">
+          <td
+            align="center"
+            style="font-weight: bold"
+            rowspan="{{ komponen_biaya_count + 1 }}"
+          >
             {{nomor_urut_bidang}}
           </td>
           <td colspan="17">&nbsp;</td>
