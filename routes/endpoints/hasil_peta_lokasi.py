@@ -273,7 +273,7 @@ async def update(
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
-    if len(sch.hasilpetalokasidetails) > 0:
+    if len([dt for dt in sch.hasilpetalokasidetails if dt.bidang_id is not None]) > 0:
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
 
     #update hasil peta lokasi
