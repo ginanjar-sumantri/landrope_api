@@ -415,7 +415,7 @@ class KomponenBiayaHelper:
         response = await db_session.execute(query)
         result = response.fetchone()
  
-        return result.estimated_amount
+        return round(result.estimated_amount)
     
     async def calculated_all_komponen_biaya(self, bidang_ids:list[UUID]):
         """Calculated all komponen bidang when created or updated spk"""
