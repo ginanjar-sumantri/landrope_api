@@ -63,7 +63,8 @@ async def create(
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
     code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
-    sch.code = f"SPK-{sch.jenis_bayar.value.replace('_', ' ')}/{code}/{bidang.id_bidang}"
+    jns_byr = "KURANG BAYAR" if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN else sch.jenis_bayar.value.replace('_', ' ')
+    sch.code = f"SPK-{jns_byr}/{code}/{bidang.id_bidang}"
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
