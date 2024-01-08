@@ -603,8 +603,7 @@ async def printout(id:UUID | str,
     day_of_week = date_obj.strftime("%A")
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
 
-    remarks = termin_header.remark.split("\\n")
-
+    remarks = termin_header.remark.splitlines()
     #perhitungan utj (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
     amount_utj_used = []
     termin_invoices:list[InvoiceForPrintOutExt] = []
