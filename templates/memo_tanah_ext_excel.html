@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="pdfkit-page-size" content="Legal" />
     <meta name="pdfkit-orientation" content="Landscape" />
-    <title>Memo Tanah Overlap</title>
+    <title>SPK</title>
     <style>
       @page {
         size: A4 landscape;
@@ -68,7 +68,7 @@
       }
 
       .blanko td {
-        font-size: 12px;
+        font-size: 11px;
       }
 
       .spasi-banyak {
@@ -131,21 +131,6 @@
         style="border-collapse: collapse; border: 1px solid; width: 100%"
       >
         <tr>
-          <th
-            style="background-color: white; border-left: none; border-top: none"
-            colspan="10"
-          ></th>
-          <th colspan="10">OVERLAP DAMAI</th>
-          <th
-            style="
-              background-color: white;
-              border-right: none;
-              border-top: none;
-            "
-            colspan="2"
-          ></th>
-        </tr>
-        <tr>
           <th>NO</th>
           <th>ID BID</th>
           <th>ALIAS</th>
@@ -154,277 +139,86 @@
           <th>SURAT ASAL</th>
           <th>L SURAT</th>
           <th>L UKUR</th>
+          <th>L GU</th>
           <th>L NETT</th>
+          <th>L PBT</th>
           <th>L BAYAR</th>
           <th>NO PETA</th>
-          <th>KET</th>
-          <th>NAMA</th>
-          <th>ALASHAK</th>
-          <th>THP</th>
-          <th>LUAS</th>
-          <th>L.O</th>
-          <th>KAT</th>
-          <th>NO NIB</th>
-          <th>ID BID</th>
-          <th>STATUS</th>
           <th>HARGA</th>
           <th>JUMLAH</th>
         </tr>
-        {% for item in data %} {% set overlap_count = item.overlaps|length %} {%
-        for overlap in item.overlaps %} {% if overlap_count > 0 %}
-        <tr>
-          {% if item.is_bold %} {% if loop.index == 1 %}
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.no }}
-          </td>
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.id_bidang }}
-          </td>
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.group }}
-          </td>
-          <!-- <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.lokasi }}
-          </td> -->
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.pemilik_name }}
-          </td>
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.alashak }}
-          </td>
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.luas_suratExt }}
-          </td>
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.luas_ukurExt }}
-          </td>
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.luas_nettExt }}
-          </td>
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.luas_bayarExt }}
-          </td>
-          <td
-            align="center"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.no_peta }}
-          </td>
-          {% endif %}
-          <!-- Sel-sel dalam kolom lainnya (tidak perlu rowspan) -->
-          <td align="center" style="font-weight: bold">{{ overlap.ket }}</td>
-          <td align="center" style="font-weight: bold">{{ overlap.nama }}</td>
-          <td align="center" style="font-weight: bold">
-            {{ overlap.alashak }}
-          </td>
-          <td align="center" style="font-weight: bold">{{ overlap.tahap }}</td>
-          <td align="center" style="font-weight: bold">
-            {{ overlap.luasExt }}
-          </td>
-          <td align="right" style="font-weight: bold">
-            {{ overlap.luas_overlapExt }}
-          </td>
-          <td align="right" style="font-weight: bold">{{ overlap.kat }}</td>
-          <td align="right" style="font-weight: bold">{{ overlap.nib }}</td>
-          <td align="right" style="font-weight: bold">
-            {{ overlap.id_bidang }}
-          </td>
-          <td align="center" style="font-weight: bold">
-            {{ overlap.status_overlap }}
-          </td>
-          {% if loop.index == 1 %}
-          <!-- ... kolom lainnya dalam kolom pertama ... -->
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.harga_transaksiExt }}
-          </td>
-          <td
-            align="right"
-            style="font-weight: bold"
-            rowspan="{{ overlap_count }}"
-          >
-            {{ item.total_hargaExt }}
-          </td>
-          {% endif %} {% else %} {% if loop.index == 1 %}
-          <td align="center" rowspan="{{ overlap_count }}">{{ item.no }}</td>
-          <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.id_bidang }}
-          </td>
-          <td align="center" rowspan="{{ overlap_count }}">{{ item.group }}</td>
-          <!-- <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.lokasi }}
-          </td> -->
-          <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.pemilik_name }}
-          </td>
-          <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.alashak }}
-          </td>
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.luas_suratExt }}
-          </td>
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.luas_ukurExt }}
-          </td>
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.luas_nettExt }}
-          </td>
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.luas_bayarExt }}
-          </td>
-          <td align="center" rowspan="{{ overlap_count }}">
-            {{ item.no_peta }}
-          </td>
-          {% endif %}
-          <!-- Sel-sel dalam kolom lainnya (tidak perlu rowspan) -->
-          <td align="center">{{ overlap.ket }}</td>
-          <td align="center">{{ overlap.nama }}</td>
-          <td align="center">{{ overlap.alashak }}</td>
-          <td align="center">{{ overlap.tahap }}</td>
-          <td align="center">{{ overlap.luasExt }}</td>
-          <td align="right">{{ overlap.luas_overlapExt }}</td>
-          <td align="right">{{ overlap.kat }}</td>
-          <td align="right">{{ overlap.nib }}</td>
-          <td align="right">{{ overlap.id_bidang }}</td>
-          <td align="center">{{ overlap.status_overlap }}</td>
-          {% if loop.index == 1 %}
-          <!-- ... kolom lainnya dalam kolom pertama ... -->
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.harga_transaksiExt }}
-          </td>
-          <td align="right" rowspan="{{ overlap_count }}">
-            {{ item.total_hargaExt }}
-          </td>
-          {% endif %} {% endif %}
-        </tr>
-        {% endif %} {% endfor %} {% if overlap_count == 0 %}
+        {% for item in data %}
         <tr>
           {% if item.is_bold %}
+          <td align="center" style="font-weight: bold">{{ item.no }}.</td>
+          <td align="center" style="font-weight: bold">{{ item.id_bidang }}</td>
+          <td align="center" style="font-weight: bold">{{ item.group }}</td>
+          <!-- <td align="center">{{ item.lokasi }}</td> -->
           <td align="center" style="font-weight: bold">
-            {{ loop.index or '' }}
+            {{ item.pemilik_name }}
           </td>
-          <td align="center" style="font-weight: bold">
-            {{ item.id_bidang or '' }}
-          </td>
-          <td align="center" style="font-weight: bold">
-            {{ item.group or '' }}
-          </td>
-          <!-- <td align="center">{{ item.lokasi or '' }}</td> -->
-          <td align="center" style="font-weight: bold">
-            {{ item.pemilik_name or '' }}
-          </td>
-          <td align="center" style="font-weight: bold">
-            {{ item.alashak or '' }}
+          <td align="center" style="font-weight: bold">{{ item.alashak }}</td>
+          <td align="right" style="font-weight: bold">
+            {{ item.luas_suratExt }}
           </td>
           <td align="right" style="font-weight: bold">
-            {{ item.luas_suratExt or '' }}
+            {{ item.luas_ukurExt }}
           </td>
           <td align="right" style="font-weight: bold">
-            {{ item.luas_ukurExt or '' }}
+            {{ item.luas_gu_peroranganExt }}
           </td>
           <td align="right" style="font-weight: bold">
-            {{ item.luas_nettExt or '' }}
+            {{ item.luas_nettExt }}
           </td>
           <td align="right" style="font-weight: bold">
-            {{ item.luas_bayarExt or '' }}
-          </td>
-          <td align="center" style="font-weight: bold">
-            {{ item.no_peta or '' }}
-          </td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="right" style="font-weight: bold">-</td>
-          <td align="right" style="font-weight: bold">-</td>
-          <td align="right" style="font-weight: bold">-</td>
-          <td align="right" style="font-weight: bold">-</td>
-          <td align="center" style="font-weight: bold">-</td>
-          <td align="right" style="font-weight: bold">
-            {{ item.harga_transaksiExt or '' }}
+            {{ item.luas_pbt_peroranganExt }}
           </td>
           <td align="right" style="font-weight: bold">
-            {{ item.total_hargaExt or '' }}
+            {{ item.luas_bayarExt }}
+          </td>
+          <td align="center" style="font-weight: bold">{{ item.no_peta }}</td>
+          <td align="right" style="font-weight: bold">
+            {{ item.harga_transaksiExt }}
+          </td>
+          <td align="right" style="font-weight: bold">
+            {{ item.total_hargaExt }}
           </td>
           {% else %}
-          <td align="center">{{ loop.index or '' }}</td>
-          <td align="center">{{ item.id_bidang or '' }}</td>
-          <td align="center">{{ item.group or '' }}</td>
-          <!-- <td align="center">{{ item.lokasi or '' }}</td> -->
-          <td align="center">{{ item.pemilik_name or '' }}</td>
-          <td align="center">{{ item.alashak or '' }}</td>
-          <td align="right">{{ item.luas_suratExt or '' }}</td>
-          <td align="right">{{ item.luas_ukurExt or '' }}</td>
-          <td align="right">{{ item.luas_nettExt or '' }}</td>
-          <td align="right">{{ item.luas_bayarExt or '' }}</td>
-          <td align="center">{{ item.no_peta or '' }}</td>
-          <td align="center">-</td>
-          <td align="center">-</td>
-          <td align="center">-</td>
-          <td align="center">-</td>
-          <td align="center">-</td>
-          <td align="right">-</td>
-          <td align="right">-</td>
-          <td align="right">-</td>
-          <td align="right">-</td>
-          <td align="center">-</td>
-          <td align="right">{{ item.harga_transaksiExt or '' }}</td>
-          <td align="right">{{ item.total_hargaExt or '' }}</td>
+
+          <td align="center">{{ loop.index }}.</td>
+          <td align="center">{{ item.id_bidang }}</td>
+          <td align="center">{{ item.group }}</td>
+          <!-- <td align="center">{{ item.lokasi }}</td> -->
+          <td align="center">{{ item.pemilik_name }}</td>
+          <td align="center">{{ item.alashak }}</td>
+          <td align="right">{{ item.luas_suratExt }}</td>
+          <td align="right">{{ item.luas_ukurExt }}</td>
+          <td align="right">{{ item.luas_gu_peroranganExt }}</td>
+          <td align="right">{{ item.luas_nettExt }}</td>
+          <td align="right">{{ item.luas_pbt_peroranganExt }}</td>
+          <td align="right">{{ item.luas_bayarExt }}</td>
+          <td align="center">{{ item.no_peta }}</td>
+          <td align="right">{{ item.harga_transaksiExt }}</td>
+          <td align="right">{{ item.total_hargaExt }}</td>
           {% endif %}
+          <!-- Tambahkan kolom sesuai dengan properti objek -->
         </tr>
-        {% endif %} {% endfor %}
+
+        {% endfor %}
         <tr>
           <td colspan="5"></td>
           <td align="center">{{total_luas_surat}}</td>
           <td align="center">{{total_luas_ukur}}</td>
+          <td align="center">{{total_luas_gu_perorangan}}</td>
           <td align="center">{{total_luas_nett}}</td>
+          <td align="center">{{total_luas_pbt_perorangan}}</td>
           <td align="center">{{total_luas_bayar}}</td>
-          <td colspan="12">&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
           <td align="center">{{total_harga}}</td>
         </tr>
         <tr>
-          <td colspan="22">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         {% if data_invoice_history|length > 0 %} {% for item2 in
         data_invoice_history %} {% set beban_biaya_count =
@@ -436,7 +230,7 @@
           <td align="center" rowspan="{{ beban_biaya_count + 1 }}">
             {{item2.index_bidang}}
           </td>
-          <td colspan="17">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right">{{item2.str_amount}}</td>
         </tr>
         {% for beban_biaya in item2.beban_biayas %}
@@ -444,12 +238,13 @@
           <td>&nbsp;</td>
           <td>&nbsp;</td>
           <td>{{ beban_biaya.beban_biaya_name }}</td>
-          <td colspan="17">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right">{{beban_biaya.amountExt}}</td>
         </tr>
         {% endfor %} {% endfor %} {% endif %}
+
         <tr>
-          <td colspan="22">&nbsp;</td>
+          <td colspan="14">&nbsp;</td>
         </tr>
         {% set komponen_biaya_count = data_beban_biaya|length %}
         <tr>
@@ -463,7 +258,7 @@
           >
             {{nomor_urut_bidang}}
           </td>
-          <td colspan="17">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right" style="font-weight: bold">{{amount}}</td>
         </tr>
         {% for komponen_biaya in data_beban_biaya %}
@@ -471,7 +266,7 @@
           <td>&nbsp;</td>
           <td>&nbsp;</td>
           <td>{{ komponen_biaya.beban_biaya_name }}</td>
-          <td colspan="17">&nbsp;</td>
+          <td colspan="9">&nbsp;</td>
           <td align="right">{{komponen_biaya.amountExt}}</td>
         </tr>
         {% endfor %}
@@ -553,7 +348,7 @@
                 <td>MED : {{mediator}}</td>
               </tr>
             </table>
-            <table
+            <!-- <table
               width="50%"
               align="right"
               style="border-collapse: collapse; border: 1px solid black"
@@ -652,7 +447,7 @@
                   ________
                 </td>
               </tr>
-            </table>
+            </table> -->
           </td>
         </tr>
       </table>

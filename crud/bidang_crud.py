@@ -11,8 +11,8 @@ from typing import List, Any, Dict
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice, InvoiceDetail,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya)
-from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload,
-                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang)
+from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload, BidangAllPembayaran,
+                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, BidangRptExcel)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum
 from services.history_service import HistoryService
@@ -612,5 +612,66 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         response = await db_session.execute(query)
         return response.scalars().all()
+
+    async def get_multi_by_tahap_id_excel(self, tahap_id:UUID|str|None = None) -> list[BidangRptExcel] : 
+
+        db_session = db.session
+
+        query = text("""
+                    select
+                    b.id,
+                    b.id_bidang,
+                    b.group,
+                    b.luas_surat,
+                    p.name as pemilik_name,
+                    b_bo.id_bidang as id_bidang_ov,
+                    bo.luas as luas_ov
+                    from bidang b
+                    left outer join bidang_overlap bo on b.id = bo.parent_bidang_id
+                    left outer join bidang b_bo on bo.parent_bidang_intersect_id = b_bo.id
+                    left outer join pemilik p on p.id = b.pemilik_id
+                    inner join tahap_detail t_dt on b.id = t_dt.bidang_id
+                    inner join tahap t on t.id = t_dt.tahap_id
+                    where tahap_id = '4f4b0f27-d0c3-4fa7-bb61-0680311239a9';
+                """)
+        
+        response = await db_session.execute(query)
+
+        result = [BidangRptExcel(**dict(bd)) for bd in response.fetchall()]
+        return result
+
+    async def get_all_pembayaran_by_bidang_id(self, bidang_id:UUID|None = None) ->list[BidangAllPembayaran]:
+        db_session = db.session
+        
+        query = text(f"""
+                select 
+                tr.id as id_pembayaran,
+                tr.jenis_bayar as name,
+                i.amount as amount,
+                tr.created_at
+                from invoice i
+                inner join termin tr on i.termin_id = tr.id
+                where i.bidang_id = '{str(bidang_id)}' 
+                and i.is_void != true
+                union
+                select
+                bb.id as id_pembayaran,
+                case
+                    when bkb.beban_pembeli = True then bb.name || ' (Beban Pembeli)'
+                    else bb.name || ' (Beban Penjual)'
+                end as name,
+                coalesce(sum(idt.amount), 0) as amount,
+                max(idt.created_at) as created_at
+                from bidang_komponen_biaya bkb
+                inner join invoice_detail idt on idt.bidang_komponen_biaya_id = bkb.id
+                inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                where bkb.bidang_id = '{str(bidang_id)}'
+                and bkb.is_void != True
+                group by bb.id, bkb.id
+                order by created_at asc
+                """)
+        response = await db_session.execute(query)
+        result = [BidangAllPembayaran(**dict(bd)) for bd in response.fetchall()]
+        return result
 
 bidang = CRUDBidang(Bidang)

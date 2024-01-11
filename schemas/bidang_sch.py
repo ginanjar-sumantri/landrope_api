@@ -276,6 +276,13 @@ class BidangExcelSch(SQLModel):
     harga_transaksi:str | None
     total_harga:str | None
 
+class BidangRptExcel(SQLModel):
+    id_bidang:str|None
+    luas_surat:Decimal|None
+    pemilik_name:str|None
+    id_bidang_ov:str|None
+    luas_ov:Decimal|None
+
 class BidangFilterJson(SQLModel):
     id_bidang:str|None
     id_bidang_lama:str|None
@@ -307,3 +314,9 @@ class BidangParameterDownload(SQLModel):
     projects:list[UUID]|None
     desas:list[UUID]|None
     jenis_bidangs:list[str]|None
+
+#semua jenis pembayaran dan komponen biaya untuk tarikan excel
+class BidangAllPembayaran(SQLModel):
+    id_pembayaran:UUID|None
+    name:str|None
+    amount:Decimal|None

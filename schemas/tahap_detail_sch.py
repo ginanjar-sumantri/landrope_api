@@ -1,5 +1,6 @@
 from models.tahap_model import TahapDetailBase, TahapDetailFullBase
 from schemas.bidang_overlap_sch import BidangOverlapUpdateExtSch, BidangOverlapForTahap, BidangOverlapRawSch, BidangOverlapForPrintout
+from schemas.bidang_sch import BidangAllPembayaran
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from common.partial import optional
@@ -129,3 +130,7 @@ class TahapDetailForPrintOut(SQLModel):
     is_bold:Optional[bool]
 
     overlaps:Optional[list[BidangOverlapForPrintout]]
+
+
+class TahapDetailForExcel(TahapDetailForPrintOut):
+    pembayarans:list[BidangAllPembayaran]|None
