@@ -794,7 +794,7 @@ async def printout(id:UUID | str,
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-@router.get("/print-out-excel/{id}")
+@router.get("/print-out/excel/{id}")
 async def printout(id:UUID | str,
                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
@@ -1030,14 +1030,14 @@ async def termin_excel(id:UUID):
     for bd in obj_bidangs:
         bidang = TahapDetailForExcel(**dict(bd),
                                     no=no,
-                                    total_hargaExt="{:,.0f}".format(bd.total_harga),
-                                    harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
-                                    luas_suratExt = "{:,.0f}".format(bd.luas_surat),
-                                    luas_nettExt = "{:,.0f}".format(bd.luas_nett),
-                                    luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
-                                    luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
-                                    luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-                                    luas_bayarExt = "{:,.0f}".format(bd.luas_bayar),
+                                    total_hargaExt="{:,.0f}".format(bd.total_harga or 0),
+                                    harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi or 0),
+                                    luas_suratExt = "{:,.0f}".format(bd.luas_surat or 0),
+                                    luas_nettExt = "{:,.0f}".format(bd.luas_nett or 0),
+                                    luas_ukurExt = "{:,.0f}".format(bd.luas_ukur or 0),
+                                    luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan or 0),
+                                    luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan or 0),
+                                    luas_bayarExt = "{:,.0f}".format(bd.luas_bayar or 0),
                                     is_bold=False)
         
 
