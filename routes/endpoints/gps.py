@@ -88,7 +88,8 @@ async def update(id:UUID,
     
     draft = await crud.draft.get(id=sch.draft_id)
     if draft:
-        obj_updated.geom = wkt.dumps(wkb.loads(draft.geom.data, hex=True))
+        if draft.geom:
+            obj_updated.geom = wkt.dumps(wkb.loads(draft.geom.data, hex=True)) 
 
         
     obj_updated = await crud.gps.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
