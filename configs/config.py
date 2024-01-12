@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     WF_CLIENT_ID:str
     ADOBE_TOKEN:str
     ADOBE_CLIENT_ID:str
+    ADOBE_CLIENT_SECRET:str
 
     class Config:
         env_file = ".env"

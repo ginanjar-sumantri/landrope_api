@@ -7,20 +7,16 @@ from io import BytesIO
 
 class PDFToExcelService:
 
-    headers = {
-                'Authorization': 'Bearer ' + str(settings.ADOBE_TOKEN),
-                'Content-Type': 'Application/Json',
-                'x-api-key' : str(settings.ADOBE_CLIENT_ID)
-            }
     
     async def export_pdf_to_excel(self, data) -> BytesIO | None:
 
         excel_content = None
-        asset = await self.create_asset()
+        token = await self.get_token()
+        asset = await self.create_asset(token=token)
         ok = await self.upload_file_to_asset(data=data, asset=asset)
         if ok:
-            location = await self.export_to_excel(asset=asset)
-            result = await self.get_file_from_location(location=location)
+            location = await self.export_to_excel(asset=asset, token=token)
+            result = await self.get_file_from_location(location=location, token=token)
             try:
                 # Mengunduh file dari URL
                 response = requests.get(url=result.downloadUri)
@@ -34,17 +30,43 @@ class PDFToExcelService:
 
         return excel_content
     
+    async def get_token(self) -> str:
+
+        url = "https://pdf-services.adobe.io/token"
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        body = {
+            "client_id" : str(settings.ADOBE_CLIENT_ID),
+            "client_secret" : str(settings.ADOBE_CLIENT_SECRET)
+        }
+
+        response = requests.post(url=url, headers=headers, data=body)
+        if 200 <= response.status_code <=299:
+            r = response.json()
+            token = r["access_token"]
+            return token
+        else:
+            raise HTTPException(status_code=422, detail="Failed Export Excel. Detail : Can't create token")
+    
     # Membuat asset (file pdf) pada internal storage adobe
-    async def create_asset(self) -> ResponseAssetSch:
+    async def create_asset(self, token:str) -> ResponseAssetSch:
 
         response_asset:ResponseAssetSch = None
 
         url = "https://pdf-services.adobe.io/assets"
+        headers = {
+                'Authorization': 'Bearer ' + str(token),
+                'Content-Type': 'Application/Json',
+                'x-api-key' : str(settings.ADOBE_CLIENT_ID)
+            }
         body = {
                     "mediaType": "application/pdf"
             }
 
-        response = requests.post(url=url, json=body, headers=self.headers)
+        response = requests.post(url=url, json=body, headers=headers)
         if 200 <= response.status_code <=299:
             r = response.json()
             response_asset = ResponseAssetSch(**r)
@@ -65,15 +87,20 @@ class PDFToExcelService:
         else:
             raise HTTPException(status_code=422, detail="Failed Export Excel. Detail : Failed upload to asset")
     
-    async def export_to_excel(self, asset:ResponseAssetSch) -> str:
+    async def export_to_excel(self, asset:ResponseAssetSch, token:str) -> str:
 
         url = "https://pdf-services-ue1.adobe.io/operation/exportpdf"
+        headers = {
+                'Authorization': 'Bearer ' + str(token),
+                'Content-Type': 'Application/Json',
+                'x-api-key' : str(settings.ADOBE_CLIENT_ID)
+            }
         body = {
                 "assetID": str(asset.assetID),
                 "targetFormat": "xlsx",
                 "ocrLang" : "ru-RU"
             }
-        response = requests.post(url=url, json=body, headers=self.headers)
+        response = requests.post(url=url, json=body, headers=headers)
 
         if 200 <= response.status_code <=299:
             location = response.headers.get('location', None)
@@ -84,11 +111,11 @@ class PDFToExcelService:
         else:
             raise HTTPException(status_code=422, detail="Failed Export Excel. Detail : Failed to Export")
     
-    async def get_file_from_location(self, location:str) -> ResponseExportExcel:
+    async def get_file_from_location(self, location:str, token) -> ResponseExportExcel:
 
         url = location
         headers = {
-                'Authorization': 'Bearer ' + str(settings.ADOBE_TOKEN),
+                'Authorization': 'Bearer ' + token,
                 'x-api-key' : str(settings.ADOBE_CLIENT_ID)
             }
         
