@@ -5,9 +5,11 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 import crud
 from models.gps_model import Gps, StatusGpsEnum
+from models import Desa, Planing
 from models.worker_model import Worker
 from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch, GpsValidator, GpsShpSch, GpsParamSch)
 from schemas.bidang_sch import BidangGpsValidator
+from schemas.desa_sch import DesaSearchSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ImportFailedException)
@@ -159,6 +161,23 @@ async def export_bulk_shp(param:GpsParamSch):
         raise HTTPException(status_code=422, detail="Failed Export SHP. Detail : Tidak ada data gps pada desa-desa yang di pilih")
 
     return GeomService.export_shp_zip(data=data, obj_name=f"gps-{date.today()}")
+
+@router.get("/desa/on-gps", response_model=GetResponseBaseSch[list[DesaSearchSch]])
+async def desa_list_on_gps(keyword:str|None=None):
+
+    query = select(Desa)
+    query = query.join(Planing, Planing.desa_id == Desa.id)
+    query = query.join(Gps, Gps.planing_id == Planing.id)
+
+    if keyword:
+        query = query.filter(Desa.name.ilike(f"%{keyword}%"))
+
+    query = query.distinct()
+
+    objs = await crud.desa.get_multi_no_page(query=query)
+
+    return create_response(data=objs)
+
 
 
 

@@ -34,3 +34,7 @@ class DesaForTreeReportSch(SQLModel):
     name:str|None
     project_id:UUID|None
     project_name:str|None
+
+class DesaSearchSch(SQLModel):
+    id:UUID|None
+    name:str|None
