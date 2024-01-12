@@ -1,12 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException, Response
 from fastapi_pagination import Params
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 import crud
 from models.gps_model import Gps, StatusGpsEnum
 from models.worker_model import Worker
-from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch, GpsValidator)
+from schemas.gps_sch import (GpsSch, GpsRawSch, GpsCreateSch, GpsUpdateSch, GpsValidator, GpsShpSch, GpsParamSch)
 from schemas.bidang_sch import BidangGpsValidator
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
@@ -18,6 +18,7 @@ from geoalchemy2.shape import to_shape
 from common.rounder import RoundTwo
 from decimal import Decimal
 from shapely import wkt, wkb
+from datetime import date
 
 
 router = APIRouter()
@@ -114,3 +115,45 @@ async def get_by_alashak(alashak:str | None = None):
     obj = GpsValidator(bidang=bidang_objs, gps=gps_objs)
     
     return create_response(data=obj)
+
+@router.get("/export/shp", response_class=Response)
+async def export_shp(id:UUID):
+    
+    """Export SHP"""
+
+    data = []
+    obj_current = await crud.gps.get_by_id(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(Gps, id)
+
+    gps = GpsShpSch(**obj_current.dict(exclude={"geom"}),
+                    ptsk_name=obj_current.ptsk_name,
+                    nomor_sk=obj_current.nomor_sk,
+                    desa_name=obj_current.desa_name,
+                    project_name=obj_current.project_name,
+                    geom=wkt.dumps(wkb.loads(obj_current.geom.data, hex=True)))
+    
+    data.append(gps)
+
+    return GeomService.export_shp_zip(data=data, obj_name=f"gps-{date.today()}")
+
+@router.post("/export/bulk/shp", response_class=Response)
+async def export_bulk_shp(param:GpsParamSch):
+    
+    """Export SHP"""
+    data = []
+    objs = await crud.gps.get_multi_export_shp(param=param)
+
+    data = [GpsShpSch(**obj.dict(exclude={"geom"}),
+                    ptsk_name=obj.ptsk_name,
+                    nomor_sk=obj.nomor_sk,
+                    desa_name=obj.desa_name,
+                    project_name=obj.project_name,
+                    geom=wkt.dumps(wkb.loads(obj.geom.data, hex=True))) for obj in objs]
+
+    return GeomService.export_shp_zip(data=data, obj_name=f"gps-{date.today()}")
+
+
+
+

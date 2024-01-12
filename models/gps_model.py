@@ -78,3 +78,7 @@ class Gps(GpsFullBase, table=True):
     @property
     def desa_name(self)-> str:
         return getattr(getattr(getattr(self, 'planing', None), 'desa', None), 'name', None)
+    
+    @property
+    def project_name(self)-> str:
+        return getattr(getattr(getattr(self, 'planing', None), 'project', None), 'name', None)

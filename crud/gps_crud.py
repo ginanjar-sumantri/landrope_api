@@ -1,6 +1,6 @@
 from crud.base_crud import CRUDBase
-from models import Gps, Skpt, Planing
-from schemas.gps_sch import GpsCreateSch, GpsUpdateSch
+from models import Gps, Skpt, Planing, Desa
+from schemas.gps_sch import GpsCreateSch, GpsUpdateSch, GpsParamSch
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
@@ -28,7 +28,8 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
         query = query.options(selectinload(Gps.skpt
                                         ).options(selectinload(Skpt.ptsk))
                     ).options(selectinload(Gps.planing
-                                        ).options(selectinload(Planing.desa))
+                                        ).options(selectinload(Planing.desa)
+                                        ).options(selectinload(Planing.project))
                     )
         
         response = await db_session.execute(query)
@@ -123,6 +124,23 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
             
         return await paginate(db_session, query, params)
     
+    async def get_multi_export_shp(self, *, param:GpsParamSch) -> list[Gps]:
 
+        db_session = db.session
+
+        query = select(Gps)
+        query = query.join(Planing, Planing.id == Gps.planing_id)
+        query = query.filter(Planing.desa_id.in_(param.desa_ids))
+
+        query = query.options(selectinload(Gps.skpt
+                                        ).options(selectinload(Skpt.ptsk))
+                    ).options(selectinload(Gps.planing
+                                        ).options(selectinload(Planing.desa)
+                                        ).options(selectinload(Planing.project))
+                    )
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 gps = CRUDGps(Gps)
