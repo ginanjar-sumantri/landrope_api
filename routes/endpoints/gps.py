@@ -154,6 +154,9 @@ async def export_bulk_shp(param:GpsParamSch):
                     desa_name=obj.desa_name,
                     project_name=obj.project_name,
                     geom=wkt.dumps(wkb.loads(obj.geom.data, hex=True)) if obj.geom else None) for obj in objs]
+    
+    if len(data) == 0:
+        raise HTTPException(status_code=422, detail="Failed Export SHP. Detail : Tidak ada data gps pada desa-desa yang di pilih")
 
     return GeomService.export_shp_zip(data=data, obj_name=f"gps-{date.today()}")
 
