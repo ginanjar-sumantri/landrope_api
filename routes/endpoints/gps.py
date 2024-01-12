@@ -126,6 +126,9 @@ async def export_shp(id:UUID):
 
     if not obj_current:
         raise IdNotFoundException(Gps, id)
+    
+    if obj_current.geom is None:
+        raise HTTPException(status_code=422, detail="Failed Export SHP. Detail : Geometry on data is null")
 
     gps = GpsShpSch(**obj_current.dict(exclude={"geom"}),
                     ptsk_name=obj_current.ptsk_name,

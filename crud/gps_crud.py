@@ -131,6 +131,7 @@ class CRUDGps(CRUDBase[Gps, GpsCreateSch, GpsUpdateSch]):
         query = select(Gps)
         query = query.join(Planing, Planing.id == Gps.planing_id)
         query = query.filter(Planing.desa_id.in_(param.desa_ids))
+        query = query.filter(Gps.geom != None)
 
         query = query.options(selectinload(Gps.skpt
                                         ).options(selectinload(Skpt.ptsk))
