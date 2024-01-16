@@ -167,8 +167,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         for field in obj_data:
             if field in update_data:
-                if update_data[field] != getattr(obj_current, key):
-                    difference_one_approve = True
+                # if update_data[field] != getattr(obj_current, key):
+                #     difference_one_approve = True
 
                 setattr(obj_current, field, update_data[field])
             if field == "updated_at":
@@ -183,8 +183,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbRekening).where(and_(KjbRekening.id.notin_(r.id for r in obj_new.rekenings if r.id is not None), 
                                                         KjbRekening.kjb_hd_id == obj_current.id)))
         
-        if difference_one_approve is False:
-            difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, [tr for hr in obj_new.hargas for tr in hr.termins]), [termin for harga in obj_current.hargas for termin in harga.termins])))) > 0 else False
+        # if difference_one_approve is False:
+        #     difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, [tr for hr in obj_new.hargas for tr in hr.termins]), [termin for harga in obj_current.hargas for termin in harga.termins])))) > 0 else False
         
         await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
                                                     KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
@@ -195,8 +195,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbBebanBiaya).where(and_(KjbBebanBiaya.id.notin_(b.id for b in obj_new.bebanbiayas if b.id is not None),
                                                             KjbBebanBiaya.kjb_hd_id == obj_current.id)))
         
-        if difference_one_approve is False:
-            difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.penjuals), obj_current.penjuals)))) > 0 else False
+        # if difference_one_approve is False:
+        #     difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.penjuals), obj_current.penjuals)))) > 0 else False
        
         await db_session.execute(delete(KjbPenjual).where(and_(KjbPenjual.id.notin_(p.id for p in obj_new.penjuals if p.id is not None),
                                                             KjbPenjual.kjb_hd_id == obj_current.id)))
