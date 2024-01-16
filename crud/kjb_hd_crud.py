@@ -107,7 +107,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 termin = KjbTermin(**l.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
                 termins.append(termin)
             
-            harga = KjbHarga(**j.dict(exclude_unset={"termins"}), created_by_id=created_by_id, updated_by_id=created_by_id)
+            harga = KjbHarga(**j.dict(exclude={"termins"}), created_by_id=created_by_id, updated_by_id=created_by_id)
             
             if len(termins) > 0:
                 harga.termins = termins
