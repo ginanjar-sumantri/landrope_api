@@ -17,6 +17,7 @@ from shapely import wkt, wkb
 import crud
 import json
 import pytz
+import uuid
 
 class HelperService:
     def extract_metadata_for_history(self, meta_data:str | None = None,
@@ -124,10 +125,7 @@ class HelperService:
             raise ContentNoChangeException(detail=f"Riwayat {sch.key_value} tidak ditemukan")
         
         if file:
-            if codehd is None and codedt is None:
-                file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{dokumen.name}-{key_value}')
-            else:
-                file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{codehd}-{codedt}-{dokumen.name}-{key_value}')
+            file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'Bundle-{uuid.uuid4().hex}')
         else:
             file_path = sch.file_path
         

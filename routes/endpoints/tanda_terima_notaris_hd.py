@@ -16,6 +16,7 @@ from common.exceptions import (IdNotFoundException, ContentNoChangeException,
 from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
+import uuid
 import crud
 import json
 
@@ -43,7 +44,7 @@ async def create(
     db_session = db.session
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{sch.nomor_tanda_terima}-{sch.tanggal_tanda_terima}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'TTN-{uuid.uuid4().hex}')
         sch.file_path = file_path
     
     kjb_dt_update = KjbDtUpdateSch.from_orm(kjb_dt)
@@ -165,7 +166,7 @@ async def update(id:UUID,
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
     
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'{obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'TTN-{uuid.uuid4().hex}')
         sch.file_path = file_path
     else:
         sch.file_path = obj_current.file_path

@@ -17,6 +17,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException,
 from services.helper_service import HelperService
 from services.gcloud_storage_service import GCStorageService
 from datetime import datetime
+import uuid
 import crud
 import json
 
@@ -59,7 +60,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     if not bundledt_obj_current:
         raise ContentNoChangeException(detail=f"Bundle with dokumen {dokumen.name} not exists")
     
-    file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
+    file_name = f'Bundle-{uuid.uuid4().hex}'
 
     if dokumen.is_riwayat:
         metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
@@ -68,7 +69,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
         if key_value is None or key_value == "":
             raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
         
-        file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}-{key_value}'
+        file_name = f'Bundle-{uuid.uuid4().hex}'
 
 
     if file:
@@ -159,7 +160,7 @@ async def update(id:UUID,
     if not bundledt_obj_current:
         raise ContentNoChangeException(detail=f"Bundle with dokumen {dokumen.name} not exists")
     
-    file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
+    file_name = f'Bundle-{uuid.uuid4().hex}'
 
     if dokumen.is_riwayat:
         metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
@@ -168,7 +169,7 @@ async def update(id:UUID,
         if key_value is None or key_value == "":
             raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
         
-        file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}-{key_value}'
+        file_name = f'Bundle-{uuid.uuid4().hex}'
 
     if file:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)

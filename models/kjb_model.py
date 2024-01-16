@@ -30,19 +30,20 @@ class KjbHdBase(SQLModel):
     code:str | None = Field(nullable=True, max_length=500)
     category:CategoryEnum | None
     nama_group:str | None = Field(nullable=True, max_length=200)
-    kategori_penjual:KategoriPenjualEnum
-    desa_id:UUID = Field(foreign_key="desa.id", nullable=False)
-    luas_kjb:Decimal
+    kategori_penjual:KategoriPenjualEnum | None
+    desa_id:UUID | None = Field(foreign_key="desa.id", nullable=False)
+    luas_kjb:Decimal | None
     tanggal_kjb:date| None = Field(default=date.today())
     remark:str | None = Field(nullable=True)
-    manager_id:UUID = Field(foreign_key="manager.id")
-    sales_id:UUID = Field(foreign_key="sales.id")
+    manager_id:UUID | None = Field(foreign_key="manager.id")
+    sales_id:UUID | None = Field(foreign_key="sales.id")
     mediator:str | None
     telepon_mediator:str | None = Field(nullable=True)
-    ada_utj:bool
-    utj_amount:Decimal
-    satuan_bayar:SatuanBayarEnum
-    satuan_harga:SatuanHargaEnum
+    ada_utj:bool | None
+    utj_amount:Decimal | None
+    satuan_bayar:SatuanBayarEnum | None
+    satuan_harga:SatuanHargaEnum | None
+    file_path:str | None = Field(nullable=True)
     is_draft:Optional[bool] = Field(nullable=True)
 
 class KjbHdFullBase(BaseUUIDModel, KjbHdBase):

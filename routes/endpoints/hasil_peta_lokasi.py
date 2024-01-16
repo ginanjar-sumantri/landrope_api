@@ -83,7 +83,7 @@ async def upload_dokumen(
         raise IdNotFoundException(HasilPetaLokasi, id)
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'Hasil Peta Lokasi-{id}-{obj_current.id_bidang}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'Hasil_Peta_Lokasi-{id}')
         object_updated = HasilPetaLokasiUpdateSch(file_path=file_path)
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)

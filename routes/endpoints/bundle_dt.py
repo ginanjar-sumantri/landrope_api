@@ -19,6 +19,7 @@ from services.helper_service import HelperService
 from datetime import datetime
 from decimal import Decimal
 from shapely import wkt, wkb
+import uuid
 import crud
 import json
 
@@ -107,7 +108,7 @@ async def update(id:UUID,
 
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
 
-    file_name = f'{obj_current.bundlehd.code}-{obj_current.code}-{dokumen.name}'
+    file_name = f'Bundle-{uuid.uuid4().hex}'
 
     if dokumen.is_riwayat:
         metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
@@ -116,7 +117,7 @@ async def update(id:UUID,
         if key_value is None or key_value == "":
             raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
         
-        file_name = f'{obj_current.bundlehd.code}-{obj_current.code}-{dokumen.name}-{key_value}'
+        file_name = f'Bundle-{uuid.uuid4().hex}'
 
 
     if file:

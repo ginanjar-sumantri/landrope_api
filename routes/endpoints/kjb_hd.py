@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
@@ -13,6 +13,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, Delet
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from datetime import datetime
+from services.gcloud_storage_service import GCStorageService
 import crud
 import json
 
@@ -32,6 +33,27 @@ async def create(sch: KjbHdCreateSch,
     new_obj = await crud.kjb_hd.get_by_id_cu(id=new_obj.id)
     
     return create_response(data=new_obj)
+
+@router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
+async def upload_dokumen(
+            id:UUID, 
+            file: UploadFile = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Update a obj by its id"""
+
+    obj_current = await crud.kjb_hd.get_by_id(id=id)
+    if not obj_current:
+        raise IdNotFoundException(KjbHd, id)
+
+    if file:
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{id}')
+        object_updated = KjbHdUpdateSch(file_path=file_path)
+    
+    obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
+    obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
+
+    return create_response(data=obj_updated)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(
