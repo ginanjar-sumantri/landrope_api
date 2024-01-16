@@ -116,7 +116,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         for k in obj_in.bebanbiayas:
             if k.beban_biaya_id != "":
-                obj_bebanbiaya = await crud.bebanbiaya.get(id=UUID(k.beban_biaya_id))
+                obj_bebanbiaya = await crud.bebanbiaya.get(id=k.beban_biaya_id)
             else:
                 obj_bebanbiaya = await crud.bebanbiaya.get_by_name(name=k.beban_biaya_name)
                 
