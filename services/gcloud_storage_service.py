@@ -78,14 +78,20 @@ class GCStorageService:
 
         return file_path
 
-    async def upload_file_dokumen(self, file: UploadFile, file_name:str = None) -> str:
+    async def upload_file_dokumen(self, file: UploadFile, file_name:str = None, is_public:bool=False) -> str:
         bucket = self.storage_client.get_bucket(self.bucket_name)
         file_path = await self.path_and_rename_dokumen(upload_file=file, file_name=file_name)
         blob = bucket.blob(file_path)
+
+        if is_public:
+            blob.make_public()
+            blob.public_url()
+
         blob.upload_from_file(file_obj=file.file,
                               content_type=file.content_type)
 
         return file_path
+    
     
     async def upload_excel(self, file: UploadFile) -> Tuple[str | None, str | None]:
         bucket = self.storage_client.get_bucket(self.bucket_name)
@@ -111,6 +117,13 @@ class GCStorageService:
         file_content = blob.download_as_bytes()
 
         return io.BytesIO(file_content)
+    
+    async def public_url(self, file_path:str | None) -> str | None:
+        bucket = self.storage_client.get_bucket(self.bucket_name)
+        blob = bucket.blob(file_path)
+        url_public = blob.public_url()
+
+        return str(url_public)
     
     async def download_dokumen(self, file_path:str | None):
         bucket = self.storage_client.get_bucket(self.bucket_name)

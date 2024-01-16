@@ -3,19 +3,23 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
-from models.kjb_model import KjbHd, KjbDt, KjbPenjual
+from models import KjbHd, KjbDt, KjbPenjual, WorkflowTemplate
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
 from models.pemilik_model import Pemilik
 from models.code_counter_model import CodeCounterEnum
 from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
+from common.enum import WorkflowEntityEnum
 from datetime import datetime
+from typing import Dict, Any
 from services.gcloud_storage_service import GCStorageService
 import crud
 import json
+import time
 
 
 router = APIRouter()
@@ -31,13 +35,13 @@ async def create(sch: KjbHdCreateSch,
 
     new_obj = await crud.kjb_hd.create_(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
     new_obj = await crud.kjb_hd.get_by_id_cu(id=new_obj.id)
-    
+
     return create_response(data=new_obj)
 
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
 async def upload_dokumen(
             id:UUID, 
-            file: UploadFile = None,
+            file: UploadFile,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -54,6 +58,37 @@ async def upload_dokumen(
     obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
+
+@router.post("/cloud-task-workflow")
+async def create_workflow(payload:Dict):
+    id = payload.get("id", None)
+    is_create = payload.get("is_create", None)
+
+    obj = await crud.kjb_hd.get(id=id)
+
+    if not obj:
+        raise IdNotFoundException(KjbHd, id)
+    
+    if is_create:
+        while obj.file_path is None:
+            obj = await crud.kjb_hd.get(id=id)
+            time.sleep(2)
+    
+    public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
+    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.id)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.id}", url=public_url)
+    wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
+                                            flow_id=flow.id, 
+                                            descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                    Tanggal: {obj.created_at.date()}<br>
+                                                    Dokumen: {obj.code}""", 
+                                            additional_info={}, 
+                                            attachments=[wf_system_attachment])
+    
+    await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+
+    return {"message" : "successfully"}
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(
@@ -133,7 +168,6 @@ async def update(id:UUID, sch:KjbHdCreateSch,
 
     if not obj_current:
         raise IdNotFoundException(KjbHd, id)
-    
 
     try:
         obj_updated = await crud.kjb_hd.update_(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
@@ -142,6 +176,3 @@ async def update(id:UUID, sch:KjbHdCreateSch,
     
     obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
     return create_response(data=obj_updated)
-
-
-   

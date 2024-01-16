@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
@@ -8,10 +8,12 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
+from common.enum import WorkflowEntityEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
+from services.gcloud_task_service import GCloudTaskService
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID
 from datetime import datetime
@@ -66,8 +68,13 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         return response.scalar_one_or_none()
     
-    async def create_(self, *, obj_in: KjbHdCreateSch | KjbHd, created_by_id : UUID | str | None = None, 
-                     db_session : AsyncSession | None = None) -> KjbHd :
+    async def create_(self, *, 
+                    obj_in: KjbHdCreateSch | KjbHd,
+                    # request: Request,
+                    created_by_id : UUID | str | None = None, 
+                    db_session : AsyncSession | None = None,
+                    ) -> KjbHd :
+        
         db_session = db_session or db.session
         db_obj = self.model.from_orm(obj_in) #type ignore
         db_obj.created_at = datetime.utcnow()
@@ -75,7 +82,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         if created_by_id:
             db_obj.created_by_id = created_by_id
 
-        
         for dt in obj_in.details:
             alashak = await crud.kjb_dt.get_by_alashak(alashak=dt.alashak)
             if alashak:
@@ -101,7 +107,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 termin = KjbTermin(**l.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
                 termins.append(termin)
             
-            harga = KjbHarga(**j.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
+            harga = KjbHarga(**j.dict(exclude_unset={"termins"}), created_by_id=created_by_id, updated_by_id=created_by_id)
             
             if len(termins) > 0:
                 harga.termins = termins
@@ -126,8 +132,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             penjual = KjbPenjual(pemilik_id=p.pemilik_id, created_by_id=created_by_id, updated_by_id=created_by_id)
             db_obj.penjuals.append(penjual)
 
+        db_session.add(db_obj)
+
+        # url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+        # GCloudTaskService().create_task(payload={"id":db_obj.id, "is_create":True}, base_url=url)
+
         try:
-            db_session.add(db_obj)
             await db_session.commit()
         except exc.IntegrityError:
             await db_session.rollback()
@@ -144,6 +154,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
+        difference_one_approve:bool = False
+        difference_two_approve:bool = False
+
         db_session =  db_session or db.session
         obj_data = jsonable_encoder(obj_current)
 
@@ -154,6 +167,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         for field in obj_data:
             if field in update_data:
+                if update_data[field] != getattr(obj_current, key):
+                    difference_one_approve = True
+
                 setattr(obj_current, field, update_data[field])
             if field == "updated_at":
                 setattr(obj_current, field, datetime.utcnow())
@@ -166,7 +182,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         #delete all data detail current when not exists in schema update
         await db_session.execute(delete(KjbRekening).where(and_(KjbRekening.id.notin_(r.id for r in obj_new.rekenings if r.id is not None), 
                                                         KjbRekening.kjb_hd_id == obj_current.id)))
-
+        
+        if difference_one_approve is False:
+            difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, [tr for hr in obj_new.hargas for tr in hr.termins]), [termin for harga in obj_current.hargas for termin in harga.termins])))) > 0 else False
+        
         await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
                                                     KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
         
@@ -176,6 +195,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbBebanBiaya).where(and_(KjbBebanBiaya.id.notin_(b.id for b in obj_new.bebanbiayas if b.id is not None),
                                                             KjbBebanBiaya.kjb_hd_id == obj_current.id)))
         
+        if difference_one_approve is False:
+            difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.penjuals), obj_current.penjuals)))) > 0 else False
+       
         await db_session.execute(delete(KjbPenjual).where(and_(KjbPenjual.id.notin_(p.id for p in obj_new.penjuals if p.id is not None),
                                                             KjbPenjual.kjb_hd_id == obj_current.id)))
         

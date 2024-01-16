@@ -15,7 +15,7 @@ class WorkflowSch(WorkflowFullBase):
 class WorkflowUpdateSch(WorkflowBase):
     pass
 
-class WorkflowSystemAttachment(SQLModel):
+class WorkflowSystemAttachmentSch(SQLModel):
     name:str
     url:str
 
@@ -25,7 +25,7 @@ class WorkflowSystemCreateSch(SQLModel):
     flow_id :str | None
     additional_info:dict|None = Field(default={})
     descs:str | None
-    attachments:list[WorkflowSystemAttachment] | None
+    attachments:list[WorkflowSystemAttachmentSch] | None
 
 
 class WorkflowCreateResponseSch(SQLModel):

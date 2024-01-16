@@ -154,5 +154,6 @@ class WorkflowLastStatusEnum(str, Enum):
 class WorkflowEntityEnum(str, Enum):
     SPK = "SPK"
     TERMIN = "TERMIN"
+    KJB = "KJB"
 
     
