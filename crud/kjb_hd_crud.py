@@ -2,7 +2,8 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_, text
+from fastapi.encoders import jsonable_encoder
+from sqlmodel import select, or_, and_, text, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
@@ -11,7 +12,7 @@ from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
-from typing import List
+from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID
 from datetime import datetime
 from sqlalchemy import exc
@@ -65,7 +66,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         return response.scalar_one_or_none()
     
-    async def create_kjb_hd(self, *, obj_in: KjbHdCreateSch | KjbHd, created_by_id : UUID | str | None = None, 
+    async def create_(self, *, obj_in: KjbHdCreateSch | KjbHd, created_by_id : UUID | str | None = None, 
                      db_session : AsyncSession | None = None) -> KjbHd :
         db_session = db_session or db.session
         db_obj = self.model.from_orm(obj_in) #type ignore
@@ -80,28 +81,13 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             if alashak:
                 raise HTTPException(status_code=409, detail=f"alashak {dt.alashak} ada di KJB lain ({alashak.kjb_code})")
             
-            detail = KjbDt(jenis_alashak=dt.jenis_alashak,
-                           alashak=dt.alashak,
-                           posisi_bidang=dt.posisi_bidang,
-                           harga_akta=dt.harga_akta,
-                           harga_transaksi=dt.harga_transaksi,
-                           luas_surat=dt.luas_surat,
-                           desa_id=dt.desa_id,
-                           project_id=dt.project_id,
-                           pemilik_id=dt.pemilik_id,
-                           jenis_surat_id=dt.jenis_surat_id,
-                           created_by_id=created_by_id,
-                           updated_by_id=created_by_id)
+            detail = KjbDt(**dt.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
             
             db_obj.kjb_dts.append(detail)
 
         
         for i in obj_in.rekenings:
-            rekening = KjbRekening(nama_pemilik_rekening=i.nama_pemilik_rekening,
-                                    bank_rekening=i.bank_rekening,
-                                    nomor_rekening=i.nomor_rekening,
-                                    created_by_id=created_by_id,
-                                    updated_by_id=created_by_id)
+            rekening = KjbRekening(**i.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
             
             db_obj.rekenings.append(rekening)
         
@@ -112,17 +98,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             
             termins = []
             for l in j.termins:
-                termin = KjbTermin(jenis_bayar=l.jenis_bayar,
-                                        nilai=l.nilai,
-                                        created_by_id=created_by_id,
-                                        updated_by_id=created_by_id)
+                termin = KjbTermin(**l.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
                 termins.append(termin)
             
-            harga = KjbHarga(jenis_alashak=j.jenis_alashak,
-                                harga_akta=j.harga_akta,
-                                harga_transaksi=j.harga_transaksi,
-                                created_by_id=created_by_id,
-                                updated_by_id=created_by_id)
+            harga = KjbHarga(**j.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
             
             if len(termins) > 0:
                 harga.termins = termins
@@ -139,15 +118,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     obj_bebanbiaya_in = BebanBiayaCreateSch(name=k.beban_biaya_name, is_active=True)
                     obj_bebanbiaya = await crud.bebanbiaya.create(obj_in=obj_bebanbiaya_in)
                 
-            bebanbiaya = KjbBebanBiaya(beban_biaya_id=obj_bebanbiaya.id,
-                                            beban_pembeli=k.beban_pembeli,
-                                            created_by_id=created_by_id,
-                                            updated_by_id=created_by_id)
+            bebanbiaya = KjbBebanBiaya(**k.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
+            
             db_obj.bebanbiayas.append(bebanbiaya)
         
         for p in obj_in.penjuals:
-            penjual = KjbPenjual(pemilik_id=p.pemilik_id, created_by_id=created_by_id,
-                                    updated_by_id=created_by_id)
+            penjual = KjbPenjual(pemilik_id=p.pemilik_id, created_by_id=created_by_id, updated_by_id=created_by_id)
             db_obj.penjuals.append(penjual)
 
         try:
@@ -159,7 +135,144 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         await db_session.refresh(db_obj)
         return db_obj
-    
+
+    async def update_(self, 
+                     *, 
+                     obj_current : KjbHd, 
+                     obj_new : KjbHdUpdateSch | Dict[str, Any] | KjbHd,
+                     updated_by_id: UUID | str | None = None,
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True) -> KjbHd :
+        
+        db_session =  db_session or db.session
+        obj_data = jsonable_encoder(obj_current)
+
+        if isinstance(obj_new, dict):
+            update_data =  obj_new
+        else:
+            update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
+        
+        for field in obj_data:
+            if field in update_data:
+                setattr(obj_current, field, update_data[field])
+            if field == "updated_at":
+                setattr(obj_current, field, datetime.utcnow())
+        
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
+        
+        db_session.add(obj_current)
+
+        #delete all data detail current when not exists in schema update
+        await db_session.execute(delete(KjbRekening).where(and_(KjbRekening.id.notin_(r.id for r in obj_new.rekenings if r.id is not None), 
+                                                        KjbRekening.kjb_hd_id == obj_current.id)))
+
+        await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
+                                                    KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
+        
+        await db_session.execute(delete(KjbHarga).where(and_(KjbHarga.id.notin_(h.id for h in obj_new.hargas if h.id is not None),
+                                                            KjbHarga.kjb_hd_id == obj_current.id)))
+        
+        await db_session.execute(delete(KjbBebanBiaya).where(and_(KjbBebanBiaya.id.notin_(b.id for b in obj_new.bebanbiayas if b.id is not None),
+                                                            KjbBebanBiaya.kjb_hd_id == obj_current.id)))
+        
+        await db_session.execute(delete(KjbPenjual).where(and_(KjbPenjual.id.notin_(p.id for p in obj_new.penjuals if p.id is not None),
+                                                            KjbPenjual.kjb_hd_id == obj_current.id)))
+        
+        await db_session.execute(delete(KjbDt).where(and_(KjbDt.id.notin_(dt.id for dt in obj_new.details if dt.id is not None),
+                                                            KjbDt.kjb_hd_id == obj_current.id)))
+        
+
+        for rekening in obj_new.rekenings:
+            existing_rekening = next((r for r in obj_current.rekenings if r.id == rekening.id), None)
+            if existing_rekening:
+                rek = rekening.dict(exclude_unset=True)
+                for key, value in rek.items():
+                    setattr(existing_rekening, key, value)
+                existing_rekening.updated_at = datetime.utcnow()
+                existing_rekening.updated_by_id = updated_by_id
+                db_session.add(existing_rekening)
+            else:
+                new_rekening = KjbRekening(**rekening.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                db_session.add(new_rekening)
+        
+        for harga in obj_new.hargas:
+            existing_harga = next((h for h in obj_current.hargas if h.id == harga.id), None)
+            if existing_harga:
+                for termin in harga.termins:
+                    existing_termin = next((t for t in existing_harga.termins if t.id == termin.id), None)
+                    if existing_termin:
+                        ter = termin.dict(exclude_unset=True)
+                        for key, value in ter.items():
+                            setattr(existing_termin, key, value)
+                        existing_termin.updated_at = datetime.utcnow()
+                        existing_termin.updated_by_id = updated_by_id
+                        db_session.add(existing_termin)
+                    else:
+                        new_termin = KjbTermin(**termin.dict(), kjb_harga_id=existing_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                        db_session.add(new_termin)
+                
+                har = harga.dict(exclude_unset=True)
+                for key, value in har.items():
+                    if key == 'termins':
+                        continue
+                    setattr(existing_harga, key, value)
+                existing_harga.updated_at = datetime.utcnow()
+                existing_harga.updated_by_id = updated_by_id
+                db_session.add(existing_harga)
+            else:
+                new_harga = KjbHarga(**harga.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                db_session.add(new_harga)
+
+                for termin in harga.termins:
+                    new_termin = KjbTermin(**termin.dict(), kjb_harga_id=new_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                    db_session.add(new_termin)
+        
+        for beban_biaya in obj_new.bebanbiayas:
+            existing_bebanbiaya = next((b for b in obj_current.bebanbiayas if b.id == beban_biaya.id), None)
+            if existing_bebanbiaya:
+                bb = beban_biaya.dict(exclude_unset=True)
+                for key, value in bb.items():
+                    setattr(existing_bebanbiaya, key, value)
+                existing_bebanbiaya.updated_at = datetime.utcnow()
+                existing_bebanbiaya.updated_by_id = updated_by_id
+                db_session.add(existing_rekening)
+            else:
+                new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                db_session.add(new_bebanbiaya)
+            
+        
+        for penjual in obj_new.penjuals:
+            existing_penjual = next((p for p in obj_current.penjuals if p.id == penjual.id), None)
+            if existing_penjual:
+                pj = penjual.dict(exclude_unset=True)
+                for key, value in pj.items():
+                    setattr(existing_penjual, key, value)
+                existing_penjual.updated_at = datetime.utcnow()
+                existing_penjual.updated_by_id = updated_by_id
+                db_session.add(existing_penjual)
+            else:
+                new_penjual = KjbPenjual(**penjual.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                db_session.add(new_penjual)
+        
+        for detail in obj_new.details:
+            existing_detail = next((dt for dt in obj_current.kjb_dts if dt.id == detail.id), None)
+            if existing_detail:
+                dtl = detail.dict(exclude_unset=True)
+                for key, value in dtl.items():
+                    setattr(existing_detail, key, value)
+                existing_detail.updated_at = datetime.utcnow()
+                existing_detail.updated_by_id = updated_by_id
+                db_session.add(existing_detail)
+            else:
+                new_detail = KjbDt(**detail.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                db_session.add(new_detail)
+            
+        if with_commit:
+            await db_session.commit()
+            await db_session.refresh(obj_current)
+        return obj_current
+
     async def get_multi_kjb_not_draft(
         self,
         *,

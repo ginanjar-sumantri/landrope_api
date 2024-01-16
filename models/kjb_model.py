@@ -310,7 +310,14 @@ class KjbHargaFullBase(BaseUUIDModel, KjbHargaBase):
 
 class KjbHarga(KjbHargaFullBase, table=True):
     kjb_hd:"KjbHd" = Relationship(back_populates="hargas", sa_relationship_kwargs={'lazy':'select'})
-    termins:list["KjbTermin"] = Relationship(back_populates="harga", sa_relationship_kwargs={'lazy':'select'})
+
+    termins:list["KjbTermin"] = Relationship(back_populates="harga", 
+                                            sa_relationship_kwargs={
+                                                'lazy':'select',
+                                                "cascade" : "delete, all",
+                                                "foreign_keys" : "[KjbTermin.kjb_harga_id]"
+                                            }
+                                            )
     
 
 ################################################################################################

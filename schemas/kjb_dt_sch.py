@@ -11,12 +11,13 @@ class KjbDtCreateSch(KjbDtBase):
     pass
 
 class KjbDtCreateExtSch(SQLModel):
-    jenis_alashak:JenisAlashakEnum
-    alashak:str
-    posisi_bidang:PosisiBidangEnum
-    harga_akta:Decimal
-    harga_transaksi:Decimal
-    luas_surat:Decimal
+    id:UUID|None
+    jenis_alashak:JenisAlashakEnum | None
+    alashak:str | None
+    posisi_bidang:PosisiBidangEnum | None
+    harga_akta:Decimal | None
+    harga_transaksi:Decimal | None
+    luas_surat:Decimal | None
     desa_id:Optional[UUID] 
     project_id:Optional[UUID] 
     pemilik_id:UUID | None 

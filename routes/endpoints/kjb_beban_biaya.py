@@ -4,7 +4,7 @@ from fastapi_pagination import Params
 from models.kjb_model import KjbBebanBiaya
 from models.worker_model import Worker
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
-from schemas.kjb_beban_biaya_sch import (KjbBebanBiayaSch, KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch, KjbBebanBiayaCreateExSch)
+from schemas.kjb_beban_biaya_sch import (KjbBebanBiayaSch, KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 import crud

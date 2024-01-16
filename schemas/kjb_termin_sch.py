@@ -1,6 +1,5 @@
 from models.kjb_model import KjbTermin, KjbTerminBase, KjbTerminFullBase
 from common.partial import optional
-from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 from typing import List
 from uuid import UUID
@@ -10,9 +9,10 @@ from decimal import Decimal
 class KjbTerminCreateSch(KjbTerminBase):
     nilai_lunas:Decimal|None = Field(default=0)
 
-class KjbTerminCreateExtSch(BaseModel):
-    jenis_bayar:JenisBayarEnum
-    nilai:Decimal
+class KjbTerminCreateExtSch(SQLModel):
+    id:UUID|None
+    jenis_bayar:JenisBayarEnum | None
+    nilai:Decimal | None
 
 class KjbTerminSch(KjbTerminFullBase):
     pass

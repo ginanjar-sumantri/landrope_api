@@ -18,6 +18,27 @@ from sqlalchemy import exc
 
 
 class CRUDKjbRekening(CRUDBase[KjbRekening, KjbRekeningCreateSch, KjbRekeningUpdateSch]):
-    pass
+    async def delete_multiple_where_not_in(
+            self, 
+            *, 
+            ids:list[UUID] = None,
+            kjb_hd_id:UUID,
+            db_session : AsyncSession | None = None,
+            with_commit:bool | None = True
+            ) -> bool:
+        
+        db_session = db_session or db.session
+        
+        query = self.model.__table__.delete().where(and_(self.model.id.notin_(ids), self.model.kjb_hd_id == kjb_hd_id))
+
+        try:
+            await db_session.execute(query)
+            if with_commit:
+                await db_session.commit()
+        except exc.IntegrityError:
+            db_session.rollback()
+            raise HTTPException(status_code=422, detail="failed delete data")
+
+        return True
 
 kjb_rekening = CRUDKjbRekening(KjbRekening)

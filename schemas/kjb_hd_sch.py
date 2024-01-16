@@ -9,16 +9,16 @@ from schemas.kjb_dt_sch import KjbDtCreateExtSch
 from schemas.bidang_sch import BidangForUtjSch
 from common.partial import optional
 from common.enum import KategoriPenjualEnum
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel 
 from typing import List, Optional
 from decimal import Decimal
 from uuid import UUID
 
 class KjbHdCreateSch(KjbHdBase):
-    rekenings:List[KjbRekeningCreateExtSch]
-    hargas:List[KjbHargaCreateExtSch]
-    bebanbiayas:List[KjbBebanBiayaCreateExtSch]
-    penjuals:List[KjbPenjualCreateExtSch]
+    rekenings:List[KjbRekeningCreateExtSch] | None
+    hargas:List[KjbHargaCreateExtSch] | None
+    bebanbiayas:List[KjbBebanBiayaCreateExtSch] | None
+    penjuals:List[KjbPenjualCreateExtSch] | None
     details:List[KjbDtCreateExtSch] | None
 
 
@@ -49,7 +49,7 @@ class KjbHdSearchSch(SQLModel):
 
 
 @optional
-class KjbHdUpdateSch(KjbHdBase):
+class KjbHdUpdateSch(KjbHdCreateSch):
     pass
 
 class KjbHdForTerminByIdSch(SQLModel):

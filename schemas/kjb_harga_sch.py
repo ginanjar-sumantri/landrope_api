@@ -12,12 +12,13 @@ from typing import Optional
 class KjbHargaCreateSch(KjbHargaBase):
     termins:list[KjbTerminCreateExtSch]
 
-class KjbHargaCreateExtSch(BaseModel):
-    jenis_alashak:JenisAlashakEnum
+class KjbHargaCreateExtSch(SQLModel):
+    id:UUID|None
+    jenis_alashak:JenisAlashakEnum | None
     harga_akta:Decimal | None
-    harga_transaksi:Decimal
+    harga_transaksi:Decimal | None
 
-    termins:list[KjbTerminCreateExtSch]
+    termins:list[KjbTerminCreateExtSch] | None
 
 class KjbHargaSch(KjbHargaFullBase):
     pass

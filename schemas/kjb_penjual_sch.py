@@ -5,13 +5,14 @@ from typing import List
 from uuid import UUID
 from common.enum import JenisBayarEnum
 from decimal import Decimal
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel
 
 class KjbPenjualCreateSch(KjbPenjualBase):
     pass
 
-class KjbPenjualCreateExtSch(BaseModel):
-    pemilik_id:UUID
+class KjbPenjualCreateExtSch(SQLModel):
+    id:UUID|None
+    pemilik_id:UUID|None
 
 class KjbPenjualSch(KjbPenjualFullBase):
     penjual_tanah:str = Field(alias="penjual_tanah")
