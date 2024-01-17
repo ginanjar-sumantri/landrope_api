@@ -15,7 +15,7 @@ class KjbTerminCreateExtSch(SQLModel):
     nilai:Decimal | None
 
 class KjbTerminSch(KjbTerminFullBase):
-    pass
+    has_been_spk:bool|None
 
 class KjbTerminInSpkSch(KjbTerminFullBase):
     spk_id:UUID|None

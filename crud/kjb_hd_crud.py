@@ -40,7 +40,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                                         ).options(selectinload(KjbDt.request_peta_lokasi))
                                                 ).options(selectinload(KjbHd.rekenings)
                                                 ).options(selectinload(KjbHd.hargas
-                                                                        ).options(selectinload(KjbHarga.termins)
+                                                                        ).options(selectinload(KjbHarga.termins
+                                                                                                ).options(selectinload(KjbTermin.spks)
+                                                                                                )
                                                                         )
                                                 ).options(selectinload(KjbHd.bebanbiayas
                                                                         ).options(selectinload(KjbBebanBiaya.beban_biaya))
@@ -70,7 +72,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
     
     async def create_(self, *, 
                     obj_in: KjbHdCreateSch | KjbHd,
-                    # request: Request,
+                    request: Request,
                     created_by_id : UUID | str | None = None, 
                     db_session : AsyncSession | None = None,
                     ) -> KjbHd :
@@ -134,27 +136,28 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         db_session.add(db_obj)
 
-        # url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        # GCloudTaskService().create_task(payload={"id":db_obj.id, "is_create":True}, base_url=url)
-
         try:
             await db_session.commit()
         except exc.IntegrityError:
             await db_session.rollback()
             raise HTTPException(status_code=409, detail="Resource already exists")
         
+        url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+        GCloudTaskService().create_task(payload={"id":db_obj.id, "is_create":True, "additional_info":"ONE_APPROVAL"}, base_url=url)
+        
         await db_session.refresh(db_obj)
         return db_obj
 
     async def update_(self, 
-                     *, 
+                     *,
+                     request: Request,
                      obj_current : KjbHd, 
                      obj_new : KjbHdUpdateSch | Dict[str, Any] | KjbHd,
                      updated_by_id: UUID | str | None = None,
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
-        difference_one_approve:bool = False
+       
         difference_two_approve:bool = False
 
         db_session =  db_session or db.session
@@ -167,9 +170,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         for field in obj_data:
             if field in update_data:
-                # if update_data[field] != getattr(obj_current, key):
-                #     difference_one_approve = True
-
                 setattr(obj_current, field, update_data[field])
             if field == "updated_at":
                 setattr(obj_current, field, datetime.utcnow())
@@ -183,21 +183,18 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbRekening).where(and_(KjbRekening.id.notin_(r.id for r in obj_new.rekenings if r.id is not None), 
                                                         KjbRekening.kjb_hd_id == obj_current.id)))
         
-        # if difference_one_approve is False:
-        #     difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, [tr for hr in obj_new.hargas for tr in hr.termins]), [termin for harga in obj_current.hargas for termin in harga.termins])))) > 0 else False
-        
         await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
                                                     KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
         
         await db_session.execute(delete(KjbHarga).where(and_(KjbHarga.id.notin_(h.id for h in obj_new.hargas if h.id is not None),
                                                             KjbHarga.kjb_hd_id == obj_current.id)))
         
+        if difference_two_approve is False:
+            difference_two_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.bebanbiayas), obj_current.bebanbiayas)))) > 0 else False
+       
         await db_session.execute(delete(KjbBebanBiaya).where(and_(KjbBebanBiaya.id.notin_(b.id for b in obj_new.bebanbiayas if b.id is not None),
                                                             KjbBebanBiaya.kjb_hd_id == obj_current.id)))
         
-        # if difference_one_approve is False:
-        #     difference_one_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.penjuals), obj_current.penjuals)))) > 0 else False
-       
         await db_session.execute(delete(KjbPenjual).where(and_(KjbPenjual.id.notin_(p.id for p in obj_new.penjuals if p.id is not None),
                                                             KjbPenjual.kjb_hd_id == obj_current.id)))
         
@@ -255,6 +252,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             if existing_bebanbiaya:
                 bb = beban_biaya.dict(exclude_unset=True)
                 for key, value in bb.items():
+                    if key == "beban_biaya_name":
+                        continue
+                    if difference_two_approve == False:
+                        difference_two_approve == True if value != getattr(existing_bebanbiaya, key) else False
+
                     setattr(existing_bebanbiaya, key, value)
                 existing_bebanbiaya.updated_at = datetime.utcnow()
                 existing_bebanbiaya.updated_by_id = updated_by_id
@@ -262,7 +264,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             else:
                 new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_bebanbiaya)
-            
+                if difference_two_approve == False:
+                    difference_two_approve = True
         
         for penjual in obj_new.penjuals:
             existing_penjual = next((p for p in obj_current.penjuals if p.id == penjual.id), None)
@@ -293,6 +296,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         if with_commit:
             await db_session.commit()
             await db_session.refresh(obj_current)
+
+        # url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+        # GCloudTaskService().create_task(payload={"id":obj_current.id, "is_create":False, "additional_info":"TWO_APPROVAL"}, base_url=url)
+
         return obj_current
 
     async def get_multi_kjb_not_draft(

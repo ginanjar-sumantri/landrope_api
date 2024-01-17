@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
@@ -26,6 +26,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[KjbHdSch], status_code=status.HTTP_201_CREATED)
 async def create(sch: KjbHdCreateSch,
+                 request:Request,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -33,7 +34,7 @@ async def create(sch: KjbHdCreateSch,
     db_session = db.session
     sch.code = await generate_code(CodeCounterEnum.Kjb, db_session=db_session, with_commit=False)
 
-    new_obj = await crud.kjb_hd.create_(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
+    new_obj = await crud.kjb_hd.create_(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, request=request)
     new_obj = await crud.kjb_hd.get_by_id_cu(id=new_obj.id)
 
     return create_response(data=new_obj)
@@ -159,7 +160,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbHd, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbHdSch])
-async def update(id:UUID, sch:KjbHdCreateSch,
+async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -170,7 +171,7 @@ async def update(id:UUID, sch:KjbHdCreateSch,
         raise IdNotFoundException(KjbHd, id)
 
     try:
-        obj_updated = await crud.kjb_hd.update_(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+        obj_updated = await crud.kjb_hd.update_(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, request=request)
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"{str(e)}")
     

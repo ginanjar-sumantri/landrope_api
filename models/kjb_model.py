@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from models.base_model import BaseUUIDModel
+from models.base_model import BaseUUIDModel, BaseHistoryModel
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, 
@@ -59,6 +59,7 @@ class KjbHd(KjbHdFullBase, table=True):
     hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
     penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    # kjb_histories:list["KjbHistory"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
 
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
@@ -334,7 +335,15 @@ class KjbTerminFullBase(BaseUUIDModel, KjbTerminBase):
 
 class KjbTermin(KjbTerminFullBase, table=True):
     harga:"KjbHarga" = Relationship(back_populates="termins", sa_relationship_kwargs={'lazy':'select'})
-    # spks:list["Spk"] = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'select'})
+    spks:list["Spk"] = Relationship(back_populates="kjb_termin", sa_relationship_kwargs={'lazy':'select'})
+
+
+    @property
+    def has_been_spk(self) -> bool:
+        if len(self.spks) > 0:
+            return True
+        
+        return False
 
 
 #################################################################################
@@ -366,4 +375,35 @@ class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
     @property
     def is_add_pay(self) -> bool | None :
         return getattr(getattr(self, "beban_biaya", False), "is_add_pay", False)
+    
+###################################################################################################################
+
+# class KjbHistoryBase(SQLModel):
+#     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
+
+# class KjbHistoryBaseExt(KjbHistoryBase, BaseHistoryModel):
+#     pass
+
+# class KjbHistoryFullBase(BaseUUIDModel, KjbHistoryBaseExt):
+#     pass
+
+# class KjbHistory(KjbHistoryFullBase, table=True):
+#     kjb_hd:"KjbHd" = Relationship(
+#         sa_relationship_kwargs=
+#         {
+#             "lazy" : "select"
+#         },
+#         back_populates="kjb_histories"
+#     )
+
+#     trans_worker: "Worker" = Relationship(  
+#         sa_relationship_kwargs={
+#             "lazy": "joined",
+#             "primaryjoin": "KjbHistory.trans_worker_id==Worker.id",
+#         }
+#     )
+
+#     @property
+#     def trans_worker_name(self) -> str | None:
+#         return getattr(getattr(self, "trans_worker", None), "name", None)
     
