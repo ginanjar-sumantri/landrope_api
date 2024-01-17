@@ -1,7 +1,7 @@
 from fastapi import Depends
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
-from models import Worker, Bidang, HasilPetaLokasi
+from models import Worker, Bidang, HasilPetaLokasi, KjbHd
 from schemas.bidang_sch import BidangSch
 from schemas.bidang_history_sch import BidangHistoryCreateSch, MetaDataSch
 from schemas.spk_history_sch import SpkHistoryCreateSch
@@ -36,7 +36,6 @@ class HistoryService:
         
         await crud.bidang_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
-    
     async def create_history_spk(self, spk:SpkByIdSch,
                                 worker_id:UUID|None = None,
                                 db_session:AsyncSession | None = None):
@@ -62,6 +61,6 @@ class HistoryService:
         
         await crud.hasil_peta_lokasi_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
-        
+    # async def create_history_kjb(self, obj_surrent:KjbHd)  
         
 

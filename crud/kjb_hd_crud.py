@@ -183,9 +183,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbRekening).where(and_(KjbRekening.id.notin_(r.id for r in obj_new.rekenings if r.id is not None), 
                                                         KjbRekening.kjb_hd_id == obj_current.id)))
         
-        await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
-                                                    KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
-        
         await db_session.execute(delete(KjbHarga).where(and_(KjbHarga.id.notin_(h.id for h in obj_new.hargas if h.id is not None),
                                                             KjbHarga.kjb_hd_id == obj_current.id)))
         
@@ -218,6 +215,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         for harga in obj_new.hargas:
             existing_harga = next((h for h in obj_current.hargas if h.id == harga.id), None)
             if existing_harga:
+                termins = []
                 for termin in harga.termins:
                     existing_termin = next((t for t in existing_harga.termins if t.id == termin.id), None)
                     if existing_termin:
@@ -227,9 +225,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                         existing_termin.updated_at = datetime.utcnow()
                         existing_termin.updated_by_id = updated_by_id
                         db_session.add(existing_termin)
+                        termins.append(existing_termin)
+
                     else:
                         new_termin = KjbTermin(**termin.dict(), kjb_harga_id=existing_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                         db_session.add(new_termin)
+                        termins.append(new_termin)
                 
                 har = harga.dict(exclude_unset=True)
                 for key, value in har.items():
@@ -246,6 +247,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 for termin in harga.termins:
                     new_termin = KjbTermin(**termin.dict(), kjb_harga_id=new_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                     db_session.add(new_termin)
+        
+        await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
+                                                    KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
         
         for beban_biaya in obj_new.bebanbiayas:
             existing_bebanbiaya = next((b for b in obj_current.bebanbiayas if b.id == beban_biaya.id), None)

@@ -59,7 +59,7 @@ class KjbHd(KjbHdFullBase, table=True):
     hargas:list["KjbHarga"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
     bebanbiayas:list["KjbBebanBiaya"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
     penjuals:list["KjbPenjual"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
-    # kjb_histories:list["KjbHistory"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
+    kjb_histories:list["KjbHistory"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'select'})
 
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="kjb_hd", sa_relationship_kwargs={'lazy':'selectin'})
 
@@ -378,32 +378,32 @@ class KjbBebanBiaya(KjbBebanBiayaFullBase, table=True):
     
 ###################################################################################################################
 
-# class KjbHistoryBase(SQLModel):
-#     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
+class KjbHistoryBase(SQLModel):
+    kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id", nullable=False)
 
-# class KjbHistoryBaseExt(KjbHistoryBase, BaseHistoryModel):
-#     pass
+class KjbHistoryBaseExt(KjbHistoryBase, BaseHistoryModel):
+    pass
 
-# class KjbHistoryFullBase(BaseUUIDModel, KjbHistoryBaseExt):
-#     pass
+class KjbHistoryFullBase(BaseUUIDModel, KjbHistoryBaseExt):
+    pass
 
-# class KjbHistory(KjbHistoryFullBase, table=True):
-#     kjb_hd:"KjbHd" = Relationship(
-#         sa_relationship_kwargs=
-#         {
-#             "lazy" : "select"
-#         },
-#         back_populates="kjb_histories"
-#     )
+class KjbHistory(KjbHistoryFullBase, table=True):
+    kjb_hd:"KjbHd" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        },
+        back_populates="kjb_histories"
+    )
 
-#     trans_worker: "Worker" = Relationship(  
-#         sa_relationship_kwargs={
-#             "lazy": "joined",
-#             "primaryjoin": "KjbHistory.trans_worker_id==Worker.id",
-#         }
-#     )
+    trans_worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "KjbHistory.trans_worker_id==Worker.id",
+        }
+    )
 
-#     @property
-#     def trans_worker_name(self) -> str | None:
-#         return getattr(getattr(self, "trans_worker", None), "name", None)
+    @property
+    def trans_worker_name(self) -> str | None:
+        return getattr(getattr(self, "trans_worker", None), "name", None)
     
