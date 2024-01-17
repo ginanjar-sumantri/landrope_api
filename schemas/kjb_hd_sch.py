@@ -29,6 +29,8 @@ class KjbHdSch(KjbHdFullBase):
     total_luas_surat:Decimal = Field(alias="total_luas_surat")
     penjuals:List[KjbPenjualSch] | None
     updated_by_name:str|None = Field(alias="updated_by_name")
+    status_workflow:str|None
+    step_name_workflow:str|None
     
 
 class KjbHdByIdSch(KjbHdFullBase):

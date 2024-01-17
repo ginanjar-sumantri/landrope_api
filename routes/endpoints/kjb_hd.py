@@ -85,6 +85,7 @@ async def download_file(id:UUID):
 async def create_workflow(payload:Dict):
     id = payload.get("id", None)
     is_create = payload.get("is_create", None)
+    additional_info = payload.get("additional_info", None)
 
     obj = await crud.kjb_hd.get(id=id)
 
@@ -105,7 +106,7 @@ async def create_workflow(payload:Dict):
                                             descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                     Tanggal: {obj.created_at.date()}<br>
                                                     Dokumen: {obj.code}""", 
-                                            additional_info={}, 
+                                            additional_info={"approval_number" : str(additional_info)}, 
                                             attachments=[wf_system_attachment])
     
     await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)

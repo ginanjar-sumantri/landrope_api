@@ -1,7 +1,9 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, select
 from models.base_model import BaseUUIDModel, BaseHistoryModel
+from sqlalchemy.orm import column_property, declared_attr
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
+from models.workflow_model import Workflow
 from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, 
                          PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, 
                          JenisBayarEnum, StatusPetaLokasiEnum)
@@ -97,7 +99,31 @@ class KjbHd(KjbHdFullBase, table=True):
             total_luas = sum(item.luas_surat for item in self.kjb_dts)
             return RoundTwo(total_luas)
         else:
-            return RoundTwo(0)        
+            return RoundTwo(0)    
+
+    @declared_attr
+    def step_name_workflow(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.step_name
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )
+    
+    @declared_attr
+    def status_workflow(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.last_status
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )    
 
 
 ##########################################################################

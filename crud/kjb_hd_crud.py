@@ -305,8 +305,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             await db_session.commit()
             await db_session.refresh(obj_current)
 
-        # url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        # GCloudTaskService().create_task(payload={"id":obj_current.id, "is_create":False, "additional_info":"TWO_APPROVAL"}, base_url=url)
+        url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+        GCloudTaskService().create_task(payload={"id":obj_current.id, "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
 
         return obj_current
 
