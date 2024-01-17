@@ -186,8 +186,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbHarga).where(and_(KjbHarga.id.notin_(h.id for h in obj_new.hargas if h.id is not None),
                                                             KjbHarga.kjb_hd_id == obj_current.id)))
         
-        await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(t.id for h in obj_new.hargas if h.id is not None for t in h.termins if t.id is not None),
-                                                    KjbTermin.kjb_harga_id.in_(hr.id for hr in obj_new.hargas if hr.id is not None))))
+        # for harga in obj_new.hargas:
+        #     exts_harga = next((hr for hr in obj_current.hargas if hr.id == harga.id), None)
+        #     if exts_harga:
+        #         await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(b.id for b in harga.termins if b.id is not None),
+        #                                                     KjbTermin.kjb_harga_id == exts_harga.id)))
         
         if difference_two_approve is False:
             difference_two_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.bebanbiayas), obj_current.bebanbiayas)))) > 0 else False
@@ -218,7 +221,18 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         for harga in obj_new.hargas:
             existing_harga = next((h for h in obj_current.hargas if h.id == harga.id), None)
             if existing_harga:
-                termins = []
+                har = harga.dict(exclude_unset=True)
+                for key, value in har.items():
+                    if key == 'termins':
+                        continue
+                    setattr(existing_harga, key, value)
+                existing_harga.updated_at = datetime.utcnow()
+                existing_harga.updated_by_id = updated_by_id
+                db_session.add(existing_harga)
+
+                await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(b.id for b in harga.termins if b.id is not None),
+                                                            KjbTermin.kjb_harga_id == existing_harga.id)))
+                
                 for termin in harga.termins:
                     existing_termin = next((t for t in existing_harga.termins if t.id == termin.id), None)
                     if existing_termin:
@@ -227,23 +241,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                             setattr(existing_termin, key, value)
                         existing_termin.updated_at = datetime.utcnow()
                         existing_termin.updated_by_id = updated_by_id
-                        # db_session.add(existing_termin)
-                        termins.append(existing_termin)
+                        db_session.add(existing_termin)
 
                     else:
                         new_termin = KjbTermin(**termin.dict(), kjb_harga_id=existing_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
-                        # db_session.add(new_termin)
-                        termins.append(new_termin)
+                        db_session.add(new_termin)
                 
-                har = harga.dict(exclude_unset=True)
-                for key, value in har.items():
-                    if key == 'termins':
-                        continue
-                    setattr(existing_harga, key, value)
-                existing_harga.updated_at = datetime.utcnow()
-                existing_harga.updated_by_id = updated_by_id
-                existing_harga.termins = termins
-                db_session.add(existing_harga)
             else:
                 new_harga = KjbHarga(**harga.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_harga)

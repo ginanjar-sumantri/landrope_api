@@ -4,10 +4,12 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from models import Worker, Bidang, HasilPetaLokasi, KjbHd
 from schemas.bidang_sch import BidangSch
 from schemas.bidang_history_sch import BidangHistoryCreateSch, MetaDataSch
-from schemas.spk_history_sch import SpkHistoryCreateSch
 from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiByIdSch
 from schemas.hasil_peta_lokasi_history_sch import HasilPetaLokasiHistoryCreateSch
 from schemas.spk_sch import SpkByIdSch
+from schemas.spk_history_sch import SpkHistoryCreateSch
+from schemas.kjb_hd_sch import KjbHdByIdSch
+from schemas.kjb_history_sch import KjbHistoryCreateSch
 from services.helper_service import HelperService
 from shapely import wkt, wkb
 from uuid import UUID
@@ -61,6 +63,15 @@ class HistoryService:
         
         await crud.hasil_peta_lokasi_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
-    # async def create_history_kjb(self, obj_surrent:KjbHd)  
+    async def create_history_kjb(self, obj_current:KjbHd, worker_id, db_session:AsyncSession | None = None):
+        
+        meta_data_current =  KjbHdByIdSch.from_orm(obj_current)
+        sch = KjbHistoryCreateSch(kjb_hd_id=obj_current.id,
+                                meta_data=meta_data_current.json(),
+                                trans_at=HelperService().no_timezone(obj_current.updated_at),
+                                trans_worker_id=obj_current.updated_by_id)
+        
+        await crud.kjb_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
+
         
 

@@ -1,4 +1,4 @@
-from models import KjbHistory, KjbHistoryFullBase, KjbHistoryBaseExt
+from models.kjb_model import KjbHistory, KjbHistoryFullBase, KjbHistoryBaseExt
 from common.partial import optional
 from sqlmodel import Field, SQLModel
 from uuid import UUID
