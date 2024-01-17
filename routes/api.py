@@ -5,7 +5,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               bundle_hd, bundle_dt, checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, 
                               marketing, pemilik, beban_biaya,
                               kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment, utj_khusus,
-                              kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual,
+                              kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual, kjb_history,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
                               hasil_peta_lokasi_detail, hasil_peta_lokasi_history, import_log, order_gambar_ukur,
                               report_map, dashboard, workflow, export_excel)
@@ -49,6 +49,8 @@ api_router.include_router(kjb_harga.router, prefix="/kjbharga", tags=["kjbharga"
 api_router.include_router(kjb_termin.router, prefix="/kjbtermin", tags=["kjbtermin"])
 api_router.include_router(kjb_beban_biaya.router, prefix="/kjbbebanbiaya", tags=["kjbbebanbiaya"])
 api_router.include_router(kjb_penjual.router, prefix="/kjbpenjual", tags=["kjbpenjual"])
+api_router.include_router(kjb_history.router, prefix="/kjbhistory", tags=["kjbhistory"])
+
 api_router.include_router(tanda_terima_notaris_hd.router, prefix="/tandaterimanotaris_hd", tags=["tandaterimanotaris_hd"])
 api_router.include_router(tanda_terima_notaris_dt.router, prefix="/tandaterimanotaris_dt", tags=["tandaterimanotaris_dt"])
 api_router.include_router(request_peta_lokasi.router, prefix="/requestpetalokasi", tags=["requestpetalokasi"])

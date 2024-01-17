@@ -14,6 +14,7 @@ from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbReken
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from services.gcloud_task_service import GCloudTaskService
+from services.history_service import HistoryService
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID
 from datetime import datetime
@@ -159,8 +160,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
        
         difference_two_approve:bool = False
-
         db_session =  db_session or db.session
+
+        #add history
+        await HistoryService().create_history_kjb(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
+
         obj_data = jsonable_encoder(obj_current)
 
         if isinstance(obj_new, dict):
@@ -186,11 +190,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         await db_session.execute(delete(KjbHarga).where(and_(KjbHarga.id.notin_(h.id for h in obj_new.hargas if h.id is not None),
                                                             KjbHarga.kjb_hd_id == obj_current.id)))
         
-        # for harga in obj_new.hargas:
-        #     exts_harga = next((hr for hr in obj_current.hargas if hr.id == harga.id), None)
-        #     if exts_harga:
-        #         await db_session.execute(delete(KjbTermin).where(and_(KjbTermin.id.notin_(b.id for b in harga.termins if b.id is not None),
-        #                                                     KjbTermin.kjb_harga_id == exts_harga.id)))
         
         if difference_two_approve is False:
             difference_two_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.bebanbiayas), obj_current.bebanbiayas)))) > 0 else False
