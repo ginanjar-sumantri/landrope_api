@@ -151,9 +151,9 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
     db_session = db.session
     obj_current = await crud.kjb_dt.get_by_id(id=id)
 
-    alashak = await crud.kjb_dt.get_by_alashak_and_kjb_hd_id(alashak=sch.alashak, kjb_hd_id=sch.kjb_hd_id)
-    if alashak :
-        raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
+    # alashak = await crud.kjb_dt.get_by_alashak_and_kjb_hd_id(alashak=sch.alashak, kjb_hd_id=sch.kjb_hd_id)
+    # if alashak :
+    #     raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
 
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)
