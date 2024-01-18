@@ -25,6 +25,7 @@ class SummaryProject(SQLModel):
     project_id:UUID | None
     project_name:str | None
     luas:condecimal(decimal_places=2) | None
+    jumlah_bidang:int | None
 
 class SummaryStatus(SummaryProject):
     status:str | None
@@ -52,7 +53,9 @@ class FishboneProject(SQLModel):
     project_id:UUID | None
     project_name:str | None
     luas:condecimal(decimal_places=2) | None
+    jumlah_bidang:int | None
     status:list[FishboneStatus] | None
+
 
 class ParamProject(SQLModel):
     project_ids:list[UUID]
