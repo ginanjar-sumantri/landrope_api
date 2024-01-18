@@ -24,9 +24,9 @@ async def create(sch: KjbDtCreateSch,
     
     """Create a new object"""
 
-    alashak = await crud.kjb_dt.get_by_alashak(alashak=sch.alashak)
-    if alashak:
-        raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
+    # alashak = await crud.kjb_dt.get_by_alashak(alashak=sch.alashak)
+    # if alashak:
+    #     raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
         
     new_obj = await crud.kjb_dt.create(obj_in=sch, created_by_id=current_worker.id)
     new_obj = await crud.kjb_dt.get_by_id(id=new_obj.id)

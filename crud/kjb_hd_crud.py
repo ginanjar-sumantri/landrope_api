@@ -76,9 +76,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         
         for dt in obj_in.details:
-            alashak = await crud.kjb_dt.get_by_alashak(alashak=dt.alashak)
-            if alashak:
-                raise HTTPException(status_code=409, detail=f"alashak {dt.alashak} ada di KJB lain ({alashak.kjb_code})")
+            # alashak = await crud.kjb_dt.get_by_alashak(alashak=dt.alashak)
+            # if alashak:
+            #     raise HTTPException(status_code=409, detail=f"alashak {dt.alashak} ada di KJB lain ({alashak.kjb_code})")
             
             detail = KjbDt(jenis_alashak=dt.jenis_alashak,
                            alashak=dt.alashak,
