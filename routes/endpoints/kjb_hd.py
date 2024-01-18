@@ -52,7 +52,7 @@ async def upload_dokumen(
         raise IdNotFoundException(KjbHd, id)
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{id}')
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{id}', is_public=True)
         object_updated = KjbHdUpdateSch(file_path=file_path)
     
     obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
@@ -99,15 +99,15 @@ async def create_workflow(payload:Dict):
     
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.id)
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.id}", url=public_url)
+    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB", url=public_url)
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=flow.id, 
+                                            flow_id=flow.flow_id, 
                                             descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                     Tanggal: {obj.created_at.date()}<br>
                                                     Dokumen: {obj.code}""", 
                                             additional_info={"approval_number" : str(additional_info)}, 
-                                            attachments=[wf_system_attachment])
+                                            attachments=[vars(wf_system_attachment)])
     
     await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
 

@@ -4,6 +4,7 @@ from common.enum import WorkflowLastStatusEnum
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from configs.config import settings
+from typing import Dict
 
 class WorkflowCreateSch(WorkflowBase):
     pass
@@ -25,7 +26,7 @@ class WorkflowSystemCreateSch(SQLModel):
     flow_id :str | None
     additional_info:dict|None = Field(default={})
     descs:str | None
-    attachments:list[WorkflowSystemAttachmentSch] | None
+    attachments:list[Dict]
 
 
 class WorkflowCreateResponseSch(SQLModel):

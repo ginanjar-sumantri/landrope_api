@@ -121,7 +121,8 @@ class GCStorageService:
     async def public_url(self, file_path:str | None) -> str | None:
         bucket = self.storage_client.get_bucket(self.bucket_name)
         blob = bucket.blob(file_path)
-        url_public = blob.public_url()
+        blob.make_public()
+        url_public = blob.public_url
 
         return str(url_public)
     

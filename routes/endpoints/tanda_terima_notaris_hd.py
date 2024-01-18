@@ -1,12 +1,14 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Response, HTTPException
+from fastapi import APIRouter, status, Depends, UploadFile, Response, HTTPException, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func
+from sqlmodel.ext.asyncio.session import AsyncSession
 from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 from models.kjb_model import KjbDt
 from models.worker_model import Worker
 from models.notaris_model import Notaris
+from models import BundleHd
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.kjb_dt_sch import KjbDtUpdateSch
@@ -16,6 +18,7 @@ from common.exceptions import (IdNotFoundException, ContentNoChangeException,
 from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService
+from typing import Dict, Any
 import uuid
 import crud
 import json
@@ -25,6 +28,7 @@ router = APIRouter()
 
 @router.post("/create", response_model=PostResponseBaseSch[TandaTerimaNotarisHdSch], status_code=status.HTTP_201_CREATED)
 async def create(
+            background_task:BackgroundTasks,
             sch: TandaTerimaNotarisHdCreateSch=Depends(TandaTerimaNotarisHdCreateSch.as_form), 
             file:UploadFile = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -71,24 +75,8 @@ async def create(
         bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         
         #update bundle alashak for default if metadata not exists
-        dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
-        bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
-        if bundledt_current:
-            if bundledt_current.meta_data is None:
-                input_dict = {}
-                # for field in dokumen.dyn_form.get("field", []):
-                #     key = field.get("key")
-                #     meta_data[key] = None
-                input_data = json.loads(dokumen.dyn_form)
-                input_dict = {field["key"]: None for field in input_data["field"]}
-                if dokumen.key_field not in input_dict:
-                    raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
-                
-                input_dict[dokumen.key_field] = kjb_dt.alashak
-                meta_data = json.dumps(input_dict)
-                
-                await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
-                            db_session=db_session, worker_id=current_worker.id)
+        await merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
+        await merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session)
 
     kjb_dt_update.luas_surat_by_ttn = sch.luas_surat if sch.luas_surat != None else kjb_dt_update.luas_surat
     kjb_dt_update.desa_by_ttn_id = sch.desa_id if sch.desa_id != None else kjb_dt_update.desa_by_ttn_id
@@ -100,7 +88,56 @@ async def create(
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
     new_obj = await crud.tandaterimanotaris_hd.get_by_id(id=new_obj.id)
+
+    background_task.add_task(merge_alashak, bundle)
     return create_response(data=new_obj)
+
+async def merge_alashak(bundle:BundleHd, alashak:str, worker_id:UUID, db_session:AsyncSession):
+
+    #update bundle alashak for default if metadata not exists
+
+    dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
+    bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
+    if bundledt_current:
+        if bundledt_current.meta_data is None:
+            input_dict = {}
+            input_data = json.loads(dokumen.dyn_form)
+            input_dict = {field["key"]: None for field in input_data["field"]}
+            if dokumen.key_field not in input_dict:
+                raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
+            
+            input_dict[dokumen.key_field] = alashak
+            meta_data = json.dumps(input_dict)
+            
+            await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                        db_session=db_session, worker_id=worker_id)
+            
+            await db_session.commit()
+
+async def merge_kesepakatan_jual_beli(bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession):
+
+    #update bundle alashak for default if metadata not exists
+    
+    kjb_dt_current = await crud.kjb_dt.get_by_id(id=kjb_dt_id)
+    dokumen = await crud.dokumen.get_by_name(name="KESEPAKATAN JUAL BELI")
+    bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
+    if bundledt_current:
+        if bundledt_current.meta_data is None:
+            input_dict = {}
+            input_data = json.loads(dokumen.dyn_form)
+            input_dict = {field["key"]: None for field in input_data["field"]}
+            if dokumen.key_field not in input_dict:
+                raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Kesepakatan Jual Beli' tidak memiliki key field {dokumen.key_field}")
+            
+            input_dict[dokumen.key_field] = kjb_dt_current.pemilik_name
+            meta_data = json.dumps(input_dict)
+            
+            await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
+                        db_session=db_session, worker_id=worker_id)
+            
+            await db_session.commit()
+
+
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -230,4 +267,9 @@ async def download_file(
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}.{ext}"
     return response
 
-   
+@router.post("/cloud-task-ttn-to-bundle")
+async def bundle_kjb_from_ttn(payload:Dict):
+
+    """Update Bundle Kesepakatan Jual Beli dari KJB lewat TTN"""
+
+    

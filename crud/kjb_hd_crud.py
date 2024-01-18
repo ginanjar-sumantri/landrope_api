@@ -144,7 +144,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             raise HTTPException(status_code=409, detail="Resource already exists")
         
         url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        GCloudTaskService().create_task(payload={"id":db_obj.id, "is_create":True, "additional_info":"ONE_APPROVAL"}, base_url=url)
+        GCloudTaskService().create_task(payload={"id":str(db_obj.id), "is_create":True, "additional_info":"ONE_APPROVAL"}, base_url=url)
         
         await db_session.refresh(db_obj)
         return db_obj
@@ -306,7 +306,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             await db_session.refresh(obj_current)
 
         url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        GCloudTaskService().create_task(payload={"id":obj_current.id, "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
+        GCloudTaskService().create_task(payload={"id":str(obj_current.id), "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
 
         return obj_current
 

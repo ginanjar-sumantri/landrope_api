@@ -18,8 +18,7 @@ import crud
 router = APIRouter()
 
 @router.post("/notification")
-async def notification(
-            sch: WorkflowSystemCallbackSch):
+async def notification(sch: WorkflowSystemCallbackSch):
     
     """Create a new object"""
     try:

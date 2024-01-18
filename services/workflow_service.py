@@ -28,5 +28,5 @@ class WorkflowService:
             else:
                 print(f'{response.status_code}:{response.reason}')
                 return None, response.reason
-        except:
+        except Exception as e:
             return None, self.CONNECTION_FAILED
