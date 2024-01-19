@@ -18,13 +18,13 @@ from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKBy
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum
+from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
 from services.history_service import HistoryService
-from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper
+from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper, BidangHelper
 from services.workflow_service import WorkflowService
 from configs.config import settings
 from jinja2 import Environment, FileSystemLoader
@@ -85,7 +85,6 @@ async def create(
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
             
-            
         else:
             beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
             komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
@@ -113,11 +112,19 @@ async def create(
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), 
-                                                      flow_id=template.flow_id, 
-                                                      descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br>Tanggal: {new_obj.created_at.date()}<br>Dokumen: {new_obj.code}", 
-                                                      additional_info=additional_info, 
-                                                      attachments=[])
+                                                    flow_id=template.flow_id, 
+                                                    descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
+                                                    Tanggal: {new_obj.created_at.date()}<br>
+                                                    Dokumen: {new_obj.code}", 
+                                                    additional_info=additional_info, 
+                                                    attachments=[])
+        
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
+    
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        status_pembebasan = spk_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
+
     
     await db_session.commit()
     await db_session.refresh(new_obj)
@@ -130,6 +137,12 @@ async def create(
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
     
     return create_response(data=new_obj)
+
+spk_status_pembebasan_dict = {
+    JenisBayarEnum.DP : StatusPembebasanEnum.SPK_DP,
+    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.SPK_PELUNASAN,
+    JenisBayarEnum.LUNAS : StatusPembebasanEnum.SPK_LUNAS
+}
 
 async def filter_biaya_lain(beban_biaya_ids:list[UUID], bidang_id:UUID):
 

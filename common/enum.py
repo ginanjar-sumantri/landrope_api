@@ -156,4 +156,14 @@ class WorkflowEntityEnum(str, Enum):
     TERMIN = "TERMIN"
     KJB = "KJB"
 
+class StatusPembebasanEnum(str, Enum):
+    INPUT_PETA_LOKASI = "INPUT_PETA_LOKASI"
+    SPK_DP = "SPK_DP"
+    SPK_LUNAS = "SPK_LUNAS"
+    SPK_PELUNASAN = "SPK_PELUNASAN"
+    PEMBAYARAN_DP = "PEMBAYARAN_DP"
+    PEMBAYARAN_LUNAS = "PEMBAYARAN_LUNAS"
+    PEMBAYARAN_PELUNASAN = "PEMBAYARAN_PELUNASAN"
+
+
     

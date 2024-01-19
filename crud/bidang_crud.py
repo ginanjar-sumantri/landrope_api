@@ -2,7 +2,7 @@ from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi.encoders import jsonable_encoder
-from sqlmodel import select, and_, or_, func
+from sqlmodel import select, and_, or_, func, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import text
@@ -14,7 +14,7 @@ from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, Jeni
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload, BidangAllPembayaran,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, BidangRptExcel)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
-from common.enum import StatusBidangEnum
+from common.enum import StatusBidangEnum, StatusPembebasanEnum
 from services.history_service import HistoryService
 from io import BytesIO
 from uuid import UUID
@@ -206,7 +206,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         db_session = db_session or db.session
         obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama))
         return obj.scalar_one_or_none()
-    
+
     # Untuk Import Bidang Overlap
     async def get_by_id_bidang_lama_for_import_excel(
         self, *, idbidang_lama: str, db_session: AsyncSession | None = None

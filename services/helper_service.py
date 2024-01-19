@@ -8,7 +8,7 @@ from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
-from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum
+from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum, StatusPembebasanEnum
 from services.gcloud_storage_service import GCStorageService
 from uuid import UUID
 from decimal import Decimal
@@ -440,3 +440,15 @@ class BundleHelper:
                 value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
 
         return value
+    
+class BidangHelper:
+
+    async def update_status_pembebasan(self, list_bidang_id:list[UUID], status_pembebasan:StatusPembebasanEnum | None = None, db_session:AsyncSession | None = None):
+
+        db_session = db_session or db.session
+
+        for id in list_bidang_id:
+            bidang_current = await crud.bidang.get_by_id(id=id)
+
+            bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"status_pembebasan"}), status_pembebasan=status_pembebasan)
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)

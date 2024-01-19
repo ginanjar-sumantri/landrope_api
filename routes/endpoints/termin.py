@@ -35,11 +35,12 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
-from common.enum import JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, WorkflowEntityEnum, WorkflowLastStatusEnum
+from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, 
+                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum)
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
-from services.helper_service import HelperService, BundleHelper
+from services.helper_service import HelperService, BundleHelper, BidangHelper
 from services.workflow_service import WorkflowService
 from services.adobe_service import PDFToExcelService
 from decimal import Decimal
@@ -133,6 +134,10 @@ async def create(
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        status_pembebasan = termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+    
     await db_session.commit()
     await db_session.refresh(new_obj)
 
@@ -156,6 +161,12 @@ async def make_sure_all_komponen_biaya_not_outstanding(sch: TerminCreateSch):
 
         if outstanding > 0:
             raise HTTPException(status_code=422, detail="Failed create Termin. Detail : Ada bidang yang komponen biayanya masih memiliki outstanding!")
+
+termin_status_pembebasan_dict = {
+    JenisBayarEnum.DP : StatusPembebasanEnum.PEMBAYARAN_DP,
+    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.PEMBAYARAN_PELUNASAN,
+    JenisBayarEnum.LUNAS : StatusPembebasanEnum.PEMBAYARAN_LUNAS
+}
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
 async def get_list(

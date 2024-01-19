@@ -25,7 +25,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.generator import generate_code, CodeCounterEnum, generate_code_month
-from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBayarEnum,
+from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBayarEnum, StatusPembebasanEnum,
                          JenisBidangEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum, TipeOverlapEnum)
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
@@ -506,7 +506,8 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         notaris_id=tanda_terima_notaris_current.notaris_id,
         bundle_hd_id=kjb_dt_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
-        harga_transaksi=kjb_dt_current.harga_transaksi)
+        harga_transaksi=kjb_dt_current.harga_transaksi,
+        status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
     
     await crud.bidang.update(obj_current=bidang_current, 
                             obj_new=bidang_updated, 
@@ -635,7 +636,8 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
 
     bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, 
                                          status=StatusBidangEnum.Belum_Bebas, 
-                                         jenis_bidang=JenisBidangEnum.Standard)
+                                         jenis_bidang=JenisBidangEnum.Standard,
+                                         status_pembebasan=None)
 
     await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 

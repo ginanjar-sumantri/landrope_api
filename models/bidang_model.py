@@ -8,7 +8,7 @@ from decimal import Decimal
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
-                         SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum)
+                         SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum, StatusPembebasanEnum)
 from geoalchemy2 import Geometry
 import json
 
@@ -55,6 +55,8 @@ class BidangBase(SQLModel):
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     njop:Decimal|None = Field(nullable=True)
+
+    status_pembebasan:StatusPembebasanEnum|None = Field(nullable=True)
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
