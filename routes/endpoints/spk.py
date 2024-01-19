@@ -113,9 +113,9 @@ async def create(
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), 
                                                     flow_id=template.flow_id, 
-                                                    descs=f"Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
+                                                    descs=f"""Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
                                                     Tanggal: {new_obj.created_at.date()}<br>
-                                                    Dokumen: {new_obj.code}", 
+                                                    Dokumen: {new_obj.code}""", 
                                                     additional_info=additional_info, 
                                                     attachments=[])
         
