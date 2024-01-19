@@ -127,16 +127,16 @@ async def create(
         termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=new_obj.id)
         await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        status_pembebasan = termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+
     #workflow
     if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=template.flow_id)
         workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
-    
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
-        await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
     
     await db_session.commit()
     await db_session.refresh(new_obj)

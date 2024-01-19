@@ -450,5 +450,11 @@ class BidangHelper:
         for id in list_bidang_id:
             bidang_current = await crud.bidang.get_by_id(id=id)
 
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+            if bidang_current.geom_ori :
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
             bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"status_pembebasan"}), status_pembebasan=status_pembebasan)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)

@@ -106,6 +106,10 @@ async def create(
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        status_pembebasan = spk_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
+
     #workflow
     if sch.jenis_bayar != JenisBayarEnum.PAJAK:
         template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
@@ -120,11 +124,6 @@ async def create(
                                                     attachments=[])
         
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
-    
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = spk_status_pembebasan_dict.get(sch.jenis_bayar, None)
-        await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
-
     
     await db_session.commit()
     await db_session.refresh(new_obj)
