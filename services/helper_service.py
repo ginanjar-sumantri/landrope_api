@@ -1,4 +1,4 @@
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
@@ -217,7 +217,7 @@ class HelperService:
             bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen, db_session=db_session, with_commit=False, created_by_id=worker_id)
         else:
 
-            history_data = self.extract_metadata_for_history(str(meta_data), current_history=bundledt_obj_current.history_data)
+            history_data = self.extract_metadata_for_history(meta_data=str(meta_data), current_history=bundledt_obj_current.history_data)
 
             riwayat_data = None
             if dokumen.is_riwayat == True:
@@ -441,6 +441,60 @@ class BundleHelper:
 
         return value
     
+    async def merge_alashak(self, bundle:BundleHd, alashak:str, worker_id:UUID, db_session:AsyncSession):
+
+    #update bundle alashak for default if metadata not exists
+
+        dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
+        bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
+        if bundledt_current:
+            if bundledt_current.meta_data is None:
+                input_dict = {}
+                input_data = json.loads(dokumen.dyn_form)
+                input_dict = {field["key"]: None for field in input_data["field"]}
+                if dokumen.key_field not in input_dict:
+                    raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
+                
+                input_dict[dokumen.key_field] = alashak
+                meta_data = json.dumps(input_dict)
+                
+            else:
+                input_data = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                if dokumen.key_field not in input_data:
+                    raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
+                
+                input_data[dokumen.key_field] = alashak
+                meta_data = json.dumps(input_data)
+
+            
+            await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                            db_session=db_session, worker_id=worker_id)
+
+                
+            
+    async def merge_kesepakatan_jual_beli(self, bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession, pemilik_id:UUID|None = None):
+
+        #update bundle alashak for default if metadata not exists
+        
+        pemilik = await crud.pemilik.get(id=pemilik_id)
+        kjb_dt_current = await crud.kjb_dt.get_by_id(id=kjb_dt_id)
+        dokumen = await crud.dokumen.get_by_name(name="KESEPAKATAN JUAL BELI")
+        bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
+        if bundledt_current:
+            if bundledt_current.meta_data is None:
+                input_dict = {}
+                input_data = json.loads(dokumen.dyn_form)
+                input_dict = {field["key"]: None for field in input_data["field"]}
+                if dokumen.key_field not in input_dict:
+                    raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Kesepakatan Jual Beli' tidak memiliki key field {dokumen.key_field}")
+                
+                input_dict[dokumen.key_field] = pemilik.name if pemilik else ""
+                meta_data = json.dumps(input_dict)
+                
+                await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
+                            db_session=db_session, worker_id=worker_id)
+
+    
 class BidangHelper:
 
     async def update_status_pembebasan(self, list_bidang_id:list[UUID], status_pembebasan:StatusPembebasanEnum | None = None, db_session:AsyncSession | None = None):
@@ -458,3 +512,20 @@ class BidangHelper:
 
             bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"status_pembebasan"}), status_pembebasan=status_pembebasan)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)
+    
+    async def update_alashak(self, bidang_id:UUID, worker_id:UUID | str | None = None, alashak:str | None = None, db_session:AsyncSession | None = None):
+
+        db_session = db_session or db.session
+
+        bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+        
+        if bidang_current.alashak != alashak:
+
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+            if bidang_current.geom_ori :
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
+            bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"alashak"}), alashak=alashak)
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False, updated_by_id=worker_id)

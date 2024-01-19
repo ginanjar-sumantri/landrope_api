@@ -17,7 +17,7 @@ from common.exceptions import (IdNotFoundException, ContentNoChangeException,
                                ImportFailedException, DocumentFileNotFoundException)
 from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
-from services.helper_service import HelperService
+from services.helper_service import HelperService, BundleHelper
 from typing import Dict, Any
 import uuid
 import crud
@@ -84,8 +84,8 @@ async def create(
 
     if bundle:
         #update bundle alashak & penjual for default if metadata not exists
-        await merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
-        await merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
+        await BundleHelper().merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
+        await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
@@ -93,47 +93,6 @@ async def create(
 
     return create_response(data=new_obj)
 
-async def merge_alashak(bundle:BundleHd, alashak:str, worker_id:UUID, db_session:AsyncSession):
-
-    #update bundle alashak for default if metadata not exists
-
-    dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
-    bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
-    if bundledt_current:
-        if bundledt_current.meta_data is None:
-            input_dict = {}
-            input_data = json.loads(dokumen.dyn_form)
-            input_dict = {field["key"]: None for field in input_data["field"]}
-            if dokumen.key_field not in input_dict:
-                raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
-            
-            input_dict[dokumen.key_field] = alashak
-            meta_data = json.dumps(input_dict)
-            
-            await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
-                        db_session=db_session, worker_id=worker_id)
-            
-async def merge_kesepakatan_jual_beli(bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession, pemilik_id:UUID|None = None):
-
-    #update bundle alashak for default if metadata not exists
-    
-    pemilik = await crud.pemilik.get(id=pemilik_id)
-    kjb_dt_current = await crud.kjb_dt.get_by_id(id=kjb_dt_id)
-    dokumen = await crud.dokumen.get_by_name(name="KESEPAKATAN JUAL BELI")
-    bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
-    if bundledt_current:
-        if bundledt_current.meta_data is None:
-            input_dict = {}
-            input_data = json.loads(dokumen.dyn_form)
-            input_dict = {field["key"]: None for field in input_data["field"]}
-            if dokumen.key_field not in input_dict:
-                raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Kesepakatan Jual Beli' tidak memiliki key field {dokumen.key_field}")
-            
-            input_dict[dokumen.key_field] = pemilik.name if pemilik else ""
-            meta_data = json.dumps(input_dict)
-            
-            await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
-                        db_session=db_session, worker_id=worker_id)
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -239,8 +198,8 @@ async def update(id:UUID,
 
     if bundle:
         #update bundle alashak & penjual for default if metadata not exists
-        await merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
-        await merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
+        await BundleHelper().merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
+        await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 

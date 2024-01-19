@@ -63,7 +63,7 @@ class HistoryService:
         
         await crud.hasil_peta_lokasi_history.create(obj_in=sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
 
-    async def create_history_kjb(self, obj_current:KjbHd, worker_id, db_session:AsyncSession | None = None):
+    async def create_history_kjb(self, obj_current:KjbHd, worker_id:UUID, db_session:AsyncSession | None = None):
         
         meta_data_current =  KjbHdByIdSch.from_orm(obj_current)
         sch = KjbHistoryCreateSch(kjb_hd_id=obj_current.id,

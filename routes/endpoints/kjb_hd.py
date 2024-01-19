@@ -17,6 +17,7 @@ from common.enum import WorkflowEntityEnum
 from datetime import datetime
 from typing import Dict, Any
 from services.gcloud_storage_service import GCStorageService
+from services.helper_service import BidangHelper, BundleHelper
 import crud
 import json
 import time
@@ -199,3 +200,28 @@ async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
     
     obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
     return create_response(data=obj_updated)
+
+@router.post("/task/update-alashak")
+async def update_alashak_bidang_bundle(payload:Dict):
+
+    db_session = db.session
+
+    id = payload.get("id", None)
+    obj = await crud.kjb_hd.get_by_id(id=id)
+
+    if not obj:
+        raise IdNotFoundException(KjbHd, id)
+    
+    for kjb_dt in obj.kjb_dts:
+        if kjb_dt.hasil_peta_lokasi:
+            await BidangHelper().update_alashak(bidang_id=kjb_dt.hasil_peta_lokasi.bidang_id, alashak=kjb_dt.alashak, db_session=db_session, worker_id=obj.updated_by_id)
+
+        if kjb_dt.bundlehd:
+            await BundleHelper().merge_alashak(bundle=kjb_dt.bundlehd, worker_id=obj.updated_by_id, alashak=kjb_dt.alashak, db_session=db_session)
+    
+    await db_session.commit()
+
+    return {"message" : "successfully"}
+
+
+

@@ -11,10 +11,12 @@ from common.ordered import OrderEnumSch
 from common.enum import WorkflowEntityEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
+from models import BundleHd
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from services.gcloud_task_service import GCloudTaskService
 from services.history_service import HistoryService
+from services.helper_service import BidangHelper
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID
 from datetime import datetime
@@ -38,7 +40,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                                         ).options(selectinload(KjbDt.pemilik)
                                                                         ).options(selectinload(KjbDt.kjb_hd)
                                                                         ).options(selectinload(KjbDt.jenis_surat)
-                                                                        ).options(selectinload(KjbDt.request_peta_lokasi))
+                                                                        ).options(selectinload(KjbDt.request_peta_lokasi)
+                                                                        ).options(selectinload(KjbDt.hasil_peta_lokasi)
+                                                                        ).options(selectinload(KjbDt.bundlehd
+                                                                                        ).options(selectinload(BundleHd.bundledts))
+                                                                        )
                                                 ).options(selectinload(KjbHd.rekenings)
                                                 ).options(selectinload(KjbHd.hargas
                                                                         ).options(selectinload(KjbHarga.termins
@@ -297,6 +303,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 existing_detail.updated_at = datetime.utcnow()
                 existing_detail.updated_by_id = updated_by_id
                 db_session.add(existing_detail)
+
             else:
                 new_detail = KjbDt(**detail.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_detail)

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from models.workflow_model import Workflow
@@ -8,9 +8,10 @@ from schemas.workflow_sch import WorkflowSystemCallbackSch, WorkflowUpdateSch, W
 from schemas.workflow_history_sch import WorkflowHistoryCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from services.helper_service import HelperService
+from services.gcloud_task_service import GCloudTaskService
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
-from common.enum import WorkflowLastStatusEnum
+from common.enum import WorkflowLastStatusEnum, WorkflowEntityEnum
 from models.code_counter_model import CodeCounterEnum
 from datetime import datetime
 import crud
@@ -18,7 +19,7 @@ import crud
 router = APIRouter()
 
 @router.post("/notification")
-async def notification(sch: WorkflowSystemCallbackSch):
+async def notification(sch: WorkflowSystemCallbackSch, request:Request):
     
     """Create a new object"""
     try:
@@ -55,8 +56,11 @@ async def notification(sch: WorkflowSystemCallbackSch):
             last_step_app_action_remarks=sch.last_step_approver.confirm_remarks if sch.last_step_approver else None
         )
 
-
         await crud.workflow_history.create(obj_in=obj_in, db_session=db_session)
+
+        if obj_updated.entity == WorkflowEntityEnum.KJB and obj_updated.last_status == WorkflowLastStatusEnum.COMPLETED:
+            url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+            GCloudTaskService().create_task(payload={"id":str(obj_updated.reference_id)}, base_url=url)
         
         return {"success" : True}
     
