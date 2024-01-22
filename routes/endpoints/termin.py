@@ -36,7 +36,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
 from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, 
-                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum)
+                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum, jenis_bayar_to_termin_status_pembebasan_dict)
 from common.rounder import RoundTwo
 from common.generator import generate_code_month
 from services.gcloud_task_service import GCloudTaskService
@@ -128,7 +128,7 @@ async def create(
         await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
 
     #workflow
@@ -161,12 +161,6 @@ async def make_sure_all_komponen_biaya_not_outstanding(sch: TerminCreateSch):
 
         if outstanding > 0:
             raise HTTPException(status_code=422, detail="Failed create Termin. Detail : Ada bidang yang komponen biayanya masih memiliki outstanding!")
-
-termin_status_pembebasan_dict = {
-    JenisBayarEnum.DP : StatusPembebasanEnum.PEMBAYARAN_DP,
-    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.PEMBAYARAN_PELUNASAN,
-    JenisBayarEnum.LUNAS : StatusPembebasanEnum.PEMBAYARAN_LUNAS
-}
 
 @router.get("", response_model=GetResponsePaginatedSch[TerminSch])
 async def get_list(

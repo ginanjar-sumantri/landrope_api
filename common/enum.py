@@ -166,4 +166,14 @@ class StatusPembebasanEnum(str, Enum):
     PEMBAYARAN_PELUNASAN = "PEMBAYARAN_PELUNASAN"
 
 
-    
+jenis_bayar_to_spk_status_pembebasan = {
+    JenisBayarEnum.DP : StatusPembebasanEnum.SPK_DP,
+    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.SPK_PELUNASAN,
+    JenisBayarEnum.LUNAS : StatusPembebasanEnum.SPK_LUNAS
+}
+
+jenis_bayar_to_termin_status_pembebasan_dict = {
+    JenisBayarEnum.DP : StatusPembebasanEnum.PEMBAYARAN_DP,
+    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.PEMBAYARAN_PELUNASAN,
+    JenisBayarEnum.LUNAS : StatusPembebasanEnum.PEMBAYARAN_LUNAS
+}

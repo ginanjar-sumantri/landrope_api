@@ -18,7 +18,9 @@ from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKBy
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import JenisBayarEnum, StatusSKEnum, JenisBidangEnum, SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum
+from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
+                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
+                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan)
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
@@ -107,7 +109,7 @@ async def create(
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = spk_status_pembebasan_dict.get(sch.jenis_bayar, None)
+        status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
 
     #workflow
@@ -136,12 +138,6 @@ async def create(
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
     
     return create_response(data=new_obj)
-
-spk_status_pembebasan_dict = {
-    JenisBayarEnum.DP : StatusPembebasanEnum.SPK_DP,
-    JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.SPK_PELUNASAN,
-    JenisBayarEnum.LUNAS : StatusPembebasanEnum.SPK_LUNAS
-}
 
 async def filter_biaya_lain(beban_biaya_ids:list[UUID], bidang_id:UUID):
 

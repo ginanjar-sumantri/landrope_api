@@ -203,18 +203,15 @@ async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
                     project.name AS project_name,
                     COALESCE(SUM(CASE
                             WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' THEN
-                                CASE
-                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                END
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
                             WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                            WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' Then ROUND(bidang.luas_surat/10000::numeric,2)
                         END), 0) AS LUAS,
                     COUNT(bidang.id) AS jumlah_bidang
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
-                    WHERE ((status = 'Bebas' AND bidang.jenis_bidang = 'Bintang')
+                    WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
                     OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
                     GROUP by project.id
@@ -243,19 +240,15 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                         ELSE bidang.status
                     END AS status,
                     COALESCE(SUM(CASE
-                            WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                             WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' THEN
-                                CASE
-                                    WHEN bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                END
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
                             WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                            WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                         END), 0) AS LUAS
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
-                    WHERE ((status = 'Bebas' AND bidang.jenis_bidang = 'Bintang')
+                    WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
                     OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
                     GROUP by project.id, CASE
@@ -279,7 +272,7 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
 async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
 
     query = text(f"""
-                    SELECT
+                    with subquery as (SELECT
                     project.id AS project_id,
                     project.name As project_name,
                     CASE
@@ -306,9 +299,19 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
                     INNER JOIN project ON project.id = planing.project_id
                     LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
                     WHERE ((bidang.jenis_bidang = 'Standard' AND bidang.status = 'Belum_Bebas')
-                    OR (bidang.jenis_bidang = 'Bintang' AND bidang.status = 'Bebas'))
+                    OR (bidang.jenis_bidang = 'Bintang' AND bidang.status = 'Lanjut'))
                     AND project.id IN ({projects})
-                    GROUP by project.id, bidang.status, kategori.id, bidang.jenis_bidang
+                    GROUP by project.id, bidang.status, kategori.id, bidang.jenis_bidang)
+                    Select 
+                    project_id, 
+                    project_name, 
+                    status, 
+                    kategori_name, 
+                    sum(shm) as shm, 
+                    sum(girik) as girik, 
+                    sum(luas) as luas 
+                    from subquery
+                    group by project_id, project_name, status, kategori_name
                 """)
     
     db_session = db.session
