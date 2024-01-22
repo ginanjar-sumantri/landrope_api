@@ -164,6 +164,8 @@ async def fishbone(project_ids:ParamProject):
 
         total_luas_project = project.luas
         project_fishbone_sch = FishboneProject(**project.dict())
+        planings = await crud.planing.get_by_project_id(project_id=project_fishbone_sch.project_id)
+        project_fishbone_sch.luas_planing = (sum([pl.luas for pl in planings])/10000)
 
         status_fishbones = []
         for status in summary_status:
@@ -236,7 +238,11 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                     project.id AS project_id,
                     project.name AS project_name,
                     CASE
-                        WHEN bidang.jenis_bidang = 'Bintang' THEN 'Belum_Bebas'
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN 
+                            CASE
+                                WHEN kategori.name = 'Asset' AND kategori_sub.name IN ('Bolong', 'Saluran') THEN 'Bebas'
+                                ELSE 'Belum_Bebas'
+                            END
                         ELSE bidang.status
                     END AS status,
                     COALESCE(SUM(CASE
@@ -248,11 +254,18 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
+                    LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
+                    LEFT OUTER JOIN kategori_sub ON kategori_sub.id = bidang.kategori_sub_id
                     WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
                     OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
-                    GROUP by project.id, CASE
-                        WHEN bidang.jenis_bidang = 'Bintang' THEN 'Belum_Bebas'
+                    GROUP by project.id, 
+                    CASE
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN 
+                            CASE
+                                WHEN kategori.name = 'Asset' AND kategori_sub.name IN ('Bolong', 'Saluran') THEN 'Bebas'
+                                ELSE 'Belum_Bebas'
+                            END
                         ELSE bidang.status
                     END
                 """)
@@ -284,11 +297,7 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
                         WHEN bidang.jenis_bidang = 'Bintang' THEN 'Hibah'
                     END AS kategori_name,
                     COALESCE(SUM(CASE
-                            WHEN bidang.jenis_alashak = 'Sertifikat' THEN 
-                                CASE 
-                                    WHEN bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                    WHEN bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                END
+                            WHEN bidang.jenis_alashak = 'Sertifikat' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                     END), 0) AS SHM,
                     COALESCE(SUM(CASE
                             WHEN bidang.jenis_alashak = 'Girik' THEN ROUND(bidang.luas_surat/10000::numeric,2)
@@ -298,8 +307,10 @@ async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
                     LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
+                    LEFT OUTER JOIN kategori_sub ON kategori_sub.id = bidang.kategori_sub_id
                     WHERE ((bidang.jenis_bidang = 'Standard' AND bidang.status = 'Belum_Bebas')
-                    OR (bidang.jenis_bidang = 'Bintang' AND bidang.status = 'Lanjut'))
+                    OR (bidang.jenis_bidang = 'Bintang' AND bidang.status = 'Lanjut' 
+                        AND kategori.name != 'Asset' AND kategori_sub.name NOT IN ('Bolong', 'Saluran')))
                     AND project.id IN ({projects})
                     GROUP by project.id, bidang.status, kategori.id, bidang.jenis_bidang)
                     Select 

@@ -40,6 +40,15 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         obj = await db_session.execute(select(Planing).where(and_(Planing.project_id == project_id, Planing.desa_id == desa_id)))
         return obj.scalar_one_or_none()
     
+    async def get_by_project_id(
+        self, *,
+        project_id: UUID | str | None,
+        db_session: AsyncSession | None = None
+    ) -> list[Planing]:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Planing).where(Planing.project_id == project_id))
+        return obj.scalars().all()
+    
     async def create_planing(self, *, obj_in: PlaningCreateSch, created_by_id : UUID | str | None = None, 
                      db_session : AsyncSession | None = None) -> Planing :
         db_session = db_session or db.session

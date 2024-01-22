@@ -53,12 +53,14 @@ class FishboneProject(SQLModel):
     project_id:UUID | None
     project_name:str | None
     luas:condecimal(decimal_places=2) | None
+    luas_planing:Decimal | None
     jumlah_bidang:int | None
     status:list[FishboneStatus] | None
 
 
 class ParamProject(SQLModel):
     project_ids:list[UUID]
+    planing_ids:list[UUID]
 
 
 
