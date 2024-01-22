@@ -165,7 +165,7 @@ async def fishbone(project_ids:ParamProject):
         total_luas_project = project.luas
         project_fishbone_sch = FishboneProject(**project.dict())
         planings = await crud.planing.get_by_project_id(project_id=project_fishbone_sch.project_id)
-        project_fishbone_sch.luas_planing = (sum([pl.luas for pl in planings])/10000)
+        project_fishbone_sch.luas_planning = (sum([pl.luas for pl in planings])/10000)
 
         status_fishbones = []
         for status in summary_status:
@@ -205,7 +205,11 @@ async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
                     project.name AS project_name,
                     COALESCE(SUM(CASE
                             WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN 
+                                CASE
+                                    WHEN bidang.luas_bayar is null THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                                    ELSE ROUND(bidang.luas_bayar/10000::numeric,2)
+                                END
                             WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                             WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' Then ROUND(bidang.luas_surat/10000::numeric,2)
                         END), 0) AS LUAS,
@@ -247,7 +251,11 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                     END AS status,
                     COALESCE(SUM(CASE
                             WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_bayar/10000::numeric,2)
+                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN 
+                                CASE
+                                    WHEN bidang.luas_bayar is null THEN ROUND(bidang.luas_surat/10000::numeric,2)
+                                    ELSE ROUND(bidang.luas_bayar/10000::numeric,2)
+                                END
                             WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                             WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
                         END), 0) AS LUAS
