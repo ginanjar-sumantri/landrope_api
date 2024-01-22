@@ -165,7 +165,7 @@ async def fishbone(project_ids:ParamProject):
         total_luas_project = project.luas
         project_fishbone_sch = FishboneProject(**project.dict())
         planings = await crud.planing.get_by_project_id(project_id=project_fishbone_sch.project_id)
-        project_fishbone_sch.luas_planning = (sum([pl.luas for pl in planings])/10000)
+        project_fishbone_sch.luas_planning = RoundTwo(angka=sum([pl.luas for pl in planings])/10000)
 
         status_fishbones = []
         for status in summary_status:
