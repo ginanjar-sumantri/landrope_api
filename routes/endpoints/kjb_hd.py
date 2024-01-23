@@ -93,10 +93,14 @@ async def create_workflow(payload:Dict):
     if not obj:
         raise IdNotFoundException(KjbHd, id)
     
+    trying:int = 0
     if is_create:
         while obj.file_path is None:
+            if trying > 7:
+                raise HTTPException(status_code=409, detail="File not found")
             obj = await crud.kjb_hd.get(id=id)
             time.sleep(2)
+            trying = trying + 1
     
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
