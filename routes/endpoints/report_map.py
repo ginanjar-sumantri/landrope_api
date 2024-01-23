@@ -200,27 +200,85 @@ async def fishbone(project_ids:ParamProject):
 async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
 
     query = text(f"""
+                    with subquery as (
                     SELECT
                     project.id AS project_id,
                     project.name AS project_name,
-                    COALESCE(SUM(CASE
-                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN 
-                                CASE
-                                    WHEN bidang.luas_bayar is null THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                    ELSE ROUND(bidang.luas_bayar/10000::numeric,2)
-                                END
-                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' Then ROUND(bidang.luas_surat/10000::numeric,2)
-                        END), 0) AS LUAS,
-                    COUNT(bidang.id) AS jumlah_bidang
+                    desa.name As desa_name,
+                    bidang.id_bidang,
+                    bidang.jenis_bidang,
+                    bidang.jenis_alashak,
+                    kategori.name as kategori_name,
+                    kategori_sub.name as kategori_sub_name,
+                    CASE
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN 
+                            CASE
+                                WHEN kategori.name = 'Asset' AND kategori_sub.name IN ('Bolong', 'Saluran') THEN 'Bebas'
+                                ELSE 'Belum_Bebas'
+                            END
+                        ELSE bidang.status
+                    END AS report_status,
+                    bidang.status AS current_status,
+                    COALESCE(bidang.luas_surat, 0) AS luas_surat,
+                    COALESCE(bidang.luas_ukur, 0) AS luas_ukur,
+                    COALESCE(bidang.luas_gu_perorangan, 0) AS luas_gu_perorangan,
+                    COALESCE(bidang.luas_gu_pt, 0) AS luas_gu_pt,
+                    COALESCE(bidang.luas_nett, 0) AS luas_nett,
+                    COALESCE(bidang.luas_clear, 0) AS luas_clear,
+                    COALESCE(bidang.luas_pbt_perorangan, 0) AS luas_pbt_perorangan,
+                    COALESCE(bidang.luas_pbt_pt, 0) AS luas_pbt_pt,
+                    COALESCE(bidang.luas_bayar, 0) AS luas_bayar,
+                    CASE 
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_id
+                                                                            where bidang_overlap.parent_bidang_intersect_id = bidang.id
+                                                                            and bd.status = 'Bebas'
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_damai,
+                    CASE
+                        WHEN bidang.jenis_bidang = 'Overlap' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_intersect_id
+                                                                            where bidang_overlap.parent_bidang_id = bidang.id
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_overlap,
+                    CASE
+                        WHEN bidang.jenis_bidang IN ('Standard', 'Overlap')
+                        THEN
+                            ROUND((CASE
+                                WHEN bidang.status IN ('Deal', 'Belum_Bebas') THEN bidang.luas_surat
+                                WHEN bidang.status IN ('Bebas') THEN COALESCE(bidang.luas_bayar, bidang.luas_surat)
+                                ELSE 0
+                            END) - COALESCE((SELECT SUM(COALESCE(luas, 0)) 
+                                            FROM bidang_overlap bo
+                                            WHERE bo.parent_bidang_id = bidang.id), 0), 2)
+                        WHEN bidang.jenis_bidang IN ('Bintang')
+                        THEN ROUND(COALESCE(bidang.luas_surat, 0) - COALESCE((SELECT SUM(COALESCE(luas, 0))
+                                                                    FROM bidang_overlap bo
+                                                                    INNER JOIN bidang bd ON bd.id = bo.parent_bidang_id
+                                                                    WHERE bo.parent_bidang_intersect_id = bidang.id
+                                                                    AND bd.status = 'Bebas'), 0), 2)
+                        ELSE 0
+                    END AS luas_product
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
+                    INNER JOIN desa ON desa.id = planing.desa_id
+                    LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
+                    LEFT OUTER JOIN kategori_sub ON kategori_sub.id = bidang.kategori_sub_id
                     WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
                     OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
-                    GROUP by project.id
+                    )
+                    select project_id, 
+                    project_name, 
+                    ROUND(sum(luas_product)/10000::numeric, 2) as luas, 
+                    COUNT(id_bidang) as jumlah_bidang
+                    from subquery
+                    group by project_id, project_name
                 """)
     
     db_session = db.session
@@ -238,9 +296,16 @@ async def fishbone_get_project_data(projects:str) -> list[SummaryProject]:
 async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
 
     query = text(f"""
+                    with subquery as (
                     SELECT
                     project.id AS project_id,
                     project.name AS project_name,
+                    desa.name As desa_name,
+                    bidang.id_bidang,
+                    bidang.jenis_bidang,
+                    bidang.jenis_alashak,
+                    kategori.name as kategori_name,
+                    kategori_sub.name as kategori_sub_name,
                     CASE
                         WHEN bidang.jenis_bidang = 'Bintang' THEN 
                             CASE
@@ -248,34 +313,81 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
                                 ELSE 'Belum_Bebas'
                             END
                         ELSE bidang.status
-                    END AS status,
-                    COALESCE(SUM(CASE
-                            WHEN bidang.status = 'Deal' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Bebas' AND bidang.jenis_bidang IN ('Overlap','Standard') THEN 
-                                CASE
-                                    WHEN bidang.luas_bayar is null THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                                    ELSE ROUND(bidang.luas_bayar/10000::numeric,2)
-                                END
-                            WHEN bidang.status = 'Belum_Bebas' AND bidang.jenis_bidang = 'Standard' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                            WHEN bidang.status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                        END), 0) AS LUAS
+                    END AS report_status,
+                    bidang.status AS current_status,
+                    COALESCE(bidang.luas_surat, 0) AS luas_surat,
+                    COALESCE(bidang.luas_ukur, 0) AS luas_ukur,
+                    COALESCE(bidang.luas_gu_perorangan, 0) AS luas_gu_perorangan,
+                    COALESCE(bidang.luas_gu_pt, 0) AS luas_gu_pt,
+                    COALESCE(bidang.luas_nett, 0) AS luas_nett,
+                    COALESCE(bidang.luas_clear, 0) AS luas_clear,
+                    COALESCE(bidang.luas_pbt_perorangan, 0) AS luas_pbt_perorangan,
+                    COALESCE(bidang.luas_pbt_pt, 0) AS luas_pbt_pt,
+                    COALESCE(bidang.luas_bayar, 0) AS luas_bayar,
+                    CASE 
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_id
+                                                                            where bidang_overlap.parent_bidang_intersect_id = bidang.id
+                                                                            and bd.status = 'Bebas'
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_damai,
+                    CASE
+                        WHEN bidang.jenis_bidang = 'Overlap' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_intersect_id
+                                                                            where bidang_overlap.parent_bidang_id = bidang.id
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_overlap,
+                    CASE
+                        WHEN bidang.jenis_bidang IN ('Standard', 'Overlap')
+                        THEN
+                            ROUND((CASE
+                                WHEN bidang.status IN ('Deal', 'Belum_Bebas') THEN bidang.luas_surat
+                                WHEN bidang.status IN ('Bebas') THEN COALESCE(bidang.luas_bayar, bidang.luas_surat)
+                                ELSE 0
+                            END) - COALESCE((SELECT SUM(COALESCE(luas, 0)) 
+                                            FROM bidang_overlap bo
+                                            WHERE bo.parent_bidang_id = bidang.id), 0), 2)
+                        WHEN bidang.jenis_bidang IN ('Bintang')
+                        THEN ROUND(COALESCE(bidang.luas_surat, 0) - COALESCE((SELECT SUM(COALESCE(luas, 0))
+                                                                    FROM bidang_overlap bo
+                                                                    INNER JOIN bidang bd ON bd.id = bo.parent_bidang_id
+                                                                    WHERE bo.parent_bidang_intersect_id = bidang.id
+                                                                    AND bd.status = 'Bebas'), 0), 2)
+                        ELSE 0
+                    END AS luas_product
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
+                    INNER JOIN desa ON desa.id = planing.desa_id
                     LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
                     LEFT OUTER JOIN kategori_sub ON kategori_sub.id = bidang.kategori_sub_id
                     WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
                     OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
-                    GROUP by project.id, 
+                    ),
+                    subs as (select 
+                    project_id,
+                    project_name,
+                    report_status as status,
+                    sum(luas_product) AS luas,
+                    (SELECT sum(luas_damai) from subquery s WHERE s.project_id = subquery.project_id) as luas_damai
+                    from subquery
+                    group by project_id, project_name, report_status)
+                    select
+                    project_id,
+                    project_name,
+                    status,
                     CASE
-                        WHEN bidang.jenis_bidang = 'Bintang' THEN 
-                            CASE
-                                WHEN kategori.name = 'Asset' AND kategori_sub.name IN ('Bolong', 'Saluran') THEN 'Bebas'
-                                ELSE 'Belum_Bebas'
-                            END
-                        ELSE bidang.status
-                    END
+                        WHEN status = 'Bebas' THEN ROUND((luas + luas_damai)/10000::numeric, 2)
+                        ELSE ROUND(luas/10000::numeric, 2)
+                    END AS luas
+                    from subs
+                    Order by project_id, status
+
                 """)
     
     db_session = db.session
@@ -293,43 +405,97 @@ async def fishbone_get_status_data(projects:str) -> list[SummaryStatus]:
 async def fishbone_get_kategori_data(projects:str) -> list[SummaryKategori]:
 
     query = text(f"""
-                    with subquery as (SELECT
+                    with subquery as (
+                    SELECT
                     project.id AS project_id,
-                    project.name As project_name,
+                    project.name AS project_name,
+                    desa.name As desa_name,
+                    bidang.id_bidang,
+                    bidang.jenis_bidang,
+                    bidang.jenis_alashak,
+                    kategori.name as kategori_name,
+                    kategori_sub.name as kategori_sub_name,
                     CASE
-                        WHEN bidang.jenis_bidang = 'Bintang' THEN 'Belum_Bebas'
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN 
+                            CASE
+                                WHEN kategori.name = 'Asset' AND kategori_sub.name IN ('Bolong', 'Saluran') THEN 'Bebas'
+                                ELSE 'Belum_Bebas'
+                            END
                         ELSE bidang.status
-                    END AS status,
+                    END AS report_status,
+                    bidang.status AS current_status,
+                    CASE 
+                        WHEN bidang.jenis_bidang = 'Bintang' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_id
+                                                                            where bidang_overlap.parent_bidang_intersect_id = bidang.id
+                                                                            and bd.status = 'Bebas'
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_damai,
                     CASE
-                        WHEN bidang.jenis_bidang = 'Standard' THEN COALESCE(kategori.name, 'Non Category')
-                        WHEN bidang.jenis_bidang = 'Bintang' THEN 'Hibah'
-                    END AS kategori_name,
-                    COALESCE(SUM(CASE
-                            WHEN bidang.jenis_alashak = 'Sertifikat' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                    END), 0) AS SHM,
-                    COALESCE(SUM(CASE
-                            WHEN bidang.jenis_alashak = 'Girik' THEN ROUND(bidang.luas_surat/10000::numeric,2)
-                    END), 0) AS GIRIK,
-                    COALESCE(SUM(ROUND(bidang.luas_surat/10000::numeric,2)), 0) AS luas
+                        WHEN bidang.jenis_bidang = 'Overlap' THEN COALESCE((select sum(bidang_overlap.luas) 
+                                                                            from bidang_overlap
+                                                                            inner join bidang bd on bd.id = bidang_overlap.parent_bidang_intersect_id
+                                                                            where bidang_overlap.parent_bidang_id = bidang.id
+                                                                            ), 0) 
+                        ELSE 0
+                    END AS luas_overlap,
+                    CASE
+                        WHEN bidang.jenis_bidang IN ('Standard', 'Overlap')
+                        THEN
+                            ROUND((CASE
+                                WHEN bidang.status IN ('Deal', 'Belum_Bebas') THEN bidang.luas_surat
+                                WHEN bidang.status IN ('Bebas') THEN COALESCE(bidang.luas_bayar, bidang.luas_surat)
+                                ELSE 0
+                            END) - COALESCE((SELECT SUM(COALESCE(luas, 0)) 
+                                            FROM bidang_overlap bo
+                                            WHERE bo.parent_bidang_id = bidang.id), 0), 2)
+                        WHEN bidang.jenis_bidang IN ('Bintang')
+                        THEN ROUND(COALESCE(bidang.luas_surat, 0) - COALESCE((SELECT SUM(COALESCE(luas, 0))
+                                                                    FROM bidang_overlap bo
+                                                                    INNER JOIN bidang bd ON bd.id = bo.parent_bidang_id
+                                                                    WHERE bo.parent_bidang_intersect_id = bidang.id
+                                                                    AND bd.status = 'Bebas'), 0), 2)
+                        ELSE 0
+                    END AS luas_product
                     FROM bidang
                     INNER JOIN planing ON planing.id = bidang.planing_id
                     INNER JOIN project ON project.id = planing.project_id
+                    INNER JOIN desa ON desa.id = planing.desa_id
                     LEFT OUTER JOIN kategori ON kategori.id = bidang.kategori_id
                     LEFT OUTER JOIN kategori_sub ON kategori_sub.id = bidang.kategori_sub_id
-                    WHERE ((bidang.jenis_bidang = 'Standard' AND bidang.status = 'Belum_Bebas')
-                    OR (bidang.jenis_bidang = 'Bintang' AND bidang.status = 'Lanjut' 
-                        AND kategori.name != 'Asset' AND kategori_sub.name NOT IN ('Bolong', 'Saluran')))
+                    WHERE ((status = 'Lanjut' AND bidang.jenis_bidang = 'Bintang')
+                    OR (status != 'Batal' AND bidang.jenis_bidang IN ('Overlap', 'Standard')))
                     AND project.id IN ({projects})
-                    GROUP by project.id, bidang.status, kategori.id, bidang.jenis_bidang)
+                    ),
+                    subs as (SELECT 
+                    project_id,
+                    project_name,
+                    report_status AS status,
+                    CASE
+                        WHEN jenis_bidang IN ('Standard', 'Overlap') THEN COALESCE(kategori_name, 'Non Category')
+                        WHEN jenis_bidang = 'Bintang' THEN 'Hibah'
+                    END AS kategori_name,
+                    COALESCE(SUM(CASE
+                                    WHEN jenis_alashak = 'Sertifikat' THEN luas_product
+                                END), 0) AS SHM,
+                    COALESCE(SUM(CASE
+                                    WHEN jenis_alashak = 'Girik' THEN luas_product
+                                END), 0) AS GIRIK,
+                    SUM(luas_product) AS luas
+                    FROM subquery
+                    WHERE report_status = 'Belum_Bebas'
+                    GROUP BY project_id, project_name, report_status, jenis_bidang, kategori_name)
                     Select 
                     project_id, 
                     project_name, 
                     status, 
                     kategori_name, 
-                    sum(shm) as shm, 
-                    sum(girik) as girik, 
-                    sum(luas) as luas 
-                    from subquery
+                    ROUND(sum(shm)/10000::numeric, 2) as shm, 
+                    ROUND(sum(girik)/10000::numeric, 2) as girik, 
+                    ROUND(sum(luas)/10000::numeric,2) as luas 
+                    from subs
                     group by project_id, project_name, status, kategori_name
                 """)
     
