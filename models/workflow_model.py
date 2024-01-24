@@ -16,6 +16,7 @@ class WorkflowBase(SQLModel):
     last_step_app_action_remarks:str|None = Field(nullable=True)
     entity:WorkflowEntityEnum|None = Field(nullable=False)
     flow_id:str|None = Field(nullable=False)
+    version:int|None = Field(default=1)
 
 class WorkflowFullBase(BaseUUIDModel, WorkflowBase):
     pass

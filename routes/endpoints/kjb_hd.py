@@ -102,6 +102,8 @@ async def create_workflow(payload:Dict):
             time.sleep(2)
             trying = trying + 1
     
+
+    
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
     wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
@@ -113,6 +115,11 @@ async def create_workflow(payload:Dict):
                                                     Dokumen: {obj.code}""", 
                                             additional_info={"approval_number" : str(additional_info)}, 
                                             attachments=[vars(wf_system_attachment)])
+    
+    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
+    if wf_current:
+        wf_sch.version = wf_current.version + 1
+        wf_system_sch.version = wf_current.version + 1
     
     await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
 

@@ -27,6 +27,7 @@ class WorkflowSystemCreateSch(SQLModel):
     additional_info:dict|None = Field(default={})
     descs:str | None
     attachments:list[Dict]
+    version:int | None = Field(default=1)
 
 
 class WorkflowCreateResponseSch(SQLModel):

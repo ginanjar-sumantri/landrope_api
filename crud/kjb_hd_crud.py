@@ -315,6 +315,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
         GCloudTaskService().create_task(payload={"id":str(obj_current.id), "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
 
+        url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+        GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
+
+
         return obj_current
 
     async def get_multi_kjb_not_draft(
