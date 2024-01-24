@@ -183,10 +183,11 @@ async def update(id:UUID,
             else:
                 planing_id = None
 
-            bundle_sch = BundleHdCreateSch(planing_id=planing_id)
+            bundle_sch = BundleHdCreateSch(planing_id=planing_id, keyword=kjb_dt.alashak)
             bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
 
         kjb_dt_update.bundle_hd_id = bundle.id
+        bundle = await crud.bundlehd.get_by_id(id=bundle.id)
     else:
         bundle = await crud.bundlehd.get_by_id(id=kjb_dt.bundle_hd_id)
 
