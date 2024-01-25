@@ -118,9 +118,10 @@ async def create_workflow(payload:Dict):
     
     wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
     if wf_current:
-        wf_sch.version = wf_current.version + 1 if wf_current.version else 1
+        last_version = 1 if wf_current.version is None else wf_current.version
+        wf_sch.version = last_version + 1 
         wf_sch.last_status = None
-        wf_system_sch.version = wf_current.version + 1 if wf_current.version else 1
+        wf_system_sch.version = last_version + 1 
         await crud.workflow.update_(obj_current=wf_current, obj_wf=wf_system_sch, obj_new=wf_sch, updated_by_id=obj.updated_by_id)
     else:
         await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
