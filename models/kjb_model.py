@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship, select
 from models.base_model import BaseUUIDModel, BaseHistoryModel
+from sqlalchemy import Column, String
 from sqlalchemy.orm import column_property, declared_attr
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
@@ -29,7 +30,7 @@ if TYPE_CHECKING:
     from models.spk_model import Spk
 
 class KjbHdBase(SQLModel):
-    code:str | None = Field(nullable=True, max_length=500)
+    code:str | None = Field(sa_column=(Column("code", String, unique=True)), nullable=False)
     category:CategoryEnum | None
     nama_group:str | None = Field(nullable=True, max_length=200)
     kategori_penjual:KategoriPenjualEnum | None
