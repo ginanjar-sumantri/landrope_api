@@ -19,6 +19,7 @@ class BundleDtSch(BundleDtFullBase):
 class BundleDtMetaDynSch(SQLModel):
     meta_data:str|None
     dyn_form:str|None = Field(alias="dyn_form")
+    is_multiple:bool|None
 
 class BundleDtMetaDokumenRepeatSch(SQLModel):
     id:UUID|None

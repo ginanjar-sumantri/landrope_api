@@ -116,10 +116,12 @@ async def update(id:UUID,
     elif file is None and sch.file_path is None:
         sch.file_path = obj_current.file_path
 
+    sch.meta_data = sch.meta_data.replace("'", "\"")
+
     if dokumen.is_multiple != True:
         #validasi untuk riwayat
         if dokumen.is_riwayat:
-            metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+            metadata_dict = json.loads(sch.meta_data)
             key_value = metadata_dict.get(dokumen.key_riwayat, None)
 
             if key_value is None or key_value == "":
@@ -133,8 +135,9 @@ async def update(id:UUID,
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :
             await BundleHelper().update_bundle_keyword(meta_data=sch.meta_data, bundle_hd_id=sch.bundle_hd_id, key_field=dokumen.key_field, worker_id=current_worker.id, db_session=db_session)
+        
     else:
-        pass
+        sch.meta_data = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
 
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch, db_session=db_session, updated_by_id=current_worker.id, with_commit=True)
     obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)

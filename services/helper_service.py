@@ -227,8 +227,8 @@ class BundleHelper:
                                     }
                                 ]}
             
-            new_riwayat_data = json.dumps(new_riwayat_data)
-            riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
+            riwayat_data = json.dumps(new_riwayat_data)
+            # riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
         else:
             # current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
             current_riwayat = current_riwayat.replace("'", "\"")
@@ -254,8 +254,8 @@ class BundleHelper:
             
             current_riwayat_obj['riwayat'].append(new_riwayat_obj)
 
-            current_riwayat_obj = json.dumps(current_riwayat_obj)
-            riwayat_data = str(current_riwayat_obj).replace('None', 'null').replace('"', "'")
+            riwayat_data = json.dumps(current_riwayat_obj)
+            # riwayat_data = str(current_riwayat_obj).replace('None', 'null').replace('"', "'")
 
         return riwayat_data
     
@@ -418,30 +418,45 @@ class BundleHelper:
 
     async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None) -> str | None:
         
-        meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
+        
+        if meta_data_current:
+            meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
+        else:
+            meta_datas_current = {"data" : []}
+
         meta_datas_new = json.loads(meta_data_new.replace("'", "\""))
 
-        for data_new in meta_datas_new:
-            index_current = next((index for index, data in enumerate(meta_datas_current) if data[dokumen.key_field] == data_new[dokumen.key_field]), None)
+        #delete
+        for data_current in meta_datas_current["data"]:
+            index_current = next((index for index, data in enumerate(meta_datas_new["data"]) if data[dokumen.key_field] == data_current[dokumen.key_field]), None)
+
+            if index_current is None:
+                meta_datas_current["data"] = [dt for dt in meta_datas_current["data"] if dt[dokumen.key_field] != data_current[dokumen.key_field]]
+
+
+        for data_new in meta_datas_new["data"]:
+            index_current = next((index for index, data in enumerate(meta_datas_current["data"]) if data[dokumen.key_field] == data_new[dokumen.key_field]), None)
             file_data_new = data_new.get("file", None)
-            if index_current:
+            if index_current is None:
+                if file_data_new:
+                    data_new["file"] = await self.get_file_path_for_multiple_meta_data(base64_str=file_data_new, key_value=data_new[dokumen.key_field])
+
+                meta_datas_current["data"].append(data_new)
+
+            elif 0 <= index_current < len(meta_datas_current["data"]):
                 if file_data_new:
                     data_new["file"] = await self.get_file_path_for_multiple_meta_data(base64_str=file_data_new, key_value=data_new[dokumen.key_field])
                 else:
-                    data_new["file"] = meta_datas_current[index_current]["file"]
+                    data_new["file"] = meta_datas_current["data"][index_current]["file"]
 
-                meta_datas_current[index_current] = data_new
+                meta_datas_current["data"][index_current] = data_new
             
             else:
-                if file_data_new:
-                    data_new["file"] = await self.get_file_path_for_multiple_meta_data(base64_str=file_data_new, key_value=data_new[dokumen.key_field])
-
-                meta_datas_current.append(data_new)
-        
+                pass
+                
         meta_data = json.dumps(meta_datas_current)
 
         return meta_data
-            
 
 
     async def get_file_path_for_multiple_meta_data(self, base64_str:str, key_value:str) -> str | None:
