@@ -14,7 +14,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch,
                                   PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, 
                                ContentNoChangeException, DocumentFileNotFoundException)
-from services.helper_service import HelperService
+from services.helper_service import HelperService, BundleHelper
 from services.gcloud_storage_service import GCStorageService
 from datetime import datetime
 import uuid
@@ -81,14 +81,14 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
     db_session = db.session
 
     # Merging Data Dokumen dari Tanda Terima Notaris ke Bundle
-    await HelperService().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current, dokumen=dokumen, meta_data=sch.meta_data,
+    await BundleHelper().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current, dokumen=dokumen, meta_data=sch.meta_data,
                             db_session=db_session, file_path=file_path,
                             worker_id=current_worker.id)
     
-    sch.history_data = HelperService().extract_metadata_for_history(sch.meta_data, current_history=None)
+    # sch.history_data = HelperService().extract_metadata_for_history(sch.meta_data, current_history=None)
 
     if dokumen.is_riwayat == True:
-        sch.riwayat_data = HelperService().extract_metadata_for_riwayat(meta_data=sch.meta_data, 
+        sch.riwayat_data = BundleHelper().extract_metadata_for_riwayat(meta_data=sch.meta_data, 
                                                                     key_riwayat=dokumen.key_riwayat, 
                                                                     current_riwayat=None, 
                                                                     file_path=file_path, 
@@ -178,17 +178,12 @@ async def update(id:UUID,
     db_session = db.session
 
     # Merging Data Dokumen dari Tanda Terima Notaris ke Bundle
-    await HelperService().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current,
-                            dokumen=dokumen,
-                            meta_data=sch.meta_data,
-                            db_session=db_session,
-                            file_path=file_path,
-                            worker_id=current_worker.id)
+    await BundleHelper().merging_to_bundle(bundle_hd_obj=bundlehd_obj_current, dokumen=dokumen, meta_data=sch.meta_data, file_path=file_path, worker_id=current_worker.id, db_session=db_session,)
     
-    sch.history_data = HelperService().extract_metadata_for_history(sch.meta_data, current_history=None)
+    # sch.history_data = HelperService().extract_metadata_for_history(sch.meta_data, current_history=None)
 
     if dokumen.is_riwayat == True:
-        sch.riwayat_data = HelperService().extract_metadata_for_riwayat(meta_data=sch.meta_data, 
+        sch.riwayat_data = BundleHelper().extract_metadata_for_riwayat(meta_data=sch.meta_data, 
                                                                     key_riwayat=dokumen.key_riwayat, 
                                                                     current_riwayat=None, 
                                                                     file_path=file_path, 
@@ -230,7 +225,7 @@ async def update_riwayat(id:UUID,
     
     db_session = db.session
     # Bundle
-    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=bundledt_obj_current.riwayat_data, 
+    riwayat_data, file_path = await BundleHelper().update_riwayat(current_riwayat_data=bundledt_obj_current.riwayat_data, 
                                                                    dokumen=dokumen,
                                                                    codedt=bundledt_obj_current.code,
                                                                    codehd=bundlehd_obj_current.code,
@@ -252,7 +247,7 @@ async def update_riwayat(id:UUID,
                                            with_commit=False, 
                                            updated_by_id=current_worker.id)
     if dokumen.is_keyword == True :
-            await HelperService().update_bundle_keyword(meta_data=sch.meta_data, 
+            await BundleHelper().update_bundle_keyword(meta_data=sch.meta_data, 
                                                         bundle_hd_id=bundlehd_obj_current.id, 
                                                         worker_id=current_worker.id, 
                                                         key_field=dokumen.key_field, 
@@ -260,7 +255,7 @@ async def update_riwayat(id:UUID,
     #----------
     
     # Tanda Terima Notaris
-    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
+    riwayat_data, file_path = await BundleHelper().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
                                                                    dokumen=dokumen,
                                                                    code=bundledt_obj_current.code,
                                                                    sch=sch, 

@@ -15,7 +15,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetRe
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException, ContentNoChangeException)
 from common.ordered import OrderEnumSch
 from services.gcloud_storage_service import GCStorageService
-from services.helper_service import HelperService
+from services.helper_service import HelperService, BundleHelper
 from datetime import datetime
 from decimal import Decimal
 from shapely import wkt, wkb
@@ -100,7 +100,6 @@ async def update(id:UUID,
     """Update a obj by its id"""
 
     db_session = db.session
-    file_path = None
 
     obj_current = await crud.bundledt.get_by_id(id=id)
     if not obj_current:
@@ -109,51 +108,35 @@ async def update(id:UUID,
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
 
     file_name = f'Bundle-{uuid.uuid4().hex}'
-
-    if dokumen.is_riwayat:
-        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
-        key_value = metadata_dict[f'{dokumen.key_riwayat}']
-
-        if key_value is None or key_value == "":
-            raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
-        
-        file_name = f'Bundle-{uuid.uuid4().hex}'
-
+    from_new_file:bool = False
 
     if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
-        sch.file_path = file_path
+        sch.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
+        from_new_file = True
     elif file is None and sch.file_path is None:
         sch.file_path = obj_current.file_path
 
-    if sch.meta_data is not None or sch.meta_data != "":
-        #history
-        history_new = HelperService().extract_metadata_for_history(sch.meta_data, obj_current.history_data)
-        sch.history_data = history_new
+    if dokumen.is_multiple != True:
+        #validasi untuk riwayat
+        if dokumen.is_riwayat:
+            metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+            key_value = metadata_dict.get(dokumen.key_riwayat, None)
 
-        #riwayat
-        if dokumen.is_riwayat == True:
-            riwayat_new = HelperService().extract_metadata_for_riwayat(meta_data=sch.meta_data, 
-                                                                       key_riwayat=dokumen.key_riwayat, 
-                                                                       current_riwayat=obj_current.riwayat_data, 
-                                                                       file_path=file_path, 
-                                                                       is_default=True)
-            sch.riwayat_data = riwayat_new
-        
+            if key_value is None or key_value == "":
+                if from_new_file:
+                    await GCStorageService().delete_file(file_name=file_name)
+
+                raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
+            
+            sch.riwayat_data = BundleHelper().extract_metadata_for_riwayat(meta_data=sch.meta_data, key_riwayat=dokumen.key_riwayat, current_riwayat=obj_current.riwayat_data, file_path=sch.file_path, is_default=True)
+            
         #updated bundle header keyword when dokumen metadata is_keyword true
         if dokumen.is_keyword == True :
-            await HelperService().update_bundle_keyword(meta_data=sch.meta_data, 
-                                                        bundle_hd_id=sch.bundle_hd_id, 
-                                                        worker_id=current_worker.id, 
-                                                        key_field=dokumen.key_field, 
-                                                        db_session=db_session)
-        
-    obj_updated = await crud.bundledt.update(obj_current=obj_current, 
-                                             obj_new=sch, 
-                                             db_session=db_session, 
-                                             updated_by_id=current_worker.id,
-                                             with_commit=True)
+            await BundleHelper().update_bundle_keyword(meta_data=sch.meta_data, bundle_hd_id=sch.bundle_hd_id, key_field=dokumen.key_field, worker_id=current_worker.id, db_session=db_session)
+    else:
+        pass
 
+    obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch, db_session=db_session, updated_by_id=current_worker.id, with_commit=True)
     obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)
 
     if obj_updated.dokumen_name == "SPPT PBB NOP":
@@ -175,7 +158,7 @@ async def update_riwayat(id:UUID,
     
     dokumen = await crud.dokumen.get(id=obj_current.dokumen_id)
     
-    riwayat_data, file_path = await HelperService().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
+    riwayat_data, file_path = await BundleHelper().update_riwayat(current_riwayat_data=obj_current.riwayat_data, 
                                                                    dokumen=dokumen,
                                                                    codehd=obj_current.bundlehd.code,
                                                                    codedt=obj_current.code,
@@ -191,7 +174,7 @@ async def update_riwayat(id:UUID,
     obj_updated.riwayat_data = riwayat_data
 
     if dokumen.is_keyword == True :
-            await HelperService().update_bundle_keyword(meta_data=sch.meta_data, 
+            await BundleHelper().update_bundle_keyword(meta_data=sch.meta_data, 
                                                         bundle_hd_id=obj_current.bundle_hd_id, 
                                                         worker_id=current_worker.id, 
                                                         key_field=dokumen.key_field, 

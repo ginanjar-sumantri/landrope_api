@@ -153,3 +153,11 @@ class GCStorageService:
             bucket = storage_client.bucket(self.bucket_name)
             blob = bucket.blob(blob_name)
             blob.delete
+
+    async def delete_file(self, file_name) -> None:
+        if file_name is not None:
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(self.bucket_name)
+            file_path = f"upload_dokumen/{file_name}"
+            blob = bucket.blob(file_path)
+            blob.delete

@@ -20,6 +20,7 @@ class DokumenBase(SQLModel):
     key_riwayat:Optional[str] #key unik yang dipakai untuk crud pada riwayat tersebut
     kategori_dokumen_id:UUID | None = Field(nullable=True, foreign_key="kategori_dokumen.id")
     additional_info:Optional[str] = Field(nullable=True)
+    is_multiple:bool|None = Field(nullable=True)
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass

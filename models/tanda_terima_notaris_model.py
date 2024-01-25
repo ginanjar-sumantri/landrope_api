@@ -107,7 +107,7 @@ class TandaTerimaNotarisDtBase(SQLModel):
     tanggal_tanda_terima:date | None = Field(default=date.today())
     dokumen_id:UUID = Field(foreign_key="dokumen.id")
     meta_data:str | None
-    history_data:str | None
+    # history_data:str | None
     riwayat_data:str | None
     tanggal_terima_dokumen:date | None = Field(default=date.today())
     file_path:str | None = Field(nullable=True)
