@@ -139,5 +139,9 @@ class BundleDt(BundleDtFullBase, table=True):
         return getattr(getattr(self, 'dokumen', None), 'dyn_form', None)
     
     @property
+    def is_multiple(self) -> bool | None:
+        return getattr(getattr(self, 'dokumen', None), 'is_multiple', None)
+    
+    @property
     def kategori_dokumen_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)
