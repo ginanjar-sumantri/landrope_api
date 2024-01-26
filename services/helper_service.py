@@ -391,6 +391,7 @@ class BundleHelper:
             bundledt_obj_updated.meta_data = meta_data
             bundledt_obj_updated.riwayat_data = riwayat_data
             bundledt_obj_updated.file_path = file_path
+            bundledt_obj_updated.jumlah_waris = jumlah_waris
 
             bundledt_obj_current = await crud.bundledt.update(obj_current=bundledt_obj_current, 
                                                             obj_new=bundledt_obj_updated, 
