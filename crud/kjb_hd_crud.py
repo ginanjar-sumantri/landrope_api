@@ -11,7 +11,7 @@ from common.ordered import OrderEnumSch
 from common.enum import WorkflowEntityEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt
-from models import BundleHd
+from models import BundleHd, Rekening
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from services.gcloud_task_service import GCloudTaskService
@@ -103,9 +103,15 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         for i in obj_in.rekenings:
             rekening = KjbRekening(**i.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
-            
             db_obj.rekenings.append(rekening)
-        
+
+            #menambahkan rekening dari pemilik
+            rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=i.pemilik_id)
+            existing_rekening = next((r for r in rekenings if r.nomor_rekening == i.nomor_rekening), None)
+            if existing_rekening is None:
+                new_rekening = Rekening(**i.dict(exclude={"id"}))
+                db_session.add(new_rekening)
+
         for j in obj_in.hargas:
             obj_harga = next((harga for harga in db_obj.hargas if harga.jenis_alashak == j.jenis_alashak), None)
             if obj_harga:
@@ -224,6 +230,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             else:
                 new_rekening = KjbRekening(**rekening.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_rekening)
+            
+            rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=rekening.pemilik_id)
+            existing_rekening_ = next((r for r in rekenings if r.nomor_rekening == rekening.nomor_rekening), None)
+            if existing_rekening_ is None:
+                new_rekening_ = Rekening(**rekening.dict(exclude={"id"}))
+                db_session.add(new_rekening_)
         
         for harga in obj_new.hargas:
             existing_harga = next((h for h in obj_current.hargas if h.id == harga.id), None)

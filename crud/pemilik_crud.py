@@ -66,7 +66,7 @@ class CRUDKontak(CRUDBase[Kontak, KontakCreateSch, KontakUpdateSch]):
 kontak = CRUDKontak(Kontak)
 
 class CRUDRekening(CRUDBase[Rekening, RekeningCreateSch, RekeningUpdateSch]):
-    async def get_by_pemilik_id(self, *, pemilik_id: UUID | str, db_session: AsyncSession | None = None) -> List[Rekening] | None:
+    async def get_by_pemilik_id(self, *, pemilik_id: UUID | str | None = None, db_session: AsyncSession | None = None) -> List[Rekening] | None:
         db_session = db_session or db.session
         query = select(self.model).where(self.model.pemilik_id == pemilik_id)
         response = await db_session.execute(query)

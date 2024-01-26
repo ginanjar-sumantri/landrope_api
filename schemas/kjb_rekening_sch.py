@@ -9,9 +9,10 @@ class KjbRekeningCreateSch(KjbRekeningBase):
 
 class KjbRekeningCreateExtSch(SQLModel):
     id:UUID|None
-    nama_pemilik_rekening:str
-    bank_rekening:str
-    nomor_rekening:str
+    nama_pemilik_rekening:str|None
+    bank_rekening:str|None
+    nomor_rekening:str|None
+    pemilik_id:UUID|None
 
 class KjbRekeningSch(KjbRekeningFullBase):
     pass
