@@ -464,12 +464,12 @@ class BundleHelper:
         bytes_data = base64.b64decode(base64_str)
         file_type = filetype.guess(bytes_data)
         file_extension = str(file_type.extension)
-        file_name = f"Bundle-{key_value}-{uuid.uuid4().hex}.{file_extension}"
+        file_name = f"Bundle-{key_value}-{uuid.uuid4().hex}"
         binary_io_data = io.BytesIO(bytes_data)
 
-        file = UploadFile(file=binary_io_data, filename=file_name)
+        file = UploadFile(file=binary_io_data, filename=f"{file_name}.{file_extension}")
 
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{file_name}")
 
         return file_path
 

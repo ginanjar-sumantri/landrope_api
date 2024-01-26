@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, UploadFile, Response, BackgroundTasks
+from fastapi import APIRouter, Depends, UploadFile, Response, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -249,6 +249,41 @@ async def download_file(id:UUID):
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.bundlehd.code}-{obj_current.code}-{obj_current.dokumen_name}.{ext}"
+    return response
+
+@router.get("/download-file/waris/{id}")
+async def download_file_waris(id:UUID, meta_data:str):
+    """Download File Dokumen"""
+
+    obj_current = await crud.bundledt.get_by_id(id=id)
+    if not obj_current:
+        raise IdNotFoundException(BundleDt, id)
+    if obj_current.meta_data is None:
+        raise HTTPException(status_code=422, detail="meta data is null")
+    
+    meta_data_current = json.loads(obj_current.meta_data)
+    meta_data = json.loads(meta_data)
+    
+    data_current = next((index for index, data in enumerate(meta_data_current["data"]) if data[obj_current.dokumen.key_field] == meta_data[obj_current.dokumen.key_field]), None)
+
+    if data_current is None:
+        raise HTTPException(status_code=422, detail="dokumen yang dimaksud tidak ditemukan dalam meta data")
+
+    file_path = meta_data.get("file", None)
+    key_value = meta_data.get(obj_current.dokumen.key_field, uuid.uuid4().hex)
+    if file_path is None:
+        raise HTTPException(status_code=422, detail="dokumen yang dimaksud tidak memiliki file")
+
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.dokumen_name)
+    
+    ext = file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={key_value}.{ext}"
     return response
 
 @router.get("/download-file/riwayat/{id}")
