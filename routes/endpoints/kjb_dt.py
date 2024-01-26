@@ -91,7 +91,8 @@ async def get_list(
                 ).outerjoin(KjbPenjual, KjbHd.id == KjbPenjual.kjb_hd_id
                 ).outerjoin(Pemilik, Pemilik.id == KjbPenjual.pemilik_id
                 ).join(Manager, Manager.id == KjbHd.manager_id
-                ).join(Sales, Sales.id == KjbHd.sales_id)
+                ).join(Sales, Sales.id == KjbHd.sales_id
+                ).where(or_(KjbHd.is_draft != True, KjbHd.is_draft is None))
     
     if keyword and keyword != "":
         query = query.filter(
@@ -191,6 +192,3 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
 
     obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
-
-
-   

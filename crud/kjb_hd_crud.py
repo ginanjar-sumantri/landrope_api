@@ -149,8 +149,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             await db_session.rollback()
             raise HTTPException(status_code=409, detail="Resource already exists")
         
-        url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        GCloudTaskService().create_task(payload={"id":str(db_obj.id), "is_create":True, "additional_info":"ONE_APPROVAL"}, base_url=url)
+        if db_obj.is_draft == False:
+            url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+            GCloudTaskService().create_task(payload={"id":str(db_obj.id), "is_create":True, "additional_info":"ONE_APPROVAL"}, base_url=url)
         
         await db_session.refresh(db_obj)
         return db_obj
@@ -166,6 +167,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
        
         difference_two_approve:bool = False
+        is_draft = obj_current.is_draft or False
         db_session =  db_session or db.session
 
         #add history
@@ -198,7 +200,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         
         
         if difference_two_approve is False:
-            difference_two_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.bebanbiayas), obj_current.bebanbiayas)))) > 0 else False
+            difference_two_approve = True if len(list(map(lambda item: item, filter(lambda x: x.id not in map(lambda y: y.id, obj_new.bebanbiayas), obj_current.bebanbiayas)))) > 0 and is_draft == False else False
        
         await db_session.execute(delete(KjbBebanBiaya).where(and_(KjbBebanBiaya.id.notin_(b.id for b in obj_new.bebanbiayas if b.id is not None),
                                                             KjbBebanBiaya.kjb_hd_id == obj_current.id)))
@@ -269,7 +271,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     if key == "beban_biaya_name":
                         continue
                     if difference_two_approve == False:
-                        difference_two_approve == True if value != getattr(existing_bebanbiaya, key) else False
+                        difference_two_approve == True if value != getattr(existing_bebanbiaya, key) and is_draft == False else False
 
                     setattr(existing_bebanbiaya, key, value)
                 existing_bebanbiaya.updated_at = datetime.utcnow()
@@ -279,7 +281,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_bebanbiaya)
                 if difference_two_approve == False:
-                    difference_two_approve = True
+                    difference_two_approve = True if is_draft == False else False
         
         for penjual in obj_new.penjuals:
             existing_penjual = next((p for p in obj_current.penjuals if p.id == penjual.id), None)
@@ -312,12 +314,12 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             await db_session.commit()
             await db_session.refresh(obj_current)
 
-        url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
-        GCloudTaskService().create_task(payload={"id":str(obj_current.id), "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
+        if obj_current.is_draft == False:
+            url = f'{request.base_url}landrope/kjbhd/cloud-task-workflow'
+            GCloudTaskService().create_task(payload={"id":str(obj_current.id), "is_create":False, "additional_info":"TWO_APPROVAL" if difference_two_approve else "ONE_APPROVAL"}, base_url=url)
 
-        url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
-        GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
-
+            url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+            GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
 
         return obj_current
 

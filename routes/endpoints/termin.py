@@ -385,6 +385,7 @@ async def get_list_kjb_hd(
     query = select(KjbHd)
     query = query.outerjoin(Termin, Termin.kjb_hd_id == KjbHd.id)
     query = query.filter(Termin.kjb_hd_id == None)
+    query = query.filter(or_(KjbHd.is_draft != True, KjbHd.is_draft is None))
     
     if keyword:
         query = query.filter(KjbHd.code.ilike(f'%{keyword}%'))

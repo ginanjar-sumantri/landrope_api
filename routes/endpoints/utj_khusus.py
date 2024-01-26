@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select
+from sqlmodel import select, or_
 from models import UtjKhusus, UtjKhususDetail, Worker, KjbDt, Invoice, PaymentDetail, KjbHd, Termin
 from schemas.utj_khusus_sch import (UtjKhususSch, UtjKhususCreateSch, UtjKhususUpdateSch, UtjKhususByIdSch, UtjKhususPrintOutSch)
 from schemas.utj_khusus_detail_sch import (UtjKhususDetailCreateSch, UtjKhususDetailUpdateSch)
@@ -267,6 +267,7 @@ async def get_list_kjb_hd(
     query = select(KjbHd)
     query = query.outerjoin(Termin, Termin.kjb_hd_id == KjbHd.id)
     query = query.filter(Termin.kjb_hd_id == None)
+    query = query.filter(or_(KjbHd.is_draft != True, KjbHd.is_draft is None))
     
     if keyword:
         query = query.filter(KjbHd.code.ilike(f'%{keyword}%'))

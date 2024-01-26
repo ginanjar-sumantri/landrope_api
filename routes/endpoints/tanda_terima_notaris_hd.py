@@ -11,7 +11,7 @@ from models.notaris_model import Notaris
 from models import BundleHd
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
-from schemas.kjb_dt_sch import KjbDtUpdateSch
+from schemas.kjb_dt_sch import KjbDtUpdateSch, KjbDtListSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, 
                                ImportFailedException, DocumentFileNotFoundException)
@@ -93,7 +93,6 @@ async def create(
     new_obj = await crud.tandaterimanotaris_hd.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
-
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -231,5 +230,3 @@ async def download_file(
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_tanda_terima}-{obj_current.tanggal_tanda_terima}.{ext}"
     return response
-
-    

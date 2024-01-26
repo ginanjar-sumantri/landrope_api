@@ -70,6 +70,9 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         
         if filter == "kurangdarisamadengan":
             query = query.filter(KjbDt.harga_transaksi <= HargaStandard.harga)
+        
+        if filter == "requestpetlok":
+            query = query.filter(or_(KjbHd.is_draft != True, KjbHd.is_draft is None))
 
         if keyword:
             query = query.filter(
