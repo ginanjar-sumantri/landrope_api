@@ -91,6 +91,7 @@ class BundleDtBase(SQLModel):
     dokumen_id:UUID | None = Field(default=None, foreign_key="dokumen.id", nullable=False)
     file_path:str | None = Field(nullable=True)
     riwayat_data:str | None = Field(nullable=True)
+    multiple_count:int | None = Field(nullable=True)
 
 class BundleDtFullBase(BaseUUIDModel, BundleDtBase):
     pass

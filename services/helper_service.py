@@ -343,6 +343,7 @@ class BundleHelper:
                             dokumen : Dokumen,
                             meta_data : str,
                             db_session : AsyncSession | None,
+                            jumlah_waris:int | None = None,
                             file_path : str | None = None,
                             worker_id : UUID | str = None):
 
@@ -363,16 +364,16 @@ class BundleHelper:
 
             new_dokumen = BundleDt(code=code, 
                                 dokumen_id=dokumen.id, 
-                                meta_data=meta_data, 
-                                history_data=history_data,
+                                meta_data=meta_data,
                                 riwayat_data=riwayat_data,
                                 bundle_hd_id=bundle_hd_obj.id, 
-                                file_path=file_path)
+                                file_path=file_path,
+                                jumlah_waris=jumlah_waris)
 
             bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen, db_session=db_session, with_commit=False, created_by_id=worker_id)
         else:
 
-            history_data = self.extract_metadata_for_history(meta_data=str(meta_data), current_history=bundledt_obj_current.history_data)
+            # history_data = self.extract_metadata_for_history(meta_data=str(meta_data), current_history=bundledt_obj_current.history_data)
 
             riwayat_data = None
             if dokumen.is_riwayat == True:
@@ -388,7 +389,6 @@ class BundleHelper:
 
             bundledt_obj_updated = bundledt_obj_current
             bundledt_obj_updated.meta_data = meta_data
-            bundledt_obj_updated.history_data = history_data
             bundledt_obj_updated.riwayat_data = riwayat_data
             bundledt_obj_updated.file_path = file_path
 
@@ -417,7 +417,6 @@ class BundleHelper:
         return value
 
     async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None) -> str | None:
-        
         
         if meta_data_current:
             meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
@@ -457,6 +456,12 @@ class BundleHelper:
         meta_data = json.dumps(meta_datas_current)
 
         return meta_data
+    
+    def multiple_data_count(self, meta_data:str|None = None) -> int | None:
+        
+        meta_data = json.loads(meta_data)
+
+        return len(meta_data["data"])
 
 
     async def get_file_path_for_multiple_meta_data(self, base64_str:str, key_value:str) -> str | None:

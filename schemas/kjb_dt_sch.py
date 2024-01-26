@@ -21,7 +21,8 @@ class KjbDtCreateExtSch(SQLModel):
     desa_id:Optional[UUID] 
     project_id:Optional[UUID] 
     pemilik_id:UUID | None 
-    jenis_surat_id:UUID | None 
+    jenis_surat_id:UUID | None
+    jumlah_waris:int | None
 
 class KjbDtSch(KjbDtFullBase):
     kjb_code:str | None = Field(alias="kjb_code")

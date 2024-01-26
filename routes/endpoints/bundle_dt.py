@@ -107,7 +107,7 @@ async def update(id:UUID,
 
     dokumen = await crud.dokumen.get(id=sch.dokumen_id)
 
-    file_name = f'Bundle-{uuid.uuid4().hex}'
+    file_name = f'Bundle-{dokumen.name}-{uuid.uuid4().hex}'
     from_new_file:bool = False
 
     if file:
@@ -118,7 +118,7 @@ async def update(id:UUID,
 
     sch.meta_data = sch.meta_data.replace("'", "\"")
 
-    if dokumen.is_multiple != True:
+    if dokumen.is_multiple != True or dokumen.is_multiple is None:
         #validasi untuk riwayat
         if dokumen.is_riwayat:
             metadata_dict = json.loads(sch.meta_data)
@@ -127,7 +127,6 @@ async def update(id:UUID,
             if key_value is None or key_value == "":
                 if from_new_file:
                     await GCStorageService().delete_file(file_name=file_name)
-
                 raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
             
             sch.riwayat_data = BundleHelper().extract_metadata_for_riwayat(meta_data=sch.meta_data, key_riwayat=dokumen.key_riwayat, current_riwayat=obj_current.riwayat_data, file_path=sch.file_path, is_default=True)
@@ -138,6 +137,7 @@ async def update(id:UUID,
         
     else:
         sch.meta_data = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
+        sch.multiple_count = BundleHelper().multiple_data_count(meta_data=sch.meta_data)
 
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch, db_session=db_session, updated_by_id=current_worker.id, with_commit=True)
     obj_updated = await crud.bundledt.get_by_id(id=obj_updated.id)
