@@ -10,7 +10,7 @@ from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLo
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
                                              RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
                                              RequestPetaLokasiHdbyCodeSch, RequestPetaLokasiPdfSch,
-                                             RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdatesSch)
+                                             RequestPetaLokasiForInputHasilSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code, CodeCounterEnum
@@ -54,7 +54,7 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
     counter = await generate_code(CodeCounterEnum.RequestPetaLokasi, db_session=db_session, with_commit=False)
     code = f"SO/{counter}/REQ-PETLOK/{str(today_date.month)}/{str(today_date.year)}"
    
-    for id in sch.kjb_dt_ids:
+    for id in sch.datas:
         kjb_dt = await crud.kjb_dt.get(id=id)
 
         if kjb_dt is None:
@@ -69,11 +69,11 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
                                  is_disabled=False,
-                                 tanggal_terima_berkas=sch.tanggal_terima_berkas,
-                                 tanggal_pengukuran=sch.tanggal_pengukuran,
-                                 tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
-                                 penunjuk_batas=sch.penunjuk_batas,
-                                 surveyor=sch.surveyor
+                                 tanggal_terima_berkas=id.tanggal_terima_berkas,
+                                 tanggal_pengukuran=id.tanggal_pengukuran,
+                                 tanggal_kirim_ukur=id.tanggal_kirim_ukur,
+                                 penunjuk_batas=id.penunjuk_batas,
+                                 surveyor=id.surveyor
                                  )
         
         await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
@@ -152,71 +152,71 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(RequestPetaLokasi, id)
 
+# @router.put("", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
+# async def update(sch:RequestPetaLokasiUpdateExtSch,
+#                  current_worker:Worker=Depends(crud.worker.get_current_user)):
+    
+#     """Update a obj by its id"""
+#     db_session = db.session
+#     obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=sch.code)
+
+#     list_removed = []
+#     for i in obj_currents:
+#         if i.kjb_dt_id not in sch.kjb_dt_ids:
+#             request_removed = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=i.kjb_dt_id)
+#             list_removed.append(request_removed)
+    
+#     if len(list_removed) > 0:
+#         await crud.request_peta_lokasi.remove_multiple_data(list_obj=list_removed, db_session=db_session)
+
+#     ids = [x.kjb_dt_id for x in obj_currents]  
+
+#     for j in sch.kjb_dt_ids:
+#         if j not in ids:
+#             new_obj = RequestPetaLokasi(code=sch.code,
+#                                  kjb_dt_id=j,
+#                                  remark=sch.remark,
+#                                  tanggal=sch.tanggal,
+#                                  tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
+#                                  tanggal_pengukuran=sch.tanggal_pengukuran,
+#                                  tanggal_terima_berkas=sch.tanggal_terima_berkas,
+#                                  penunjuk_batas=sch.penunjuk_batas,
+#                                  surveyor=sch.surveyor,
+#                                  dibuat_oleh="Land Adm Acquisition Officer",
+#                                  diperiksa_oleh="Land Adm & Verification Section Head",
+#                                  diterima_oleh="Land Measurement Analyst",
+#                                  is_disabled=False)
+#             obj = await crud.request_peta_lokasi.create(obj_in=new_obj, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+#         else:
+#             obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
+#             obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
+#                                                      tanggal=sch.tanggal,
+#                                                      remark=sch.remark,
+#                                                      tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
+#                                                      tanggal_pengukuran=sch.tanggal_pengukuran,
+#                                                      tanggal_terima_berkas=sch.tanggal_terima_berkas,
+#                                                      penunjuk_batas=sch.penunjuk_batas,
+#                                                      surveyor=sch.surveyor,
+#                                                      kjb_dt_id=j)
+            
+#             obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+#     await db_session.commit()
+
+#     obj = await crud.request_peta_lokasi.get_by_id(id=obj.id)
+
+#     return create_response(data=obj)
+
+
 @router.put("", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
 async def update(sch:RequestPetaLokasiUpdateExtSch,
-                 current_worker:Worker=Depends(crud.worker.get_current_user)):
-    
-    """Update a obj by its id"""
-    db_session = db.session
-    obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=sch.code)
-
-    list_removed = []
-    for i in obj_currents:
-        if i.kjb_dt_id not in sch.kjb_dt_ids:
-            request_removed = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=i.kjb_dt_id)
-            list_removed.append(request_removed)
-    
-    if len(list_removed) > 0:
-        await crud.request_peta_lokasi.remove_multiple_data(list_obj=list_removed, db_session=db_session)
-
-    ids = [x.kjb_dt_id for x in obj_currents]  
-
-    for j in sch.kjb_dt_ids:
-        if j not in ids:
-            new_obj = RequestPetaLokasi(code=sch.code,
-                                 kjb_dt_id=j,
-                                 remark=sch.remark,
-                                 tanggal=sch.tanggal,
-                                 tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
-                                 tanggal_pengukuran=sch.tanggal_pengukuran,
-                                 tanggal_terima_berkas=sch.tanggal_terima_berkas,
-                                 penunjuk_batas=sch.penunjuk_batas,
-                                 surveyor=sch.surveyor,
-                                 dibuat_oleh="Land Adm Acquisition Officer",
-                                 diperiksa_oleh="Land Adm & Verification Section Head",
-                                 diterima_oleh="Land Measurement Analyst",
-                                 is_disabled=False)
-            obj = await crud.request_peta_lokasi.create(obj_in=new_obj, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        else:
-            obj_current = next((x for x in obj_currents if x.kjb_dt_id == j), None)
-            obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
-                                                     tanggal=sch.tanggal,
-                                                     remark=sch.remark,
-                                                     tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
-                                                     tanggal_pengukuran=sch.tanggal_pengukuran,
-                                                     tanggal_terima_berkas=sch.tanggal_terima_berkas,
-                                                     penunjuk_batas=sch.penunjuk_batas,
-                                                     surveyor=sch.surveyor,
-                                                     kjb_dt_id=j)
-            
-            obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
-    await db_session.commit()
-
-    obj = await crud.request_peta_lokasi.get_by_id(id=obj.id)
-
-    return create_response(data=obj)
-
-
-@router.put("/request/updates", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
-async def update(code:str, sch:RequestPetaLokasiUpdatesSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
 
-    obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=code)
+    obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=sch.code)
 
-    obj_updated = await crud.request_peta_lokasi.updates_(obj_currents=obj_currents, obj_new=sch, code=code, updated_by_id=current_worker.id)
+    obj_updated = await crud.request_peta_lokasi.updates_(obj_currents=obj_currents, obj_new=sch, code=sch.code, updated_by_id=current_worker.id)
     obj_updated = await crud.request_peta_lokasi.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 

@@ -14,7 +14,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasi
 from models.planing_model import Planing
 from models.desa_model import Desa
 from schemas.request_peta_lokasi_sch import (RequestPetaLokasiCreateSch, RequestPetaLokasiHdSch, 
-                                            RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch, RequestPetaLokasiUpdatesSch)
+                                            RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch, RequestPetaLokasiUpdateExtSch)
 from typing import List, Dict, Any
 from common.ordered import OrderEnumSch
 from uuid import UUID
@@ -25,18 +25,18 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                      *,
                      code:str|None,
                      obj_currents : list[RequestPetaLokasi], 
-                     obj_new :  RequestPetaLokasiUpdatesSch| Dict[str, Any] | RequestPetaLokasi,
+                     obj_new :  RequestPetaLokasiUpdateExtSch| Dict[str, Any] | RequestPetaLokasi,
                      updated_by_id: UUID | str | None = None,
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
 
         #delete all data detail current when not exists in schema update
-        await db_session.execute(delete(RequestPetaLokasi).where(and_(RequestPetaLokasi.id.notin_(r.id for r in obj_new.request_peta_lokasist if r.id is not None), 
+        await db_session.execute(delete(RequestPetaLokasi).where(and_(RequestPetaLokasi.id.notin_(r.id for r in obj_new.datas if r.id is not None), 
                                                         RequestPetaLokasi.code == code)))
         
 
-        for req in obj_new.request_peta_lokasist:
+        for req in obj_new.datas:
             existing_req = next((r for r in obj_currents if r.id == req.id), None)
             if existing_req:
                 request_petlok = req.dict(exclude_unset=True)

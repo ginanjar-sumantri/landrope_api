@@ -12,9 +12,9 @@ if TYPE_CHECKING:
     from hasil_peta_lokasi_model import HasilPetaLokasi
 
 class RequestPetaLokasiBase(SQLModel):
-    code:str = Field(nullable=True)
-    tanggal:date = Field(default=date.today(), nullable=False)
-    remark:str
+    code:str|None = Field(nullable=True)
+    tanggal:date|None = Field(default=date.today(), nullable=False)
+    remark:str | None
     is_disabled:bool | None = Field(nullable=True)
     tanggal_terima_berkas:date | None = Field(nullable=True)
     tanggal_pengukuran:date |None = Field(nullable=True)

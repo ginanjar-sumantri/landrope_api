@@ -14,13 +14,13 @@ class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
 
 class RequestPetaLokasiCreatesSch(BaseModel):
     tanggal:date | None
-    tanggal_terima_berkas:date | None
-    tanggal_pengukuran:date |None
-    penunjuk_batas:str | None
-    surveyor:str | None 
-    tanggal_kirim_ukur:date|None 
+    # tanggal_terima_berkas:date | None
+    # tanggal_pengukuran:date |None
+    # penunjuk_batas:str | None
+    # surveyor:str | None 
+    # tanggal_kirim_ukur:date|None 
 
-    kjb_dt_ids: List[UUID]
+    datas: List[RequestPetaLokasiCreateSch]
     remark:str | None
 
 class RequestPetaLokasiHdSch(SQLModel):
@@ -84,23 +84,16 @@ class RequestPetaLokasiPdfSch(BaseModel):
 
 @optional
 class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
-    pass
+    id:UUID|None
 
 @optional
 class RequestPetaLokasiUpdateExtSch(BaseModel):
     code:str = Field(nullable=True)
     tanggal:date = Field(default=date.today(), nullable=False)
-    tanggal_terima_berkas:date | None
-    tanggal_pengukuran:date |None
-    penunjuk_batas:str | None
-    surveyor:str | None 
-    tanggal_kirim_ukur:date|None 
-    kjb_dt_ids: List[UUID]
+    # tanggal_terima_berkas:date | None
+    # tanggal_pengukuran:date |None
+    # penunjuk_batas:str | None
+    # surveyor:str | None 
+    # tanggal_kirim_ukur:date|None 
+    datas: List[RequestPetaLokasiUpdateSch]
     remark:str | None
-
-@optional
-class RequestPetaLokasiUpdateExSch(RequestPetaLokasiBase):
-    id:UUID|None
-
-class RequestPetaLokasiUpdatesSch(SQLModel):
-    request_peta_lokasist:list[RequestPetaLokasiUpdateExSch]
