@@ -51,6 +51,7 @@ class BidangBase(SQLModel):
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
     luas_bayar:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
     luas_proses:Optional[Decimal] = Field(nullable=True)
+    luas_produk:Optional[Decimal] = Field(nullable=True)
     harga_akta:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
     harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
 
