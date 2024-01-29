@@ -44,9 +44,12 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     setattr(existing_req, key, value)
                 existing_req.updated_at = datetime.utcnow()
                 existing_req.updated_by_id = updated_by_id
+                existing_req.tanggal_terima_berkas = obj_new.tanggal_terima_berkas
                 db_session.add(existing_req)
             else:
-                new_request_petlok = RequestPetaLokasi(**req.dict(), created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_request_petlok = RequestPetaLokasi(**req.dict(exclude={"tanggal_terima_berkas", "code"}), 
+                                                    tanggal_terima_berkas=obj_new.tanggal_terima_berkas, 
+                                                    code=obj_new.code, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_request_petlok)
             
         if with_commit:
