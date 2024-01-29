@@ -368,7 +368,7 @@ class BundleHelper:
                                 riwayat_data=riwayat_data,
                                 bundle_hd_id=bundle_hd_obj.id, 
                                 file_path=file_path,
-                                jumlah_waris=jumlah_waris)
+                                multiple_count=jumlah_waris)
 
             bundledt_obj_current = await crud.bundledt.create(obj_in=new_dokumen, db_session=db_session, with_commit=False, created_by_id=worker_id)
         else:
@@ -391,7 +391,7 @@ class BundleHelper:
             bundledt_obj_updated.meta_data = meta_data
             bundledt_obj_updated.riwayat_data = riwayat_data
             bundledt_obj_updated.file_path = file_path
-            bundledt_obj_updated.jumlah_waris = jumlah_waris
+            bundledt_obj_updated.multiple_count = jumlah_waris
 
             bundledt_obj_current = await crud.bundledt.update(obj_current=bundledt_obj_current, 
                                                             obj_new=bundledt_obj_updated, 

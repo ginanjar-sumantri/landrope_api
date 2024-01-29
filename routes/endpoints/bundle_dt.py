@@ -262,7 +262,7 @@ async def download_file_waris(id:UUID, meta_data:str):
         raise HTTPException(status_code=422, detail="meta data is null")
     
     meta_data_current = json.loads(obj_current.meta_data)
-    meta_data = json.loads(meta_data)
+    meta_data = json.loads(meta_data.replace("'", '\"'))
     
     data_current = next((index for index, data in enumerate(meta_data_current["data"]) if data[obj_current.dokumen.key_field] == meta_data[obj_current.dokumen.key_field]), None)
 
