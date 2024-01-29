@@ -21,6 +21,7 @@ class RequestPetaLokasiBase(SQLModel):
     penunjuk_batas:str | None = Field(nullable=True)
     surveyor:str | None = Field(nullable=True)
     tanggal_kirim_ukur:date|None = Field(nullable=True)
+    luas_ukur:Decimal | None = Field(nullable=True)
     
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 

@@ -14,7 +14,7 @@ class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
 
 class RequestPetaLokasiCreatesSch(BaseModel):
     tanggal:date | None
-    # tanggal_terima_berkas:date | None
+    tanggal_terima_berkas:date | None
     # tanggal_pengukuran:date |None
     # penunjuk_batas:str | None
     # surveyor:str | None 
@@ -90,7 +90,7 @@ class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
 class RequestPetaLokasiUpdateExtSch(BaseModel):
     code:str = Field(nullable=True)
     tanggal:date = Field(default=date.today(), nullable=False)
-    # tanggal_terima_berkas:date | None
+    tanggal_terima_berkas:date | None
     # tanggal_pengukuran:date |None
     # penunjuk_batas:str | None
     # surveyor:str | None 
