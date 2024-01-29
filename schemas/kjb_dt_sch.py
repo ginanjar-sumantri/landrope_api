@@ -5,7 +5,7 @@ from sqlmodel import Field, SQLModel
 from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 class KjbDtCreateSch(KjbDtBase):
     pass
@@ -43,6 +43,11 @@ class KjbDtListRequestPetlokSch(KjbDtSch):
     bundle_dt_alashak_id:UUID | None
     bundle_dt_alashak_file_exists:bool | None
     bundle_dt_alashak_file_path:str | None
+    tanggal_terima_berkas:date | None
+    tanggal_pengukuran:date |None
+    penunjuk_batas:str | None
+    surveyor:str | None 
+    tanggal_kirim_ukur:date|None 
 
 class KjbDtListSch(SQLModel):
     kjb_code:str|None

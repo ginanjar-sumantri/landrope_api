@@ -20,7 +20,7 @@ from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
                         SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
-                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan)
+                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text)
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException)
 from common.generator import generate_code
@@ -60,13 +60,14 @@ async def create(
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
         await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
-
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
+
     code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
-    jns_byr = "KURANG BAYAR" if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN else sch.jenis_bayar.value.replace('_', ' ')
-    sch.code = f"SPK-{jns_byr}/{code}/{bidang.id_bidang}"
+    jenis_bayar = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
+
+    sch.code = f"SPK-{jenis_bayar}/{code}/{bidang.id_bidang}"
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
@@ -117,13 +118,15 @@ async def create(
         template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
         workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
         additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
-        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), 
-                                                    flow_id=template.flow_id, 
-                                                    descs=f"""Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
-                                                    Tanggal: {new_obj.created_at.date()}<br>
-                                                    Dokumen: {new_obj.code}""", 
-                                                    additional_info=additional_info, 
-                                                    attachments=[])
+        workflow_system_sch = WorkflowSystemCreateSch(
+                                client_ref_no=str(new_obj.id), 
+                                flow_id=template.flow_id, 
+                                descs=f"""Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
+                                Tanggal: {new_obj.created_at.date()}<br>
+                                Dokumen: {new_obj.code}""", 
+                                additional_info=additional_info, 
+                                attachments=[]
+                            )
         
         await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
@@ -166,7 +169,7 @@ async def filter_sisa_pelunasan(bidang_id:UUID):
 async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
     bundle_dts = await crud.bundledt.get_by_ids(list_ids=bundle_dt_ids)
 
-    bundle_dt_no_have_metadata = next((bundle_dt for bundle_dt in bundle_dts if bundle_dt.file_exists == False), None)
+    bundle_dt_no_have_metadata = any(bundledt.file_exists == False for bundledt in bundle_dts)
     if bundle_dt_no_have_metadata:
         raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
 
@@ -631,8 +634,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(Spk, id)
 
 @router.get("/print-out/{id}")
-async def printout(id:UUID | str,
-                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
+async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
     """Get for search"""
 

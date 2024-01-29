@@ -165,6 +165,19 @@ class StatusPembebasanEnum(str, Enum):
     PEMBAYARAN_LUNAS = "PEMBAYARAN_LUNAS"
     PEMBAYARAN_PELUNASAN = "PEMBAYARAN_PELUNASAN"
 
+jenis_bayar_to_text = {
+    JenisBayarEnum.UTJ : "UTJ",
+    JenisBayarEnum.UTJ_KHUSUS : "UTJ-KHUSUS",
+    JenisBayarEnum.DP : "DP",
+    JenisBayarEnum.LUNAS : "LUNAS",
+    JenisBayarEnum.PELUNASAN : "PELUNASAN",
+    JenisBayarEnum.PAJAK : "PAJAK",
+    JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL : "PENGEMBALIAN-BEBAN-PENJUAL",
+    JenisBayarEnum.BEGINNING_BALANCE : "BEGINNING-BALANCE",
+    JenisBayarEnum.BIAYA_LAIN : "BIAYA-LAIN",
+    JenisBayarEnum.SISA_PELUNASAN : "KURANG-BAYAR",
+    JenisBayarEnum.TAMBAHAN_DP : "TAMBAHAN-DP"
+}
 
 jenis_bayar_to_spk_status_pembebasan = {
     JenisBayarEnum.DP : StatusPembebasanEnum.SPK_DP,

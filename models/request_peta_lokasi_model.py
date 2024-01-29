@@ -16,7 +16,12 @@ class RequestPetaLokasiBase(SQLModel):
     tanggal:date = Field(default=date.today(), nullable=False)
     remark:str
     is_disabled:bool | None = Field(nullable=True)
-
+    tanggal_terima_berkas:date | None = Field(nullable=True)
+    tanggal_pengukuran:date |None = Field(nullable=True)
+    penunjuk_batas:str | None = Field(nullable=True)
+    surveyor:str | None = Field(nullable=True)
+    tanggal_kirim_ukur:date|None = Field(nullable=True)
+    
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 
 class RequestPetaLokasiFullBase(BaseUUIDModel, RequestPetaLokasiBase):

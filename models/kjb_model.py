@@ -291,6 +291,26 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def kjb_hd_group(self) -> str | None:
         return getattr(getattr(self, "kjb_hd", None), "nama_group", None)
+    
+    @property
+    def tanggal_kirim_ukur(self) -> date | None:
+        return getattr(getattr(self, "request_peta_lokasi", None), "tanggal_kirim_ukur", None)
+    
+    @property
+    def tanggal_terima_berkas(self) -> date | None:
+        return getattr(getattr(self, "request_peta_lokasi", None), "tanggal_terima_berkas", None)
+    
+    @property
+    def tanggal_pengukuran(self) -> date | None:
+        return getattr(getattr(self, "request_peta_lokasi", None), "tanggal_pengukuran", None)
+    
+    @property
+    def penunjuk_batas(self) -> str | None:
+        return getattr(getattr(self, "request_peta_lokasi", None), "penunjuk_batas", None)
+    
+    @property
+    def surveyor(self) -> str | None:
+        return getattr(getattr(self, "request_peta_lokasi", None), "surveyor", None)
 
 ##########################################################################
 

@@ -1,9 +1,11 @@
+from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import select, case, text, and_, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
+from sqlalchemy import exc
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, 
@@ -14,9 +16,68 @@ from common.enum import JenisBayarEnum
 from uuid import UUID
 from decimal import Decimal
 from typing import List
+from datetime import datetime
+import crud
 
 
 class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
+
+    async def create_(self, *, 
+                     obj_in: SpkCreateSch | Spk, 
+                     created_by_id : UUID | str | None = None, 
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True) -> Spk :
+        db_session = db_session or db.session
+        db_obj = self.model.from_orm(obj_in) #type ignore
+        db_obj.created_at = datetime.utcnow()
+        db_obj.updated_at = datetime.utcnow()
+        if created_by_id:
+            db_obj.created_by_id = created_by_id
+            db_obj.updated_by_id = created_by_id
+        
+        db_session.add(db_obj)
+
+        bidang = await crud.bidang.get_by_id(id=obj_in.bidang_id)
+        beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[beban_biaya.beban_biaya_id for beban_biaya in obj_in.spk_beban_biayas])
+
+        for komponen_biaya in obj_in.spk_beban_biayas:
+            existing_komponen = next((komponen for komponen in bidang.komponen_biayas if komponen.beban_biaya_id == komponen_biaya.beban_biaya_id), None)
+            if existing_komponen:
+                komponen = komponen_biaya.dict(exclude={"id"}, exclude_unset=True)
+                for key, value in komponen.items():
+                    setattr(existing_komponen, key, value)
+                existing_komponen.updated_at = datetime.utcnow()
+                existing_komponen.updated_by_id = created_by_id
+                db_session.add(existing_komponen)
+            else:
+                beban_biaya = next((bebanbiaya for bebanbiaya in beban_biayas if bebanbiaya.id == komponen_biaya.beban_biaya_id), None)
+                new_komponen = BidangKomponenBiaya(**beban_biaya.dict(exclude={"id", "created_at", "updated_at", "created_by_id", "updated_by_id"}),
+                                    bidang_id=obj_in.bidang_id,
+                                    beban_biaya=beban_biaya.id,
+                                    beban_pembeli=komponen_biaya.beban_pembeli,
+                                    is_void=False,
+                                    is_paid=False,
+                                    is_retur=False,
+                                    remark=komponen_biaya.remark)
+                
+                db_session.add(new_komponen)
+        
+        for kelengkapan in obj_in.spk_kelengkapan_dokumens:
+            new_kelengkapan = SpkKelengkapanDokumen(spk_id=db_obj.id, bundle_dt_id=kelengkapan.bundle_dt_id, tanggapan=kelengkapan.tanggapan)
+            db_session.add(new_kelengkapan)
+        
+        try:
+            
+            if with_commit:
+                await db_session.commit()
+        except exc.IntegrityError:
+            await db_session.rollback()
+            raise HTTPException(status_code=409, detail="Resource already exists")
+        
+        if with_commit:
+            await db_session.refresh(db_obj)
+        return db_obj
+
     async def get_by_id(self, 
                   *, 
                   id: UUID | str | None = None,

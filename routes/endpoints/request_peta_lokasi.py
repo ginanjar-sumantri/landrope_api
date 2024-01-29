@@ -10,7 +10,7 @@ from schemas.request_peta_lokasi_sch import (RequestPetaLokasiSch, RequestPetaLo
                                              RequestPetaLokasiCreateSch, RequestPetaLokasiCreatesSch, 
                                              RequestPetaLokasiUpdateSch, RequestPetaLokasiUpdateExtSch,
                                              RequestPetaLokasiHdbyCodeSch, RequestPetaLokasiPdfSch,
-                                             RequestPetaLokasiForInputHasilSch)
+                                             RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdatesSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code, CodeCounterEnum
@@ -53,7 +53,7 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
     today_date = date.today()
     counter = await generate_code(CodeCounterEnum.RequestPetaLokasi, db_session=db_session, with_commit=False)
     code = f"SO/{counter}/REQ-PETLOK/{str(today_date.month)}/{str(today_date.year)}"
-    current_datetime = datetime.now()
+   
     for id in sch.kjb_dt_ids:
         kjb_dt = await crud.kjb_dt.get(id=id)
 
@@ -68,14 +68,18 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
                                  kjb_dt_id=kjb_dt.id,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
-                                 is_disabled=False
+                                 is_disabled=False,
+                                 tanggal_terima_berkas=sch.tanggal_terima_berkas,
+                                 tanggal_pengukuran=sch.tanggal_pengukuran,
+                                 tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
+                                 penunjuk_batas=sch.penunjuk_batas,
+                                 surveyor=sch.surveyor
                                  )
-        await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id, db_session=db_session)
-    #     datas.append(data)
-
+        
+        await crud.request_peta_lokasi.create(obj_in=data, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-    # if len(datas) > 0:
-    #     objs = await crud.request_peta_lokasi.create_all(obj_ins=datas)
+    await db_session.commit()
+    
 
     return {"result" : status.HTTP_200_OK, "message" : "Data created correctly"}
 
@@ -117,9 +121,12 @@ async def get_by_code(code:str = None):
     if objs:
         
         data = objs[0]
-        kjb_dt_ids = []
+        kjb_dt_ids:list[RequestPetaLokasiSch] = []
         for i in objs:
-            kjb_dt_ids.append(i.kjb_dt_id)
+            request = RequestPetaLokasiSch.from_orm(i)
+            request.created_at = None
+            request.updated_at = None
+            kjb_dt_ids.append(request)
 
         obj = RequestPetaLokasiHdbyCodeSch(code=data.code,
                                            desa_name=data.desa_hd_name,
@@ -170,6 +177,11 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
                                  kjb_dt_id=j,
                                  remark=sch.remark,
                                  tanggal=sch.tanggal,
+                                 tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
+                                 tanggal_pengukuran=sch.tanggal_pengukuran,
+                                 tanggal_terima_berkas=sch.tanggal_terima_berkas,
+                                 penunjuk_batas=sch.penunjuk_batas,
+                                 surveyor=sch.surveyor,
                                  dibuat_oleh="Land Adm Acquisition Officer",
                                  diperiksa_oleh="Land Adm & Verification Section Head",
                                  diterima_oleh="Land Measurement Analyst",
@@ -180,6 +192,11 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
             obj_updated = RequestPetaLokasiUpdateSch(code=sch.code,
                                                      tanggal=sch.tanggal,
                                                      remark=sch.remark,
+                                                     tanggal_kirim_ukur=sch.tanggal_kirim_ukur,
+                                                     tanggal_pengukuran=sch.tanggal_pengukuran,
+                                                     tanggal_terima_berkas=sch.tanggal_terima_berkas,
+                                                     penunjuk_batas=sch.penunjuk_batas,
+                                                     surveyor=sch.surveyor,
                                                      kjb_dt_id=j)
             
             obj = await crud.request_peta_lokasi.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
@@ -189,6 +206,20 @@ async def update(sch:RequestPetaLokasiUpdateExtSch,
     obj = await crud.request_peta_lokasi.get_by_id(id=obj.id)
 
     return create_response(data=obj)
+
+
+@router.put("/request/updates", response_model=PutResponseBaseSch[RequestPetaLokasiSch])
+async def update(code:str, sch:RequestPetaLokasiUpdatesSch,
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Update a obj by its id"""
+
+    obj_currents = await crud.request_peta_lokasi.get_all_by_code(code=code)
+
+    obj_updated = await crud.request_peta_lokasi.updates_(obj_currents=obj_currents, obj_new=sch, code=code, updated_by_id=current_worker.id)
+    obj_updated = await crud.request_peta_lokasi.get_by_id(id=obj_updated.id)
+    return create_response(data=obj_updated)
+
 
 @router.get("/perintah/pengukuran")
 async def perintah_pengukuran(

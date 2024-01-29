@@ -14,6 +14,12 @@ class RequestPetaLokasiCreateSch(RequestPetaLokasiBase):
 
 class RequestPetaLokasiCreatesSch(BaseModel):
     tanggal:date | None
+    tanggal_terima_berkas:date | None
+    tanggal_pengukuran:date |None
+    penunjuk_batas:str | None
+    surveyor:str | None 
+    tanggal_kirim_ukur:date|None 
+
     kjb_dt_ids: List[UUID]
     remark:str | None
 
@@ -24,16 +30,7 @@ class RequestPetaLokasiHdSch(SQLModel):
     group:str | None 
     kjb_hd_code:str | None
 
-class RequestPetaLokasiHdbyCodeSch(BaseModel):
-    code:str | None
-    desa_name:str | None 
-    mediator:str | None 
-    group:str | None
-    tanggal:date | None
-    remark:str | None
-    kjb_hd_code:str | None 
-    kjb_hd_id:UUID | None
-    kjb_dt_ids: List[UUID]
+
 
 class RequestPetaLokasiForInputHasilSch(SQLModel):
     id:UUID
@@ -61,6 +58,17 @@ class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     bidang_id:UUID | None
     file_path:str | None
 
+class RequestPetaLokasiHdbyCodeSch(BaseModel):
+    code:str | None
+    desa_name:str | None 
+    mediator:str | None 
+    group:str | None
+    tanggal:date | None
+    remark:str | None
+    kjb_hd_code:str | None 
+    kjb_hd_id:UUID | None
+    kjb_dt_ids: List[RequestPetaLokasiSch]
+
 
 class RequestPetaLokasiPdfSch(BaseModel):
     no:str | None
@@ -76,12 +84,23 @@ class RequestPetaLokasiPdfSch(BaseModel):
 
 @optional
 class RequestPetaLokasiUpdateSch(RequestPetaLokasiBase):
-    kjb_dt_ids: List[UUID]
-    remark:str | None
+    pass
 
 @optional
 class RequestPetaLokasiUpdateExtSch(BaseModel):
     code:str = Field(nullable=True)
     tanggal:date = Field(default=date.today(), nullable=False)
+    tanggal_terima_berkas:date | None
+    tanggal_pengukuran:date |None
+    penunjuk_batas:str | None
+    surveyor:str | None 
+    tanggal_kirim_ukur:date|None 
     kjb_dt_ids: List[UUID]
     remark:str | None
+
+@optional
+class RequestPetaLokasiUpdateExSch(RequestPetaLokasiBase):
+    id:UUID|None
+
+class RequestPetaLokasiUpdatesSch(SQLModel):
+    request_peta_lokasist:list[RequestPetaLokasiUpdateExSch]
