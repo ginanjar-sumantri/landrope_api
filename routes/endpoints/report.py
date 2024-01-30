@@ -33,9 +33,9 @@ async def report_tim_ukur(start_date:date, end_date:date):
         ws.cell(row=1, column=idx + 1, value=val).font = Font(bold=True)
 
     if start_date:
-            query_start_date = "q.created_at >="f'"{start_date}"'
+            query_start_date = "rpl.tanggal_terima_berkas >="f'"{start_date}"'
     if end_date:
-        query_end_date = " AND q.created_at < "f'"{end_date}"'
+        query_end_date = " AND rpl.tanggal_terima_berkas < "f'"{end_date}"'
 
     query = f"""
             SELECT
