@@ -31,21 +31,21 @@ if TYPE_CHECKING:
 
 class KjbHdBase(SQLModel):
     code:str | None = Field(sa_column=(Column("code", String, unique=True)), nullable=False)
-    category:CategoryEnum | None
+    category:CategoryEnum | None = Field(nullable=True)
     nama_group:str | None = Field(nullable=True, max_length=200)
-    kategori_penjual:KategoriPenjualEnum | None
-    desa_id:UUID | None = Field(foreign_key="desa.id", nullable=False)
-    luas_kjb:Decimal | None
-    tanggal_kjb:date| None = Field(default=date.today())
+    kategori_penjual:KategoriPenjualEnum | None = Field(nullable=True)
+    desa_id:UUID | None = Field(foreign_key="desa.id", nullable=True)
+    luas_kjb:Decimal | None = Field(nullable=True)
+    tanggal_kjb:date| None = Field(default=date.today(), nullable=True)
     remark:str | None = Field(nullable=True)
-    manager_id:UUID | None = Field(foreign_key="manager.id")
-    sales_id:UUID | None = Field(foreign_key="sales.id")
-    mediator:str | None
+    manager_id:UUID | None = Field(foreign_key="manager.id", nullable=True)
+    sales_id:UUID | None = Field(foreign_key="sales.id", nullable=True)
+    mediator:str | None = Field(nullable=True)
     telepon_mediator:str | None = Field(nullable=True)
-    ada_utj:bool | None
-    utj_amount:Decimal | None
-    satuan_bayar:SatuanBayarEnum | None
-    satuan_harga:SatuanHargaEnum | None
+    ada_utj:bool | None = Field(nullable=True)
+    utj_amount:Decimal | None = Field(nullable=True)
+    satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
+    satuan_harga:SatuanHargaEnum | None = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
     is_draft:Optional[bool] = Field(nullable=True)
 
