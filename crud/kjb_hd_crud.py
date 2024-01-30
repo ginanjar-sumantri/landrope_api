@@ -102,7 +102,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         
         for i in obj_in.rekenings:
-            rekening = KjbRekening(**i.dict(), created_by_id=created_by_id, updated_by_id=created_by_id)
+            rekening = KjbRekening(**i.dict(exclude={"pemilik_id"}), created_by_id=created_by_id, updated_by_id=created_by_id)
             db_obj.rekenings.append(rekening)
 
             if i.pemilik_id:
@@ -223,7 +223,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         for rekening in obj_new.rekenings:
             existing_rekening = next((r for r in obj_current.rekenings if r.id == rekening.id), None)
             if existing_rekening:
-                rek = rekening.dict(exclude_unset=True)
+                rek = rekening.dict(exclude={"pemilik_id"}, exclude_unset=True)
                 for key, value in rek.items():
                     setattr(existing_rekening, key, value)
                 existing_rekening.updated_at = datetime.utcnow()

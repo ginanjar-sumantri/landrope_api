@@ -29,6 +29,10 @@ async def report_tim_ukur(start_date:date, end_date:date):
     header_string = ["No", "No. Permintaan Ukur", "Tanggal Terima Berkas", "Mediator", "Group", "Desa", "Nama Pemilik Tanah", "Jenis Surat (GIRIK/SHM)", 
                     "Alas Hak", "Luas Surat (m2)", "Tanggal Pengukuran", "Penunjuk Batas", "Luas Ukur (m2)", "Surveyor", "Tanggal Kirim Ukur ke Analis", "Keterangan"]
     
+
+    ws.cell(row=1, column=2, value="LAPORAN PENGUKURAN")
+    ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
+
     for idx, val in enumerate(header_string):
         ws.cell(row=1, column=idx + 1, value=val).font = Font(bold=True)
 
@@ -87,6 +91,15 @@ async def report_tim_ukur(start_date:date, end_date:date):
         ws.cell(row=x, column=14, value=row_data[13])
         ws.cell(row=x, column=15, value=row_data[14])
         ws.cell(row=x, column=16, value=row_data[15])
+    
+    ws.cell(row=x + 2, column=2, value="CATATAN:")
+    ws.cell(row=x + 3, column=2, value="1. KOLOM B S/D J DIPEROLEH DARI TIM MARKETING (DARI REQUEST UKUR/PETA LOKASI)")
+    ws.cell(row=x + 4, column=2, value="2. KOLOM K S/D P DIISI OLEH ADMIN UKUR DI SISTEM, SETELAH MENERIMA HASIL UKUR")
+    ws.cell(row=x + 5, column=2, value="3. 'TANGGAL PENGUKURAN' ADALAH TANGGAL TIM UKUR MELAKUKAN PENGUKURAN DI LAPANGAN ")
+    ws.cell(row=x + 6, column=2, value="4. 'TANGGAL KIRIM UKUR KE ANALIS' ADALAH TANGGAL TIM UKUR MENGIRIMKAN HASIL UKUR KE ANALIS")
+    ws.cell(row=x + 7, column=2, value="5. 'KETERANGAN' DIISI DENGAN INFORMASI DARI TIM UKUR APABILA ADA KENDALA/PENDING SEPERTI : BELUM UKUR MENUNGGU INFO MEDIATOR, PENJUAL BELUM MENUNJUKKAN BIDANG, DLL")
+    ws.cell(row=x + 8, column=2, value="6. 'TANGGAL TERIMA BERKAS' ADALAH TANGGAL TIM UKUR MENERIMA BERKAS UKUR DARI MARKETING")
+    
 
     excel_data = BytesIO()
 
