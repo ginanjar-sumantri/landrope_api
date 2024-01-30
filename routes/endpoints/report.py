@@ -1,7 +1,7 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlmodel import text, select
+from sqlmodel import text, select, SQLModel
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
@@ -26,15 +26,15 @@ async def report_tim_ukur(start_date:date, end_date:date):
     ws.title =  "REPORT TIM UKUR"
     ws.firstHeader
 
-    header_string = ["No", "No. Permintaan Ukur", "Tanggal Terima Berkas", "Mediator", "Group", "Desa", "Nama Pemilik Tanah", "Jenis Surat (GIRIK/SHM)", 
-                    "Alas Hak", "Luas Surat (m2)", "Tanggal Pengukuran", "Penunjuk Batas", "Luas Ukur (m2)", "Surveyor", "Tanggal Kirim Ukur ke Analis", "Keterangan"]
-    
-    end_column = len(header_string)
-
     ws.cell(row=1, column=2, value="LAPORAN PENGUKURAN")
     ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
     ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
     ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
+
+    header_string = ["No", "No. Permintaan Ukur", "Tanggal Terima Berkas", "Mediator", "Group", "Desa", "Nama Pemilik Tanah", "Jenis Surat (GIRIK/SHM)", 
+                    "Alas Hak", "Luas Surat (m2)", "Tanggal Pengukuran", "Penunjuk Batas", "Luas Ukur (m2)", "Surveyor", "Tanggal Kirim Ukur ke Analis", "Keterangan"]
+    
+    end_column = len(header_string)
 
     for idx, val in enumerate(header_string):
         ws.cell(row=3, column=idx + 1, value=val).font = Font(bold=True)
@@ -60,7 +60,7 @@ async def report_tim_ukur(start_date:date, end_date:date):
             p.name as pemilik_name,
             dt.jenis_alashak,
             dt.alashak,
-            dt.luas_surat_by_ttn as luas_surat,
+            dt.luas_surat as luas_surat,
             rpl.tanggal_pengukuran,
             rpl.penunjuk_batas,
             rpl.luas_ukur,
@@ -138,16 +138,16 @@ async def report_tim_analyst(start_date:date, end_date:date):
     ws.title =  "REPORT TIM ANALYST"
     ws.firstHeader
 
+    ws.cell(row=1, column=2, value="LAPORAN ANALISA PETA LOKASI")
+    ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
+    ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
+    ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
+
     header_string = ["No", "No. Permintaan Ukur", "Tanggal Serah Terima Ukur", "Mediator", "Group", "Nama Pemilik Tanah", "Jenis Surat", "Alas Hak", "Luas (m2)", 
                     "Desa", "Project", "PT SK", "Nama Petugas Analyst", "No. ID Bidang", "L SURAT", "L UKUR", "L NETT", "L CLEAR", "L OVERLAP", "ID OVERLAP", 
                     "Ket (Overlap/Clear)", "L Proses (PBT dan SERTIFIKASI)", "Tanggal Serah Terima ke Tim Marketing", "Selisih Hari"]
     
     end_column = len(header_string)
-
-    ws.cell(row=1, column=2, value="LAPORAN ANALISA PETA LOKASI")
-    ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
-    ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
-    ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
 
     for idx, val in enumerate(header_string):
         ws.cell(row=3, column=idx + 1, value=val).font = Font(bold=True)
@@ -172,7 +172,7 @@ async def report_tim_analyst(start_date:date, end_date:date):
             p.name as pemilik_name,
             dt.jenis_alashak,
             dt.alashak,
-            dt.luas_surat_by_ttn as luas_surat,
+            dt.luas_surat as luas_surat,
             d.name as desa_name,
             pr.name as project_name,
             pt.name as ptsk_name,
@@ -195,8 +195,9 @@ async def report_tim_analyst(start_date:date, end_date:date):
             INNER JOIN kjb_dt dt ON dt.id = rpl.kjb_dt_id
             INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
             LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
-            LEFT OUTER JOIN project pr ON pr.id = dt.project_by_ttn_id
+            LEFT OUTER JOIN planing pl ON pl.id = hpl.planing_id
+            LEFT OUTER JOIN desa d ON d.id = pl.desa_id
+            LEFT OUTER JOIN project pr ON pr.id = pl.project_id
             LEFT OUTER JOIN skpt sk ON sk.id = hpl.skpt_id
             LEFT OUTER JOIN ptsk pt ON pt.id = sk.ptsk_id
             INNER JOIN worker w ON w.id = hpl.created_by_id
@@ -249,6 +250,101 @@ async def report_tim_analyst(start_date:date, end_date:date):
     ws.merge_cells(start_row=x + 6, start_column=2, end_row=x + 6, end_column=end_column)
     ws.cell(row=x + 7, column=2, value="ADA MODUL UNTUK REVISI LUAS SURAT DI TIM PRA PEMBEBASAN, ADA PILIHAN UNTUK RENVOY SURAT")
     ws.merge_cells(start_row=x + 7, start_column=2, end_row=x + 7, end_column=end_column)
+
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
+    
+
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+
+class HasilAnalisa(SQLModel):
+     ids:list[UUID]|None
+
+@router.get("/hasil-analisa")
+async def report_hasil_analisa(request_peta_lokasi_id:UUID|None = None):
+
+    request_peta_lokasi_current = await crud.request_peta_lokasi.get(id=request_peta_lokasi_id)
+
+    if not request_peta_lokasi_current:
+        HTTPException(status_code=422, detail="Request Peta Lokasi tidak ditemukan")
+
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title =  "REPORT TIM UKUR"
+    ws.firstHeader
+
+    ws.cell(row=1, column=2, value="HASIL ANALISA")
+    ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
+    ws.cell(row=2, column=2, value=f"NO: {request_peta_lokasi_current.code}")
+    ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
+
+    header_string = ["No", "Mediator", "Group", "Nama Pemilik Tanah", "No. Telp Pemilik Tanah", "Alas Hak", "Luas (m2)", 
+                    "Desa", "Project", "PT", "Nama Petugas Analyst", "No. Id Bidang", "Luas (m2)", "Ket (Overlap/Clear)"]
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=4, column=idx + 1, value=val).font = Font(bold=True)
+        ws.cell(row=4, column=idx + 1, value=val).fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
+
+
+    query = f"""
+            SELECT 
+            ROW_NUMBER() OVER (ORDER BY hpl.id) AS no,
+            hd.mediator,
+            dt.group,
+            p.name as pemilik_name,
+            (select nomor_telepon from kontak k where k.pemilik_id = p.id limit 1) as no_pemilik,
+            dt.alashak,
+            dt.luas_surat_by_ttn as luas_surat,
+            d.name as desa_name,
+            pr.name as project_name,
+            pt.name as ptsk_name,
+            w.name as petugas_name,
+            b.id_bidang,
+            hpl.luas_ukur,
+            hpl.hasil_analisa_peta_lokasi
+            FROM hasil_peta_lokasi hpl
+            INNER JOIN kjb_dt dt ON dt.id = hpl.kjb_dt_id 
+            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
+            INNER JOIN pemilik p ON p.id = hpl.pemilik_id
+            LEFT OUTER JOIN planing pl ON pl.id = hpl.planing_id
+            LEFT OUTER JOIN desa d ON d.id = pl.desa_id
+            LEFT OUTER JOIN project pr ON pr.id = pl.project_id
+            LEFT OUTER JOIN skpt sk ON sk.id = hpl.skpt_id
+            LEFT OUTER JOIN ptsk pt ON pt.id = sk.ptsk_id
+            INNER JOIN worker w ON w.id = hpl.created_by_id
+            INNER JOIN bidang b ON b.id = hpl.bidang_id
+            WHERE hpl.request_peta_lokasi_id = '{request_peta_lokasi_id}'
+    """
+
+    db_session = db.session
+    response = await db_session.execute(query)
+    result = response.all()
+
+    x = 4
+    for row_data in result:
+        x += 1
+        ws.cell(row=x, column=1, value=row_data[0])
+        ws.cell(row=x, column=2, value=row_data[1])
+        ws.cell(row=x, column=3, value=row_data[2])
+        ws.cell(row=x, column=4, value=row_data[3])
+        ws.cell(row=x, column=5, value=row_data[4])
+        ws.cell(row=x, column=6, value=row_data[5])
+        ws.cell(row=x, column=7, value=row_data[6])
+        ws.cell(row=x, column=8, value=row_data[7])
+        ws.cell(row=x, column=9, value=row_data[8])
+        ws.cell(row=x, column=10, value=row_data[9])
+        ws.cell(row=x, column=11, value=row_data[10])
+        ws.cell(row=x, column=12, value=row_data[11])
+        ws.cell(row=x, column=13, value=row_data[12])
+        ws.cell(row=x, column=14, value=row_data[13])
 
     excel_data = BytesIO()
 
