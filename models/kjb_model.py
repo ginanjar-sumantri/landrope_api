@@ -311,6 +311,10 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def surveyor(self) -> str | None:
         return getattr(getattr(self, "request_peta_lokasi", None), "surveyor", None)
+    
+    @property
+    def keterangan_req_petlok_name(self) -> str | None:
+        return getattr(getattr(getattr(self, "request_peta_lokasi", None), "keterangan_req_petlok", None), "name", None)
 
 ##########################################################################
 

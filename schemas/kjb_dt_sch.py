@@ -48,6 +48,7 @@ class KjbDtListRequestPetlokSch(KjbDtSch):
     penunjuk_batas:str | None
     surveyor:str | None 
     tanggal_kirim_ukur:date|None 
+    keterangan_req_petlok_name:str|None
 
 class KjbDtListSch(SQLModel):
     kjb_code:str|None

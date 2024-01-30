@@ -10,18 +10,19 @@ if TYPE_CHECKING:
     from kjb_model import KjbDt
     from worker_model import Worker
     from hasil_peta_lokasi_model import HasilPetaLokasi
+    from master_model import KeteranganReqPetlok
 
 class RequestPetaLokasiBase(SQLModel):
     code:str|None = Field(nullable=True)
     tanggal:date|None = Field(default=date.today(), nullable=False)
     remark:str | None
-    is_disabled:bool | None = Field(nullable=True)
     tanggal_terima_berkas:date | None = Field(nullable=True)
     tanggal_pengukuran:date |None = Field(nullable=True)
     penunjuk_batas:str | None = Field(nullable=True)
     surveyor:str | None = Field(nullable=True)
     tanggal_kirim_ukur:date|None = Field(nullable=True)
     luas_ukur:Decimal | None = Field(nullable=True)
+    keterangan_req_petlok_id:UUID | None = Field(nullable=True, foreign_key="keterangan_req_petlok.id")
     
     kjb_dt_id:UUID = Field(foreign_key="kjb_dt.id", nullable=False)
 
@@ -35,6 +36,12 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
         sa_relationship_kwargs={
             "lazy" : "select",
             "uselist" : False
+        }
+    )
+
+    keterangan_req_petlok: "KeteranganReqPetlok" = Relationship(
+        sa_relationship_kwargs={
+            "lazy":"select"
         }
     )
 
@@ -115,4 +122,8 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     @property
     def hasil_peta_lokasi_id(self) -> UUID | None:
         return getattr(getattr(self, "hasil_peta_lokasi", None), "id", None)
+    
+    @property
+    def keterangan_req_petlok_name(self) -> str | None:
+        return getattr(getattr(self, "keterangan_req_petlok", None), "name", None)
     

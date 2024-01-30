@@ -91,3 +91,14 @@ class HargaStandard(HargaStandardFullBase, table=True):
             return ""
         
         return self.planing.code
+
+#####################################################
+
+class KeteranganReqPetlokBase(SQLModel):
+    name:str | None = Field(nullable=True)
+
+class KeteranganReqPetlokFullBase(KeteranganReqPetlokBase, BaseUUIDModel):
+    pass
+
+class KeteranganReqPetlok(KeteranganReqPetlokFullBase, table=True):
+    pass

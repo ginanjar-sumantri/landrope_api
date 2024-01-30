@@ -3,7 +3,7 @@ from .project_model import Project, SubProject, MainProject
 from .planing_model import Planing
 from .desa_model import Desa
 from .ptsk_model import Ptsk
-from .master_model import JenisLahan, BebanBiaya, JenisSurat
+from .master_model import JenisLahan, BebanBiaya, JenisSurat, KeteranganReqPetlok
 from .bidang_model import Bidang, BidangHistory
 from .bidang_overlap_model import BidangOverlap
 from .bidang_komponen_biaya_model import BidangKomponenBiaya
@@ -35,6 +35,7 @@ from .termin_model import Termin, TerminBayar
 from .utj_khusus_model import UtjKhusus, UtjKhususDetail
 from .invoice_model import Invoice, InvoiceDetail
 from .payment_model import Payment, PaymentDetail
+
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate
 

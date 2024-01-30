@@ -3,7 +3,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               sub_project, ptsk, section, jenis_lahan, jenis_surat, harga_standard,
                               draft, draft_detail, draft_report_map, gps, skpt, skpt_dt, worker, role, dokumen, kategori_dokumen, 
                               bundle_hd, bundle_dt, checklist_dokumen, checklist_kelengkapan_dokumen_hd,checklist_kelengkapan_dokumen_dt, 
-                              marketing, pemilik, beban_biaya,
+                              marketing, pemilik, beban_biaya, keterangan_req_petlok,
                               kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment, utj_khusus,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual, kjb_history,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
@@ -81,6 +81,7 @@ api_router.include_router(kategori.router, prefix="/kategori", tags=["kategori"]
 api_router.include_router(kategori_sub.router, prefix="/kategorisub", tags=["kategorisub"])
 api_router.include_router(kategori_proyek.router, prefix="/kategoriproyek", tags=["kategoriproyek"])
 api_router.include_router(giro.router, prefix="/giro", tags=["giro"])
+api_router.include_router(keterangan_req_petlok.router, prefix="/keterangan_req_petlok", tags=["keterangan_req_petlok"])
 
 api_router.include_router(import_log.router, prefix="/importlog", tags=["importlog"])
 

@@ -57,6 +57,7 @@ from .kategori_crud import kategori
 from .kategori_sub_crud import kategori_sub
 from .kategori_proyek_crud import kategori_proyek
 from .giro_crud import giro
+from .keterangan_req_petlok_crud import keterangan_req_petlok
 
 from .order_gambar_ukur_crud import order_gambar_ukur
 from .order_gambar_ukur_bidang_crud import order_gambar_ukur_bidang
