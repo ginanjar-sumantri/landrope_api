@@ -30,6 +30,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
+        db_session = db.session
 
         #delete all data detail current when not exists in schema update
         await db_session.execute(delete(RequestPetaLokasi).where(and_(RequestPetaLokasi.id.notin_(r.id for r in obj_new.datas if r.id is not None), 

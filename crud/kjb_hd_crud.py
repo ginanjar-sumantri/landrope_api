@@ -176,8 +176,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         is_draft = obj_current.is_draft or False
         db_session =  db_session or db.session
 
-        #add history
-        await HistoryService().create_history_kjb(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
+        if obj_current.is_draft != True:
+            #add history
+            await HistoryService().create_history_kjb(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
 
         obj_data = jsonable_encoder(obj_current)
 
@@ -231,11 +232,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 new_rekening = KjbRekening(**rekening.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_rekening)
             
-            rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=rekening.pemilik_id)
-            existing_rekening_ = next((r for r in rekenings if r.nomor_rekening == rekening.nomor_rekening), None)
-            if existing_rekening_ is None:
-                new_rekening_ = Rekening(**rekening.dict(exclude={"id"}))
-                db_session.add(new_rekening_)
+            # rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=rekening.pemilik_id)
+            # existing_rekening_ = next((r for r in rekenings if r.nomor_rekening == rekening.nomor_rekening), None)
+            # if existing_rekening_ is None:
+            #     new_rekening_ = Rekening(**rekening.dict(exclude={"id"}))
+            #     db_session.add(new_rekening_)
         
         for harga in obj_new.hargas:
             existing_harga = next((h for h in obj_current.hargas if h.id == harga.id), None)
