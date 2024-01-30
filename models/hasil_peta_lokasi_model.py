@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 from decimal import Decimal
 from common.enum import TipeOverlapEnum, StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum
+from datetime import date
 
 if TYPE_CHECKING:
     from models import Bidang, KjbDt, Planing, RequestPetaLokasi, Skpt, Pemilik, Worker, BidangOverlap, SubProject
@@ -34,6 +35,7 @@ class HasilPetaLokasiBase(SQLModel):
     hasil_analisa_peta_lokasi:HasilAnalisaPetaLokasiEnum | None = Field(nullable=True)
     remark:str | None = Field(nullable=True)
     is_done:bool | None = Field(nullable=True, default=False)
+    tanggal_kirim_berkas:date | None = Field(nullable=True) #tanggal tim analyst menyerahkan berkas ke tim marketing
 
 class HasilPetaLokasiFullBase(BaseUUIDModel, HasilPetaLokasiBase):
     pass
