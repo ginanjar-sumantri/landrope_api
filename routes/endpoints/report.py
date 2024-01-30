@@ -45,9 +45,9 @@ async def report_tim_ukur(start_date:date, end_date:date):
 
 
     if start_date:
-            query_start_date = "rpl.tanggal_terima_berkas >="f'"{start_date}"'
+            query_start_date = "rpl.tanggal_terima_berkas >=" f"'{start_date}'"
     if end_date:
-        query_end_date = " AND rpl.tanggal_terima_berkas < "f'"{end_date}"'
+        query_end_date = " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
 
     query = f"""
             SELECT
@@ -73,7 +73,7 @@ async def report_tim_ukur(start_date:date, end_date:date):
             LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
             LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
             LEFT OUTER JOIN keterangan_req_petlok ket ON ket.id = rpl.keterangan_req_petlok_id
-            WHERE ({query_start_date} {query_end_date})
+            WHERE {query_start_date} {query_end_date}
     """
 
     db_session = db.session
