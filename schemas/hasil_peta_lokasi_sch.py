@@ -43,6 +43,11 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
 
     details:list[HasilPetaLokasiDetailSch]
 
+class HasiLPetaLokasiUpdateTanggalKirimBerkasSch(SQLModel):
+    code:str|None
+    tanggal_kirim_berkas:date|None
+    ids:list[UUID]
+
 @optional
 class HasilPetaLokasiUpdateSch(HasilPetaLokasiBase):
     pass

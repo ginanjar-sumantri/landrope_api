@@ -1,10 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from sqlmodel import text, select, SQLModel
+from sqlmodel import text, select, SQLModel, update
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
+from models import HasilPetaLokasi
+from schemas.hasil_peta_lokasi_sch import HasiLPetaLokasiUpdateTanggalKirimBerkasSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, create_response)
 from common.rounder import RoundTwo
 from decimal import Decimal
@@ -267,14 +269,12 @@ async def report_tim_analyst(start_date:date, end_date:date):
 class HasilAnalisa(SQLModel):
      ids:list[UUID]|None
 
-@router.get("/hasil-analisa")
-async def report_hasil_analisa(request_peta_lokasi_id:UUID|None = None):
-
-    request_peta_lokasi_current = await crud.request_peta_lokasi.get(id=request_peta_lokasi_id)
-
-    if not request_peta_lokasi_current:
-        HTTPException(status_code=422, detail="Request Peta Lokasi tidak ditemukan")
-
+@router.post("/hasil-analisa")
+async def report_hasil_analisa(background_task:BackgroundTasks, sch:HasiLPetaLokasiUpdateTanggalKirimBerkasSch|None = None):
+    
+    ids = [f"'{str(req)}'" for req in sch.ids]
+    ids_str = ",".join(ids)
+    
     wb = Workbook()
     ws = wb.active
 
@@ -283,7 +283,7 @@ async def report_hasil_analisa(request_peta_lokasi_id:UUID|None = None):
 
     ws.cell(row=1, column=2, value="HASIL ANALISA")
     ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
-    ws.cell(row=2, column=2, value=f"NO: {request_peta_lokasi_current.code}")
+    ws.cell(row=2, column=2, value=f"NO: {sch.code}")
     ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
 
     header_string = ["No", "Mediator", "Group", "Nama Pemilik Tanah", "No. Telp Pemilik Tanah", "Alas Hak", "Luas (m2)", 
@@ -321,7 +321,7 @@ async def report_hasil_analisa(request_peta_lokasi_id:UUID|None = None):
             LEFT OUTER JOIN ptsk pt ON pt.id = sk.ptsk_id
             INNER JOIN worker w ON w.id = hpl.created_by_id
             INNER JOIN bidang b ON b.id = hpl.bidang_id
-            WHERE hpl.request_peta_lokasi_id = '{request_peta_lokasi_id}'
+            WHERE hpl.id IN ({ids_str})
     """
 
     db_session = db.session
@@ -353,8 +353,17 @@ async def report_hasil_analisa(request_peta_lokasi_id:UUID|None = None):
 
     # Set posisi objek BytesIO ke awal
     excel_data.seek(0)
-    
+
+    background_task.add_task(update_tanggal_kirim_berkas, sch)
 
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+
+async def update_tanggal_kirim_berkas(sch:HasiLPetaLokasiUpdateTanggalKirimBerkasSch):
+     
+    query = update(HasilPetaLokasi).where(HasilPetaLokasi.id.in_(sch.ids)).values(tanggal_kirim_berkas=sch.tanggal_kirim_berkas)
+    
+    db_session = db.session
+    await db_session.execute(query)
+    await db_session.commit()

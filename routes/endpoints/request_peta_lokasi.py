@@ -106,9 +106,19 @@ async def get_list_for_input_hasil_petlok(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(outstanding=outstanding,
-        params=params, 
-        keyword=keyword)
+    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(outstanding=outstanding, params=params, keyword=keyword)
+    
+    return create_response(data=objs)
+
+@router.get("/has-input-petlok", response_model=GetResponsePaginatedSch[RequestPetaLokasiForInputHasilSch])
+async def get_list_for_input_hasil_petlok(
+            code:str|None = None,
+            params: Params = Depends(), 
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    objs = await crud.request_peta_lokasi.get_multi_detail_has_input_petlok_paginated(params=params, code=code)
     
     return create_response(data=objs)
 
@@ -278,4 +288,15 @@ async def delete(
 
     return obj_deleted
 
-   
+
+@router.get("/search/has-input-petlok", response_model=GetResponsePaginatedSch[RequestPetaLokasiHdSch])
+async def get_list_header_has_input_petlok(
+                    params: Params=Depends(), 
+                    keyword:str|None = None,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+    
+
+    objs = await crud.request_peta_lokasi.get_multi_header_has_input_petlok_paginated(params=params, keyword=keyword)
+    return create_response(data=objs)
