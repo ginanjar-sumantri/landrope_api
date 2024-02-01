@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Response, Request, BackgroundTasks, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_
@@ -35,6 +36,9 @@ from services.history_service import HistoryService
 from shapely import wkb, to_wkt, wkt
 from decimal import Decimal
 from datetime import date
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from io import BytesIO
 import geopandas as gpd
 import pandas as pd
 import roman
@@ -698,4 +702,144 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
         # geom_union = GeomService.single_geometry_to_wkt(union_geom[0])
 
         # bidang_bintang_updated = {"geom" : geom_union}
-        
+
+@router.get("/report/excel-detail")
+async def report_detail(start_date:date | None = None, end_date:date|None = None):
+
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title =  "REPORT HASIL PETA LOKASI DETAIL"
+    ws.firstHeader
+
+    ws.cell(row=1, column=2, value="LAPORAN HASIL PETA LOKASI DETAIL")
+    ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=4)
+    ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
+    ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=4)
+
+    header_string = ["ID Bidang", "Alashak", "Desa", "Project", "Nama Pemilik Tanah", "Nomor SK", "PT SK", "Status SK",
+                    "Jenis Surat", "No Peta", "L Surat", "L Ukur", "L Nett", "L Clear", "L GU Perorangan", "L GU PT",
+                    "L Proses", "L PBT Perorangan", "L PBT PT", "Status Peta Lokasi", "Hasil Analisa", "ID Bidang Overlap",
+                    "Alashak Overlap", "Jenis Bidang", "Tipe Overlap", "L Overlap", "Status Luas", "Keterangan"]
+    
+    end_column = len(header_string)
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=3, column=idx + 1, value=val).font = Font(bold=True)
+        if idx + 1 < 22:
+            ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00FFFF00", end_color="00FFFF00", fill_type="solid")
+        else:
+            ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
+
+    query_start_date = ""
+    if start_date and end_date:
+        query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+
+    query = f"""
+            SELECT
+            bd.id_bidang,
+            bd.alashak,
+            d.name as desa_name,
+            p.name as project_name,
+            pm.name as pemilik_name,
+            sk.nomor_sk,
+            pt.name as ptsk_name,
+            sk.status as status_sk,
+            hpl.jenis_alashak,
+            hpl.no_peta,
+            hpl.luas_surat,
+            hpl.luas_ukur,
+            hpl.luas_nett,
+            hpl.luas_clear,
+            hpl.luas_gu_perorangan,
+            hpl.luas_gu_pt,
+            hpl.luas_proses,
+            hpl.luas_pbt_perorangan,
+            hpl.luas_pbt_pt,
+            hpl.status_hasil_peta_lokasi,
+            hpl.hasil_analisa_peta_lokasi,
+            bd_dt.id_bidang as id_bidang_overlap,
+            bd_dt.alashak as alashak_overlap,
+            bd_dt.jenis_bidang as jenis_bidang_overlap,
+            hpl_dt.tipe_overlap,
+            hpl_dt.luas_overlap,
+            hpl_dt.status_luas,
+            hpl_dt.keterangan
+            FROM hasil_peta_lokasi hpl
+            INNER JOIN hasil_peta_lokasi_detail hpl_dt ON hpl.id = hpl_dt.hasil_peta_lokasi_id
+            LEFT OUTER JOIN bidang bd ON bd.id = hpl.bidang_id
+            LEFT OUTER JOIN bidang bd_dt ON bd_dt.id = hpl_dt.bidang_id
+            LEFT OUTER JOIN planing pl ON pl.id = hpl.planing_id
+            LEFT OUTER JOIN desa d ON d.id = pl.desa_id
+            LEFT OUTER JOIN project p ON p.id = pl.project_id
+            LEFT OUTER JOIN skpt sk ON sk.id = hpl.skpt_id
+            LEFT OUTER JOIN ptsk pt ON pt.id = sk.ptsk_id
+            LEFT OUTER JOIN pemilik pm ON pm.id = hpl.pemilik_id
+            {query_start_date}
+    """
+
+    db_session = db.session
+    response = await db_session.execute(query)
+    result = response.all()
+
+    x = 3
+    for row_data in result:
+        x += 1
+        ws.cell(row=x, column=1, value=row_data[0])
+        ws.cell(row=x, column=2, value=row_data[1])
+        ws.cell(row=x, column=3, value=row_data[2])
+        ws.cell(row=x, column=4, value=row_data[3])
+        ws.cell(row=x, column=5, value=row_data[4])
+        ws.cell(row=x, column=6, value=row_data[5])
+        ws.cell(row=x, column=7, value=row_data[6])
+        ws.cell(row=x, column=8, value=row_data[7])
+        ws.cell(row=x, column=9, value=row_data[8])
+        ws.cell(row=x, column=10, value=row_data[9])
+        ws.cell(row=x, column=11, value=row_data[10])
+        ws.cell(row=x, column=12, value=row_data[11])
+        ws.cell(row=x, column=13, value=row_data[12])
+        ws.cell(row=x, column=14, value=row_data[13])
+        ws.cell(row=x, column=15, value=row_data[14])
+        ws.cell(row=x, column=16, value=row_data[15])
+        ws.cell(row=x, column=17, value=row_data[16])
+        ws.cell(row=x, column=18, value=row_data[17])
+        ws.cell(row=x, column=19, value=row_data[18])
+        ws.cell(row=x, column=20, value=row_data[19])
+        ws.cell(row=x, column=21, value=row_data[20])
+        ws.cell(row=x, column=22, value=row_data[21])
+        ws.cell(row=x, column=23, value=row_data[22])
+        ws.cell(row=x, column=24, value=row_data[23])
+        ws.cell(row=x, column=25, value=row_data[24])
+        ws.cell(row=x, column=26, value=row_data[25])
+        ws.cell(row=x, column=27, value=row_data[26])
+        ws.cell(row=x, column=28, value=row_data[27])
+    
+    # ws.cell(row=x + 2, column=2, value="CATATAN:")
+    # ws.merge_cells(start_row=x + 2, start_column=2, end_row=x + 2, end_column=end_column)
+    # ws.cell(row=x + 3, column=2, value="1. KOLOM B S/D J DIPEROLEH DARI TIM MARKETING (DARI REQUEST UKUR/PETA LOKASI)")
+    # ws.merge_cells(start_row=x + 3, start_column=2, end_row=x + 3, end_column=end_column)
+    # ws.cell(row=x + 4, column=2, value="2. KOLOM K S/D P DIISI OLEH ADMIN UKUR DI SISTEM, SETELAH MENERIMA HASIL UKUR")
+    # ws.merge_cells(start_row=x + 4, start_column=2, end_row=x + 4, end_column=end_column)
+    # ws.cell(row=x + 5, column=2, value="3. 'TANGGAL PENGUKURAN' ADALAH TANGGAL TIM UKUR MELAKUKAN PENGUKURAN DI LAPANGAN ")
+    # ws.merge_cells(start_row=x + 5, start_column=2, end_row=x + 5, end_column=end_column)
+    # ws.cell(row=x + 6, column=2, value="4. 'TANGGAL KIRIM UKUR KE ANALIS' ADALAH TANGGAL TIM UKUR MENGIRIMKAN HASIL UKUR KE ANALIS")
+    # ws.merge_cells(start_row=x + 6, start_column=2, end_row=x + 6, end_column=end_column)
+    # ws.cell(row=x + 7, column=2, value="5. 'KETERANGAN' DIISI DENGAN INFORMASI DARI TIM UKUR APABILA ADA KENDALA/PENDING SEPERTI : BELUM UKUR MENUNGGU INFO MEDIATOR, PENJUAL BELUM MENUNJUKKAN BIDANG, DLL")
+    # ws.merge_cells(start_row=x + 7, start_column=2, end_row=x + 7, end_column=end_column)
+    # ws.cell(row=x + 8, column=2, value="6. 'TANGGAL TERIMA BERKAS' ADALAH TANGGAL TIM UKUR MENERIMA BERKAS UKUR DARI MARKETING")
+    # ws.merge_cells(start_row=x + 8, start_column=2, end_row=x + 8, end_column=end_column)
+    
+
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
+    
+
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
