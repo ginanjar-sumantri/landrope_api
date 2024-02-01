@@ -552,9 +552,9 @@ async def report_summary_analyst(start_date:date, end_date:date):
     total_order_selesai = RoundTwo(sum([data[6] for data in result if data[15] == "ORDER UKUR SELESAI"])/10000)
     total_order_belum_selesai = RoundTwo(sum([data[6] for data in result if data[15] == "ORDER UKUR BELUM SELESAI"])/10000)
 
-    ws.cell(row=x + 3, column=2, value=f"TOTAL ORDER SELESAI: {total_order_selesai}")
+    ws.cell(row=x + 3, column=2, value=f"TOTAL ORDER SELESAI: {total_order_selesai} Ha")
     ws.merge_cells(start_row=x + 3, start_column=2, end_row=x + 3, end_column=end_column)
-    ws.cell(row=x + 4, column=2, value=f"TOTAL ORDER BELUM SELESAI: {total_order_belum_selesai}")
+    ws.cell(row=x + 4, column=2, value=f"TOTAL ORDER BELUM SELESAI: {total_order_belum_selesai} Ha")
     ws.merge_cells(start_row=x + 4, start_column=2, end_row=x + 4, end_column=end_column)
 
     
