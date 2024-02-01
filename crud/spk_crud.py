@@ -133,7 +133,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                             ).options(selectinload(Planing.project)
                                                             )
                                             ).options(selectinload(Bidang.sub_project)
-                                            ).options(selectinload(Bidang.tahap_details)
+                                            ).options(selectinload(Bidang.tahap_details
+                                                                ).options(selectinload(TahapDetail.tahap))
                                             ).options(selectinload(Bidang.manager)
                                             ).options(selectinload(Bidang.sales)
                                             ).options(selectinload(Bidang.notaris)
