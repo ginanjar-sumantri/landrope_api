@@ -24,6 +24,8 @@ class PaymentBase(SQLModel):
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
+    tanggal_cair:date|None = Field(nullable=True)
+    tanggal_buka:date|None = Field(nullable=True)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass

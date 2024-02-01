@@ -42,7 +42,6 @@ import roman
 
 router = APIRouter()
 
-
 @router.get("", response_model=GetResponsePaginatedSch[HasilPetaLokasiSch])
 async def get_list(
             params: Params=Depends(), 
@@ -145,19 +144,14 @@ async def create(
 
     db_session = db.session
 
-    draft = await crud.draft.get_by_id(id=sch.draft_id)
+    draft = None
+    if sch.draft_id:
+        draft = await crud.draft.get_by_id(id=sch.draft_id)
     
     for dt in sch.hasilpetalokasidetails:
         if dt.bidang_id is None:
             continue
 
-        # bidang_overlap = await crud.bidang.get(id=dt.bidang_id)
-        # if dt.luas_overlap > sch.luas_ukur:
-        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas ukur bidang yang menimpa")
-        
-        # if dt.luas_overlap > bidang_overlap.luas_surat:
-        #     raise HTTPException(status_code=422, detail=f"Luas overlap {bidang_overlap.id_bidang} tidak boleh lebih besar dari luas suratnya {bidang_overlap.luas_surat}")
-        
         if dt.tipe_overlap == TipeOverlapEnum.BintangBatal and dt.status_luas != StatusLuasOverlapEnum.Menambah_Luas:
             raise HTTPException(status_code=422, detail=f"Apabila Bintang batal pada overlap, maka status luas harus Menambah Luas. Agar perhitungan luas bintang (DAMAI, BATAL, SISA BINTANG) sesuai")
         
@@ -175,52 +169,54 @@ async def create(
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-    bidang_current = await crud.bidang.get_by_id(id=sch.bidang_id)
-    if bidang_current.geom :
-        if isinstance(bidang_current.geom, str):
-            pass
-        else:
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-    if bidang_current.geom_ori :
-        if isinstance(bidang_current.geom_ori, str):
-            pass
-        else:
-            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+    if sch.bidang_id:
+        bidang_current = await crud.bidang.get_by_id(id=sch.bidang_id)
+        if bidang_current.geom :
+            if isinstance(bidang_current.geom, str):
+                pass
+            else:
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        if bidang_current.geom_ori :
+            if isinstance(bidang_current.geom_ori, str):
+                pass
+            else:
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
 
-    bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
-    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
+        bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
-    details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
-                                               bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
-                                               luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
-                                               keterangan=x.keterangan,
-                                               draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
-                                               status_luas=x.status_luas) 
-               for x in sch.hasilpetalokasidetails]
+        details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
+                                                bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
+                                                luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
+                                                keterangan=x.keterangan,
+                                                draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
+                                                status_luas=x.status_luas) 
+                for x in sch.hasilpetalokasidetails]
 
-    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(new_obj.bidang_id) if new_obj.bidang_id is not None else new_obj.bidang_id,
-                                              hasil_peta_lokasi_id=str(new_obj.id) if new_obj.id is not None else new_obj.id,
-                                              kjb_dt_id=str(new_obj.kjb_dt_id) if new_obj.kjb_dt_id is not None else new_obj.kjb_dt_id,
-                                              draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
-                                              from_updated=False,
-                                              details=details)
+        payload = HasilPetaLokasiTaskUpdate(bidang_id=str(new_obj.bidang_id) if new_obj.bidang_id is not None else new_obj.bidang_id,
+                                                hasil_peta_lokasi_id=str(new_obj.id) if new_obj.id is not None else new_obj.id,
+                                                kjb_dt_id=str(new_obj.kjb_dt_id) if new_obj.kjb_dt_id is not None else new_obj.kjb_dt_id,
+                                                draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
+                                                from_updated=False,
+                                                details=details)
+        
+        await db_session.commit()
+        await db_session.refresh(new_obj)
+
+        url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
+
+        url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
+
+        url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     
-    # background_task.add_task(insert_detail, payload)
-    # background_task.add_task(update_bidang_override, payload)
-    # background_task.add_task(generate_kelengkapan_bidang_override, payload)
+    else:
 
-    await db_session.commit()
-    await db_session.refresh(new_obj)
-
-    url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
-
-    url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
-
-    url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
+        await db_session.commit()
+        await db_session.refresh(new_obj)
 
     new_obj = await crud.hasil_peta_lokasi.get_by_id(id=new_obj.id)
 
@@ -238,7 +234,9 @@ async def update(
 
     db_session = db.session
 
-    draft = await crud.draft.get_by_id(id=sch.draft_id)
+    if sch.draft_id:
+        draft = await crud.draft.get_by_id(id=sch.draft_id)
+
     for dt in sch.hasilpetalokasidetails:
         if dt.bidang_id is None:
             continue
@@ -265,7 +263,7 @@ async def update(
     await HistoryService().create_history_hasil_peta_lokasi(obj_current=obj_current, worker_id=current_worker.id, db_session=db_session)
     
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
-    if obj_current.bidang_id != sch.bidang_id:
+    if obj_current.bidang_id != sch.bidang_id and obj_current.bidang_id is not None:
 
         url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
         payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
@@ -282,52 +280,51 @@ async def update(
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
-    bidang_current = await crud.bidang.get_by_id(id=sch.bidang_id)
-    if bidang_current.geom :
-        if isinstance(bidang_current.geom, str):
-            pass
-        else:
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-    if bidang_current.geom_ori :
-        if isinstance(bidang_current.geom_ori, str):
-            pass
-        else:
-            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+    if sch.bidang_id:
+        bidang_current = await crud.bidang.get_by_id(id=sch.bidang_id)
+        if bidang_current.geom :
+            if isinstance(bidang_current.geom, str):
+                pass
+            else:
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        if bidang_current.geom_ori :
+            if isinstance(bidang_current.geom_ori, str):
+                pass
+            else:
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-    bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
-    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
+        bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
-    details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
-                                               bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
-                                               luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
-                                               keterangan=x.keterangan,
-                                               draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
-                                               status_luas=x.status_luas) 
-               for x in sch.hasilpetalokasidetails]
+        details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
+                                                bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
+                                                luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
+                                                keterangan=x.keterangan,
+                                                draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
+                                                status_luas=x.status_luas) 
+                for x in sch.hasilpetalokasidetails]
 
-    payload = HasilPetaLokasiTaskUpdate(bidang_id=str(obj_updated.bidang_id) if obj_updated.bidang_id is not None else obj_updated.bidang_id,
-                                              hasil_peta_lokasi_id=str(obj_updated.id) if obj_updated.id is not None else obj_updated.id,
-                                              kjb_dt_id=str(obj_updated.kjb_dt_id) if obj_updated.kjb_dt_id is not None else obj_updated.kjb_dt_id,
-                                              draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
-                                              from_updated=True,
-                                              details=details)
-    
-    
-    # background_task.add_task(insert_detail, payload)
-    # background_task.add_task(update_bidang_override, payload)
-    # background_task.add_task(generate_kelengkapan_bidang_override, payload)
+        payload = HasilPetaLokasiTaskUpdate(bidang_id=str(obj_updated.bidang_id) if obj_updated.bidang_id is not None else obj_updated.bidang_id,
+                                                hasil_peta_lokasi_id=str(obj_updated.id) if obj_updated.id is not None else obj_updated.id,
+                                                kjb_dt_id=str(obj_updated.kjb_dt_id) if obj_updated.kjb_dt_id is not None else obj_updated.kjb_dt_id,
+                                                draft_id=str(sch.draft_id) if sch.draft_id is not None else sch.draft_id,
+                                                from_updated=True,
+                                                details=details)
 
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
+        await db_session.commit()
+        await db_session.refresh(obj_updated)
 
-    url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
+        url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
-    url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
+        url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
 
-    url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
-    GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
+        url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
+        GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
+    else:
+        await db_session.commit()
+        await db_session.refresh(obj_updated)
 
     obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
 
