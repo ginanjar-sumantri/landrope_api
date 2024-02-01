@@ -64,6 +64,7 @@ class RequestPetaLokasiHdbyCodeSch(BaseModel):
     mediator:str | None 
     group:str | None
     tanggal:date | None
+    tanggal_terima_berkas:date | None
     remark:str | None
     kjb_hd_code:str | None 
     kjb_hd_id:UUID | None

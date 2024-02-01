@@ -143,6 +143,7 @@ async def get_by_code(code:str = None):
                                            mediator=data.mediator,
                                            group=data.group,
                                            tanggal=data.tanggal,
+                                           tanggal_terima_berkas=data.tanggal_terima_berkas,
                                            remark=data.remark,
                                            kjb_hd_code=data.kjb_hd_code,
                                            kjb_hd_id=data.kjb_dt.kjb_hd_id,

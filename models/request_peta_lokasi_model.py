@@ -69,7 +69,7 @@ class RequestPetaLokasi(RequestPetaLokasiFullBase, table=True):
     
     @property
     def group(self) -> str:
-        return self.kjb_dt.kjb_hd.nama_group
+        return self.kjb_dt.group
     
     @property
     def nama_pemilik_tanah(self) -> str | None:
