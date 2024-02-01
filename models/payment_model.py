@@ -24,8 +24,6 @@ class PaymentBase(SQLModel):
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
-    tanggal_cair:date|None = Field(nullable=True)
-    tanggal_buka:date|None = Field(nullable=True)
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -76,6 +74,14 @@ class Payment(PaymentFullBase, table=True):
     @property
     def bank_code(self) -> str | None:
         return getattr(getattr(self, "giro", None), "bank_code", None)
+    
+    @property
+    def tanggal_buka(self) -> date | None:
+        return getattr(getattr(self, "giro", None), "tanggal_buka", None)
+    
+    @property
+    def tanggal_cair(self) -> date | None:
+        return getattr(getattr(self, "giro", None), "tanggal_cair", None)
     
     @property
     def payment_outstanding(self) -> Decimal | None:

@@ -9,7 +9,7 @@ from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
-from schemas.giro_sch import GiroSch, GiroCreateSch
+from schemas.giro_sch import GiroSch, GiroCreateSch, GiroUpdateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -49,8 +49,22 @@ async def create(
             sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
             
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        else:
+            sch_giro = GiroUpdateSch(**giro_current.dict())
+            sch_giro.tanggal_buka = sch.tanggal_buka
+            sch_giro.tanggal_cair = sch.tanggal_cair
+
+            giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
         sch.giro_id = giro_current.id      
+    
+    if sch.giro_id and sch.payment_method == PaymentMethodEnum.Giro:
+        giro_current = await crud.giro.get(id=sch.giro_id)
+        sch_giro = GiroUpdateSch(**giro_current.dict())
+        sch_giro.tanggal_buka = sch.tanggal_buka
+        sch_giro.tanggal_cair = sch.tanggal_cair
+
+        giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
     sch.code = f"PAY/{last_number}"
@@ -166,9 +180,22 @@ async def update(id:UUID, sch:PaymentUpdateSch,
             code_giro = f"{sch.payment_method.value}/{last_number_giro}"
             sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        
+        else:
+            sch_giro = GiroUpdateSch(**giro_current.dict())
+            sch_giro.tanggal_buka = sch.tanggal_buka
+            sch_giro.tanggal_cair = sch.tanggal_cair
+
+            giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
         sch.giro_id = giro_current.id    
     
+    if sch.giro_id and sch.payment_method == PaymentMethodEnum.Giro:
+        giro_current = await crud.giro.get(id=sch.giro_id)
+        sch_giro = GiroUpdateSch(**giro_current.dict())
+        sch_giro.tanggal_buka = sch.tanggal_buka
+        sch_giro.tanggal_cair = sch.tanggal_cair
+
+        giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
     sch.is_void = obj_current.is_void
     
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)

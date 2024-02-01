@@ -22,6 +22,8 @@ class GiroBase(SQLModel):
     tanggal:date|None = Field(nullable=True)
     bank_code:str|None = Field(nullable=True)
     payment_method:PaymentMethodEnum|None = Field(nullable=True)
+    tanggal_buka:date|None = Field(nullable=True)
+    tanggal_cair:date|None = Field(nullable=True)
 
 
 class GiroFullBase(BaseUUIDModel, GiroBase):

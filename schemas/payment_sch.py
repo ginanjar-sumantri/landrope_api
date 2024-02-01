@@ -9,6 +9,8 @@ from datetime import date
 class PaymentCreateSch(PaymentBase):
     nomor_giro:str|None
     tanggal:date|None
+    tanggal_buka:date|None
+    tanggal_cair:date|None
     details:list[PaymentDetailExtSch]|None
 
 class PaymentSch(PaymentFullBase):
@@ -16,12 +18,16 @@ class PaymentSch(PaymentFullBase):
     giro_code:str|None = Field(alias="giro_code")
     nomor_giro:str|None = Field(alias="nomor_giro")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
+    tanggal_buka:date|None
+    tanggal_cair:date|None
 
 class PaymentByIdSch(PaymentFullBase):
     giro_code:str|None = Field(alias="giro_code")
     nomor_giro:str|None = Field(alias="nomor_giro")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
     details:list[PaymentDetailSch]
+    tanggal_buka:date|None
+    tanggal_cair:date|None
 
 class PaymentVoidSch(SQLModel):
     void_reason:str
@@ -36,5 +42,8 @@ class PaymentVoidExtSch(SQLModel):
 @optional
 class PaymentUpdateSch(PaymentBase):
     tanggal:date|None
+    tanggal:date|None
+    tanggal_buka:date|None
+    tanggal_cair:date|None
     nomor_giro:str|None
     details:list[PaymentDetailExtSch]|None
