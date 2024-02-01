@@ -166,6 +166,8 @@ async def create(
 
     if len([dt for dt in sch.hasilpetalokasidetails if dt.bidang_id is not None]) > 0:
         sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Overlap
+    
+    sch.is_done = False if sch.bidang_id else True
 
     new_obj = await crud.hasil_peta_lokasi.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
@@ -277,6 +279,7 @@ async def update(
     #update hasil peta lokasi
     sch_updated = HasilPetaLokasiUpdateSch(**sch.dict())
     sch_updated.file_path = obj_current.file_path
+    sch_updated.is_done = False if sch_updated.bidang_id else True
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=sch_updated,
                                                        updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     
