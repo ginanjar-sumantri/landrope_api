@@ -20,7 +20,7 @@ import crud
 router = APIRouter()
 
 @router.get("/tim-ukur")
-async def report_tim_ukur(start_date:date, end_date:date):
+async def report_tim_ukur(start_date:date | None = None, end_date:date|None = None):
 
     wb = Workbook()
     ws = wb.active
@@ -45,11 +45,10 @@ async def report_tim_ukur(start_date:date, end_date:date):
         else:
             ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
 
-
-    if start_date:
-            query_start_date = "rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-    if end_date:
-        query_end_date = " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+    query_start_date = ""
+    if start_date and end_date:
+        query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
 
     query = f"""
             SELECT
@@ -75,7 +74,7 @@ async def report_tim_ukur(start_date:date, end_date:date):
             LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
             LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
             LEFT OUTER JOIN keterangan_req_petlok ket ON ket.id = rpl.keterangan_req_petlok_id
-            WHERE {query_start_date} {query_end_date}
+            {query_start_date}
     """
 
     db_session = db.session
@@ -132,7 +131,7 @@ async def report_tim_ukur(start_date:date, end_date:date):
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
 
 @router.get("/tim-analyst")
-async def report_tim_analyst(start_date:date, end_date:date):
+async def report_tim_analyst(start_date:date | None = None, end_date:date|None = None):
 
     wb = Workbook()
     ws = wb.active
@@ -159,10 +158,10 @@ async def report_tim_analyst(start_date:date, end_date:date):
             ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00FFFF00", end_color="00FFFF00", fill_type="solid")
             
 
-    if start_date:
-            query_start_date = "rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-    if end_date:
-        query_end_date = " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+    query_start_date = ""
+    if start_date and end_date:
+        query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
 
     query = f"""
             SELECT
@@ -205,7 +204,7 @@ async def report_tim_analyst(start_date:date, end_date:date):
             INNER JOIN worker w ON w.id = hpl.created_by_id
             INNER JOIN bidang b ON b.id = hpl.bidang_id
             INNER JOIN bidang bd ON bd.id = bo.parent_bidang_intersect_id
-            WHERE {query_start_date} {query_end_date}
+            {query_start_date}
     """
 
     db_session = db.session
@@ -433,10 +432,10 @@ async def report_summary_analyst(start_date:date, end_date:date):
         ws.cell(row=5, column=idx + 1, value=val).font = Font(bold=True)
         ws.cell(row=5, column=idx + 1, value=val).fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
 
-    if start_date:
-        query_start_date = "rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-    if end_date:
-        query_end_date = " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+    query_start_date = ""
+    if start_date and end_date:
+        query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
 
     query = f"""
             WITH subquery AS (SELECT
@@ -514,7 +513,7 @@ async def report_summary_analyst(start_date:date, end_date:date):
             INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
             LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
             LEFT OUTER JOIN manager m ON m.id = hd.manager_id
-            WHERE {query_start_date} {query_end_date}
+            {query_start_date}
             GROUP BY hd.code, d.id, dt.group, m.name, rpl.code)
             SELECT s.*,
             CASE
