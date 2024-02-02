@@ -124,7 +124,7 @@ async def create(
 
     if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
         url = f'{request.base_url}landrope/spk/task-workflow'
-        GCloudTaskService().create_task(payload={"id":str(new_obj.id), "additional_info":new_obj.jenis_bayar.value}, base_url=url)
+        GCloudTaskService().create_task(payload={"id":str(new_obj.id), "additional_info":new_obj.jenis_bayar}, base_url=url)
 
     bidang_ids = []
     bidang_ids.append(new_obj.bidang_id)
