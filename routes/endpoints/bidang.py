@@ -258,9 +258,6 @@ async def update(id:UUID,
         jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
         if jenis_surat is None:
             raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
-        
-        sch.jenis_alashak = jenis_surat.jenis_alashak
-        sch.bundle_hd_id = obj_current.bundle_hd_id
 
         if file:
             geo_dataframe = None
@@ -275,6 +272,10 @@ async def update(id:UUID,
 
             sch = BidangSch(**sch.dict())
             sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+        
+        sch.jenis_alashak = jenis_surat.jenis_alashak
+        sch.bundle_hd_id = obj_current.bundle_hd_id
+        sch.status_pembebasan = obj_current.status_pembebasan
 
         obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
         obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
