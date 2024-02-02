@@ -111,13 +111,6 @@ async def create(
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
-
-    #workflow
-    if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-        workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=template.flow_id)
-        workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), flow_id=template.flow_id, descs=f"Need Approval {new_obj.code}", attachments=[])
-        await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
     
     await db_session.commit()
     await db_session.refresh(new_obj)
@@ -126,7 +119,7 @@ async def create(
 
     #workflow
     if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        url = f'{request.base_url}landrope/spk/task-workflow'
+        url = f'{request.base_url}landrope/termin/task-workflow'
         GCloudTaskService().create_task(payload={"id":str(new_obj.id)}, base_url=url)
         background_task.add_task(generate_printout, new_obj.id)
     else:
@@ -341,7 +334,7 @@ async def update_(
 
     #workflow
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        url = f'{request.base_url}landrope/spk/task-workflow'
+        url = f'{request.base_url}landrope/termin/task-workflow'
         GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=url)
         background_task.add_task(generate_printout, obj_updated.id)
     else:
