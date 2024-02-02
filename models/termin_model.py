@@ -30,6 +30,7 @@ class TerminBase(SQLModel):
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
+    file_path:str | None = Field(nullable=True)
 
 
 class TerminFullBase(BaseUUIDModel, TerminBase):

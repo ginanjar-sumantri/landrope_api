@@ -1,4 +1,5 @@
 from enum import Enum
+from models.code_counter_model import CodeCounterEnum
 
 class StatusBidangEnum(str, Enum):
     Bebas = "Bebas"
@@ -167,16 +168,30 @@ class StatusPembebasanEnum(str, Enum):
 
 jenis_bayar_to_text = {
     JenisBayarEnum.UTJ : "UTJ",
-    JenisBayarEnum.UTJ_KHUSUS : "UTJ-KHUSUS",
+    JenisBayarEnum.UTJ_KHUSUS : "UTJ",
     JenisBayarEnum.DP : "DP",
     JenisBayarEnum.LUNAS : "LUNAS",
     JenisBayarEnum.PELUNASAN : "PELUNASAN",
     JenisBayarEnum.PAJAK : "PAJAK",
-    JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL : "PENGEMBALIAN-BEBAN-PENJUAL",
+    JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL : "PENGEMBALIAN",
     JenisBayarEnum.BEGINNING_BALANCE : "BEGINNING-BALANCE",
     JenisBayarEnum.BIAYA_LAIN : "BIAYA-LAIN",
     JenisBayarEnum.SISA_PELUNASAN : "KURANG-BAYAR",
     JenisBayarEnum.TAMBAHAN_DP : "TAMBAHAN-DP"
+}
+
+jenis_bayar_to_code_counter_enum = {
+    JenisBayarEnum.UTJ : CodeCounterEnum.Utj,
+    JenisBayarEnum.UTJ_KHUSUS : CodeCounterEnum.Utj,
+    JenisBayarEnum.DP : CodeCounterEnum.Dp,
+    JenisBayarEnum.LUNAS : CodeCounterEnum.Lunas,
+    JenisBayarEnum.PELUNASAN : CodeCounterEnum.Pelunasan,
+    JenisBayarEnum.PAJAK : None,
+    JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL : CodeCounterEnum.Pengembalian_Beban_Penjual,
+    JenisBayarEnum.BEGINNING_BALANCE : None,
+    JenisBayarEnum.BIAYA_LAIN : CodeCounterEnum.Biaya_Lain,
+    JenisBayarEnum.SISA_PELUNASAN : CodeCounterEnum.Sisa_Pelunasan,
+    JenisBayarEnum.TAMBAHAN_DP : CodeCounterEnum.Tambahan_Dp
 }
 
 jenis_bayar_to_spk_status_pembebasan = {
