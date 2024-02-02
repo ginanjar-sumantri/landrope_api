@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException, Response, BackgroundTasks
+from fastapi import APIRouter, status, Depends, HTTPException, Response, BackgroundTasks, UploadFile, Request
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
@@ -16,25 +16,28 @@ from schemas.spk_history_sch import SpkHistoryCreateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
-from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
                         SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
                         StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text)
 from common.ordered import OrderEnumSch
-from common.exceptions import (IdNotFoundException)
+from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
 from common.generator import generate_code
 from services.pdf_service import PdfService
 from services.history_service import HistoryService
 from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper, BidangHelper
 from services.workflow_service import WorkflowService
+from services.gcloud_storage_service import GCStorageService
+from services.gcloud_task_service import GCloudTaskService
 from configs.config import settings
 from jinja2 import Environment, FileSystemLoader
 from datetime import date
+from typing import Dict
 import crud
 import json
 import pandas as pd
-import pytz
+import time
 from io import BytesIO
 
 router = APIRouter()
@@ -43,6 +46,7 @@ router = APIRouter()
 async def create(
             sch: SpkCreateSch,
             background_task:BackgroundTasks,
+            request: Request,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
@@ -113,32 +117,20 @@ async def create(
         status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
 
-    #workflow
-    if sch.jenis_bayar != JenisBayarEnum.PAJAK:
-        template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        workflow_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
-        additional_info = {"jenis_bayar" : sch.jenis_bayar.value}
-        workflow_system_sch = WorkflowSystemCreateSch(
-                                client_ref_no=str(new_obj.id), 
-                                flow_id=template.flow_id, 
-                                descs=f"""Dokumen {new_obj.code} ini membutuhkan Approval Anda:<br><br>
-                                Tanggal: {new_obj.created_at.date()}<br>
-                                Dokumen: {new_obj.code}""", 
-                                additional_info=additional_info, 
-                                attachments=[]
-                            )
-        
-        await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch, db_session=db_session, with_commit=False)
-    
     await db_session.commit()
     await db_session.refresh(new_obj)
 
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
 
+    if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
+        url = f'{request.base_url}landrope/spk/task-workflow'
+        GCloudTaskService().create_task(payload={"id":str(new_obj.id), "additional_info":new_obj.jenis_bayar.value}, base_url=url)
+
     bidang_ids = []
     bidang_ids.append(new_obj.bidang_id)
 
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
+    background_task.add_task(generate_printout, new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -527,6 +519,7 @@ async def update(id:UUID,
     bidang_ids.append(bidang_current.id)
 
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
+    background_task.add_task(generate_printout, obj_updated.id)
 
     return create_response(data=obj_updated)
 
@@ -636,7 +629,29 @@ async def get_by_id(id:UUID):
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    """Get for search"""
+    """Print out"""
+
+    obj_current = await crud.spk.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Spk, id)
+    
+    file_path = obj_current.file_path
+
+    if file_path is None:
+        file_path = await generate_printout(id=id)
+    
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+    
+    ext = obj_current.file_path.split('.')[-1]
+
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.code.replace('/', '_')}.{ext}"
+    return response
+
+async def generate_printout(id:UUID|str):
 
     obj = await crud.spk.get_by_id_for_printout(id=id)
     if obj is None:
@@ -778,9 +793,21 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed generate document")
     
-    response = Response(doc, media_type='application/pdf')
-    response.headers["Content-Disposition"] = f"attachment; filename={spk_header.kjb_hd_code}.pdf"
-    return response
+    obj_current = await crud.spk.get(id=id)
+
+    binary_io_data = BytesIO(doc)
+    file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
+
+    try:
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}")
+        obj_updated = SpkUpdateSch(**obj_current.dict())
+        obj_updated.file_path = file_path
+        await crud.spk.update(obj_current=obj_current, obj_new=obj_updated)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed generate document")
+    
+    return file_path
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def void(id:UUID, 
@@ -831,3 +858,38 @@ async def create_workflow():
     await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch)
 
     return {"result" : "Successfully"}
+
+@router.post("/task-workflow")
+async def create_workflow(payload:Dict):
+    id = payload.get("id", None)
+    additional_info = payload.get("additional_info", None)
+
+    obj = await crud.spk.get(id=id)
+
+    if not obj:
+        raise IdNotFoundException(Spk, id)
+    
+    trying:int = 0
+    while obj.file_path is None:
+        if trying > 7:
+            raise HTTPException(status_code=404, detail="File not found")
+        obj = await crud.spk.get(id=id)
+        time.sleep(2)
+        trying = trying + 1
+    
+    public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
+                                            flow_id=flow.flow_id, 
+                                            descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                    Tanggal: {obj.created_at.date()}<br>
+                                                    Dokumen: {obj.code}<br><br>
+                                                    Berikut lampiran dokumen terkait : """, 
+                                            additional_info={"jenis_bayar" : str(additional_info)}, 
+                                            attachments=[vars(wf_system_attachment)])
+    
+    await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+
+    return {"message" : "successfully"}
