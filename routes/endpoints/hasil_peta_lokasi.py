@@ -733,8 +733,8 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
 
     query_start_date = ""
     if start_date and end_date:
-        query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+        query_start_date = "WHERE hpl.created_at >=" f"'{start_date}'"
+        query_start_date += " AND hpl.created_at <" f"'{end_date}'"
 
     query = f"""
             SELECT
