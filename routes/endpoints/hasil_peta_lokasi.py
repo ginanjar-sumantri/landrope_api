@@ -194,7 +194,7 @@ async def create(
 
         details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
                                                 bidang_id=str(x.bidang_id) if x.bidang_id is not None else x.bidang_id,
-                                                luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.bidang_id,
+                                                luas_overlap=str(x.luas_overlap) if x.luas_overlap is not None else x.luas_overlap,
                                                 keterangan=x.keterangan,
                                                 draft_detail_id=str(x.draft_detail_id) if x.draft_detail_id is not None else x.draft_detail_id,
                                                 status_luas=x.status_luas) 
