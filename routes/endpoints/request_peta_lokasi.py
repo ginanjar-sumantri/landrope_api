@@ -55,10 +55,10 @@ async def creates(sch: RequestPetaLokasiCreatesSch,
     code = f"SO/{counter}/REQ-PETLOK/{str(today_date.month)}/{str(today_date.year)}"
    
     for id in sch.datas:
-        kjb_dt = await crud.kjb_dt.get(id=id)
+        kjb_dt = await crud.kjb_dt.get(id=id.kjb_dt_id)
 
         if kjb_dt is None:
-            raise IdNotFoundException(KjbDt, id)
+            raise IdNotFoundException(KjbDt, id.kjb_dt_id)
         
         exists = await crud.request_peta_lokasi.get_by_kjb_dt_id(id=kjb_dt.id)
         if exists:
