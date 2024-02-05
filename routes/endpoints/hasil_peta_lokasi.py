@@ -814,22 +814,6 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
         ws.cell(row=x, column=26, value=row_data[25])
         ws.cell(row=x, column=27, value=row_data[26])
         ws.cell(row=x, column=28, value=row_data[27])
-    
-    # ws.cell(row=x + 2, column=2, value="CATATAN:")
-    # ws.merge_cells(start_row=x + 2, start_column=2, end_row=x + 2, end_column=end_column)
-    # ws.cell(row=x + 3, column=2, value="1. KOLOM B S/D J DIPEROLEH DARI TIM MARKETING (DARI REQUEST UKUR/PETA LOKASI)")
-    # ws.merge_cells(start_row=x + 3, start_column=2, end_row=x + 3, end_column=end_column)
-    # ws.cell(row=x + 4, column=2, value="2. KOLOM K S/D P DIISI OLEH ADMIN UKUR DI SISTEM, SETELAH MENERIMA HASIL UKUR")
-    # ws.merge_cells(start_row=x + 4, start_column=2, end_row=x + 4, end_column=end_column)
-    # ws.cell(row=x + 5, column=2, value="3. 'TANGGAL PENGUKURAN' ADALAH TANGGAL TIM UKUR MELAKUKAN PENGUKURAN DI LAPANGAN ")
-    # ws.merge_cells(start_row=x + 5, start_column=2, end_row=x + 5, end_column=end_column)
-    # ws.cell(row=x + 6, column=2, value="4. 'TANGGAL KIRIM UKUR KE ANALIS' ADALAH TANGGAL TIM UKUR MENGIRIMKAN HASIL UKUR KE ANALIS")
-    # ws.merge_cells(start_row=x + 6, start_column=2, end_row=x + 6, end_column=end_column)
-    # ws.cell(row=x + 7, column=2, value="5. 'KETERANGAN' DIISI DENGAN INFORMASI DARI TIM UKUR APABILA ADA KENDALA/PENDING SEPERTI : BELUM UKUR MENUNGGU INFO MEDIATOR, PENJUAL BELUM MENUNJUKKAN BIDANG, DLL")
-    # ws.merge_cells(start_row=x + 7, start_column=2, end_row=x + 7, end_column=end_column)
-    # ws.cell(row=x + 8, column=2, value="6. 'TANGGAL TERIMA BERKAS' ADALAH TANGGAL TIM UKUR MENERIMA BERKAS UKUR DARI MARKETING")
-    # ws.merge_cells(start_row=x + 8, start_column=2, end_row=x + 8, end_column=end_column)
-    
 
     excel_data = BytesIO()
 
