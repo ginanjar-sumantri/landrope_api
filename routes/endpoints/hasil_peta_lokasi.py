@@ -727,9 +727,9 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
     for idx, val in enumerate(header_string):
         ws.cell(row=3, column=idx + 1, value=val).font = Font(bold=True)
         if idx + 1 < 22:
-            ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00FFFF00", end_color="00FFFF00", fill_type="solid")
-        else:
             ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
+        else:
+            ws.cell(row=3, column=idx + 1, value=val).fill = PatternFill(start_color="00FFFF00", end_color="00FFFF00", fill_type="solid")
 
     query_start_date = ""
     if start_date and end_date:
