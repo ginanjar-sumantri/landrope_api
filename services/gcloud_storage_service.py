@@ -2,6 +2,7 @@
 import datetime
 import uuid
 import io
+import base64, filetype
 from typing import TypeVar, Tuple
 
 from fastapi import UploadFile
@@ -161,3 +162,16 @@ class GCStorageService:
             file_path = f"upload_dokumen/{file_name}"
             blob = bucket.blob(file_path)
             blob.delete
+
+    async def base64ToFilePath(self, base64_str:str, file_name:str):
+        
+        bytes_data = base64.b64decode(base64_str)
+        file_type = filetype.guess(bytes_data)
+        file_extension = str(file_type.extension)
+        binary_io_data = io.BytesIO(bytes_data)
+
+        file = UploadFile(file=binary_io_data, filename=f"{file_name}.{file_extension}")
+
+        file_path = await self.upload_file_dokumen(file=file, file_name=f"{file_name}")
+
+        return file_path

@@ -161,7 +161,7 @@ class HelperService:
                 obj_updated = await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
 
                 await KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_id=[obj_updated.id])
-
+        
 class KomponenBiayaHelper:
 
     async def get_estimated_amount(self, bidang_id:UUID, bidang_komponen_biaya_id:UUID, formula:str | None = None) -> Decimal | None:

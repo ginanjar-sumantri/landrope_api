@@ -88,7 +88,7 @@ async def create(
     """Create a new object"""
         
     new_obj = await crud.sales.create(obj_in=sch, created_by_id=current_worker.id)
-    new_obj = await crud.sales.get_by_id(id=id)
+    new_obj = await crud.sales.get_by_id(id=new_obj.id)
     
     return create_response(data=new_obj)
 

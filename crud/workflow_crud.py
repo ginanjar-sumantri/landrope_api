@@ -33,6 +33,8 @@ class CRUDWorkflow(CRUDBase[Workflow, WorkflowCreateSch, WorkflowUpdateSch]):
 
         if response is None:
             raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+        
+        obj_in.last_status = response.last_status
 
         db_obj = self.model.from_orm(obj_in) #type ignore
         db_obj.created_at = datetime.utcnow()
@@ -68,6 +70,8 @@ class CRUDWorkflow(CRUDBase[Workflow, WorkflowCreateSch, WorkflowUpdateSch]):
         response, msg = await WorkflowService().create_workflow(body=body)
         if response is None:
             raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+        
+        obj_new.last_status = response.last_status
 
         obj_data = jsonable_encoder(obj_current)
 

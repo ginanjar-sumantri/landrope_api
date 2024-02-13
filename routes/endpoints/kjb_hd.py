@@ -3,14 +3,14 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Reque
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_
-from models import KjbHd, KjbDt, KjbPenjual, WorkflowTemplate
+from models import KjbHd, KjbDt, KjbPenjual
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
 from models.pemilik_model import Pemilik
 from models.code_counter_model import CodeCounterEnum
 from schemas.kjb_hd_sch import (KjbHdSch, KjbHdCreateSch, KjbHdUpdateSch, KjbHdByIdSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
+
 from common.exceptions import (IdNotFoundException, ImportFailedException, DocumentFileNotFoundException)
 from common.generator import generate_code
 from common.enum import WorkflowEntityEnum, WorkflowLastStatusEnum
@@ -82,55 +82,51 @@ async def download_file(id:UUID):
     response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.code}.{ext}"
     return response
 
-@router.post("/cloud-task-workflow")
-async def create_workflow(payload:Dict):
-    id = payload.get("id", None)
-    is_create = payload.get("is_create", None)
-    additional_info = payload.get("additional_info", None)
+# @router.post("/cloud-task-workflow")
+# async def workflow(id:UUID, additional_info:str):
+#     obj = await crud.kjb_hd.get(id=id)
 
-    obj = await crud.kjb_hd.get(id=id)
-
-    if not obj:
-        raise IdNotFoundException(KjbHd, id)
+#     if not obj:
+#         raise IdNotFoundException(KjbHd, id)
     
-    trying:int = 0
-    if is_create:
-        while obj.file_path is None:
-            if trying > 7:
-                raise HTTPException(status_code=409, detail="File not found")
-            obj = await crud.kjb_hd.get(id=id)
-            time.sleep(2)
-            trying = trying + 1
+#     trying:int = 0
+#     if is_create:
+#         while obj.file_path is None:
+#             if trying > 7:
+#                 raise HTTPException(status_code=409, detail="File not found")
+#             obj = await crud.kjb_hd.get(id=id)
+#             time.sleep(2)
+#             trying = trying + 1
     
 
     
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.code}", url=public_url)
-    wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=flow.flow_id, 
-                                            descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
-                                                    Tanggal: {obj.created_at.date()}<br>
-                                                    Dokumen: {obj.code}<br><br>
-                                                    Berikut lampiran dokumen terkait : """, 
-                                            additional_info={"approval_number" : str(additional_info)}, 
-                                            attachments=[vars(wf_system_attachment)])
+#     public_url = await GCStorageService().public_url(file_path=obj.file_path)
+#     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
+#     wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
+#     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.code}", url=public_url)
+#     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
+#                                             flow_id=flow.flow_id, 
+#                                             descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+#                                                     Tanggal: {obj.created_at.date()}<br>
+#                                                     Dokumen: {obj.code}<br><br>
+#                                                     Berikut lampiran dokumen terkait : """, 
+#                                             additional_info={"approval_number" : str(additional_info)}, 
+#                                             attachments=[vars(wf_system_attachment)])
     
-    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-    if wf_current:
-        last_version = 1 if wf_current.version is None else wf_current.version
-        if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
-            wf_sch.version = last_version + 1 
-            wf_sch.last_status = None
-            wf_system_sch.version = last_version + 1 
+#     wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
+#     if wf_current:
+#         last_version = 1 if wf_current.version is None else wf_current.version
+#         if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
+#             wf_sch.version = last_version + 1 
+#             wf_sch.last_status = None
+#             wf_system_sch.version = last_version + 1 
             
-        await crud.workflow.update_(obj_current=wf_current, obj_wf=wf_system_sch, obj_new=wf_sch, updated_by_id=obj.updated_by_id)
-    else:
-        await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+#         await crud.workflow.update_(obj_current=wf_current, obj_wf=wf_system_sch, obj_new=wf_sch, updated_by_id=obj.updated_by_id)
+#     else:
+#         await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
 
 
-    return {"message" : "successfully"}
+#     return {"message" : "successfully"}
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(

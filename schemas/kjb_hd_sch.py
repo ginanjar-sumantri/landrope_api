@@ -20,6 +20,7 @@ class KjbHdCreateSch(KjbHdBase):
     bebanbiayas:List[KjbBebanBiayaCreateExtSch] | None
     penjuals:List[KjbPenjualCreateExtSch] | None
     details:List[KjbDtCreateExtSch] | None
+    file:str|None
 
 
 class KjbHdSch(KjbHdFullBase):
