@@ -451,9 +451,13 @@ async def export_shp(
     
     results = await crud.skptdt.get_multi_by_dict(filter_query=filter_query)
 
+    if len(results) == 0:
+        raise HTTPException(status_code=422, detail=f"Geometry Not Found. Detail : Data SK PT tidak memiliki geometry")
+
+
     for skptdt in results:
-        data = await crud.skptdt.get_by_id(id=skptdt.id)
-        sch = SkptShpSch(geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)),
+        data = await crud.skptdt.get_by_id(id=skptdt.id)    
+        sch = SkptShpSch(geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)) if data.geom else None,
                       code=data.skpt.ptsk.code,
                       name=data.skpt.ptsk.name,
                       kategori=str(data.skpt.kategori).replace("_", " "),

@@ -143,9 +143,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         query = select(self.model)
 
         if filter_query is not None and filter_query:
-                filter_query = json.loads(filter_query)
-                for key, value in filter_query.items():
-                    query = query.where(getattr(self.model, key) == value)
+            filter_query = json.loads(filter_query)
+            for key, value in filter_query.items():
+                query = query.where(getattr(self.model, key) == value)
+
+        query = query.filter(self.model.geom != None)
 
         response =  await db_session.execute(query)
         return response.scalars().all()
