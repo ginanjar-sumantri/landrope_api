@@ -60,5 +60,5 @@ class BaseGeoModel(_SQLModel):
 
 class BaseHistoryModel(_SQLModel):
     meta_data:str = Field(nullable=False)
-    trans_worker_id:UUID = Field(nullable=False, foreign_key="worker.id")
+    trans_worker_id:UUID|None = Field(nullable=True, foreign_key="worker.id")
     trans_at:datetime = Field(nullable=False)
