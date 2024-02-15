@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Response, Request, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
-from fastapi_pagination import Params
+from fastapi_pagination import Params, Page
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, and_
 import crud
@@ -43,6 +43,7 @@ from io import BytesIO
 import geopandas as gpd
 import pandas as pd
 import roman
+import math
 
 
 router = APIRouter()
@@ -556,7 +557,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     
     
     if kjb_dt_current.bundle_hd_id:
-        #update bundle alashak & penjual for default if metadata not exists
+        #update bundle Peta Lokasi
         await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session)
 
     await db_session.commit()
@@ -834,8 +835,8 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
 
-@router.get("/ready/spk", response_model=GetResponseBaseSch[list[HasilPetaLokasiReadySpkSch]])
-async def ready_spk(keyword:str | None = None):
+@router.get("/ready/spk", response_model=GetResponsePaginatedSch[HasilPetaLokasiReadySpkSch])
+async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 
     db_session = db.session
 
@@ -958,6 +959,12 @@ async def ready_spk(keyword:str | None = None):
                                        nilai=row[6],
                                        jenis_bayar=row[7]) for row in rows]
     
+    start = (params.page - 1) * params.size
+    end = params.page * params.size
+    total_items = len(objs)
+    pages = math.ceil(total_items / params.size)
 
-    return create_response(data=objs)
+    data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
+
+    return create_response(data=data)
 
