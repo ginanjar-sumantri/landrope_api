@@ -124,7 +124,7 @@ async def dashboard_outstanding():
                 and b_dt.file_path is null
                 ) <= 0
             Order by id_bidang)
-            select 'outstanding_spk' as tipe_worklist, Count(*) as total from subquery
+            select 'outstanding_spk' as tipe_worklist, Count(*) from subquery
             union
             select 'outstanding_hasil_peta_lokasi' as tipe_worklist, count(*) as total 
             from request_peta_lokasi
@@ -132,12 +132,15 @@ async def dashboard_outstanding():
             union
             select 'outstanding_invoice' as tipe_worklist, count(*) as total 
             from spk
-            where id not in (select spk_id 
+            inner join workflow ON spk.id = workflow.reference_id
+            where spk.id not in (select spk_id 
                             from invoice i
                             join termin t on t.id = i.termin_id
                             where i.is_void != true 
                             and t.jenis_bayar not in ('UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE'))
             and jenis_bayar not in ('PAJAK', 'BEGINNING_BALANCE')
+            and is_void != True
+            and workflow.last_status = 'COMPLETE'
             union
             SELECT 'outstanding_payment' as tipe_worklist, count(*)
             FROM invoice i
