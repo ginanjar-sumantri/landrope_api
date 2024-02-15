@@ -533,7 +533,7 @@ class BundleHelper:
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
                             db_session=db_session, worker_id=worker_id)
     
-    async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession, tanggal_input:date|None = None):
+    async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession):
         
         hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_id)
         dokumen = await crud.dokumen.get_by_name(name="PETA LOKASI")
@@ -547,9 +547,17 @@ class BundleHelper:
                 if dokumen.key_field not in input_dict:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Peta Lokasi' tidak memiliki key field {dokumen.key_field}")
                 
-                input_dict[dokumen.key_field] = tanggal_input
+                input_dict[dokumen.key_field] = str(hasil_peta_lokasi.created_at.date())
                 meta_data = json.dumps(input_dict)
                 
+                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
+                            db_session=db_session, worker_id=worker_id)
+            
+            else:
+                meta_loads = json.loads(bundledt_current.meta_data)
+                meta_loads[dokumen.key_field] = str(hasil_peta_lokasi.created_at.date())
+                meta_data = json.dumps(meta_loads)
+
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
                             db_session=db_session, worker_id=worker_id)
 

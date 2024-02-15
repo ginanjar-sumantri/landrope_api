@@ -556,7 +556,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     
     if kjb_dt_current.bundle_hd_id:
         #update bundle alashak & penjual for default if metadata not exists
-        await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session, tanggal_input=hasil_peta_lokasi.created_at)
+        await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session)
 
     await db_session.commit()
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)

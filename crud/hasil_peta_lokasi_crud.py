@@ -100,7 +100,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                     luas_gu_perorangan,
                     updated_by_id,
                     no_peta,
-                    created_at,
+                    created_at
                     from hasil_peta_lokasi
                     where id = '{str(id)}'
                     """)
