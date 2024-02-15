@@ -460,7 +460,7 @@ class BundleHelper:
                 input_dict[dokumen.key_field] = str(hasil_peta_lokasi.created_at.date())
                 meta_data = json.dumps(input_dict)
                 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
+                await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
                             db_session=db_session, worker_id=worker_id)
             
             else:
@@ -468,5 +468,5 @@ class BundleHelper:
                 meta_loads[dokumen.key_field] = str(hasil_peta_lokasi.created_at.date())
                 meta_data = json.dumps(meta_loads)
 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
+                await HelperService().merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
                             db_session=db_session, worker_id=worker_id)
