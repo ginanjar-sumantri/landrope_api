@@ -13,7 +13,8 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiTaskUpdate, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
-                                           HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang)
+                                           HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang,
+                                           HasilPetaLokasiReadySpkSch)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
@@ -832,3 +833,131 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+
+@router.get("/ready/spk", response_model=GetResponseBaseSch[list[HasilPetaLokasiReadySpkSch]])
+async def ready_spk(keyword:str | None = None):
+
+    db_session = db.session
+
+    searching = f"""
+                Where id_bidang like '%{keyword}%'
+                or alashak like '%{keyword}%'
+                or jenis_bayar like '%{keyword}%'
+                """ if keyword else ""
+    
+    query = f"""
+            with subquery as (select 
+            b.id,
+            b.id_bidang,
+            b.alashak,
+            tr.id as kjb_termin_id,
+            hd.satuan_bayar,
+            hd.satuan_harga,
+            tr.nilai,
+            'DP' as jenis_bayar
+            from hasil_peta_lokasi hpl
+            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+            inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
+            inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP'
+            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
+            inner join bidang b ON b.id = hpl.bidang_id 
+            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'DP'
+            Where s.id is null
+            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
+                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
+                and c_dt.jenis_bayar = 'DP'
+                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = hpl.bidang_id
+                and b_dt.file_path is null
+                ) <= 0
+            and (select count(*) 
+                from spk ss 
+                where ss.jenis_bayar = 'LUNAS' 
+                and ss.is_void != True 
+                and ss.bidang_id = hpl.bidang_id) <= 0
+            UNION
+            select 
+            b.id,
+            b.id_bidang,
+            b.alashak,
+            tr.id as kjb_termin_id,
+            hd.satuan_bayar,
+            hd.satuan_harga,
+            tr.nilai,
+            'PELUNASAN' as jenis_bayar
+            from hasil_peta_lokasi hpl
+            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+            inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
+            inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN'
+            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
+            inner join bidang b ON b.id = hpl.bidang_id 
+            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PELUNASAN'
+            Where s.id is null
+            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
+                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
+                and c_dt.jenis_bayar = 'PELUNASAN'
+                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = hpl.bidang_id
+                and b_dt.file_path is null
+                ) <= 0
+            and (select count(*) 
+                from spk ss 
+                where ss.jenis_bayar = 'LUNAS' 
+                and ss.is_void != True 
+                and ss.bidang_id = hpl.bidang_id) <= 0
+            UNION
+            select 
+            b.id,
+            b.id_bidang,
+            b.alashak,
+            null as kjb_termin_id,
+            null as satuan_bayar,
+            null as satuan_harga,
+            null as nilai,
+            'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
+            from hasil_peta_lokasi hpl
+            inner join bidang b ON b.id = hpl.bidang_id
+            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
+            Where (select count(*) 
+                from bidang_komponen_biaya kb
+                left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
+                left outer join invoice inv ON inv.id = inv_dt.invoice_id
+                left outer join termin tr ON tr.id = inv.termin_id
+                where kb.is_void != true and kb.is_retur = true
+                and tr.id is null and tr.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
+                ) > 0
+            UNION
+            select 
+            b.id,
+            b.id_bidang,
+            b.alashak,
+            null as kjb_termin_id,
+            null as satuan_bayar,
+            null as satuan_harga,
+            null as nilai,
+            'PAJAK' as jenis_bayar
+            from hasil_peta_lokasi hpl
+            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+            inner join bidang b ON b.id = hpl.bidang_id 
+            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PAJAK'
+            Where s.id is null
+            Order by id_bidang)
+            select * from subquery
+            {searching}
+            """
+    
+    result = await db_session.execute(query)
+    rows = result.all()
+
+    objs = [HasilPetaLokasiReadySpkSch(id=row[0],
+                                       id_bidang=row[1],
+                                       alashak=row[2],
+                                       kjb_termin_id=row[3],
+                                       satuan_bayar=row[4],
+                                       satuan_harga=row[5],
+                                       nilai=row[6],
+                                       jenis_bayar=row[7]) for row in rows]
+    
+
+    return create_response(data=objs)
+

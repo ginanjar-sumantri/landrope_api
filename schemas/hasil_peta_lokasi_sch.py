@@ -2,7 +2,7 @@ from models.hasil_peta_lokasi_model import HasilPetaLokasiBase, HasilPetaLokasiF
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailCreateExtSch, HasilPetaLokasiDetailTaskUpdate, HasilPetaLokasiDetailSch
 from common.partial import optional
 from common.as_form import as_form
-from common.enum import StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum
+from common.enum import StatusHasilPetaLokasiEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum
 from sqlmodel import SQLModel, Field
 from datetime import date, datetime
 from uuid import UUID
@@ -93,3 +93,13 @@ class HasilPetaLokasiUpdateCloud(SQLModel):
     updated_by_id:Optional[UUID]
     no_peta:Optional[str]
     created_at:datetime|None
+
+class HasilPetaLokasiReadySpkSch(SQLModel):
+    id:UUID|None
+    id_bidang:str|None
+    alashak:str|None
+    kjb_termin_id:UUID|None
+    satuan_bayar:SatuanBayarEnum|None
+    satuan_harga:SatuanHargaEnum|None
+    nilai:Decimal|None
+    jenis_bayar:JenisBayarEnum
