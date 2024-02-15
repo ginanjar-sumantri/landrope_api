@@ -31,7 +31,7 @@ from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidang
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService
 from services.geom_service import GeomService
-from services.helper_service import HelperService, KomponenBiayaHelper
+from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper
 from services.history_service import HistoryService
 from shapely import wkb, to_wkt, wkt
 from decimal import Decimal
@@ -552,6 +552,11 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
             if utj_khusus_detail.invoice.bidang_id != payload.bidang_id:
                 invoice_updated = InvoiceUpdateSch(bidang_id=payload.bidang_id)
                 await crud.invoice.update(obj_current=utj_khusus_detail.invoice, obj_new=invoice_updated, db_session=db_session, with_commit=False)
+    
+    
+    if kjb_dt_current.bundle_hd_id:
+        #update bundle alashak & penjual for default if metadata not exists
+        await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session, tanggal_input=hasil_peta_lokasi.created_at)
 
     await db_session.commit()
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
