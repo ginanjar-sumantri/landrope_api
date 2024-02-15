@@ -927,6 +927,13 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 where kb.is_void != true and kb.is_retur = true
                 and tr.id is null and tr.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
                 ) > 0
+            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
+                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
+                and c_dt.jenis_bayar = 'BIAYA_LAIN'
+                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = hpl.bidang_id
+                and b_dt.file_path is null
+                ) <= 0
             UNION
             select 
             b.id,
@@ -942,6 +949,13 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join bidang b ON b.id = hpl.bidang_id 
             left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PAJAK'
             Where s.id is null
+            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
+                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
+                and c_dt.jenis_bayar = 'BIAYA_LAIN'
+                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = hpl.bidang_id
+                and b_dt.file_path is null
+                ) <= 0
             Order by id_bidang)
             select * from subquery
             {searching}
