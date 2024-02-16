@@ -124,7 +124,7 @@ async def dashboard_outstanding():
                 and b_dt.file_path is null
                 ) <= 0
             Order by id_bidang)
-            select 'outstanding_spk' as tipe_worklist, Count(*) from subquery
+            select 'outstanding_spk' as tipe_worklist, Count(*) as total from subquery
             union
             select 'outstanding_hasil_peta_lokasi' as tipe_worklist, count(*) as total 
             from request_peta_lokasi
