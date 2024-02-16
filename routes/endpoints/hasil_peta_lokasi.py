@@ -326,14 +326,14 @@ async def update(
         url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
-        url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
-        GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
-
         url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     else:
         await db_session.commit()
         await db_session.refresh(obj_updated)
+
+    url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
+    GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
 
     obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
 
@@ -476,93 +476,97 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
 
     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload.hasil_peta_lokasi_id)
     kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload.kjb_dt_id)
-    kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
-    tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
 
-    jenis_bidang = JenisBidangEnum.Standard
-    status_bidang = StatusBidangEnum.Deal
-
-    if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
-        status_bidang = StatusBidangEnum.Batal
-
-    if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
-        jenis_bidang = JenisBidangEnum.Overlap
-    
-    bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
-    if bidang_current.geom :
-        bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-    
-    if bidang_current.geom_ori :
-        bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-    
-    if bidang_current.status == StatusBidangEnum.Bebas:
-        status_bidang = bidang_current.status
-
-    bidang_updated = BidangSch(
-        jenis_bidang=jenis_bidang,
-        status=status_bidang,
-        group=kjb_dt_current.group,
-        jenis_alashak=kjb_dt_current.jenis_alashak,
-        jenis_surat_id=kjb_dt_current.jenis_surat_id,
-        alashak=kjb_dt_current.alashak,
-        manager_id=kjb_hd_current.manager_id,
-        sales_id=kjb_hd_current.sales_id,
-        mediator=kjb_hd_current.mediator,
-        telepon_mediator=kjb_hd_current.telepon_mediator,
-        notaris_id=tanda_terima_notaris_current.notaris_id,
-        bundle_hd_id=kjb_dt_current.bundle_hd_id,
-        harga_akta=kjb_dt_current.harga_akta,
-        harga_transaksi=kjb_dt_current.harga_transaksi,
-        status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
-    
-    await crud.bidang.update(obj_current=bidang_current, 
-                            obj_new=bidang_updated, 
-                            updated_by_id=hasil_peta_lokasi.updated_by_id,
-                            db_session=db_session,
-                            with_commit=False)
-    
-    # jika kjb_dt memiliki utj khusus
-    bidang_ids = []
-    utj_khusus_detail = await crud.utj_khusus_detail.get_by_kjb_dt_id(kjb_dt_id=payload.kjb_dt_id)
-    if utj_khusus_detail:
-        if utj_khusus_detail.invoice == None:
-            today = date.today()
-            month = roman.toRoman(today.month)
-            year = today.year
-            last_number_invoice = await generate_code_month(entity=CodeCounterEnum.Invoice, with_commit=False, db_session=db_session)
-            invoice_sch = InvoiceCreateSch(
-                        bidang_id=payload.bidang_id,
-                        code=f"INV/{last_number_invoice}/{JenisBayarEnum.UTJ_KHUSUS}/LA/{month}/{year}",
-                        amount=utj_khusus_detail.amount,
-                        termin_id=utj_khusus_detail.utj_khusus.termin_id,
-                        is_void=False
-                    )
-            
-            invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=utj_khusus_detail.created_by_id)
-            
-            bidang_ids.append(invoice.bidang_id)
-
-            #add payment detail
-            payment_detail_sch = PaymentDetailCreateSch(payment_id=utj_khusus_detail.utj_khusus.payment_id, 
-                                                        invoice_id=invoice.id, 
-                                                        amount=invoice.amount, is_void=False)
-            await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=utj_khusus_detail.created_by_id, db_session=db_session, with_commit=False)
-
-            utj_khusus_detail_updated = UtjKhususDetailUpdateSch(**utj_khusus_detail.dict(exclude={"invoice_id", "created_at", "updated_at"}), invoice_id=invoice.id)
-            await crud.utj_khusus_detail.update(obj_current=utj_khusus_detail, obj_new=utj_khusus_detail_updated, db_session=db_session, with_commit=False)
-        else:
-            if utj_khusus_detail.invoice.bidang_id != payload.bidang_id:
-                invoice_updated = InvoiceUpdateSch(bidang_id=payload.bidang_id)
-                await crud.invoice.update(obj_current=utj_khusus_detail.invoice, obj_new=invoice_updated, db_session=db_session, with_commit=False)
-    
-    
     if kjb_dt_current.bundle_hd_id:
         #update bundle Peta Lokasi
         await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session)
 
+    if hasil_peta_lokasi.bidang_id:
+
+        kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
+        tanda_terima_notaris_current = await crud.tandaterimanotaris_hd.get_one_by_kjb_dt_id(kjb_dt_id=kjb_dt_current.id)
+
+        jenis_bidang = JenisBidangEnum.Standard
+        status_bidang = StatusBidangEnum.Deal
+
+        if hasil_peta_lokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Batal:
+            status_bidang = StatusBidangEnum.Batal
+
+        if hasil_peta_lokasi.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap:
+            jenis_bidang = JenisBidangEnum.Overlap
+        
+        bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
+        if bidang_current.geom :
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        
+        if bidang_current.geom_ori :
+            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+        
+        if bidang_current.status == StatusBidangEnum.Bebas:
+            status_bidang = bidang_current.status
+
+        bidang_updated = BidangSch(
+            jenis_bidang=jenis_bidang,
+            status=status_bidang,
+            group=kjb_dt_current.group,
+            jenis_alashak=kjb_dt_current.jenis_alashak,
+            jenis_surat_id=kjb_dt_current.jenis_surat_id,
+            alashak=kjb_dt_current.alashak,
+            manager_id=kjb_hd_current.manager_id,
+            sales_id=kjb_hd_current.sales_id,
+            mediator=kjb_hd_current.mediator,
+            telepon_mediator=kjb_hd_current.telepon_mediator,
+            notaris_id=tanda_terima_notaris_current.notaris_id,
+            bundle_hd_id=kjb_dt_current.bundle_hd_id,
+            harga_akta=kjb_dt_current.harga_akta,
+            harga_transaksi=kjb_dt_current.harga_transaksi,
+            status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
+        
+        await crud.bidang.update(obj_current=bidang_current, 
+                                obj_new=bidang_updated, 
+                                updated_by_id=hasil_peta_lokasi.updated_by_id,
+                                db_session=db_session,
+                                with_commit=False)
+        
+        # jika kjb_dt memiliki utj khusus
+        bidang_ids = []
+        utj_khusus_detail = await crud.utj_khusus_detail.get_by_kjb_dt_id(kjb_dt_id=payload.kjb_dt_id)
+        if utj_khusus_detail:
+            if utj_khusus_detail.invoice == None:
+                today = date.today()
+                month = roman.toRoman(today.month)
+                year = today.year
+                last_number_invoice = await generate_code_month(entity=CodeCounterEnum.Invoice, with_commit=False, db_session=db_session)
+                invoice_sch = InvoiceCreateSch(
+                            bidang_id=payload.bidang_id,
+                            code=f"INV/{last_number_invoice}/{JenisBayarEnum.UTJ_KHUSUS}/LA/{month}/{year}",
+                            amount=utj_khusus_detail.amount,
+                            termin_id=utj_khusus_detail.utj_khusus.termin_id,
+                            is_void=False
+                        )
+                
+                invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=utj_khusus_detail.created_by_id)
+                
+                bidang_ids.append(invoice.bidang_id)
+
+                #add payment detail
+                payment_detail_sch = PaymentDetailCreateSch(payment_id=utj_khusus_detail.utj_khusus.payment_id, 
+                                                            invoice_id=invoice.id, 
+                                                            amount=invoice.amount, is_void=False)
+                await crud.payment_detail.create(obj_in=payment_detail_sch, created_by_id=utj_khusus_detail.created_by_id, db_session=db_session, with_commit=False)
+
+                utj_khusus_detail_updated = UtjKhususDetailUpdateSch(**utj_khusus_detail.dict(exclude={"invoice_id", "created_at", "updated_at"}), invoice_id=invoice.id)
+                await crud.utj_khusus_detail.update(obj_current=utj_khusus_detail, obj_new=utj_khusus_detail_updated, db_session=db_session, with_commit=False)
+            else:
+                if utj_khusus_detail.invoice.bidang_id != payload.bidang_id:
+                    invoice_updated = InvoiceUpdateSch(bidang_id=payload.bidang_id)
+                    await crud.invoice.update(obj_current=utj_khusus_detail.invoice, obj_new=invoice_updated, db_session=db_session, with_commit=False)
+    
     await db_session.commit()
-    background_task.add_task(HelperService().bidang_update_status, bidang_ids)
-    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [bidang_current.id])
+
+    if hasil_peta_lokasi.bidang_id:
+        background_task.add_task(HelperService().bidang_update_status, bidang_ids)
+        background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [bidang_current.id])
 
     return {"message":"successfully"} 
 
