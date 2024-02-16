@@ -535,8 +535,8 @@ class BundleHelper:
     
     async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession|None = None):
         
-        db_session = db_session or db.session
-        
+        db_session_ = db_session or db.session
+
         hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_id)
         dokumen = await crud.dokumen.get_by_name(name="PETA LOKASI")
         bundle = await crud.bundlehd.get_by_id(id=bundle_hd_id)
@@ -553,7 +553,7 @@ class BundleHelper:
                 meta_data = json.dumps(input_dict)
                 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
-                            db_session=db_session, worker_id=worker_id)
+                            db_session=db_session_, worker_id=worker_id)
             
             else:
                 meta_loads = json.loads(bundledt_current.meta_data)
@@ -561,7 +561,10 @@ class BundleHelper:
                 meta_data = json.dumps(meta_loads)
 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=hasil_peta_lokasi.file_path,
-                            db_session=db_session, worker_id=worker_id)
+                            db_session=db_session_, worker_id=worker_id)
+        
+        if db_session is None:
+            await db_session_.commit()
 
     
 class BidangHelper:
