@@ -313,7 +313,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     setattr(existing_bebanbiaya, key, value)
                 existing_bebanbiaya.updated_at = datetime.utcnow()
                 existing_bebanbiaya.updated_by_id = updated_by_id
-                db_session.add(existing_rekening)
+                db_session.add(existing_bebanbiaya)
             else:
                 new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_bebanbiaya)

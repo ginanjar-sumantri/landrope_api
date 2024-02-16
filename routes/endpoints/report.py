@@ -642,32 +642,139 @@ async def report_kekurangan_berkas_per_manager(start_date:date | None = None, en
     #     query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
     #     query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
 
-    # query = f"""
-    #         SELECT
-    #         ROW_NUMBER() OVER (ORDER BY rpl.code) AS no,
-    #         rpl.code as no_permintaan_ukur,
-    #         rpl.tanggal_terima_berkas,
-    #         hd.mediator,
-    #         dt.group,
-    #         d.name as desa_name,
-    #         p.name as pemilik_name,
-    #         dt.jenis_alashak,
-    #         dt.alashak,
-    #         dt.luas_surat as luas_surat,
-    #         rpl.tanggal_pengukuran,
-    #         rpl.penunjuk_batas,
-    #         rpl.luas_ukur,
-    #         rpl.surveyor,
-    #         rpl.tanggal_kirim_ukur,
-    #         ket.name as keterangan
-    #         FROM request_peta_lokasi rpl
-    #         INNER JOIN kjb_dt dt ON dt.id = rpl.kjb_dt_id
-    #         INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
-    #         LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
-    #         LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-    #         LEFT OUTER JOIN keterangan_req_petlok ket ON ket.id = rpl.keterangan_req_petlok_id
-    #         {query_start_date}
-    # """
+    query = f"""
+            SELECT
+            m.id as manager_id,
+            m.name as manager_name,
+            d.name as desa_name,
+            p.name as nama_penjual,
+            dt.alashak,
+            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
+            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENJUAL'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_penjual,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PASANGAN'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pasangan,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KARTU KELUARGA'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as kk,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_nikah,
+            '' as ktp_pengurus,
+            '' as ad_art,
+            '' as perubahan_ad_art,
+            '' as surat_kematian,
+            '' as surat_ket_ahli_waris,
+            '' as surat_kuasa_waris,
+            '' as ktp_seluruh_waris,
+            '' as kk_seluruh_waris
+            FROM kjb_dt dt
+            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
+            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
+            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
+            INNER JOIN manager m ON m.id = hd.manager_id
+            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
+            WHERE hd.kategori_penjual = 'Perorangan'
+            UNION
+            SELECT
+            m.id as manager_id,
+            m.name as manager_name,
+            d.name as desa_name,
+            p.name as nama_penjual,
+            dt.alashak,
+            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
+            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
+            '' as ktp_penjual,
+            '' as ktp_pasangan,
+            '' as kk,
+            '' as surat_nikah,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENGURUS'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pengurus,
+            '' as ad_art,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'PERUBAHAN AD/ART'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as perubahan_ad_art,
+            '' as surat_kematian,
+            '' as surat_ket_ahli_waris,
+            '' as surat_kuasa_waris,
+            '' as ktp_seluruh_waris,
+            '' as kk_seluruh_waris
+            FROM kjb_dt dt
+            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
+            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
+            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
+            INNER JOIN manager m ON m.id = hd.manager_id
+            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
+            WHERE hd.kategori_penjual = 'PT'
+            UNION
+            SELECT
+            m.id as manager_id,
+            m.name as manager_name,
+            d.name as desa_name,
+            p.name as nama_penjual,
+            dt.alashak,
+            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
+            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENJUAL'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_penjual,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PASANGAN'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pasangan,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KARTU KELUARGA'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as kk,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_nikah,
+            '' as ktp_pengurus,
+            '' as ad_art,
+            '' as perubahan_ad_art,
+            CASE 
+                WHEN (SELECT b_dt.meta_data FROM bundle_dt b_dt INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI' WHERE b_dt.bundle_hd_id = b_hd.id) IS NULL 
+                AND (SELECT b_dt.meta_data FROM bundle_dt b_dt INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI' WHERE b_dt.bundle_hd_id = b_hd.id) IS NULL THEN 'V'
+                ELSE ''
+            END 
+            as surat_kematian,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'SURAT KETERANGAN AHLI WARIS'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_ket_ahli_waris,
+            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'SURAT KUASA AHLI WARIS'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_kuasa_waris,
+            (SELECT CASE WHEN COALESCE(dt.jumlah_waris, 0)::numeric > COALESCE(b_dt.multiple_count, 0)::numeric THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP AHLI WARIS'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_seluruh_waris,
+            (SELECT CASE WHEN COALESCE(dt.jumlah_waris, 0) > COALESCE(b_dt.multiple_count, 0) THEN 'V' ELSE '' END 
+            FROM bundle_dt b_dt
+            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KK AHLI WARIS'
+            WHERE b_dt.bundle_hd_id = b_hd.id) as kk_seluruh_waris
+            FROM kjb_dt dt
+            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
+            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
+            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
+            INNER JOIN manager m ON m.id = hd.manager_id
+            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
+            WHERE hd.kategori_penjual = 'Waris'
+            ORDER BY manager_id
+    """
 
     # db_session = db.session
     # response = await db_session.execute(query)

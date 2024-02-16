@@ -292,7 +292,11 @@
           <td>NO REKENING : {{no_rekening}}</td>
         </tr>
         <tr>
-          <td>CATATAN :{{remark}}</td>
+          <td>CATATAN : <br>
+            {% for item in remarks %}
+              {{ item }} <br>
+            {% endfor %}
+            </td>
         </tr>
       </table>
     </div>
