@@ -533,7 +533,9 @@ class BundleHelper:
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
                             db_session=db_session, worker_id=worker_id)
     
-    async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession):
+    async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession|None = None):
+        
+        db_session = db_session or db.session
         
         hasil_peta_lokasi = await crud.hasil_peta_lokasi.get(id=hasil_peta_lokasi_id)
         dokumen = await crud.dokumen.get_by_name(name="PETA LOKASI")
