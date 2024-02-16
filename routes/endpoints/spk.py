@@ -572,11 +572,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
+    query = select(Bidang.id, Bidang.id_bidang, Bidang.alashak).select_from(Bidang
                     ).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
     
     if keyword:
-        query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
+        query = query.filter(or_(Bidang.id_bidang.ilike(f'%{keyword}%'), 
+                                Bidang.alashak.ilike(f'%{keyword}%')))
 
 
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
