@@ -485,6 +485,7 @@ class BundleHelper:
     #update bundle alashak for default if metadata not exists
 
         dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
+        bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
         if bundledt_current:
             if bundledt_current.meta_data is None:
@@ -591,13 +592,14 @@ class BidangHelper:
 
         bidang_current = await crud.bidang.get_by_id(id=bidang_id)
         
-        if bidang_current.alashak != alashak:
+        if bidang_current:
+            if bidang_current.alashak != alashak:
 
-            if bidang_current.geom :
-                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+                if bidang_current.geom :
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
 
-            if bidang_current.geom_ori :
-                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+                if bidang_current.geom_ori :
+                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-            bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"alashak"}), alashak=alashak)
-            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False, updated_by_id=worker_id)
+                bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"alashak"}), alashak=alashak)
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False, updated_by_id=worker_id)
