@@ -39,7 +39,8 @@ async def notification(sch: WorkflowSystemCallbackSch, request:Request):
                                     last_step_app_name=sch.last_step_approver.name if sch.last_step_approver else None,
                                     last_step_app_action=sch.last_step_approver.status if sch.last_step_approver else None,
                                     last_step_app_action_at=HelperService().no_timezone(sch.last_step_approver.confirm_at) if sch.last_step_approver else None,
-                                    last_step_app_action_remarks=sch.last_step_approver.confirm_remarks if sch.last_step_approver else None
+                                    last_step_app_action_remarks=sch.last_step_approver.confirm_remarks if sch.last_step_approver else None,
+                                    version=obj_current.version
                                     )
 
         obj_updated = await crud.workflow.update(obj_current=obj_current, obj_new=obj_new, db_session=db_session, with_commit=False)

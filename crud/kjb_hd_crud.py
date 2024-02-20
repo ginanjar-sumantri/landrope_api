@@ -385,9 +385,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             await db_session.commit()
             await db_session.refresh(obj_current)
 
-        if obj_new.is_draft == False:
-            url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
-            GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
+        # fungsi ini pindah ke dalam workflow notification
+        # if obj_new.is_draft == False:
+        #     url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+        #     GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
 
         return obj_current
 
