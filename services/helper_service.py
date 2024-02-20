@@ -591,7 +591,7 @@ class BidangHelper:
         db_session = db_session or db.session
 
         bidang_current = await crud.bidang.get_by_id(id=bidang_id)
-
+        
         if bidang_current:
             if bidang_current.alashak != alashak:
 
