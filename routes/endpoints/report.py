@@ -578,7 +578,7 @@ async def report_summary_analyst(start_date:date, end_date:date):
 ######################################################################
 
 @router.get("/kekurangan-berkas-manager")
-async def report_kekurangan_berkas_per_manager(start_date:date | None = None, end_date:date|None = None):
+async def report_kekurangan_berkas_per_manager():
 
     wb = Workbook()
     ws = wb.active
