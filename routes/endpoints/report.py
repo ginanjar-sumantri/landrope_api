@@ -7,6 +7,7 @@ from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi_async_sqlalchemy import db
 from models import HasilPetaLokasi
 from schemas.hasil_peta_lokasi_sch import HasiLPetaLokasiUpdateTanggalKirimBerkasSch
+from schemas.report_sch import KekuranganBerkasManagerSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, create_response)
 from common.rounder import RoundTwo
 from decimal import Decimal
@@ -128,7 +129,7 @@ async def report_tim_ukur(start_date:date | None = None, end_date:date|None = No
 
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+                             headers={"Content-Disposition": "attachment; filename=tim_ukur.xlsx"})
 
 @router.get("/tim-analyst")
 async def report_tim_analyst(start_date:date | None = None, end_date:date|None = None):
@@ -263,7 +264,7 @@ async def report_tim_analyst(start_date:date | None = None, end_date:date|None =
 
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+                             headers={"Content-Disposition": "attachment; filename=tim_analyst.xlsx"})
 
 @router.post("/hasil-analisa")
 async def report_hasil_analisa(background_task:BackgroundTasks, sch:HasiLPetaLokasiUpdateTanggalKirimBerkasSch|None = None):
@@ -354,7 +355,7 @@ async def report_hasil_analisa(background_task:BackgroundTasks, sch:HasiLPetaLok
 
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+                             headers={"Content-Disposition": "attachment; filename=hasil_analisa.xlsx"})
 
 async def update_tanggal_kirim_berkas(sch:HasiLPetaLokasiUpdateTanggalKirimBerkasSch):
      
@@ -572,11 +573,11 @@ async def report_summary_analyst(start_date:date, end_date:date):
 
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+                             headers={"Content-Disposition": "attachment; filename=summary_analyst.xlsx"})
 
 ######################################################################
 
-@router.get("/kekurangan-berkas-mmanager")
+@router.get("/kekurangan-berkas-manager")
 async def report_kekurangan_berkas_per_manager(start_date:date | None = None, end_date:date|None = None):
 
     wb = Workbook()
@@ -585,7 +586,7 @@ async def report_kekurangan_berkas_per_manager(start_date:date | None = None, en
     ws.title =  "RINCIAN BIDANG KURANG IDENTITAS"
     ws.firstHeader
 
-    ws.cell(row=1, column=2, value="RINCIAN BIDANG KURANG IDENTITAS")
+    ws.cell(row=1, column=2, value="RINCIAN BIDANG KURANG IDENTITAS").font = Font(bold=True)
     ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=7)
 
     r2c7 = ws.cell(row=2, column=7)
@@ -637,184 +638,200 @@ async def report_kekurangan_berkas_per_manager(start_date:date | None = None, en
         
         ws.cell(row=3, column=idx + 1, value=val).alignment = Alignment(horizontal='center', vertical='center')
 
-    # query_start_date = ""
-    # if start_date and end_date:
-    #     query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-    #     query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
-
     query = f"""
-            SELECT
-            m.id as manager_id,
-            m.name as manager_name,
-            d.name as desa_name,
-            p.name as nama_penjual,
-            dt.alashak,
-            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
-            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENJUAL'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_penjual,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PASANGAN'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pasangan,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KARTU KELUARGA'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as kk,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_nikah,
-            '' as ktp_pengurus,
-            '' as ad_art,
-            '' as perubahan_ad_art,
-            '' as surat_kematian,
-            '' as surat_ket_ahli_waris,
-            '' as surat_kuasa_waris,
-            '' as ktp_seluruh_waris,
-            '' as kk_seluruh_waris
-            FROM kjb_dt dt
-            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
-            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
-            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
-            INNER JOIN manager m ON m.id = hd.manager_id
-            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-            WHERE hd.kategori_penjual = 'Perorangan'
-            UNION
-            SELECT
-            m.id as manager_id,
-            m.name as manager_name,
-            d.name as desa_name,
-            p.name as nama_penjual,
-            dt.alashak,
-            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
-            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
-            '' as ktp_penjual,
-            '' as ktp_pasangan,
-            '' as kk,
-            '' as surat_nikah,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENGURUS'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pengurus,
-            '' as ad_art,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'PERUBAHAN AD/ART'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as perubahan_ad_art,
-            '' as surat_kematian,
-            '' as surat_ket_ahli_waris,
-            '' as surat_kuasa_waris,
-            '' as ktp_seluruh_waris,
-            '' as kk_seluruh_waris
-            FROM kjb_dt dt
-            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
-            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
-            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
-            INNER JOIN manager m ON m.id = hd.manager_id
-            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-            WHERE hd.kategori_penjual = 'PT'
-            UNION
-            SELECT
-            m.id as manager_id,
-            m.name as manager_name,
-            d.name as desa_name,
-            p.name as nama_penjual,
-            dt.alashak,
-            Coalesce(dt.luas_surat_by_ttn, 0) as luas_m2,
-            ROUND(Coalesce(dt.luas_surat_by_ttn/10000, 0), 2) as luas_ha,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PENJUAL'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_penjual,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP PASANGAN'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_pasangan,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KARTU KELUARGA'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as kk,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_nikah,
-            '' as ktp_pengurus,
-            '' as ad_art,
-            '' as perubahan_ad_art,
-            CASE 
-                WHEN (SELECT b_dt.meta_data FROM bundle_dt b_dt INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI' WHERE b_dt.bundle_hd_id = b_hd.id) IS NULL 
-                AND (SELECT b_dt.meta_data FROM bundle_dt b_dt INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI' WHERE b_dt.bundle_hd_id = b_hd.id) IS NULL THEN 'V'
-                ELSE ''
-            END 
-            as surat_kematian,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'SURAT KETERANGAN AHLI WARIS'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_ket_ahli_waris,
-            (SELECT CASE WHEN b_dt.meta_data IS NULL THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'SURAT KUASA AHLI WARIS'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as surat_kuasa_waris,
-            (SELECT CASE WHEN COALESCE(dt.jumlah_waris, 0)::numeric > COALESCE(b_dt.multiple_count, 0)::numeric THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KTP AHLI WARIS'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as ktp_seluruh_waris,
-            (SELECT CASE WHEN COALESCE(dt.jumlah_waris, 0) > COALESCE(b_dt.multiple_count, 0) THEN 'V' ELSE '' END 
-            FROM bundle_dt b_dt
-            INNER JOIN dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = 'KK AHLI WARIS'
-            WHERE b_dt.bundle_hd_id = b_hd.id) as kk_seluruh_waris
-            FROM kjb_dt dt
-            INNER JOIN bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
-            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
-            LEFT OUTER JOIN desa d ON d.id = dt.desa_by_ttn_id
-            INNER JOIN manager m ON m.id = hd.manager_id
-            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-            WHERE hd.kategori_penjual = 'Waris'
-            ORDER BY manager_id
+            WITH perorangan_check AS (
+                SELECT 
+                    b_hd.id AS bundle_hd_id,
+                    dk.name,
+                    CASE 
+                        WHEN b_dt.meta_data IS NULL THEN 'V' 
+                        ELSE ''
+                    END AS meta_data
+                FROM 
+                    bundle_hd b_hd
+                CROSS JOIN 
+                    (VALUES ('KTP PENJUAL'), ('KTP PASANGAN'), ('KARTU KELUARGA'), ('AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI')) AS dkm(name)
+                LEFT JOIN 
+                    bundle_dt b_dt ON b_dt.bundle_hd_id = b_hd.id
+                LEFT JOIN 
+                    dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = dkm.name
+                WHERE dk.name IS NOT NULL
+            ),
+            pt_check AS (
+                SELECT 
+                    b_hd.id AS bundle_hd_id,
+                    dk.name,
+                    CASE 
+                        WHEN b_dt.meta_data IS NULL THEN 'V' 
+                        ELSE '' 
+                    END AS meta_data
+                FROM 
+                    bundle_hd b_hd
+                CROSS JOIN 
+                    (VALUES ('KTP PENGURUS'), ('AD/ART'), ('PERUBAHAN AD/ART')) AS dkm(name)
+                LEFT JOIN 
+                    bundle_dt b_dt ON b_dt.bundle_hd_id = b_hd.id
+                LEFT JOIN 
+                    dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = dkm.name
+                WHERE dk.name IS NOT NULL
+            ),
+            waris_check AS (
+                SELECT 
+                    b_hd.id AS bundle_hd_id,
+                    dk.name,
+                    CASE WHEN dk.name IN ('AKTA KEMATIAN', 'SURAT KEMATIAN', 'SURAT KETERANGAN AHLI WARIS', 'SURAT KUASA AHLI WARIS') THEN
+                            CASE 
+                                WHEN b_dt.meta_data IS NULL THEN 'V' 
+                                ELSE '' 
+                            END 
+                        WHEN dk.name IN ('KTP AHLI WARIS', 'KK AHLI WARIS') THEN
+                            CASE 
+                                WHEN COALESCE(dt.jumlah_waris, 0) > COALESCE(b_dt.multiple_count, 0) THEN 'V' 
+                                ELSE '' 
+                            END 
+                        ELSE ''
+                    END AS meta_data
+                FROM 
+                    bundle_hd b_hd
+                CROSS JOIN 
+                    (VALUES ('AKTA KEMATIAN'), ('SURAT KEMATIAN'), ('SURAT KETERANGAN AHLI WARIS'), ('SURAT KUASA AHLI WARIS'), ('KTP AHLI WARIS'), ('KK AHLI WARIS')) AS dkm(name)
+                LEFT JOIN 
+                    bundle_dt b_dt ON b_dt.bundle_hd_id = b_hd.id
+                LEFT JOIN 
+                    dokumen dk ON dk.id = b_dt.dokumen_id AND dk.name = dkm.name
+                INNER JOIN
+                    kjb_dt dt ON dt.bundle_hd_id = b_hd.id
+                WHERE dk.name IS NOT NULL
+            ),
+            main_query AS (
+                SELECT 
+                    m.id AS manager_id,
+                    m.name AS manager_name,
+                    d.name AS desa_name,
+                    p.name AS nama_penjual,
+                    dt.alashak,
+                    COALESCE(dt.luas_surat_by_ttn, 0) AS luas_m2,
+                    ROUND(COALESCE(dt.luas_surat_by_ttn / 10000, 0), 2) AS luas_ha,
+                    CASE WHEN hd.kategori_penjual = 'Perorangan' THEN dk_ktp.meta_data ELSE '' END AS ktp_penjual,
+                    CASE WHEN hd.kategori_penjual = 'Perorangan' THEN dk_pasangan.meta_data ELSE '' END AS ktp_pasangan,
+                    CASE WHEN hd.kategori_penjual = 'Perorangan' THEN dk_kk.meta_data ELSE '' END AS kk,
+                    CASE WHEN hd.kategori_penjual = 'Perorangan' THEN dk_surat_nikah.meta_data ELSE '' END AS surat_nikah,
+                    CASE WHEN hd.kategori_penjual = 'PT' THEN pt_ktp.meta_data ELSE '' END AS ktp_pengurus,
+                    CASE WHEN hd.kategori_penjual = 'PT' THEN pt_ad_art.meta_data ELSE '' END AS ad_art,
+                    CASE WHEN hd.kategori_penjual = 'PT' THEN pt_p_ad_art.meta_data ELSE '' END AS perubahan_ad_art,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_s_kematian.meta_data ELSE '' END AS surat_kematian,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_a_kematian.meta_data ELSE '' END AS akta_kematian,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_ket_ahli.meta_data ELSE '' END AS surat_ket_ahli_waris,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_kuasa.meta_data ELSE '' END AS surat_kuasa_waris,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_ktp.meta_data ELSE '' END AS ktp_seluruh_waris,
+                    CASE WHEN hd.kategori_penjual = 'Waris' THEN waris_kk.meta_data ELSE '' END AS kk_seluruh_waris
+                FROM 
+                    kjb_dt dt
+                INNER JOIN 
+                    bundle_hd b_hd ON b_hd.id = dt.bundle_hd_id
+                INNER JOIN 
+                    kjb_hd hd ON hd.id = dt.kjb_hd_id
+                LEFT JOIN 
+                    desa d ON d.id = dt.desa_by_ttn_id
+                INNER JOIN
+                    manager m ON m.id = hd.manager_id
+                LEFT JOIN 
+                    pemilik p ON p.id = dt.pemilik_id
+                LEFT JOIN 
+                    perorangan_check dk_ktp ON dk_ktp.bundle_hd_id = b_hd.id AND dk_ktp.name = 'KTP PENJUAL'
+                LEFT JOIN 
+                    perorangan_check dk_pasangan ON dk_pasangan.bundle_hd_id = b_hd.id AND dk_pasangan.name = 'KTP PASANGAN'
+                LEFT JOIN 
+                    perorangan_check dk_kk ON dk_kk.bundle_hd_id = b_hd.id AND dk_kk.name = 'KARTU KELUARGA'
+                LEFT JOIN 
+                    perorangan_check dk_surat_nikah ON dk_surat_nikah.bundle_hd_id = b_hd.id AND dk_surat_nikah.name = 'AKTA NIKAH/SURAT KETERANGAN NIKAH/SURAT CERAI'
+                LEFT JOIN 
+                    pt_check pt_ktp ON pt_ktp.bundle_hd_id = b_hd.id AND pt_ktp.name = 'KTP PENGURUS'
+                LEFT JOIN 
+                    pt_check pt_ad_art ON pt_ad_art.bundle_hd_id = b_hd.id AND pt_ad_art.name = 'AD/ART'
+                LEFT JOIN 
+                    pt_check pt_p_ad_art ON pt_p_ad_art.bundle_hd_id = b_hd.id AND pt_p_ad_art.name = 'PERUBAHAN AD/ART'
+                LEFT JOIN 
+                    waris_check waris_s_kematian ON waris_s_kematian.bundle_hd_id = b_hd.id AND waris_s_kematian.name = 'SURAT KEMATIAN'
+                LEFT JOIN 
+                    waris_check waris_a_kematian ON waris_a_kematian.bundle_hd_id = b_hd.id AND waris_a_kematian.name = 'AKTA KEMATIAN'
+                LEFT JOIN 
+                    waris_check waris_ket_ahli ON waris_ket_ahli.bundle_hd_id = b_hd.id AND waris_ket_ahli.name = 'SURAT KETERANGAN AHLI WARIS'
+                LEFT JOIN 
+                    waris_check waris_kuasa ON waris_kuasa.bundle_hd_id = b_hd.id AND waris_kuasa.name = 'SURAT KUASA AHLI WARIS'
+                LEFT JOIN 
+                    waris_check waris_ktp ON waris_ktp.bundle_hd_id = b_hd.id AND waris_ktp.name = 'KTP AHLI WARIS'
+                LEFT JOIN 
+                    waris_check waris_kk ON waris_kk.bundle_hd_id = b_hd.id AND waris_kk.name = 'KK AHLI WARIS'
+                WHERE 
+                    (hd.kategori_penjual = 'Perorangan' AND EXISTS (SELECT 1 FROM perorangan_check WHERE bundle_hd_id = b_hd.id AND meta_data IS NOT NULL))
+                    OR (hd.kategori_penjual = 'PT' AND EXISTS (SELECT 1 FROM pt_check WHERE bundle_hd_id = b_hd.id AND meta_data IS NOT NULL))
+                    OR (hd.kategori_penjual = 'Waris' AND EXISTS (SELECT 1 FROM waris_check WHERE bundle_hd_id = b_hd.id AND meta_data IS NOT NULL))
+            )
+            SELECT manager_id, manager_name, desa_name, nama_penjual, alashak, luas_m2, luas_ha, ktp_penjual, ktp_pasangan, kk, surat_nikah, ktp_pengurus,
+            ad_art, perubahan_ad_art,
+            CASE WHEN surat_kematian = 'V' AND akta_kematian = 'V' THEN 'V' ELSE '' END AS surat_akta_kematian, surat_ket_ahli_waris, surat_kuasa_waris,
+            ktp_seluruh_waris, kk_seluruh_waris
+            FROM main_query
+            WHERE ktp_penjual = 'V' OR ktp_pasangan = 'V' OR kk = 'V' OR surat_nikah = 'V' OR ktp_pengurus = 'V' OR ad_art = 'V'
+            OR perubahan_ad_art = 'V' OR (surat_kematian = 'V' AND akta_kematian = 'V') OR surat_ket_ahli_waris = 'V' 
+            OR surat_kuasa_waris = 'V' OR ktp_seluruh_waris = 'V' OR kk_seluruh_waris = 'V'
+            ORDER BY manager_id;
     """
 
-    # db_session = db.session
-    # response = await db_session.execute(query)
-    # result = response.all()
+    db_session = db.session
+    response = await db_session.execute(query)
+    results = response.all()
 
-    # x = 3
-    # for row_data in result:
-    #     x += 1
-    #     ws.cell(row=x, column=1, value=row_data[0])
-    #     ws.cell(row=x, column=2, value=row_data[1])
-    #     ws.cell(row=x, column=3, value=row_data[2])
-    #     ws.cell(row=x, column=4, value=row_data[3])
-    #     ws.cell(row=x, column=5, value=row_data[4])
-    #     ws.cell(row=x, column=6, value=row_data[5])
-    #     ws.cell(row=x, column=7, value=row_data[6])
-    #     ws.cell(row=x, column=8, value=row_data[7])
-    #     ws.cell(row=x, column=9, value=row_data[8])
-    #     ws.cell(row=x, column=10, value=row_data[9])
-    #     ws.cell(row=x, column=11, value=row_data[10])
-    #     ws.cell(row=x, column=12, value=row_data[11])
-    #     ws.cell(row=x, column=13, value=row_data[12])
-    #     ws.cell(row=x, column=14, value=row_data[13])
-    #     ws.cell(row=x, column=15, value=row_data[14])
-    #     ws.cell(row=x, column=16, value=row_data[15])
-    
-    # ws.cell(row=x + 2, column=2, value="CATATAN:")
-    # ws.merge_cells(start_row=x + 2, start_column=2, end_row=x + 2, end_column=end_column)
-    # ws.cell(row=x + 3, column=2, value="1. KOLOM B S/D J DIPEROLEH DARI TIM MARKETING (DARI REQUEST UKUR/PETA LOKASI)")
-    # ws.merge_cells(start_row=x + 3, start_column=2, end_row=x + 3, end_column=end_column)
-    # ws.cell(row=x + 4, column=2, value="2. KOLOM K S/D P DIISI OLEH ADMIN UKUR DI SISTEM, SETELAH MENERIMA HASIL UKUR")
-    # ws.merge_cells(start_row=x + 4, start_column=2, end_row=x + 4, end_column=end_column)
-    # ws.cell(row=x + 5, column=2, value="3. 'TANGGAL PENGUKURAN' ADALAH TANGGAL TIM UKUR MELAKUKAN PENGUKURAN DI LAPANGAN ")
-    # ws.merge_cells(start_row=x + 5, start_column=2, end_row=x + 5, end_column=end_column)
-    # ws.cell(row=x + 6, column=2, value="4. 'TANGGAL KIRIM UKUR KE ANALIS' ADALAH TANGGAL TIM UKUR MENGIRIMKAN HASIL UKUR KE ANALIS")
-    # ws.merge_cells(start_row=x + 6, start_column=2, end_row=x + 6, end_column=end_column)
-    # ws.cell(row=x + 7, column=2, value="5. 'KETERANGAN' DIISI DENGAN INFORMASI DARI TIM UKUR APABILA ADA KENDALA/PENDING SEPERTI : BELUM UKUR MENUNGGU INFO MEDIATOR, PENJUAL BELUM MENUNJUKKAN BIDANG, DLL")
-    # ws.merge_cells(start_row=x + 7, start_column=2, end_row=x + 7, end_column=end_column)
-    # ws.cell(row=x + 8, column=2, value="6. 'TANGGAL TERIMA BERKAS' ADALAH TANGGAL TIM UKUR MENERIMA BERKAS UKUR DARI MARKETING")
-    # ws.merge_cells(start_row=x + 8, start_column=2, end_row=x + 8, end_column=end_column)
-    
+    datas = [KekuranganBerkasManagerSch(
+        manager_id=row_data[0], manager_name=row_data[1], desa_name=row_data[2],
+        nama_penjual=row_data[3], alashak=row_data[4], luas_m2=row_data[5], luas_ha=row_data[6],
+        ktp_penjual=row_data[7], ktp_pasangan=row_data[8], kk=row_data[9], surat_nikah=row_data[10],
+        ktp_pengurus=row_data[11], ad_art=row_data[12], perubahan_ad_art=row_data[13], surat_akta_kematian=row_data[14],
+        surat_ket_ahli_waris=row_data[15], surat_kuasa_waris=row_data[16], ktp_seluruh_Waris=row_data[17], kk_seluruh_waris=row_data[18]
+    ) for row_data in results]
+
+    manager_ids = list(set(item.manager_id for item in datas))
+
+    x = 4
+    for manager_id in manager_ids:
+        kekurangan_berkas_managers = list(map(lambda item: item, filter(lambda x: x.manager_id == manager_id, datas)))
+        manager_name = next((manager.manager_name for manager in kekurangan_berkas_managers), None)
+        nomor_urut = 1
+        x +=1
+        ws.cell(row=x, column=1, value=f"GROUP {manager_name.upper()}").font = Font(bold=True)
+        for berkas_kurang in kekurangan_berkas_managers:
+            x +=1
+            ws.cell(row=x, column=1, value=nomor_urut)
+            ws.cell(row=x, column=2, value=berkas_kurang.desa_name)
+            ws.cell(row=x, column=3, value=berkas_kurang.nama_penjual)
+            ws.cell(row=x, column=4, value=berkas_kurang.alashak)
+            ws.cell(row=x, column=5, value=berkas_kurang.luas_m2)
+            ws.cell(row=x, column=6, value=berkas_kurang.luas_ha)
+            ws.cell(row=x, column=7, value=berkas_kurang.ktp_penjual).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=8, value=berkas_kurang.ktp_pasangan).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=9, value=berkas_kurang.kk).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=10, value=berkas_kurang.surat_nikah).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=11, value=berkas_kurang.ktp_pengurus).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=12, value=berkas_kurang.ad_art).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=13, value=berkas_kurang.perubahan_ad_art).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=14, value=berkas_kurang.surat_akta_kematian).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=15, value=berkas_kurang.surat_ket_ahli_waris).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=16, value=berkas_kurang.surat_kuasa_waris).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=17, value=berkas_kurang.ktp_seluruh_Waris).alignment = Alignment(horizontal='center', vertical='center')
+            ws.cell(row=x, column=18, value=berkas_kurang.kk_seluruh_waris).alignment = Alignment(horizontal='center', vertical='center')
+            nomor_urut += 1
+        
+        x +=1
+        ws.cell(row=x, column=4, value=f"SUBTOTAL GROUP {manager_name.upper()}").font = Font(bold=True)
+        ws.cell(row=x, column=5, value=f"{sum([bk.luas_m2 for bk in kekurangan_berkas_managers])}").font = Font(bold=True)
+        ws.cell(row=x, column=6, value=f"{sum([bk.luas_ha for bk in kekurangan_berkas_managers])}").font = Font(bold=True)
+        x +=1
+
+    x +=1
+    ws.cell(row=x, column=4, value=f"GRAND TOTAL KEKURANGAN IDENTITAS").font = Font(bold=True)
+    ws.cell(row=x, column=5, value=f"{sum([bk.luas_m2 for bk in datas])}").font = Font(bold=True)
+    ws.cell(row=x, column=6, value=f"{sum([bk.luas_ha for bk in datas])}").font = Font(bold=True)
 
     excel_data = BytesIO()
 
@@ -824,7 +841,6 @@ async def report_kekurangan_berkas_per_manager(start_date:date | None = None, en
     # Set posisi objek BytesIO ke awal
     excel_data.seek(0)
     
-
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                             headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
+                             headers={"Content-Disposition": "attachment; filename=kekurangan_berkas_manager.xlsx"})
