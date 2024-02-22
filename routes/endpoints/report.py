@@ -12,9 +12,9 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, c
 from common.rounder import RoundTwo
 from decimal import Decimal
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill, Alignment, NamedStyle
 from openpyxl.writer.excel import save_workbook
-from datetime import date
+from datetime import date, datetime
 from io import BytesIO
 import crud
 
@@ -832,6 +832,291 @@ async def report_kekurangan_berkas_per_manager():
     ws.cell(row=x, column=4, value=f"GRAND TOTAL KEKURANGAN IDENTITAS").font = Font(bold=True)
     ws.cell(row=x, column=5, value=f"{sum([bk.luas_m2 for bk in datas])}").font = Font(bold=True)
     ws.cell(row=x, column=6, value=f"{sum([bk.luas_ha for bk in datas])}").font = Font(bold=True)
+
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
+    
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=kekurangan_berkas_manager.xlsx"})
+
+@router.get("/kjb-lunas")
+async def report_kjb_lunas(start_date:date | None = None, end_date:date|None = None):
+
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title =  "STATUS KJB-LUNAS"
+    ws.firstHeader
+
+    r1c5 = ws.cell(row=1, column=5)
+    r1c5.font = Font(bold=True)
+    r1c5.alignment = Alignment(horizontal='center', vertical='center')
+    r1c5.value = "ADMIN MARKETING"
+    ws.merge_cells(start_row=1, start_column=5, end_row=1, end_column=6)
+
+    r1c7 = ws.cell(row=1, column=7)
+    r1c7.font = Font(bold=True)
+    r1c7.alignment = Alignment(horizontal='center', vertical='center')
+    r1c7.value = "ANALIS"
+    ws.merge_cells(start_row=1, start_column=7, end_row=1, end_column=8)
+
+    r1c9 = ws.cell(row=1, column=9)
+    r1c9.font = Font(bold=True)
+    r1c9.alignment = Alignment(horizontal='center', vertical='center')
+    r1c9.value = "PEMBAYARAN"
+    ws.merge_cells(start_row=1, start_column=9, end_row=1, end_column=13)
+
+    header_string = ["NO KJB", "TGL", "MARKETING", "LUAS", "TOTAL BERKAS MASUK", "TOTAL BERKAS BELUM MASUK", 
+                    "SUDAH PETLOK", "BELUM PETLOK", "UTJ", "DP", "PELUNASAN", "LUNAS", "SISA"]
+    
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=2, column=idx + 1, value=val).font = Font(bold=True)
+        ws.cell(row=2, column=idx + 1, value=val).alignment = Alignment(horizontal='center', vertical='center')
+
+    query_start_date = ""
+    if start_date and end_date:
+        query_start_date = "WHERE tanggal_kjb >=" f"'{start_date}'"
+        query_start_date += " AND tanggal_kjb <" f"'{end_date}'"
+
+    query = f"""
+            WITH total_berkas_masuk AS (
+            SELECT
+                hd.id,
+                SUM(dt.luas_surat) AS luas
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            WHERE 
+                EXISTS (SELECT 1 FROM tanda_terima_notaris_hd WHERE kjb_dt_id = dt.id)
+            GROUP BY
+                hd.id
+            ),
+            total_berkas_belum_masuk AS (
+            SELECT
+                hd.id,
+                SUM(dt.luas_surat) AS luas
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            WHERE 
+                NOT EXISTS (SELECT 1 FROM tanda_terima_notaris_hd WHERE kjb_dt_id = dt.id)
+            GROUP BY
+                hd.id
+            ),
+            sudah_petlok AS (
+            SELECT
+                hd.id,
+                SUM(dt.luas_surat) AS luas
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            WHERE 
+                EXISTS (SELECT 1 FROM hasil_peta_lokasi WHERE kjb_dt_id = dt.id)
+            GROUP BY
+                hd.id
+            ),
+            belum_petlok AS (
+            SELECT
+                hd.id,
+                SUM(dt.luas_surat) AS luas
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            WHERE 
+                NOT EXISTS (SELECT 1 FROM hasil_peta_lokasi WHERE kjb_dt_id = dt.id)
+            GROUP BY
+                hd.id
+            ),
+            pembayaran AS (
+            SELECT
+                hd.id,
+                hd.code,
+                tr.jenis_bayar,
+                SUM(dt.luas_surat) AS luas
+            FROM
+                kjb_hd hd
+            CROSS JOIN
+                (VALUES ('UTJ'), ('DP'), ('LUNAS'), ('PELUNASAN')) AS jenis_bayar(name)
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            INNER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            INNER JOIN
+                invoice inv ON inv.bidang_id = hpl.bidang_id
+            INNER JOIN
+                termin tr ON tr.id = inv.termin_id AND tr.jenis_bayar = jenis_bayar.name
+            WHERE
+                inv.is_void != True
+            GROUP BY
+                hd.id, tr.jenis_bayar
+            ),
+            invoices AS (
+            SELECT
+                hd.id,
+                SUM(COALESCE(inv.amount, 0)) as amount
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            INNER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            INNER JOIN
+                bidang b ON b.id = hpl.bidang_id
+            INNER JOIN
+                invoice inv ON inv.bidang_id = b.id
+            WHERE
+                inv.is_void != True
+                AND EXISTS (SELECT 1 FROM payment_detail pdt WHERE pdt.invoice_id = inv.id AND pdt.is_void != True)
+            GROUP BY hd.id
+            ),
+            invoices_utj AS(
+            SELECT
+                hd.id,
+                SUM(COALESCE(inv.amount, 0)) as amount
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            INNER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            INNER JOIN
+                bidang b ON b.id = hpl.bidang_id
+            INNER JOIN
+                invoice inv ON inv.bidang_id = b.id
+            INNER JOIN
+                termin tr ON tr.id = inv.termin_id AND tr.jenis_bayar = 'UTJ'
+            WHERE
+                inv.is_void != True
+            GROUP BY hd.id
+            ),
+            komponen_biaya AS (
+            SELECT
+                hd.id,
+                SUM(COALESCE(kb.paid_amount, 0)) as amount
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            INNER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            INNER JOIN
+                bidang_komponen_biaya kb ON kb.bidang_id = hpl.bidang_id
+            WHERE
+                kb.is_paid = True
+                AND kb.is_void != True
+                AND is_retur != True
+                AND beban_pembeli != True
+                AND tanggal_bayar IS NOT NULL
+            GROUP BY hd.id
+            ),
+            total_harga AS (
+            SELECT
+                hd.id,
+                SUM(COALESCE(b.harga_transaksi, 0) * COALESCE(b.luas_bayar, 0)) as total
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            INNER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            INNER JOIN
+                bidang b ON b.id = hpl.bidang_id
+            GROUP BY hd.id
+            ),
+            main_query AS (
+            SELECT
+                hd.id,
+                hd.code,
+                hd.tanggal_kjb,
+                m.name AS manager_name,
+                ROUND(SUM(COALESCE(dt.luas_surat, 0))::numeric/10000, 2) AS luas,
+                ROUND(COALESCE(tbm.luas, 0)::numeric/10000, 2) AS total_berkas_masuk,
+                ROUND(COALESCE(tbbm.luas, 0)::numeric/10000, 2) AS total_berkas_belum_masuk,
+                ROUND(COALESCE(sp.luas, 0)::numeric/10000, 2) AS sudah_petlok,
+                ROUND(COALESCE(bp.luas, 0)::numeric/10000, 2) AS belum_petlok,
+                ROUND(COALESCE(utj.luas, 0)::numeric/10000, 2) AS utj,
+                ROUND(COALESCE(dp.luas, 0)::numeric/10000, 2) AS dp,
+                ROUND(COALESCE(pelunasan.luas, 0)::numeric/10000, 2) AS pelunasan,
+                ROUND(COALESCE(lunas.luas, 0)::numeric/10000, 2) AS lunas,
+                ROUND(COALESCE(
+                        COALESCE(th.total, 0) - (COALESCE(inv.amount, 0) + COALESCE(inv_utj.amount, 0) + COALESCE(kb.amount, 0))
+                , 0), 2) AS sisa
+            FROM 
+                kjb_hd hd
+            INNER JOIN 
+                kjb_dt dt ON hd.id = dt.kjb_hd_id
+            LEFT OUTER JOIN
+                hasil_peta_lokasi hpl ON hpl.kjb_dt_id = dt.id
+            LEFT OUTER JOIN
+                bidang b ON b.id = hpl.bidang_id
+            LEFT OUTER JOIN
+                manager m ON m.id = hd.manager_id
+            LEFT OUTER JOIN
+                total_berkas_masuk tbm ON tbm.id = hd.id
+            LEFT OUTER JOIN
+                total_berkas_belum_masuk tbbm ON tbbm.id = hd.id
+            LEFT OUTER JOIN
+                sudah_petlok sp ON sp.id = hd.id
+            LEFT OUTER JOIN
+                belum_petlok bp ON bp.id = hd.id
+            LEFT OUTER JOIN
+                pembayaran utj ON utj.id = hd.id AND utj.jenis_bayar = 'UTJ'
+            LEFT OUTER JOIN
+                pembayaran dp ON dp.id = hd.id AND dp.jenis_bayar = 'DP'
+            LEFT OUTER JOIN
+                pembayaran pelunasan ON pelunasan.id = hd.id AND pelunasan.jenis_bayar = 'PELUNASAN'
+            LEFT OUTER JOIN
+                pembayaran lunas ON lunas.id = hd.id AND lunas.jenis_bayar = 'LUNAS'
+            LEFT OUTER JOIN
+                invoices inv ON inv.id = hd.id
+            LEFT OUTER JOIN
+                invoices_utj inv_utj ON inv_utj.id = hd.id
+            LEFT OUTER JOIN
+                komponen_biaya kb ON kb.id = hd.id
+            LEFT OUTER JOIN
+                total_harga th ON th.id = hd.id
+            GROUP BY
+                hd.id, m.id, tbm.luas, tbbm.luas, sp.luas, bp.luas, utj.luas, dp.luas, pelunasan.luas, lunas.luas, 
+                th.total, inv.amount, inv_utj.amount, kb.amount
+            ORDER BY hd.code
+            )
+            SELECT * FROM main_query
+            {query_start_date}
+    """
+
+    db_session = db.session
+    response = await db_session.execute(query)
+    results = response.all()
+
+    x = 2
+    for row_data in results:
+        x += 1
+        ws.cell(row=x, column=1, value=row_data[1])
+        obj_tanggal_transaksi = datetime.strptime(str(row_data[2]), "%Y-%m-%d %H:%M:%S")
+        tanggal_transaksi = obj_tanggal_transaksi.strftime("%d/%m/%Y")
+        ws.cell(row=x, column=2, value=tanggal_transaksi)
+        ws.cell(row=x, column=3, value=row_data[3])
+        ws.cell(row=x, column=4, value=row_data[4])
+        ws.cell(row=x, column=5, value=row_data[5])
+        ws.cell(row=x, column=6, value=row_data[6])
+        ws.cell(row=x, column=7, value=row_data[7])
+        ws.cell(row=x, column=8, value=row_data[8])
+        ws.cell(row=x, column=9, value=row_data[9])
+        ws.cell(row=x, column=10, value=row_data[10])
+        ws.cell(row=x, column=11, value=row_data[11])
+        ws.cell(row=x, column=12, value=row_data[12])
+        ws.cell(row=x, column=13, value=row_data[13])
 
     excel_data = BytesIO()
 
