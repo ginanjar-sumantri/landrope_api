@@ -99,6 +99,7 @@ async def get_list(
             or_(
                 KjbDt.alashak.ilike(f'%{keyword}%'),
                 Pemilik.name.ilike(f'%{keyword}%'),
+                KjbHd.code.ilike(f'%{keyword}%'),
                 KjbHd.nama_group.ilike(f'%{keyword}%'),
                 KjbHd.mediator.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
