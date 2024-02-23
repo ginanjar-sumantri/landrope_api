@@ -717,7 +717,9 @@ async def merge_geom_kulit_bintang_with_geom_irisan_overlap(hasil_peta_lokasi_id
         # bidang_bintang_updated = {"geom" : geom_union}
 
 @router.get("/report/excel-detail")
-async def report_detail(start_date:date | None = None, end_date:date|None = None):
+async def report_detail(start_date:date | None = None, end_date:date|None = None, 
+                        project_ids:str|None=None, desa_ids:str|None=None,
+                        status:StatusHasilPetaLokasiEnum|None=None):
 
     wb = Workbook()
     ws = wb.active
@@ -749,6 +751,30 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
         query_start_date = "WHERE hpl.created_at >=" f"'{start_date}'"
         query_start_date += " AND hpl.created_at <" f"'{end_date}'"
 
+    if project_ids:
+        project_id_split = [f"'{str(req)}'" for req in project_ids.split(',')]
+        projects = ",".join(project_id_split)
+
+        if query_start_date == "":
+            query_start_date = f"WHERE p.id IN ({projects})"
+        else:
+            query_start_date += f" AND p.id IN ({projects})"
+    
+    if desa_ids:
+        desa_id_split = [f"'{str(req)}'" for req in desa_ids.split(',')]
+        desas = ",".join(desa_id_split)
+
+        if query_start_date == "":
+            query_start_date = f"WHERE d.id IN ({desas})"
+        else:
+            query_start_date += f" AND d.id IN ({desas})"
+    
+    if status:
+        if query_start_date == "":
+            query_start_date = f"WHERE hpl.status_hasil_peta_lokasi = '{status}'"
+        else:
+            query_start_date += f" AND hpl.status_hasil_peta_lokasi = '{status}'"
+    
     query = f"""
             SELECT
             bd.id_bidang,
