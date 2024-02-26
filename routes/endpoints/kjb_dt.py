@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, BackgroundTasks
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
@@ -146,7 +146,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbDt, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbDtSch])
-async def update(id:UUID, sch:KjbDtUpdateSch,
+async def update(id:UUID, sch:KjbDtUpdateSch, background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
@@ -162,6 +162,19 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
         raise IdNotFoundException(KjbDt, id)
     
     obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    await db_session.commit()
+
+    obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
+
+    background_task.add_task(update_harga, obj_updated.id)
+    background_task.add_task(update_alashak, obj_updated.id)
+
+    return create_response(data=obj_updated)
+
+async def update_harga(kjb_dt_id:UUID):
+
+    db_session = db.session
+    obj_current = await crud.kjb_dt.get_by_id(id=kjb_dt_id)
 
     if obj_current.hasil_peta_lokasi:
         # tahap_detail_current = await crud.tahap_detail.get_by_bidang_id(bidang_id=obj_current.hasil_peta_lokasi.bidang_id)
@@ -182,15 +195,43 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
                 else:
                     bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
             
+            
             if len([inv for inv in bidang_current.invoices if inv.is_void == False]) == 0:
-                if bidang_current.harga_akta != obj_updated.harga_akta or bidang_current.harga_transaksi != obj_updated.harga_transaksi or bidang_current.alashak != obj_updated.alashak:
-                    bidang_updated = BidangUpdateSch(harga_akta=obj_updated.harga_akta, harga_transaksi=obj_updated.harga_transaksi, alashak=obj_current.alashak)
-                    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-                    if bidang_current.alashak != obj_current.alashak:
-                        bundle = await crud.bundlehd.get_by_id(id=obj_updated.bundle_hd_id)
-                        await BundleHelper().merge_alashak(bundle=bundle, alashak=obj_updated.alashak, worker_id=current_worker.id, db_session=db_session)
-        
-    await db_session.commit()
+                if bidang_current.harga_akta != obj_current.harga_akta or bidang_current.harga_transaksi != obj_current.harga_transaksi:
+                    bidang_updated = BidangUpdateSch(harga_akta=obj_current.harga_akta, harga_transaksi=obj_current.harga_transaksi)
+                    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=obj_current.updated_by_id, db_session=db_session, with_commit=False)
+                    await db_session.commit()
 
-    obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
-    return create_response(data=obj_updated)
+async def update_alashak(kjb_dt_id:UUID):
+    db_session = db.session
+    obj_current = await crud.kjb_dt.get_by_id(id=kjb_dt_id)
+
+    if obj_current.hasil_peta_lokasi:
+        # tahap_detail_current = await crud.tahap_detail.get_by_bidang_id(bidang_id=obj_current.hasil_peta_lokasi.bidang_id)
+        if obj_current.hasil_peta_lokasi.bidang:
+            bidang_current = await crud.bidang.get_by_id(id=obj_current.hasil_peta_lokasi.bidang_id)
+
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+            if bidang_current.geom :
+                if isinstance(bidang_current.geom, str):
+                    pass
+                else:
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori :
+                if isinstance(bidang_current.geom_ori, str):
+                    pass
+                else:
+                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+            
+            if bidang_current.alashak != obj_current.alashak:
+                bidang_updated = BidangUpdateSch(**bidang_current.dict())
+                bidang_updated.alashak = obj_current.alashak
+
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=obj_current.updated_by_id, db_session=db_session, with_commit=False)
+               
+                bundle = await crud.bundlehd.get_by_id(id=obj_current.bundle_hd_id)
+                await BundleHelper().merge_alashak(bundle=bundle, alashak=obj_current.alashak, worker_id=obj_current.updated_by_id, db_session=db_session)
+
+                await db_session.commit()
