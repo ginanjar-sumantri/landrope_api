@@ -120,7 +120,7 @@ async def create(
     #workflow
     if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
         flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+        wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
         
         await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
 
@@ -516,7 +516,7 @@ async def update(id:UUID,
             await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         else:
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-            wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         
