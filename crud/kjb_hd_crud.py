@@ -357,7 +357,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                             Dokumen: {obj_current.code}<br><br>
                                                             Berikut lampiran dokumen terkait : """)
             
-            wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
+            wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
             version = 1 if wf_current.version is None else wf_current.version
 
             if wf_current:
