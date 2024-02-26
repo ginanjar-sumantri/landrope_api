@@ -358,9 +358,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                             Berikut lampiran dokumen terkait : """)
             
             wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
-            version = 1 if wf_current.version is None else wf_current.version
-
+            
             if wf_current:
+                version = 1 if wf_current.version is None else wf_current.version
                 if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
                     wf_system_sch.version = version + 1
                     wf_current.version = version + 1
