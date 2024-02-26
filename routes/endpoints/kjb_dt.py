@@ -160,8 +160,6 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
 
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)
-    
-    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     if obj_current.hasil_peta_lokasi:
         # tahap_detail_current = await crud.tahap_detail.get_by_bidang_id(bidang_id=obj_current.hasil_peta_lokasi.bidang_id)
@@ -182,18 +180,18 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
                 else:
                     bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
             
-            if bidang_current.harga_akta != obj_updated.harga_akta or bidang_current.harga_transaksi != obj_updated.harga_transaksi or bidang_current.alashak != obj_updated.alashak:
+            if bidang_current.harga_akta != sch.harga_akta or bidang_current.harga_transaksi != sch.harga_transaksi or bidang_current.alashak != sch.alashak:
                 if len([inv for inv in bidang_current.invoices if inv.is_void == False]) == 0:
-                    bidang_updated = BidangUpdateSch(harga_akta=obj_updated.harga_akta, harga_transaksi=obj_updated.harga_transaksi, alashak=obj_current.alashak)
+                    bidang_updated = BidangUpdateSch(harga_akta=sch.harga_akta, harga_transaksi=sch.harga_transaksi, alashak=sch.alashak)
                     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
                 else:
                     if bidang_current.alashak != obj_current.alashak:
-                        bidang_updated = BidangUpdateSch(alashak=obj_current.alashak)
+                        bidang_updated = BidangUpdateSch(alashak=sch.alashak)
                         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-                        bundle = await crud.bundlehd.get_by_id(id=obj_updated.bundle_hd_id)
-                        await BundleHelper().merge_alashak(bundle=bundle, alashak=obj_updated.alashak, worker_id=current_worker.id, db_session=db_session)
+                        bundle = await crud.bundlehd.get_by_id(id=obj_current.bundle_hd_id)
+                        await BundleHelper().merge_alashak(bundle=bundle, alashak=sch.alashak, worker_id=current_worker.id, db_session=db_session)
     
-        
+    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
     await db_session.commit()
 
     obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
