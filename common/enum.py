@@ -147,6 +147,7 @@ class KategoriOverlapEnum(str, Enum):
     D = "D" #SHM
     
 class WorkflowLastStatusEnum(str, Enum):
+    ISSUED = "ISSUED"
     COMPLETED = "COMPLETED"
     REJECTED = "REJECTED"
     NEED_DATA_UPDATE = "NEED_DATA_UPDATE"

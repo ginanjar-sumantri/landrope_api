@@ -117,38 +117,28 @@ async def create(
         status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
 
+    #workflow
+    if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
+        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+        
+        await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
+
+        GCloudTaskService().create_task(payload={
+                                                    "id":str(new_obj.id), 
+                                                    "additional_info":new_obj.jenis_bayar
+                                                }, 
+                                        base_url=f'{request.base_url}landrope/spk/task-workflow')
+
     await db_session.commit()
     await db_session.refresh(new_obj)
 
-    if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
-        # url = f'{request.base_url}landrope/spk/task-workflow'
-        # GCloudTaskService().create_task(payload={"id":str(new_obj.id), "additional_info":new_obj.jenis_bayar}, base_url=url)
-
-        file_path = await generate_printout(id=new_obj.id)
-
-        public_url = await GCStorageService().public_url(file_path=file_path)
-        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1)
-        wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{new_obj.code}", url=public_url)
-        wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(new_obj.id), 
-                                                flow_id=flow.flow_id, 
-                                                descs=f"""Dokumen SPK {new_obj.code} ini membutuhkan Approval dari Anda:<br><br>
-                                                        Tanggal: {new_obj.created_at.date()}<br>
-                                                        Dokumen: {new_obj.code}<br><br>
-                                                        Berikut lampiran dokumen terkait : """, 
-                                                additional_info={"jenis_bayar" : str(new_obj.jenis_bayar)}, 
-                                                attachments=[vars(wf_system_attachment)],
-                                                version=1)
-        
-        await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=new_obj.created_by_id)
-    
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
 
     bidang_ids = []
     bidang_ids.append(new_obj.bidang_id)
 
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
-    background_task.add_task(generate_printout, new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -414,6 +404,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 async def update(id:UUID, 
                  sch:SpkUpdateSch,
                  background_task:BackgroundTasks,
+                 request:Request,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -515,28 +506,25 @@ async def update(id:UUID,
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     #workflow
-    if obj_current.jenis_bayar != JenisBayarEnum.PAJAK:
-        workflow_current = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
-        if workflow_current:
-            public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
-            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj_current.code}", url=public_url)
-            workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str(workflow_current.reference_id), 
-                                                    flow_id=workflow_current.flow_id, 
-                                                    descs=f"""Dokumen SPK {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
-                                                            Tanggal: {obj_current.created_at.date()}<br>
-                                                            Dokumen: {obj_current.code}<br><br>
-                                                            Berikut lampiran dokumen terkait : """, 
-                                                    additional_info={"jenis_bayar" : str(obj_current.jenis_bayar)}, 
-                                                    attachments=[vars(wf_system_attachment)],
-                                                    version=1)
-            body = vars(workflow_system_sch)
-            response, msg = await WorkflowService().create_workflow(body=body)
-
-            if response is None:
-                raise HTTPException(status_code=422, detail=msg)
+    if obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
+        if wf_current:
+            if wf_current.last_status != WorkflowLastStatusEnum.REJECTED:
+                raise HTTPException(status_code=422, detail="Failed update spk. Detail : Workflow is running")
             
-            workflow_updated = WorkflowUpdateSch(**workflow_current.dict(exclude={"last_status"}), last_status=response.last_status)
-            await crud.workflow.update(obj_current=workflow_current, obj_new=workflow_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED)
+            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id)
+        else:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
+            wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+            
+            await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+        
+        GCloudTaskService().create_task(payload={
+                                                    "id":str(obj_updated.id), 
+                                                    "additional_info":obj_updated.jenis_bayar
+                                                }, 
+                                        base_url=f'{request.base_url}landrope/spk/task-workflow')
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
@@ -547,7 +535,7 @@ async def update(id:UUID,
     bidang_ids.append(bidang_current.id)
 
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
-    background_task.add_task(generate_printout, obj_updated.id)
+    background_task.add_task(generate_printout(id=obj_updated.id))
 
     return create_response(data=obj_updated)
 
@@ -899,27 +887,39 @@ async def create_workflow(payload:Dict):
     if not obj:
         raise IdNotFoundException(Spk, id)
     
+    wf_current = await crud.workflow.get(id=id)
+    if not wf_current:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
     trying:int = 0
     while obj.file_path is None:
+        await generate_printout(id=id)
         if trying > 7:
             raise HTTPException(status_code=404, detail="File not found")
         obj = await crud.spk.get(id=id)
         time.sleep(2)
-        trying = trying + 1
-    
+        trying += 1
+
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id)
+   
     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=flow.flow_id, 
+                                            flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                     Tanggal: {obj.created_at.date()}<br>
                                                     Dokumen: {obj.code}<br><br>
                                                     Berikut lampiran dokumen terkait : """, 
                                             additional_info={"jenis_bayar" : str(additional_info)}, 
-                                            attachments=[vars(wf_system_attachment)])
+                                            attachments=[vars(wf_system_attachment)],
+                                            version=wf_current.version)
     
-    await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+    body = vars(wf_system_sch)
+    response, msg = await WorkflowService().create_workflow(body=body)
+
+    if response is None:
+        raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+    
+    wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
+    await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
 
     return {"message" : "successfully"}

@@ -30,7 +30,7 @@ from schemas.payment_detail_sch import PaymentDetailForPrintout
 from schemas.marketing_sch import ManagerSrcSch, SalesSrcSch
 from schemas.rekening_sch import RekeningSch
 from schemas.notaris_sch import NotarisSrcSch
-from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch, WorkflowUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
@@ -91,11 +91,8 @@ async def create(
 
     #add invoice
     for invoice in sch.invoices:
-
         last_number = await generate_code_month(entity=CodeCounterEnum.Invoice, with_commit=False, db_session=db_session)
-        invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id)
-        invoice_sch.code = f"INV/{last_number}/{jns_byr}/LA/{month}/{year}"
-        invoice_sch.is_void = False
+        invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id, code=f"INV/{last_number}/{jns_byr}/LA/{month}/{year}", is_void=False)
         new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         
         #add invoice_detail
@@ -112,18 +109,22 @@ async def create(
         status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
         await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
     
+    #workflow
+    if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+        
+        await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
+
+        GCloudTaskService().create_task(payload={
+                                                    "id":str(new_obj.id)
+                                                }, 
+                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
+
     await db_session.commit()
     await db_session.refresh(new_obj)
 
     new_obj = await crud.termin.get_by_id(id=new_obj.id)
-
-    #workflow
-    if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        url = f'{request.base_url}landrope/termin/task-workflow'
-        GCloudTaskService().create_task(payload={"id":str(new_obj.id)}, base_url=url)
-        background_task.add_task(generate_printout, new_obj.id)
-    else:
-        background_task.add_task(generate_printout_utj, new_obj.id)
 
     return create_response(data=new_obj)
 
@@ -212,8 +213,8 @@ async def get_by_id(id:UUID,
 @router.put("/{id}", response_model=PutResponseBaseSch[TerminSch])
 async def update_(
             id:UUID,
-            request:Request,
             sch:TerminUpdateSch,
+            request:Request,
             background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -327,18 +328,35 @@ async def update_(
             termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
+    #workflow
+    if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
+        if wf_current:
+            if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
+            
+            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED)
+            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id)
+        else:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+            wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+            
+            await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+        
+        GCloudTaskService().create_task(payload={
+                                                    "id":str(obj_updated.id)
+                                                }, 
+                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
+
     await db_session.commit()
     await db_session.refresh(obj_updated)
 
-    obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
-
-    #workflow
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        url = f'{request.base_url}landrope/termin/task-workflow'
-        GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=url)
-        background_task.add_task(generate_printout, obj_updated.id)
+        background_task.add_task(generate_printout(id=obj_updated.id))
     else:
-        background_task.add_task(generate_printout_utj, obj_updated.id)
+        background_task.add_task(generate_printout_utj(id=obj_updated.id))
+
+    obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
 
@@ -1491,37 +1509,39 @@ async def create_workflow(payload:Dict):
     if not obj:
         raise IdNotFoundException(Spk, id)
     
+    wf_current = await crud.workflow.get(id=id)
+    if not wf_current:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
     trying:int = 0
     while obj.file_path is None:
+        await generate_printout(id=id)
         if trying > 7:
             raise HTTPException(status_code=404, detail="File not found")
         obj = await crud.termin.get(id=id)
         time.sleep(2)
-        trying = trying + 1
+        trying += 1
     
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-    wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id)
+
     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=flow.flow_id, 
+                                            flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                     Tanggal: {obj.created_at.date()}<br>
                                                     Dokumen: {obj.code}<br><br>
                                                     Berikut lampiran dokumen terkait : """,
-                                            attachments=[vars(wf_system_attachment)])
+                                            attachments=[vars(wf_system_attachment)],
+                                            version=wf_current.version)
     
-    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-    if wf_current:
-        if wf_current.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
-            body = vars(wf_system_sch)
-            response, msg = await WorkflowService().create_workflow(body=body)
-            if response is None:
-                raise HTTPException(status_code=422, detail=msg)
-        else:
-            raise HTTPException(status_code=422, detail=f"Tidak dapat menjalankan Workflow transaksi. Status = {wf_current.last_status}") 
-    else:
-        await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+    body = vars(wf_system_sch)
+    response, msg = await WorkflowService().create_workflow(body=body)
+
+    if response is None:
+        raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+    
+    wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
+    await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
 
     return {"message" : "successfully"}
 
