@@ -112,7 +112,7 @@ async def create(
     #workflow
     if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+        wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
         
         await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
 
@@ -335,11 +335,11 @@ async def update_(
             if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
                 raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
             
-            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED)
+            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         else:
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-            wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED)
+            wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         
