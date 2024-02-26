@@ -535,7 +535,7 @@ async def update(id:UUID,
     bidang_ids.append(bidang_current.id)
 
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
-    background_task.add_task(generate_printout(id=obj_updated.id))
+    background_task.add_task(generate_printout, obj_updated.id)
 
     return create_response(data=obj_updated)
 
