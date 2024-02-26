@@ -1509,7 +1509,7 @@ async def create_workflow(payload:Dict):
     if not obj:
         raise IdNotFoundException(Spk, id)
     
-    wf_current = await crud.workflow.get(id=id)
+    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
     if not wf_current:
         raise HTTPException(status_code=404, detail="Workflow not found")
     
