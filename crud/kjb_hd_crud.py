@@ -191,7 +191,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
-       
+
+        kjb_current = KjbHd.from_orm(obj_current)
         difference_two_approve:bool = False
         is_draft = obj_current.is_draft or False
         db_session =  db_session or db.session
@@ -348,10 +349,13 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 db_session.add(new_detail)
         
         if obj_new.is_draft == False:
-            public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
-            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)],
+            wf_system_attachment:WorkflowSystemAttachmentSch = None
+            if obj_current.file_path:
+                public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
+                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
+
+            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
                                                     descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
                                                             Tanggal: {obj_current.created_at.date()}<br>
                                                             Dokumen: {obj_current.code}<br><br>
