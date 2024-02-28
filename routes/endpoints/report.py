@@ -381,7 +381,7 @@ async def update_tanggal_kirim_berkas(sch:HasiLPetaLokasiUpdateTanggalKirimBerka
     await db_session.commit()
 
 @router.get("/summary-analyst")
-async def report_summary_analyst(start_date:date|None, end_date:date|None):
+async def report_summary_analyst(start_date:date|None = None, end_date:date|None = None):
 
     wb = Workbook()
     ws = wb.active
