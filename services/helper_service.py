@@ -120,8 +120,8 @@ class HelperService:
                 return JenisBidangEnum.Standard
             elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
                 return JenisBidangEnum.Overlap
-            elif type.replace(" ", "").lower() == JenisBidangEnum.Kulit_Bintang.lower():
-                return JenisBidangEnum.Kulit_Bintang
+            elif type.replace(" ", "").lower() == JenisBidangEnum.Rincik.lower():
+                return JenisBidangEnum.Rincik
             else:
                 return JenisBidangEnum.Standard
         else:
