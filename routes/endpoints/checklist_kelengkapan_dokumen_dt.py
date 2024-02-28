@@ -1,8 +1,9 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
+from sqlmodel import select
 from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt, ChecklistKelengkapanDokumenHd
-from models.worker_model import Worker
+from models import Worker, Dokumen
 from schemas.checklist_kelengkapan_dokumen_dt_sch import (ChecklistKelengkapanDokumenDtCreateSch, ChecklistKelengkapanDokumenDtSch, 
                                                           ChecklistKelengkapanDokumenDtUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -10,6 +11,7 @@ from common.exceptions import (IdNotFoundException, ImportFailedException, Conte
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -43,11 +45,14 @@ async def get_list(
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
+    query = select(ChecklistKelengkapanDokumenDt).join(ChecklistKelengkapanDokumenDt.dokumen).where(Dokumen.is_active != False)
 
-    objs = await crud.checklist_kelengkapan_dokumen_dt.get_multi_paginate_ordered_with_keyword_dict(params=params, 
-                                                                                                    order_by=order_by, 
-                                                                                                    keyword=keyword, 
-                                                                                                    filter_query=filter_query)
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(ChecklistKelengkapanDokumenDt, key) == value)
+
+    objs = await crud.checklist_kelengkapan_dokumen_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ChecklistKelengkapanDokumenDtSch])

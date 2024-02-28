@@ -57,10 +57,12 @@ class CRUDChecklistDokumen(CRUDBase[ChecklistDokumen, ChecklistDokumenCreateSch,
         
         db_session = db_session or db.session
 
-        query = select(self.model).where(
+        query = select(self.model).join(ChecklistDokumen.dokumen).where(
                                         and_(
                                             self.model.jenis_alashak == jenis_alashak,
-                                            self.model.kategori_penjual == kategori_penjual))
+                                            self.model.kategori_penjual == kategori_penjual),
+                                            Dokumen.is_active != False
+                                            )
         
         response =  await db_session.execute(query)
         return response.scalars().all()

@@ -1,14 +1,16 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
 from fastapi_pagination import Params
+from sqlmodel import select
 from models.checklist_dokumen_model import ChecklistDokumen
-from models.worker_model import Worker
+from models import Worker, Dokumen
 from schemas.checklist_dokumen_sch import (ChecklistDokumenSch, ChecklistDokumenCreateSch, ChecklistDokumenBulkCreateSch, ChecklistDokumenUpdateSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
 import crud
+import json
 
 
 router = APIRouter()
@@ -47,7 +49,14 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    objs = await crud.checklistdokumen.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    query = select(ChecklistDokumen).join(ChecklistDokumen.dokumen).where(Dokumen.is_active != False)
+
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(ChecklistDokumen, key) == value)
+
+    objs = await crud.checklistdokumen.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[ChecklistDokumenSch])

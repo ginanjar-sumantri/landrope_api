@@ -51,7 +51,7 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
 
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
-                if i.is_active == True:
+                if i.is_active == False:
                     continue
                 
                 code = db_obj.code + i.code

@@ -179,6 +179,7 @@ class BidangShpSch(BaseGeoModel):
     project:str | None
     kota:str | None
     kecamatan:str | None
+    parent_id:str | None
 
 class BidangShpExSch(BaseGeoModel):
     n_idbidang:str | None

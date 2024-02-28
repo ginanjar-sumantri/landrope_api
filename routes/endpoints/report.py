@@ -166,45 +166,60 @@ async def report_tim_analyst(start_date:date | None = None, end_date:date|None =
 
     query = f"""
             SELECT
-            ROW_NUMBER() OVER (ORDER BY rpl.code) AS no,
-            rpl.code as no_permintaan_ukur,
-            rpl.tanggal_kirim_ukur,
-            hd.mediator,
-            dt.group,
-            p.name as pemilik_name,
-            dt.jenis_alashak,
-            dt.alashak,
-            dt.luas_surat as luas_surat,
-            d.name as desa_name,
-            pr.name as project_name,
-            pt.name as ptsk_name,
-            w.name as petugas_name,
-            b.id_bidang as no_id_bidang,
-            hpl.luas_surat,
-            hpl.luas_ukur,
-            hpl.luas_nett,
-            hpl.luas_clear,
-            bo.luas as luas_overlap,
-            bd.id_bidang as id_overlap,
-            hpl.hasil_analisa_peta_lokasi,
-            hpl.luas_proses,
-            hpl.tanggal_kirim_berkas,
-            Coalesce((hpl.tanggal_kirim_berkas - rpl.tanggal_terima_berkas), 0) as selisih
-            FROM hasil_peta_lokasi_detail hpl_dt
-            INNER JOIN bidang_overlap bo ON bo.id = hpl_dt.bidang_overlap_id
-            INNER JOIN hasil_peta_lokasi hpl ON hpl.id = hpl_dt.hasil_peta_lokasi_id
-            INNER JOIN request_peta_lokasi rpl ON rpl.id = hpl.request_peta_lokasi_id
-            INNER JOIN kjb_dt dt ON dt.id = rpl.kjb_dt_id
-            INNER JOIN kjb_hd hd ON hd.id = dt.kjb_hd_id
-            LEFT OUTER JOIN pemilik p ON p.id = dt.pemilik_id
-            LEFT OUTER JOIN planing pl ON pl.id = hpl.planing_id
-            LEFT OUTER JOIN desa d ON d.id = pl.desa_id
-            LEFT OUTER JOIN project pr ON pr.id = pl.project_id
-            LEFT OUTER JOIN skpt sk ON sk.id = hpl.skpt_id
-            LEFT OUTER JOIN ptsk pt ON pt.id = sk.ptsk_id
-            INNER JOIN worker w ON w.id = hpl.created_by_id
-            INNER JOIN bidang b ON b.id = hpl.bidang_id
-            INNER JOIN bidang bd ON bd.id = bo.parent_bidang_intersect_id
+                ROW_NUMBER() OVER (ORDER BY rpl.code) AS no,
+                rpl.code as no_permintaan_ukur,
+                rpl.tanggal_kirim_ukur,
+                hd.mediator,
+                dt.group,
+                p.name as pemilik_name,
+                dt.jenis_alashak,
+                dt.alashak,
+                dt.luas_surat as luas_surat,
+                d.name as desa_name,
+                pr.name as project_name,
+                pt.name as ptsk_name,
+                w.name as petugas_name,
+                b.id_bidang as no_id_bidang,
+                hpl.luas_surat,
+                hpl.luas_ukur,
+                hpl.luas_nett,
+                hpl.luas_clear,
+                bo.luas as luas_overlap,
+                bd.id_bidang as id_overlap,
+                hpl.hasil_analisa_peta_lokasi,
+                hpl.luas_proses,
+                hpl.tanggal_kirim_berkas,
+                Coalesce((hpl.tanggal_kirim_berkas - rpl.tanggal_terima_berkas), 0) as selisih
+            FROM 
+                request_peta_lokasi rpl 
+            INNER JOIN 
+                hasil_peta_lokasi hpl ON rpl.id = hpl.request_peta_lokasi_id 
+            LEFT OUTER JOIN 
+                hasil_peta_lokasi_detail hpl_dt ON hpl.id = hpl_dt.hasil_peta_lokasi_id
+            LEFT OUTER JOIN 
+                bidang_overlap bo ON bo.id = hpl_dt.bidang_overlap_id
+            INNER JOIN 
+                kjb_dt dt ON dt.id = rpl.kjb_dt_id
+            INNER JOIN 
+                kjb_hd hd ON hd.id = dt.kjb_hd_id
+            LEFT OUTER JOIN 
+                pemilik p ON p.id = dt.pemilik_id
+            LEFT OUTER JOIN 
+                planing pl ON pl.id = hpl.planing_id
+            LEFT OUTER JOIN 
+                desa d ON d.id = pl.desa_id
+            LEFT OUTER JOIN 
+                project pr ON pr.id = pl.project_id
+            LEFT OUTER JOIN 
+                skpt sk ON sk.id = hpl.skpt_id
+            LEFT OUTER JOIN 
+                ptsk pt ON pt.id = sk.ptsk_id
+            INNER JOIN 
+                worker w ON w.id = hpl.created_by_id
+            INNER JOIN 
+                bidang b ON b.id = hpl.bidang_id
+            LEFT OUTER JOIN 
+                bidang bd ON bd.id = bo.parent_bidang_intersect_id
             {query_start_date}
     """
 
@@ -366,7 +381,7 @@ async def update_tanggal_kirim_berkas(sch:HasiLPetaLokasiUpdateTanggalKirimBerka
     await db_session.commit()
 
 @router.get("/summary-analyst")
-async def report_summary_analyst(start_date:date, end_date:date):
+async def report_summary_analyst(start_date:date|None, end_date:date|None):
 
     wb = Workbook()
     ws = wb.active
@@ -435,22 +450,22 @@ async def report_summary_analyst(start_date:date, end_date:date):
 
     query = f"""
             WITH subquery AS (SELECT
-            hd.code AS nomor_kjb,
-            d.name AS desa_name,
-            dt.group,
-            m.name AS manager_name,
-            rpl.code AS nomor_request,
-            COUNT(rpl.kjb_dt_id) AS jumlah_bidang,
-            SUM(dt.luas_surat_by_ttn) AS total_luas,
-            COALESCE((SELECT COUNT(rpl_.id) 
-            FROM request_peta_lokasi rpl_ 
-            INNER JOIN kjb_dt dt_ ON dt_.id = rpl_.kjb_dt_id
-            WHERE rpl_.code = rpl.code 
-            AND d.id = dt_.desa_by_ttn_id 
-            AND COALESCE(dt.group, '') = COALESCE(dt_.group, '')
-            AND rpl_.luas_ukur IS NOT NULL 
-            AND rpl_.tanggal_pengukuran IS NOT NULL), 0) AS sudah_diukur,
-            COALESCE((SELECT SUM(rpl_.luas_ukur) 
+                hd.code AS nomor_kjb,
+                d.name AS desa_name,
+                dt.group,
+                m.name AS manager_name,
+                rpl.code AS nomor_request,
+                COUNT(rpl.kjb_dt_id) AS jumlah_bidang,
+                SUM(dt.luas_surat_by_ttn) AS total_luas,
+                COALESCE((SELECT COUNT(rpl_.id) 
+                FROM request_peta_lokasi rpl_ 
+                INNER JOIN kjb_dt dt_ ON dt_.id = rpl_.kjb_dt_id
+                WHERE rpl_.code = rpl.code 
+                AND d.id = dt_.desa_by_ttn_id 
+                AND COALESCE(dt.group, '') = COALESCE(dt_.group, '')
+                AND rpl_.luas_ukur IS NOT NULL 
+                AND rpl_.tanggal_pengukuran IS NOT NULL), 0) AS sudah_diukur,
+                COALESCE((SELECT SUM(rpl_.luas_ukur) 
             FROM request_peta_lokasi rpl_ 
             INNER JOIN kjb_dt dt_ ON dt_.id = rpl_.kjb_dt_id
             WHERE rpl_.code = rpl.code 

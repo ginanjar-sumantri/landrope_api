@@ -27,7 +27,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.generator import generate_code, CodeCounterEnum, generate_code_month
-from common.enum import (TipeProsesEnum, StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBayarEnum, StatusPembebasanEnum,
+from common.enum import (StatusHasilPetaLokasiEnum, StatusBidangEnum, JenisBayarEnum, StatusPembebasanEnum,
                          JenisBidangEnum, HasilAnalisaPetaLokasiEnum, StatusLuasOverlapEnum, TipeOverlapEnum)
 from services.gcloud_storage_service import GCStorageService
 from services.gcloud_task_service import GCloudTaskService

@@ -111,7 +111,7 @@ async def regenerate(id:UUID,
     
     if dokumens:
         for doc in dokumens:
-            if doc.is_active == True:
+            if doc.is_active == False:
                 continue
             code = obj.code + doc.code
             bundle_dt_create = BundleDtCreateSch(code=code, 
