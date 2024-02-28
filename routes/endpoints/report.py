@@ -389,7 +389,7 @@ async def report_summary_analyst(start_date:date|None = None, end_date:date|None
     ws.title =  "REPORT TIM UKUR"
     ws.firstHeader
 
-    ws.cell(row=1, column=2, value="LAPORAN PENGUKURAN")
+    ws.cell(row=1, column=2, value="RESUME LAPORAN TIM ANALISA DAN TIM AKUR")
     ws.merge_cells(start_row=1, start_column=2, end_row=1, end_column=6)
     ws.cell(row=2, column=2, value=f"CUT OFF DATE {start_date} S/D {end_date}")
     ws.merge_cells(start_row=2, start_column=2, end_row=2, end_column=6)
