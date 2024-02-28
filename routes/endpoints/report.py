@@ -465,7 +465,7 @@ async def report_summary_analyst(start_date:date|None = None, end_date:date|None
                 AND COALESCE(dt.group, '') = COALESCE(dt_.group, '')
                 AND rpl_.luas_ukur IS NOT NULL 
                 AND rpl_.tanggal_pengukuran IS NOT NULL), 0) AS sudah_diukur,
-                COALESCE((SELECT SUM(rpl_.luas_ukur) 
+            COALESCE((SELECT SUM(rpl_.luas_ukur) 
             FROM request_peta_lokasi rpl_ 
             INNER JOIN kjb_dt dt_ ON dt_.id = rpl_.kjb_dt_id
             WHERE rpl_.code = rpl.code 

@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from models.marketing_model import Manager, Sales
 from models.worker_model import Worker
@@ -86,7 +86,11 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-        
+
+    sales_current = await crud.sales.get_by_name_and_manager_id(name=sch.name, manager_id=sch.manager_id)
+    if sales_current:
+        raise HTTPException(status_code=422, detail="Nama Sales sudah ada di manager tersebut")
+
     new_obj = await crud.sales.create(obj_in=sch, created_by_id=current_worker.id)
     new_obj = await crud.sales.get_by_id(id=new_obj.id)
     
@@ -128,6 +132,10 @@ async def update(
 
     if not obj_current:
         raise IdNotFoundException(Sales, id)
+    
+    sales_current = await crud.sales.get_by_name_and_manager_id(name=sch.name, manager_id=sch.manager_id)
+    if sales_current:
+        raise HTTPException(status_code=422, detail="Nama Sales sudah ada di manager tersebut")
     
     obj_updated = await crud.sales.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.sales.get_by_id(id=id)

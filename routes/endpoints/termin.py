@@ -578,10 +578,10 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
-    file_path = obj_current.file_path
+    # file_path = obj_current.file_path
 
-    if file_path is None:
-        file_path = await generate_printout(id=id)
+    # if file_path is None:
+    file_path = await generate_printout(id=id)
     
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
