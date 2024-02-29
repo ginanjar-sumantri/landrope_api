@@ -126,33 +126,39 @@ async def dashboard_outstanding():
             Order by id_bidang),
 
 subquery_hasil_petlok as (
-select 
-	hpl.id,
-	dk.name,
-	dt.meta_data
-from 
-	hasil_peta_lokasi hpl
-INNER JOIN 
-	bidang b ON b.id = hpl.bidang_id
-INNER JOIN 
-	bundle_hd hd ON hd.id = b.bundle_hd_id
-INNER JOIN
-	bundle_dt dt ON hd.id = dt.bundle_hd_id
-INNER JOIN
-	dokumen dk ON dk.id = dt.dokumen_id 
-	and dk.name IN ('GAMBAR UKUR NIB PT', 'GAMBAR UKUR NIB PERORANGAN')
-)
+                    select 
+                        hpl.id,
+                        dk.name,
+                        dt.meta_data
+                    from 
+                        hasil_peta_lokasi hpl
+                    INNER JOIN 
+                        bidang b ON b.id = hpl.bidang_id
+                    INNER JOIN 
+                        bundle_hd hd ON hd.id = b.bundle_hd_id
+                    INNER JOIN
+                        bundle_dt dt ON hd.id = dt.bundle_hd_id
+                    INNER JOIN
+                        dokumen dk ON dk.id = dt.dokumen_id 
+                        and dk.name IN ('GAMBAR UKUR NIB PT', 'GAMBAR UKUR NIB PERORANGAN', 'PBT PERORANGAN', 'PBT PT')
+                    )
 SELECT 
 	'outstanding_gu_pbt' as tipe_worklist,
 	count(hpl.id) as total
 FROM hasil_peta_lokasi hpl
 LEFT OUTER JOIN 
-	subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
-LEFT OUTER JOIN 
-	subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+                        subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok pbt_pt ON pbt_pt.id = hpl.id AND pbt_pt.name = 'PBT PT'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok pbt_perorangan ON pbt_perorangan.id = hpl.id AND pbt_perorangan.name = 'PBT PERORANGAN'
 WHERE
-	(gu_pt.meta_data IS NOT NULL AND hpl.luas_gu_pt = 0)
-	OR (gu_perorangan.meta_data IS NOT NULL AND hpl.luas_gu_perorangan = 0)
+                        (gu_pt.meta_data IS NOT NULL AND hpl.luas_gu_pt = 0)
+                        OR (gu_perorangan.meta_data IS NOT NULL AND hpl.luas_gu_perorangan = 0)
+                        OR (pbt_pt.meta_data IS NOT NULL AND hpl.luas_pbt_pt = 0)
+                        OR (pbt_perorangan.meta_data IS NOT NULL AND hpl.luas_pbt_perorangan = 0)
 union
 select 'outstanding_spk' as tipe_worklist, Count(*) as total from subquery
 union
