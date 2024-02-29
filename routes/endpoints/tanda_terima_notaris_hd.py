@@ -202,6 +202,7 @@ async def update(id:UUID,
         #update bundle alashak & penjual for default if metadata not exists
         await BundleHelper().merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
         await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
+        await BundleHelper().merge_tanda_terima_notaris(bundle=bundle, nomor_ttn=sch.nomor_tanda_terima, tanggal=sch.tanggal_tanda_terima, file_path=sch.file_path, worker_id=current_worker.id, db_session=db_session)
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 
