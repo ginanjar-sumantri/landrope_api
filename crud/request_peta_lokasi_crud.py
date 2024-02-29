@@ -214,8 +214,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         
         if filter_list == 'outstandinggupbt':
             list_id = await self.get_outstanding_gu_pbt()
+            ids = [id["id"] for id in list_id]
 
-            query = query.filter(HasilPetaLokasi.id.in_(list_id))
+            query = query.filter(HasilPetaLokasi.id.in_(ids))
             
         if filter_clause is not None:        
             query = query.filter(filter_clause)
@@ -354,9 +355,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                         hpl.id
                     FROM hasil_peta_lokasi hpl
                     LEFT OUTER JOIN 
-                        subquery gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
+                        subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
                     LEFT OUTER JOIN 
-                        subquery gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+                        subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
                     WHERE
                         (gu_pt.meta_data IS NOT NULL AND hpl.luas_gu_pt = 0)
                         OR (gu_perorangan.meta_data IS NOT NULL AND hpl.luas_gu_perorangan = 0)
