@@ -101,12 +101,12 @@ async def get_list_for_input_hasil_petlok(
             order_by:str = None, 
             keyword:str = None, 
             filter_query:str = None,
-            outstanding:bool|None = False,
+            filter_list:str | None = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(outstanding=outstanding, params=params, keyword=keyword)
+    objs = await crud.request_peta_lokasi.get_multi_detail_paginated(filter_list=filter_list, params=params, keyword=keyword)
     
     return create_response(data=objs)
 

@@ -123,53 +123,83 @@ async def dashboard_outstanding():
                 Where c_hd.bidang_id = hpl.bidang_id
                 and b_dt.file_path is null
                 ) <= 0
-            Order by id_bidang)
-            select 'outstanding_spk' as tipe_worklist, Count(*) as total from subquery
-            union
-            select 'outstanding_hasil_peta_lokasi' as tipe_worklist, count(*) as total 
-            from request_peta_lokasi
-            where kjb_dt_id not in (select kjb_dt_id from hasil_peta_lokasi)
-            union
-            select 'outstanding_invoice' as tipe_worklist, count(*) as total 
-            from spk
-            inner join workflow ON spk.id = workflow.reference_id
-            where spk.id not in (select spk_id 
-                            from invoice i
-                            join termin t on t.id = i.termin_id
-                            where i.is_void != true 
-                            and t.jenis_bayar not in ('UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE'))
-            and jenis_bayar not in ('PAJAK', 'BEGINNING_BALANCE')
-            and is_void != True
-            and workflow.last_status = 'COMPLETE'
-            union
-            SELECT 'outstanding_payment' as tipe_worklist, count(*)
-            FROM invoice i
-            WHERE i.amount - ((
-                CASE
-                WHEN i.use_utj = True THEN (
-                    SELECT COALESCE(SUM(amount), 0)
-                    FROM invoice i_utj
-                    Inner join termin tr on tr.id = i_utj.termin_id
-                    WHERE i.bidang_id = i_utj.bidang_id
-                    and tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
-                )
-                ELSE 0
-                END
-            ) + (
-                select coalesce(sum(amount), 0) 
-                from payment_detail py
-                where i.id = py.invoice_id
-                and py.is_void != true
-                ) + (
-                    Select 
-                        Coalesce(SUM(idt.amount), 0)
-                        from invoice_detail idt
-                        inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
-                        inner join beban_biaya bb on bb.id = kb.beban_biaya_id
-                        inner join bidang b on b.id = kb.bidang_id
-                        where idt.invoice_id = i.id
-                        and kb.beban_pembeli = false)
-                            ) != 0 and i.is_void != TRUE
+            Order by id_bidang),
+
+subquery_hasil_petlok as (
+select 
+	hpl.id,
+	dk.name,
+	dt.meta_data
+from 
+	hasil_peta_lokasi hpl
+INNER JOIN 
+	bidang b ON b.id = hpl.bidang_id
+INNER JOIN 
+	bundle_hd hd ON hd.id = b.bundle_hd_id
+INNER JOIN
+	bundle_dt dt ON hd.id = dt.bundle_hd_id
+INNER JOIN
+	dokumen dk ON dk.id = dt.dokumen_id 
+	and dk.name IN ('GAMBAR UKUR NIB PT', 'GAMBAR UKUR NIB PERORANGAN')
+)
+SELECT 
+	'outstanding_gu_pbt' as tipe_worklist,
+	count(hpl.id) as total
+FROM hasil_peta_lokasi hpl
+LEFT OUTER JOIN 
+	subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
+LEFT OUTER JOIN 
+	subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+WHERE
+	(gu_pt.meta_data IS NOT NULL AND hpl.luas_gu_pt = 0)
+	OR (gu_perorangan.meta_data IS NOT NULL AND hpl.luas_gu_perorangan = 0)
+union
+select 'outstanding_spk' as tipe_worklist, Count(*) as total from subquery
+union
+select 'outstanding_hasil_peta_lokasi' as tipe_worklist, count(*) as total 
+from request_peta_lokasi
+where kjb_dt_id not in (select kjb_dt_id from hasil_peta_lokasi)
+union
+select 'outstanding_invoice' as tipe_worklist, count(*) as total 
+from spk
+inner join workflow ON spk.id = workflow.reference_id
+where spk.id not in (select spk_id 
+				from invoice i
+				join termin t on t.id = i.termin_id
+				where i.is_void != true 
+				and t.jenis_bayar not in ('UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE'))
+and jenis_bayar not in ('PAJAK', 'BEGINNING_BALANCE')
+and is_void != True
+and workflow.last_status = 'COMPLETE'
+union
+SELECT 'outstanding_payment' as tipe_worklist, count(*)
+FROM invoice i
+WHERE i.amount - ((
+	CASE
+	WHEN i.use_utj = True THEN (
+		SELECT COALESCE(SUM(amount), 0)
+		FROM invoice i_utj
+		Inner join termin tr on tr.id = i_utj.termin_id
+		WHERE i.bidang_id = i_utj.bidang_id
+		and tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
+	)
+	ELSE 0
+	END
+) + (
+	select coalesce(sum(amount), 0) 
+	from payment_detail py
+	where i.id = py.invoice_id
+	and py.is_void != true
+	) + (
+		Select 
+			Coalesce(SUM(idt.amount), 0)
+			from invoice_detail idt
+			inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
+			inner join beban_biaya bb on bb.id = kb.beban_biaya_id
+			inner join bidang b on b.id = kb.bidang_id
+			where idt.invoice_id = i.id
+			and kb.beban_pembeli = false)
+				) != 0 and i.is_void != TRUE
         """)
 
     result = await db_session.execute(query)
