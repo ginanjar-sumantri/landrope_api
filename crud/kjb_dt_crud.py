@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
-from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing
+from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing, BundleHd, BundleDt
 from models.master_model import HargaStandard
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch
 from typing import List
@@ -31,7 +31,10 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                                                         ).options(selectinload(Pemilik.kontaks))
                                                 ).options(selectinload(KjbDt.kjb_hd)
                                                 ).options(selectinload(KjbDt.jenis_surat)
-                                                ).options(selectinload(KjbDt.bundlehd)
+                                                ).options(selectinload(KjbDt.bundlehd
+                                                                        ).options(selectinload(BundleHd.bundledts
+                                                                                            ).options(selectinload(BundleDt.dokumen))
+                                                                        )
                                                 ).options(selectinload(KjbDt.tanda_terima_notaris_hd)
                                                 ).options(selectinload(KjbDt.request_peta_lokasi)
                                                 ).options(selectinload(KjbDt.hasil_peta_lokasi
