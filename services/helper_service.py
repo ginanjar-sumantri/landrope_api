@@ -584,14 +584,14 @@ class BundleHelper:
             input_dict[dokumen.key_field] = nomor_ttn
             input_dict["Tanggal"] = str(tanggal)
             input_dict["file"] = file_path
-            meta_data = json.dumps(input_dict)
+            # meta_data = json.dumps(input_dict)
 
             if bundledt_current.meta_data is None:
                 meta_datas_current = {"data" : []}
-                meta_datas_current["data"].append(meta_data)
+                meta_datas_current["data"].append(input_dict)
                 
             else:
-                meta_datas_current["data"].append(meta_data)
+                meta_datas_current["data"].append(input_dict)
             
             meta_data = json.dumps(meta_datas_current)
 
