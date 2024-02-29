@@ -682,33 +682,10 @@ async def generate_printout(id:UUID|str):
     if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and spk_header.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.TAMBAHAN_DP]:
         percentage_value = f" {spk_header.amount}%"
     
-    ktp_value:str = ""
-    ktp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KTP SUAMI', bidang_id=spk_header.bidang_id)
-    if ktp_meta_data:
-        if ktp_meta_data.meta_data is not None and ktp_meta_data.meta_data != "":
-            metadata_dict = json.loads(ktp_meta_data.meta_data.replace("'", "\""))
-            ktp_value = metadata_dict[f'{ktp_meta_data.key_field}']
-
-    npwp_value:str = ""
-    npwp_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NPWP', bidang_id=spk_header.bidang_id)
-    if npwp_meta_data:
-        if npwp_meta_data.meta_data is not None and npwp_meta_data.meta_data != "": 
-            metadata_dict = json.loads(npwp_meta_data.meta_data.replace("'", "\""))
-            npwp_value = metadata_dict[f'{npwp_meta_data.key_field}']
-    
-    kk_value:str = ""
-    kk_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='KARTU KELUARGA', bidang_id=spk_header.bidang_id)
-    if kk_meta_data:
-        if kk_meta_data.meta_data is not None and kk_meta_data.meta_data != "":
-            metadata_dict = json.loads(kk_meta_data.meta_data.replace("'", "\""))
-            kk_value = metadata_dict[f'{kk_meta_data.key_field}']
-
-    nop_value:str = ""
-    nop_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='SPPT PBB NOP', bidang_id=spk_header.bidang_id)
-    if nop_meta_data:
-        if nop_meta_data.meta_data is not None and nop_meta_data.meta_data != "":
-            metadata_dict = json.loads(nop_meta_data.meta_data.replace("'", "\""))
-            nop_value = metadata_dict[f'{nop_meta_data.key_field}']
+    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP PENJUAL', bidang_id=spk_header.bidang_id)
+    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=spk_header.bidang_id)
+    kk_value:str | None = await BundleHelper().get_key_value(dokumen_name='KARTU KELUARGA', bidang_id=spk_header.bidang_id)
+    nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=spk_header.bidang_id)
     
     spk_details = []
     no = 1
@@ -716,37 +693,51 @@ async def generate_printout(id:UUID|str):
     obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
 
     #alashak mesti nomor 1
-    alashak_kel = next((SpkDetailPrintOut(**dict(alashak)) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
+    alashak_kel = next((SpkDetailPrintOut(name=alashak["name"], tanggapan=alashak["tanggapan"]) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
     if alashak_kel:
         alashak_kel.no = 1
+        alashak_kel.name = f"{alashak_kel.name} ({spk_header.alashak})"
         no = 2
         spk_details.append(alashak_kel)
     
     obj_beban_biayas = []
-    if spk_header.jenis_bayar == JenisBayarEnum.PAJAK:
-        obj_beban_biayas = await crud.spk.get_beban_biaya_pajak_by_id_for_printout(id=id)
-    elif spk_header.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-        obj_beban_biayas = await crud.spk.get_beban_biaya_pengembalian_by_id_for_printout(id=id)
-    elif spk_header.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
-        obj_beban_biayas = await crud.spk.get_beban_biaya_lain_by_id_for_printout(id=id)
-    else:
-        obj_beban_biayas = await crud.spk.get_beban_biaya_by_id_for_printout(id=id)
+    obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
 
     for bb in obj_beban_biayas:
         beban_biaya = SpkDetailPrintOut(**dict(bb))
+        if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini':
+            continue
+
         beban_biaya.no = no
         spk_details.append(beban_biaya)
-        no = no + 1
+        no += 1
     
     for k in obj_kelengkapans:
         kelengkapan = SpkDetailPrintOut(**dict(k))
         if kelengkapan.name == 'ALAS HAK':
             continue
 
+        if kelengkapan.name == 'AJB':
+            bundle_dt_ajb = await crud.bundledt.get(id=kelengkapan.bundle_dt_id)
+            riwayat_ajb = json.loads(bundle_dt_ajb.riwayat_data)
+            for data in riwayat_ajb["riwayat"]:
+                kelengkapan_ajb = SpkDetailPrintOut(no=no, name=f"AJB {data['key_value']}", tanggapan=kelengkapan.tanggapan)
+                spk_details.append(kelengkapan_ajb)
+                no += 1
+            
+            continue
+
         kelengkapan.no = no
         kelengkapan.tanggapan = kelengkapan.tanggapan or ''
         spk_details.append(kelengkapan)
-        no = no + 1
+        no += 1
+
+    pm_1 = await crud.spk.get_pm1(id=id, check_meta_data_exists=False)
+    if pm_1["jumlah"] > 0:
+        pm_1_lengkap = await crud.spk.get_pm1(id=id, check_meta_data_exists=True)
+        if pm_1_lengkap["jumlah"] == 0:
+            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap")
+            spk_details.append(pm1)
 
     overlap_details = []
     if obj.jenis_bidang == JenisBidangEnum.Overlap:

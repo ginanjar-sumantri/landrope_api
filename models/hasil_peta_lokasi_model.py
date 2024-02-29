@@ -165,6 +165,20 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     def pemilik_name(self) -> str | None:
         return getattr(getattr(self, 'pemilik', None), 'name', None)
     
+    @property
+    def gu_exists(self) -> bool | None:
+        if self.kjb_dt:
+            if self.kjb_dt.bundlehd:
+                gu_pt = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PT" and als.meta_data), None)
+                if gu_pt:
+                    return True
+                
+                gu_perorangan = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PERORANGAN" and als.meta_data), None)
+                if gu_perorangan:
+                    return True
+            
+        return False
+    
     
 ##########################################################
 

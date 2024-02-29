@@ -22,6 +22,7 @@ class DokumenBase(SQLModel):
     additional_info:Optional[str] = Field(nullable=True)
     is_multiple:bool|None = Field(nullable=True)
     is_active:bool|None = Field(nullable=True)
+    is_exclude_printout:bool|None = Field(nullable=True)
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass

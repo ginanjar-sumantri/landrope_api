@@ -40,6 +40,8 @@ class HasilPetaLokasiByIdSch(HasilPetaLokasiFullBase):
     status_sk:str|None = Field(alias="status_sk")
     pemilik_name:str|None = Field(alias="pemilik_name")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    gu_exists:bool|None = Field(default=False)
+    pbt_exists:bool|None = Field(default=False)
 
     details:list[HasilPetaLokasiDetailSch]
 
