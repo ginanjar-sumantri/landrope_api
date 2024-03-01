@@ -870,6 +870,7 @@ async def create_workflow():
 
 @router.post("/task-workflow")
 async def create_workflow(payload:Dict):
+    db_session = db.session
     id = payload.get("id", None)
     additional_info = payload.get("additional_info", None)
 
@@ -890,6 +891,14 @@ async def create_workflow(payload:Dict):
         obj = await crud.spk.get(id=id)
         time.sleep(2)
         trying += 1
+
+    with_commit:bool = False
+    if obj.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]:
+        bidang = await crud.bidang.get(id=obj.bidang_id)
+        bundle = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
+        if bundle:
+            await BundleHelper().merge_spk(bundle=bundle, code=obj.code, tanggal=obj.created_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
+            with_commit = True
 
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
    
@@ -912,5 +921,8 @@ async def create_workflow(payload:Dict):
     
     wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
     await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
+
+    if with_commit:
+        await db_session.commit()
 
     return {"message" : "successfully"}
