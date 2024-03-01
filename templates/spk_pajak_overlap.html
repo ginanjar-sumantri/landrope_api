@@ -258,8 +258,41 @@
         </tr>
         <tr>
           <td align="center">{{worker_name}}</td>
-          <td align="center">Denny P. Wangsya</td>
-          <td align="center">Yaya</td>
+          <td align="center">Denny Prasetya Wangsya</td>
+          <td align="center">Yaya Taryaman</td>
+        </tr>
+      </table>
+      &nbsp; &nbsp;
+      <table
+        align="center"
+        style="
+          border-collapse: collapse;
+          border: 1px solid;
+          width: 100%;
+          margin-top: 25px;
+        "
+      >
+        <tr>
+          <td>KOMENTAR :</td>
+        </tr>
+        <tr>
+          <td>AKTA PERALIHAN PT : {{akta_peralihan}}</td>
+        </tr>
+        <tr>
+          <td>PETA CITRIK = TERLAMPIR</td>
+        </tr>
+        <tr>
+          <td>KESEPAKATAN = TERLAMPIR</td>
+        </tr>
+        <tr>
+          <td>NO REKENING : {{no_rekening}}</td>
+        </tr>
+        <tr>
+          <td>CATATAN : <br>
+            {% for item in remarks %}
+              {{ item }} <br>
+            {% endfor %}
+            </td>
         </tr>
       </table>
     </div>

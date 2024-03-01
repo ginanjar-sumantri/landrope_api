@@ -49,16 +49,16 @@ class BidangBase(SQLModel):
     luas_clear:Optional[Decimal] = Field(nullable=True)
     luas_pbt_perorangan:Optional[Decimal] = Field(nullable=True)
     luas_pbt_pt:Optional[Decimal] = Field(nullable=True)
-    luas_bayar:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    luas_bayar:Optional[Decimal] = Field(nullable=True)
     luas_proses:Optional[Decimal] = Field(nullable=True)
     luas_produk:Optional[Decimal] = Field(nullable=True)
-    harga_akta:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
-    harga_transaksi:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    harga_akta:Optional[Decimal] = Field(nullable=True)
+    harga_transaksi:Optional[Decimal] = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     njop:Decimal|None = Field(nullable=True)
-
     status_pembebasan:StatusPembebasanEnum|None = Field(nullable=True)
+    parent_id:UUID|None = Field(nullable=True, foreign_key="bidang.id")
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
@@ -74,6 +74,14 @@ class Bidang(BidangFullBase, table=True):
         },
         back_populates="bidang"
     )
+
+    parent_bintang: "Bidang" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "select",
+            "primaryjoin": "Bidang.parent_id==Bidang.id",
+        }
+    )
+
     pemilik:"Pemilik" = Relationship(
         sa_relationship_kwargs = {'lazy':'select'})
     

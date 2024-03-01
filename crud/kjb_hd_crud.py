@@ -11,7 +11,7 @@ from common.ordered import OrderEnumSch
 from common.enum import WorkflowEntityEnum, WorkflowLastStatusEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt, Workflow
-from models import BundleHd, Rekening
+from models import BundleHd, Rekening, BundleDt
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
@@ -45,7 +45,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                                         ).options(selectinload(KjbDt.request_peta_lokasi)
                                                                         ).options(selectinload(KjbDt.hasil_peta_lokasi)
                                                                         ).options(selectinload(KjbDt.bundlehd
-                                                                                        ).options(selectinload(BundleHd.bundledts))
+                                                                                        ).options(selectinload(BundleHd.bundledts
+                                                                                                    ).options(selectinload(BundleDt.dokumen))
+                                                                                    )
                                                                         )
                                                 ).options(selectinload(KjbHd.rekenings)
                                                 ).options(selectinload(KjbHd.hargas
@@ -150,28 +152,28 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             penjual = KjbPenjual(pemilik_id=p.pemilik_id, created_by_id=created_by_id, updated_by_id=created_by_id)
             db_obj.penjuals.append(penjual)
 
-        # if obj_in.file:
-        #     db_obj.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_in.file, file_name=obj_in.code.replace('/', '_'))
+        if obj_in.file:
+            db_obj.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_in.file, file_name=obj_in.code.replace('/', '_'))
 
         db_session.add(db_obj)
 
-        # if db_obj.is_draft == False:
-        #     public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
-        #     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-        #     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=public_url)
-        #     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(db_obj.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, attachments=[vars(wf_system_attachment)], version=1,
-        #                                             descs=f"""Dokumen KJB {db_obj.code} ini membutuhkan Approval dari Anda:<br><br>
-        #                                                     Tanggal: {db_obj.created_at.date()}<br>
-        #                                                     Dokumen: {db_obj.code}<br><br>
-        #                                                     Berikut lampiran dokumen terkait : """)
+        if db_obj.is_draft == False:
+            public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
+            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=public_url)
+            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(db_obj.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, attachments=[vars(wf_system_attachment)], version=1,
+                                                    descs=f"""Dokumen KJB {db_obj.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                            Tanggal: {db_obj.created_at.date()}<br>
+                                                            Dokumen: {db_obj.code}<br><br>
+                                                            Berikut lampiran dokumen terkait : """)
 
-        #     response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
+            response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
 
-        #     if response is None:
-        #         raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
+            if response is None:
+                raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
             
-        #     new_workflow = Workflow(reference_id=db_obj.id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
-        #     db_session.add(new_workflow)
+            new_workflow = Workflow(reference_id=db_obj.id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
+            db_session.add(new_workflow)
 
         try:
             await db_session.commit()
@@ -191,7 +193,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> KjbHd :
         
-       
+
+        kjb_current = KjbHd.from_orm(obj_current)
         difference_two_approve:bool = False
         is_draft = obj_current.is_draft or False
         db_session =  db_session or db.session
@@ -216,8 +219,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         if updated_by_id:
             obj_current.updated_by_id = updated_by_id
         
-        # if obj_new.file:
-        #     obj_current.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_new.file, file_name=obj_new.code.replace('/', '_'))
+        if obj_new.file:
+            obj_current.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_new.file, file_name=obj_new.code.replace('/', '_'))
         
         db_session.add(obj_current)
 
@@ -308,7 +311,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     if key == "beban_biaya_name":
                         continue
                     if difference_two_approve == False:
-                        difference_two_approve == True if value != getattr(existing_bebanbiaya, key) and is_draft == False else False
+                        value_current = getattr(existing_bebanbiaya, key)
+                        difference_two_approve = True if value_current != value and is_draft == False and obj_current.is_draft == False else False
 
                     setattr(existing_bebanbiaya, key, value)
                 existing_bebanbiaya.updated_at = datetime.utcnow()
@@ -346,49 +350,52 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             else:
                 new_detail = KjbDt(**detail.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_detail)
-
         
-        # if obj_new.is_draft == False:
-        #     public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
-        #     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-        #     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
-        #     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)],
-        #                                             descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
-        #                                                     Tanggal: {obj_current.created_at.date()}<br>
-        #                                                     Dokumen: {obj_current.code}<br><br>
-        #                                                     Berikut lampiran dokumen terkait : """)
+        if obj_new.is_draft == False:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
+            wf_system_attachment:WorkflowSystemAttachmentSch = None
+            if obj_current.file_path:
+                public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
+                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
+
+            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"} if difference_two_approve == False else {"approval_number" : "TWO_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
+                                                    descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                            Tanggal: {obj_current.created_at.date()}<br>
+                                                            Dokumen: {obj_current.code}<br><br>
+                                                            Berikut lampiran dokumen terkait : """)
             
-        #     wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-        #     version = 1 if wf_current.version is None else wf_current.version
-
-        #     if wf_current:
-        #         if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
-        #             wf_system_sch.version = version + 1
-        #             wf_current.version = version + 1
-        #         else:
-        #             wf_system_sch.version = wf_current.version
+            wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
+            
+            if wf_current:
+                version = 1 if wf_current.version is None else wf_current.version
+                if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
+                    wf_system_sch.version = version + 1
+                    wf_current.version = version + 1
+                else:
+                    wf_system_sch.version = wf_current.version
                 
-        #         response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
+                response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
 
-        #         if response is None:
-        #             raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
+                if response is None:
+                    raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
                 
-        #         wf_current.last_status = response.last_status
-        #         db_session.add(wf_current)
-        #     else:
-        #         response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
-        #         if response is None:
-        #             raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
-        #         new_workflow = Workflow(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
-        #         db_session.add(new_workflow)
+                wf_current.last_status = response.last_status
+                db_session.add(wf_current)
+            else:
+                response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
+                if response is None:
+                    raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
+                new_workflow = Workflow(reference_id=obj_current.id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
+                db_session.add(new_workflow)
             
         if with_commit:
             await db_session.commit()
             await db_session.refresh(obj_current)
 
-        if obj_new.is_draft == False:
-            url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
-            GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
+        # fungsi ini pindah ke dalam workflow notification
+        # if obj_new.is_draft == False:
+        #     url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+        #     GCloudTaskService().create_task(payload={"id":str(obj_current.id)}, base_url=url)
 
         return obj_current
 

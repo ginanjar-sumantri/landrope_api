@@ -41,6 +41,8 @@ async def get_list(
                                             ).outerjoin(Dokumen, BundleDt.dokumen_id == Dokumen.id
                                             ).outerjoin(KategoriDokumen, Dokumen.kategori_dokumen_id == KategoriDokumen.id)
     
+    query = query.filter(Dokumen.is_active != False)
+    
     if filter_query:
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():

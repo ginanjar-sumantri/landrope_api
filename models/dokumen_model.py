@@ -21,6 +21,8 @@ class DokumenBase(SQLModel):
     kategori_dokumen_id:UUID | None = Field(nullable=True, foreign_key="kategori_dokumen.id")
     additional_info:Optional[str] = Field(nullable=True)
     is_multiple:bool|None = Field(nullable=True)
+    is_active:bool|None = Field(nullable=True)
+    is_exclude_printout:bool|None = Field(nullable=True)
 
 class DokumenFullBase(BaseUUIDModel, DokumenBase):
     pass

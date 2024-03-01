@@ -67,17 +67,17 @@ async def update(id:UUID, sch:DokumenUpdateSch,
     obj_updated = await crud.dokumen.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated)
 
-@router.delete("/delete", response_model=DeleteResponseBaseSch[DokumenSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+# @router.delete("/delete", response_model=DeleteResponseBaseSch[DokumenSch], status_code=status.HTTP_200_OK)
+# async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-    """Delete a object"""
+#     """Delete a object"""
 
-    obj_current = await crud.dokumen.get(id=id)
-    if not obj_current:
-        raise IdNotFoundException(Dokumen, id)
+#     obj_current = await crud.dokumen.get(id=id)
+#     if not obj_current:
+#         raise IdNotFoundException(Dokumen, id)
     
-    obj_deleted = await crud.dokumen.remove(id=id)
+#     obj_deleted = await crud.dokumen.remove(id=id)
 
-    return obj_deleted
+#     return obj_deleted
 
    

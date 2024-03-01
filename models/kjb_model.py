@@ -289,6 +289,19 @@ class KjbDt(KjbDtFullBase, table=True):
         return None
     
     @property
+    def gu_exists(self) -> bool | None:
+        if self.bundlehd:
+            gu_pt = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PT" and als.meta_data), None)
+            if gu_pt:
+                return True
+            
+            gu_perorangan = next((als for als in self.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PERORANGAN" and als.meta_data), None)
+            if gu_perorangan:
+                return True
+            
+        return False
+    
+    @property
     def kjb_hd_group(self) -> str | None:
         return getattr(getattr(self, "kjb_hd", None), "nama_group", None)
     

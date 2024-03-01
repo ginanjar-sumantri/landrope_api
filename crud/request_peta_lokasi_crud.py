@@ -1,7 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, delete, and_
+from sqlmodel import select, or_, delete, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
@@ -161,7 +161,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
     async def get_multi_detail_paginated(self, *, params: Params | None = Params(),
                                   order: OrderEnumSch | None = OrderEnumSch.descendent,
                                   keyword:str | None,
-                                  outstanding:bool|None = None,
+                                  filter_list:str|None = None,
                                   db_session: AsyncSession | None = None) -> Page[RequestPetaLokasiForInputHasilSch]:
         db_session = db_session or db.session
 
@@ -209,8 +209,14 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                 )
             )
 
-        if outstanding:
+        if filter_list == 'outstanding':
             query = query.filter(KjbDt.hasil_peta_lokasi == None)
+        
+        if filter_list == 'outstandinggupbt':
+            list_id = await self.get_outstanding_gu_pbt()
+            ids = [id["id"] for id in list_id]
+
+            query = query.filter(HasilPetaLokasi.id.in_(ids))
             
         if filter_clause is not None:        
             query = query.filter(filter_clause)
@@ -325,5 +331,46 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         await db_session.commit()
         return obj
 
+    async def get_outstanding_gu_pbt(self, *, db_session : AsyncSession | None = None) -> list[UUID]:
+        db_session = db_session or db.session
+        query = text(f"""
+                    with subquery_hasil_petlok as (
+                    select 
+                        hpl.id,
+                        dk.name,
+                        dt.meta_data
+                    from 
+                        hasil_peta_lokasi hpl
+                    INNER JOIN 
+                        bidang b ON b.id = hpl.bidang_id
+                    INNER JOIN 
+                        bundle_hd hd ON hd.id = b.bundle_hd_id
+                    INNER JOIN
+                        bundle_dt dt ON hd.id = dt.bundle_hd_id
+                    INNER JOIN
+                        dokumen dk ON dk.id = dt.dokumen_id 
+                        and dk.name IN ('GAMBAR UKUR NIB PT', 'GAMBAR UKUR NIB PERORANGAN', 'PBT PERORANGAN', 'PBT PT')
+                    )
+                    SELECT 
+                        hpl.id
+                    FROM hasil_peta_lokasi hpl
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok pbt_pt ON pbt_pt.id = hpl.id AND pbt_pt.name = 'PBT PT'
+                    LEFT OUTER JOIN 
+                        subquery_hasil_petlok pbt_perorangan ON pbt_perorangan.id = hpl.id AND pbt_perorangan.name = 'PBT PERORANGAN'
+                    WHERE
+                        (gu_pt.meta_data IS NOT NULL AND hpl.luas_gu_pt = 0)
+                        OR (gu_perorangan.meta_data IS NOT NULL AND hpl.luas_gu_perorangan = 0)
+                        OR (pbt_pt.meta_data IS NOT NULL AND hpl.luas_pbt_pt = 0)
+                        OR (pbt_perorangan.meta_data IS NOT NULL AND hpl.luas_pbt_perorangan = 0)
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
     
 request_peta_lokasi = CRUDRequestPetaLokasi(RequestPetaLokasi)

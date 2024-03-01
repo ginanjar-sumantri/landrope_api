@@ -393,7 +393,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 b.id_bidang,
                 b.alashak,
                 b.no_peta,
-                b.group,
+                COALESCE(b.group, '') As group,
                 b.luas_surat,
                 b.luas_ukur,
                 b.luas_gu_perorangan,
@@ -433,6 +433,110 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchone()
+    
+    async def get_beban_biaya_for_printout(self, 
+                                                 *, 
+                                                 id: UUID | str,
+                                                 jenis_bayar:JenisBayarEnum | None = None,
+                                                 db_session: AsyncSession | None = None
+                                                 ) -> List[SpkDetailPrintOut] | None:
+        db_session = db_session or db.session
+
+        if jenis_bayar == JenisBayarEnum.PAJAK:
+
+            query = text(f"""
+                    select
+                        NULL as bundle_dt_id,
+                        case
+                            when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                            when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                            when bkb.beban_pembeli = false and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                            else 'DITANGGUNG PENJUAL'
+                        end as tanggapan,
+                        bb.name
+                    from 
+                        spk s
+                    inner join 
+                        bidang b on b.id = s.bidang_id
+                    inner join 
+                        bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join 
+                        beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where 
+                        s.id = '{str(id)}'
+                        and bb.is_tax = true
+                        and bkb.is_void != true
+                    """)
+            
+        elif jenis_bayar ==  JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+            
+            query = text(f"""
+                    select
+                        NULL as bundle_dt_id,
+                        case
+                            when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                            when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                            else 'DITANGGUNG PENJUAL (PENGEMBALIAN)'
+                        end as tanggapan,
+                        bb.name
+                    from 
+                        spk s
+                    inner join 
+                        bidang b on b.id = s.bidang_id
+                    inner join 
+                        bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join 
+                        beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where 
+                        s.id = '{str(id)}'
+                        and bkb.is_void != true
+                        and bkb.is_retur = true
+                    """)
+        elif jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+
+            query = text(f"""
+                    select
+                        NULL as bundle_dt_id,
+                        case
+                            when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                            when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                            else 'DITANGGUNG PENJUAL (PENGEMBALIAN)'
+                        end as tanggapan,
+                        bb.name
+                    from 
+                        spk s
+                    inner join 
+                        bidang b on b.id = s.bidang_id
+                    inner join 
+                        bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join 
+                        beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where 
+                        s.id = '{str(id)}'
+                        and bkb.is_void != true
+                        and bkb.is_add_pay = true
+                    """)
+        else:
+
+            query = text(f"""
+                    select
+                    case
+                        when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                        else 'DITANGGUNG PENJUAL'
+                    end as tanggapan,
+                    bb.name
+                    from spk s
+                    inner join bidang b on b.id = s.bidang_id
+                    inner join bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where s.id = '{str(id)}'
+                    and bkb.is_void != true
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchall()
 
     async def get_beban_biaya_pajak_by_id_for_printout(self, 
                                                  *, 
@@ -523,7 +627,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                  ) -> List[SpkDetailPrintOut] | None:
         db_session = db_session or db.session
         query = text(f"""
-                    select 
+                    select
                     case
                         when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                         when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
@@ -551,14 +655,16 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
             db_session = db_session or db.session
 
             query = text(f"""
-                    select 
+                    select
+                    bdt.id as bundle_dt_id,
                     d.name,
-                    kd.tanggapan
+                    COALESCE(kd.tanggapan, '') as tanggapan
                     from spk s
                     inner join spk_kelengkapan_dokumen kd on kd.spk_id = s.id
                     inner join bundle_dt bdt on bdt.id = kd.bundle_dt_id
                     inner join dokumen d on d.id = bdt.dokumen_id
                     where s.id = '{str(id)}'
+                    and Coalesce(d.is_exclude_printout, False) = False 
                     """)
 
             response = await db_session.execute(query)
@@ -617,4 +723,38 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
 
             return response.fetchall()
     
+    async def get_pm1(self, 
+                    *, 
+                    id: UUID | str,
+                    check_meta_data_exists:bool | None = False,
+                    db_session: AsyncSession | None = None
+                    ) -> List[SpkDetailPrintOut] | None:
+        
+        db_session = db_session or db.session
+
+        check_meta_data:str = ""
+        if check_meta_data_exists == True:
+            check_meta_data = " AND dt.meta_data IS NULL"
+
+        query = text(f"""
+                        SELECT 
+                            COUNT(*) as jumlah
+                        FROM 
+                            spk_kelengkapan_dokumen sk
+                        INNER JOIN 
+                            bundle_dt dt ON dt.id = sk.bundle_dt_id
+                        INNER JOIN
+                            dokumen dk ON dk.id = dt.dokumen_id
+                        INNER JOIN
+                            kategori_dokumen kd ON kd.id = dk.kategori_dokumen_id
+                        WHERE 
+                            kd.code = 'PM1'
+                            AND sk.spk_id = '{id}'
+                            {check_meta_data}
+                    """)
+
+        response = await db_session.execute(query)
+
+        return response.fetchone()
+
 spk = CRUDSpk(Spk)

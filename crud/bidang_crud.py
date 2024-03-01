@@ -14,7 +14,7 @@ from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, Jeni
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload, BidangAllPembayaran,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, BidangRptExcel)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
-from common.enum import StatusBidangEnum, StatusPembebasanEnum
+from common.enum import StatusBidangEnum, StatusPembebasanEnum, JenisBidangEnum
 from services.history_service import HistoryService
 from io import BytesIO
 from uuid import UUID
@@ -206,6 +206,16 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
     ) -> Bidang:
         db_session = db_session or db.session
         obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama))
+        return obj.scalar_one_or_none()
+    
+    async def get_kulit_bintang(
+        self, *, idbidang: str, db_session: AsyncSession | None = None
+    ) -> Bidang:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Bidang).where(and_(
+                                                                or_(Bidang.id_bidang_lama == idbidang, Bidang.id_bidang == idbidang),
+                                                                Bidang.jenis_bidang == JenisBidangEnum.Bintang
+                                                                )))
         return obj.scalar_one_or_none()
 
     # Untuk Import Bidang Overlap

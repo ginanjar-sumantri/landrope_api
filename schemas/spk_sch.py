@@ -86,6 +86,7 @@ class SpkPrintOut(SQLModel):
     remark:Optional[str]
 
 class SpkDetailPrintOut(SQLModel):
+    bundle_dt_id:UUID|None
     no:Optional[int]
     tanggapan:Optional[str]
     name:Optional[str]

@@ -8,7 +8,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt, Bidang, Project
+from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt, Bidang, Project, KjbDt, BundleHd, BundleDt
 from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, HasilPetaLokasiCreateExtSch, HasilPetaLokasiUpdateCloud
 from typing import List
 from uuid import UUID
@@ -30,7 +30,12 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                                                             ).options(selectinload(HasilPetaLokasiDetail.bidang_overlap)
                                                                             )
                                                     ).options(selectinload(HasilPetaLokasi.bidang)
-                                                    ).options(selectinload(HasilPetaLokasi.kjb_dt)
+                                                    ).options(selectinload(HasilPetaLokasi.kjb_dt
+                                                                            ).options(selectinload(KjbDt.bundlehd
+                                                                                            ).options(selectinload(BundleHd.bundledts
+                                                                                                            ).options(selectinload(BundleDt.dokumen))
+                                                                                            )
+                                                                            )
                                                     ).options(selectinload(HasilPetaLokasi.request_peta_lokasi)
                                                     ).options(selectinload(HasilPetaLokasi.planing
                                                                             ).options(selectinload(Planing.project

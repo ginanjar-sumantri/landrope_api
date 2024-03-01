@@ -302,7 +302,7 @@ async def create_bulking_task(
 
     field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
                         "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
-                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan"]
+                        "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan", "parent_id"]
 
     # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
     #                     "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
@@ -395,6 +395,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     project=geo_data.get('project', ''),
                                     kota=geo_data.get('kota', ''),
                                     kecamatan=geo_data.get('kecamatan', ''),
+                                    parent_id=geo_data.get('parent_id', ''),
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
 
@@ -402,6 +403,30 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             on_row = i
 
             luas_surat:Decimal = RoundTwo(Decimal(shp_data.luassurat))
+
+            kulit_bintang_id = None
+            jenis_bidang_shp = HelperService().FindJenisBidang(shp_data.proses)
+            if jenis_bidang_shp == JenisBidangEnum.Rincik:
+                on_proc = "[get parent bidang rincik]"
+                if shp_data.parent_id is None:
+                    error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Rincik Bintang tidak memiliki Parent"
+                    done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
+                    # if last row (done)
+                    if done:
+                        break
+
+                    continue
+                else:
+                    kulit_bintang = await crud.bidang.get_kulit_bintang(idbidang=shp_data.parent_id)
+                    if kulit_bintang is None:
+                        error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Parent rincik tidak ditemukan/Jenis Bidang Parent rincik bukan Bintang"
+                        done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
+                        # if last row (done)
+                        if done:
+                            break
+
+                        continue
+                    kulit_bintang_id = kulit_bintang.id
 
             on_proc = "[get by name pemilik]"
             pemilik = None
@@ -543,6 +568,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                             sales_id=sales,
                             mediator=shp_data.mediator,
                             luas_surat=luas_surat,
+                            parent_id=kulit_bintang_id,
                             geom=shp_data.geom)
 
             obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)

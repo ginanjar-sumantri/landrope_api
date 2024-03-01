@@ -51,6 +51,9 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
 
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
+                if i.is_active == False:
+                    continue
+                
                 code = db_obj.code + i.code
                 bundle_dt = BundleDt(code=code, dokumen_id=i.id, created_by_id=created_by_id, updated_by_id=created_by_id)
                 db_obj.bundledts.append(bundle_dt)

@@ -120,8 +120,8 @@ class HelperService:
                 return JenisBidangEnum.Standard
             elif type.replace(" ", "").lower() == JenisBidangEnum.Overlap.lower():
                 return JenisBidangEnum.Overlap
-            elif type.replace(" ", "").lower() == JenisBidangEnum.Kulit_Bintang.lower():
-                return JenisBidangEnum.Kulit_Bintang
+            elif type.replace(" ", "").lower() == JenisBidangEnum.Rincik.lower():
+                return JenisBidangEnum.Rincik
             else:
                 return JenisBidangEnum.Standard
         else:
@@ -413,7 +413,8 @@ class BundleHelper:
         if bundle_dt_meta_data:
             if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":
                 metadata_dict = json.loads(bundle_dt_meta_data.meta_data.replace("'", "\""))
-                value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
+                value = metadata_dict.get(bundle_dt_meta_data.key_field, '')
+                # value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
 
         return value
 
@@ -464,7 +465,6 @@ class BundleHelper:
 
         return len(meta_data["data"])
 
-
     async def get_file_path_for_multiple_meta_data(self, base64_str:str, key_value:str) -> str | None:
 
         bytes_data = base64.b64decode(base64_str)
@@ -478,8 +478,7 @@ class BundleHelper:
         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{file_name}")
 
         return file_path
-
-    
+ 
     async def merge_alashak(self, bundle:BundleHd, alashak:str, worker_id:UUID, db_session:AsyncSession):
 
     #update bundle alashak for default if metadata not exists
@@ -510,7 +509,6 @@ class BundleHelper:
             await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=worker_id)
 
-                
             
     async def merge_kesepakatan_jual_beli(self, bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession, pemilik_id:UUID|None = None):
 
@@ -533,6 +531,8 @@ class BundleHelper:
                 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
                             db_session=db_session, worker_id=worker_id)
+    
+
     
     async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession|None = None):
         
@@ -566,6 +566,39 @@ class BundleHelper:
         
         if db_session is None:
             await db_session_.commit()
+
+    async def merge_tanda_terima_notaris(self, bundle:BundleHd, nomor_ttn:str, tanggal:date, file_path:str, worker_id:UUID, db_session:AsyncSession):
+
+    #update bundle alashak for default if metadata not exists
+
+        dokumen = await crud.dokumen.get_by_name(name="TANDA TERIMA NOTARIS")
+        bundle = await crud.bundlehd.get_by_id(id=bundle.id)
+        bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
+
+        if bundledt_current:
+            input_dict = {}
+            input_data = json.loads(dokumen.dyn_form)
+            input_dict = {field["key"]: None for field in input_data["field"]}
+            if dokumen.key_field not in input_dict:
+                raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Tanda Terima Notaris' tidak memiliki key field {dokumen.key_field}")
+            
+            input_dict[dokumen.key_field] = nomor_ttn
+            input_dict["Tanggal"] = str(tanggal)
+            input_dict["file"] = file_path
+            # meta_data = json.dumps(input_dict)
+
+            if bundledt_current.meta_data is None:
+                meta_datas_current = {"data" : []}
+                meta_datas_current["data"].append(input_dict)
+                
+            else:
+                meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                meta_datas_current["data"].append(input_dict)
+            
+            meta_data = json.dumps(meta_datas_current)
+
+            await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                            db_session=db_session, worker_id=worker_id)
 
     
 class BidangHelper:
