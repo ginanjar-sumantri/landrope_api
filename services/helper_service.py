@@ -413,7 +413,8 @@ class BundleHelper:
         if bundle_dt_meta_data:
             if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":
                 metadata_dict = json.loads(bundle_dt_meta_data.meta_data.replace("'", "\""))
-                value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
+                value = metadata_dict.get(bundle_dt_meta_data.key_field, '')
+                # value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
 
         return value
 
