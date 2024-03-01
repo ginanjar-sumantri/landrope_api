@@ -445,7 +445,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         if jenis_bayar == JenisBayarEnum.PAJAK:
 
             query = text(f"""
-                    select 
+                    select
+                        NULL as bundle_dt_id,
                         case
                             when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                             when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
@@ -470,7 +471,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         elif jenis_bayar ==  JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
             
             query = text(f"""
-                    select 
+                    select
+                        NULL as bundle_dt_id,
                         case
                             when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                             when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
@@ -493,7 +495,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         elif jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
 
             query = text(f"""
-                    select 
+                    select
+                        NULL as bundle_dt_id,
                         case
                             when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                             when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
@@ -516,25 +519,19 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         else:
 
             query = text(f"""
-                    select 
-                        case
-                            when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
-                            when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
-                            else 'DITANGGUNG PENJUAL (PENGEMBALIAN)'
-                        end as tanggapan,
-                        bb.name
-                    from 
-                        spk s
-                    inner join 
-                        bidang b on b.id = s.bidang_id
-                    inner join 
-                        bidang_komponen_biaya bkb on bkb.bidang_id = b.id
-                    inner join 
-                        beban_biaya bb on bb.id = bkb.beban_biaya_id
-                    where 
-                        s.id = '{str(id)}'
-                        and bkb.is_void != true
-                        and bkb.is_add_pay = true
+                    select
+                    case
+                        when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
+                        when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
+                        else 'DITANGGUNG PENJUAL'
+                    end as tanggapan,
+                    bb.name
+                    from spk s
+                    inner join bidang b on b.id = s.bidang_id
+                    inner join bidang_komponen_biaya bkb on bkb.bidang_id = b.id
+                    inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
+                    where s.id = '{str(id)}'
+                    and bkb.is_void != true
                     """)
 
         response = await db_session.execute(query)
@@ -630,7 +627,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                  ) -> List[SpkDetailPrintOut] | None:
         db_session = db_session or db.session
         query = text(f"""
-                    select 
+                    select
                     case
                         when bkb.beban_pembeli = true and bkb.is_paid = false Then 'DITANGGUNG PT'
                         when bkb.beban_pembeli = true and bkb.is_paid = true Then 'SUDAH DIBAYAR'
