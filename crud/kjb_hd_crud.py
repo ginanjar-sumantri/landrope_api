@@ -311,7 +311,8 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                     if key == "beban_biaya_name":
                         continue
                     if difference_two_approve == False:
-                        difference_two_approve == True if value != getattr(existing_bebanbiaya, key) and is_draft == False else False
+                        value_current = getattr(existing_bebanbiaya, key)
+                        difference_two_approve = True if value_current != value and is_draft == False and obj_current.is_draft == False else False
 
                     setattr(existing_bebanbiaya, key, value)
                 existing_bebanbiaya.updated_at = datetime.utcnow()
@@ -357,7 +358,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
                 wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
 
-            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
+            wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"} if difference_two_approve == False else {"approval_number" : "TWO_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
                                                     descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
                                                             Tanggal: {obj_current.created_at.date()}<br>
                                                             Dokumen: {obj_current.code}<br><br>
