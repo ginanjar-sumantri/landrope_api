@@ -719,7 +719,7 @@ async def generate_printout(id:UUID|str):
 
         if kelengkapan.name == 'AJB':
             bundle_dt_ajb = await crud.bundledt.get(id=kelengkapan.bundle_dt_id)
-            riwayat_ajb = json.loads(bundle_dt_ajb.riwayat_data)
+            riwayat_ajb = json.loads(bundle_dt_ajb.riwayat_data.replace("'", '\"'))
             for data in riwayat_ajb["riwayat"]:
                 kelengkapan_ajb = SpkDetailPrintOut(no=no, name=f"AJB {data['key_value']}", tanggapan=kelengkapan.tanggapan)
                 spk_details.append(kelengkapan_ajb)
