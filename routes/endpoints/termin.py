@@ -343,10 +343,10 @@ async def update_(
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         
-        # GCloudTaskService().create_task(payload={
-        #                                             "id":str(obj_updated.id)
-        #                                         }, 
-        #                                 base_url=f'{request.base_url}landrope/termin/task-workflow')
+        GCloudTaskService().create_task(payload={
+                                                    "id":str(obj_updated.id)
+                                                }, 
+                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
