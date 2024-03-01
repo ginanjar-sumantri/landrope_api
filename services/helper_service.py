@@ -591,6 +591,7 @@ class BundleHelper:
                 meta_datas_current["data"].append(input_dict)
                 
             else:
+                meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
                 meta_datas_current["data"].append(input_dict)
             
             meta_data = json.dumps(meta_datas_current)
