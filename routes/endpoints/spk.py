@@ -512,7 +512,7 @@ async def update(id:UUID,
             if wf_current.last_status != WorkflowLastStatusEnum.REJECTED:
                 raise HTTPException(status_code=422, detail="Failed update spk. Detail : Workflow is running")
             
-            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         else:
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
