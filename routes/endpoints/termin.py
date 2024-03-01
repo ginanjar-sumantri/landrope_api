@@ -335,7 +335,7 @@ async def update_(
             if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
                 raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
             
-            wf_updated = WorkflowUpdateSch(**wf_current.dict({"last_status"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         else:
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
@@ -343,10 +343,10 @@ async def update_(
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         
-        GCloudTaskService().create_task(payload={
-                                                    "id":str(obj_updated.id)
-                                                }, 
-                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
+        # GCloudTaskService().create_task(payload={
+        #                                             "id":str(obj_updated.id)
+        #                                         }, 
+        #                                 base_url=f'{request.base_url}landrope/termin/task-workflow')
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
