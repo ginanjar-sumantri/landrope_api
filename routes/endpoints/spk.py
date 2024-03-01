@@ -705,7 +705,7 @@ async def generate_printout(id:UUID|str):
 
     for bb in obj_beban_biayas:
         beban_biaya = SpkDetailPrintOut(**dict(bb))
-        if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini':
+        if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini' and spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
             continue
 
         beban_biaya.no = no
