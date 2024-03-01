@@ -1290,8 +1290,11 @@ async def generate_printout(id:UUID | str):
     current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id)
     for termin in current_termin_histories:
         termin_history = TerminHistoriesSch(**dict(termin))
-        obj_history_tanggal_transaksi = datetime.strptime(str(termin_history.tanggal_transaksi), "%Y-%m-%d")
-        termin_history.str_tanggal_transaksi = obj_history_tanggal_transaksi.strftime("%d-%m-%Y")
+        if termin_history.tanggal_transaksi:
+            obj_history_tanggal_transaksi = datetime.strptime(str(termin_history.tanggal_transaksi), "%Y-%m-%d")
+            termin_history.str_tanggal_transaksi = obj_history_tanggal_transaksi.strftime("%d-%m-%Y")
+        else:
+            termin_history.str_tanggal_transaksi = ""
 
         termin_history.str_amount = "{:,.0f}".format(termin.amount)
         if termin_history.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
