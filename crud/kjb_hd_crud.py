@@ -382,7 +382,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 response, msg = await WorkflowService().create_workflow(body=vars(wf_system_sch))
                 if response is None:
                     raise HTTPException(status_code=422, detail=f"Workflow Failed. Detail : {msg}")
-                new_workflow = Workflow(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
+                new_workflow = Workflow(reference_id=obj_current.id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id, last_status=response.last_status, version=1)
                 db_session.add(new_workflow)
             
         if with_commit:
