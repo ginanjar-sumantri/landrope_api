@@ -11,7 +11,7 @@ from common.ordered import OrderEnumSch
 from common.enum import WorkflowEntityEnum, WorkflowLastStatusEnum
 from crud.base_crud import CRUDBase
 from models.kjb_model import KjbHd, KjbBebanBiaya, KjbHarga, KjbTermin, KjbRekening, KjbPenjual, KjbDt, Workflow
-from models import BundleHd, Rekening
+from models import BundleHd, Rekening, BundleDt
 from schemas.beban_biaya_sch import BebanBiayaCreateSch
 from schemas.kjb_hd_sch import KjbHdCreateSch, KjbHdUpdateSch, KjbHdForTerminByIdSch, KjbHdForCloud
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
@@ -45,7 +45,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                                                                         ).options(selectinload(KjbDt.request_peta_lokasi)
                                                                         ).options(selectinload(KjbDt.hasil_peta_lokasi)
                                                                         ).options(selectinload(KjbDt.bundlehd
-                                                                                        ).options(selectinload(BundleHd.bundledts))
+                                                                                        ).options(selectinload(BundleHd.bundledts
+                                                                                                    ).options(selectinload(BundleDt.dokumen))
+                                                                                    )
                                                                         )
                                                 ).options(selectinload(KjbHd.rekenings)
                                                 ).options(selectinload(KjbHd.hargas
