@@ -20,7 +20,7 @@ from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, Wor
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
                         SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
-                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text)
+                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text, JenisAlashakEnum)
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
 from common.generator import generate_code
@@ -674,6 +674,8 @@ async def generate_printout(id:UUID|str):
     if obj is None:
         raise IdNotFoundException(Spk, id)
     
+    bidang = await crud.bidang.get(id=obj.bidang_id)
+    
     filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_clear.html"
     
     spk_header = SpkPrintOut(**dict(obj))
@@ -764,7 +766,11 @@ async def generate_printout(id:UUID|str):
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(filename)
 
-    akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
+    akta_peralihan:str = ""
+    if bidang.jenis_alashak == JenisAlashakEnum.Girik:
+        akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
+    else:
+        akta_peralihan = "PPJB"
 
     render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
                                       jenisbayar=f'{spk_header.jenis_bayar.value if spk_header.jenis_bayar != JenisBayarEnum.SISA_PELUNASAN else "KURANG BAYAR"}{percentage_value}'.replace("_", " "),
@@ -783,7 +789,7 @@ async def generate_printout(id:UUID|str):
                                       project_name=spk_header.project_name, 
                                       ptsk=spk_header.ptsk_name,
                                       status_il=spk_header.status_il.replace("_"," ") if spk_header.status_il is not None else "",
-                                      hasil_analisa_peta_lokasi=spk_header.analisa,
+                                      hasil_analisa_peta_lokasi=spk_header.analisa.value if spk_header.analisa else '',
                                       data=spk_details,
                                       data_overlap=overlap_details,
                                       worker_name=spk_header.worker_name, 
