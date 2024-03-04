@@ -800,7 +800,7 @@ async def export_excel(param:BidangParameterDownload|None = None,
     df = df.fillna('')
 
     output = BytesIO()
-    df.to_excel(output, index=False, sheet_name=f'SPK')
+    df.to_excel(output, index=False, sheet_name=f'BIDANG')
 
     output.seek(0)
 
