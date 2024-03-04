@@ -894,13 +894,11 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
             inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'DP'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'DP'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
+            inner join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'DP'
+            Where 
+				(select count(*) from spk_kelengkapan_dokumen spk_d
+				inner join bundle_dt b_dt ON b_dt.id = spk_d.bundle_dt_id
+                Where spk_d.spk_id = s.id
                 and b_dt.file_path is null
                 ) <= 0
             and (select count(*) 
@@ -924,13 +922,11 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
             inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PELUNASAN'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'PELUNASAN'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
+            inner join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PELUNASAN'
+            Where 
+				(select count(*) from spk_kelengkapan_dokumen spk_d
+				inner join bundle_dt b_dt ON b_dt.id = spk_d.bundle_dt_id
+                Where spk_d.spk_id = s.id
                 and b_dt.file_path is null
                 ) <= 0
             and (select count(*) 
@@ -950,7 +946,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
             from hasil_peta_lokasi hpl
             inner join bidang b ON b.id = hpl.bidang_id
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
+            inner join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
             Where (select count(*) 
                 from bidang_komponen_biaya kb
                 left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
@@ -979,13 +975,11 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             from hasil_peta_lokasi hpl
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
             inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PAJAK'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'BIAYA_LAIN'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
+            inner join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PAJAK'
+            Where 
+			(select count(*) from spk_kelengkapan_dokumen spk_d
+				inner join bundle_dt b_dt ON b_dt.id = spk_d.bundle_dt_id
+                Where spk_d.spk_id = s.id
                 and b_dt.file_path is null
                 ) <= 0
             Order by id_bidang)
