@@ -144,6 +144,10 @@ class TandaTerimaNotarisDt(TandaTerimaNotarisDtFullBase, table=True):
         return self.dokumen.name
     
     @property
+    def is_multiple(self) -> bool | None:
+        return getattr(getattr(self, 'dokumen', None), 'is_multiple', None)
+    
+    @property
     def nomor_tanda_terima(self) -> str:
         return self.tanda_terima_notaris_hd.nomor_tanda_terima
     
