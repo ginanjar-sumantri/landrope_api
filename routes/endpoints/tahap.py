@@ -123,7 +123,7 @@ async def get_list(
                                     ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
                                     ).outerjoin(TahapDetail, TahapDetail.tahap_id == Tahap.id
                                     ).outerjoin(Bidang, Bidang.id == TahapDetail.bidang_id
-                                    ).outerjoin(Tahap.sub_project)
+                                    ).outerjoin(Tahap.sub_project).distinct()
     
     if filter_list is not None and filter_list == "with_termin":
         query = query.join(Tahap.termins)
