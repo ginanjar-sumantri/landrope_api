@@ -93,6 +93,10 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "id_bidang", None)
     
     @property
+    def id_bidang_lama(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "id_bidang_lama", None)
+    
+    @property
     def luas_bayar(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "luas_bayar", None)
     

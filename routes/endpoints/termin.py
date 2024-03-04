@@ -1442,6 +1442,7 @@ async def get_report(
 
     data = [{"Nomor Memo" : invoice.termin.nomor_memo,
              "Id Bidang" : invoice.id_bidang, 
+             "Id Bidang Lama" : invoice.id_bidang_lama, 
              "Group" : invoice.bidang.group,
              "Pemilik" : invoice.bidang.pemilik_name,
              "Alashak" : invoice.alashak,
