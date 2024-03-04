@@ -118,6 +118,7 @@ async def get_list(
                 Bidang.alashak.ilike(f"%{keyword}%"),
                 Termin.code.ilike(f"%{keyword}%"),
                 Termin.nomor_memo.ilike(f"%{keyword}%"),
+                Payment.pay_to.ilike(f"%{keyword}%"),
             )
         )
 
