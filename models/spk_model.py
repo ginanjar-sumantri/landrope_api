@@ -96,6 +96,10 @@ class Spk(SpkFullBase, table=True):
         return self.bidang.id_bidang
     
     @property
+    def id_bidang_lama(self) -> str | None:
+        return self.bidang.id_bidang_lama
+    
+    @property
     def alashak(self) -> str | None:
         return self.bidang.alashak
     

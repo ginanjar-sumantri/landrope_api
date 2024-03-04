@@ -272,6 +272,7 @@ async def get_report(
     objs = await crud.spk.get_multi_no_page(query=query)
 
     data = [{"Id Bidang" : spk.id_bidang, 
+             "Id Bidang Lama" : spk.id_bidang_lama or '', 
              "Group" : spk.group,
              "Pemilik" : spk.bidang.pemilik_name,
              "Alashak" : spk.alashak,
