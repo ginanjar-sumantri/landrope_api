@@ -1451,7 +1451,7 @@ async def get_report(
              "Luas Bayar" : invoice.bidang.luas_bayar, 
              "Jenis Bayar" : invoice.jenis_bayar,
              "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
-             "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi)), 
+             "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)), 
              "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
              for termin in objs for invoice in termin.invoices]
 
