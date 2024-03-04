@@ -156,7 +156,7 @@ async def get_list(
         query = query.filter(Ptsk.id == ptsk_id)
 
 
-    objs = await crud.tahap.get_multi_paginated(params=params, query=query)
+    objs = await crud.tahap.get_multi_paginated_ordered(params=params, query=query)
 
     return create_response(data=objs)
 
