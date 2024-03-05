@@ -49,7 +49,7 @@ async def report_tim_ukur(start_date:date | None = None, end_date:date|None = No
     query_start_date = ""
     if start_date and end_date:
         query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <=" f"'{end_date}'"
 
     query = f"""
             SELECT
@@ -162,7 +162,7 @@ async def report_tim_analyst(start_date:date | None = None, end_date:date|None =
     query_start_date = ""
     if start_date and end_date:
         query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <=" f"'{end_date}'"
 
     query = f"""
             SELECT
@@ -446,7 +446,7 @@ async def report_summary_analyst(start_date:date|None = None, end_date:date|None
     query_start_date = ""
     if start_date and end_date:
         query_start_date = "WHERE rpl.tanggal_terima_berkas >=" f"'{start_date}'"
-        query_start_date += " AND rpl.tanggal_terima_berkas <" f"'{end_date}'"
+        query_start_date += " AND rpl.tanggal_terima_berkas <=" f"'{end_date}'"
 
     query = f"""
             WITH subquery AS (SELECT
@@ -898,7 +898,7 @@ async def report_kjb_lunas(start_date:date | None = None, end_date:date|None = N
     query_start_date = ""
     if start_date and end_date:
         query_start_date = "WHERE tanggal_kjb >=" f"'{start_date}'"
-        query_start_date += " AND tanggal_kjb <" f"'{end_date}'"
+        query_start_date += " AND tanggal_kjb <=" f"'{end_date}'"
 
     query = f"""
             WITH total_berkas_masuk AS (
