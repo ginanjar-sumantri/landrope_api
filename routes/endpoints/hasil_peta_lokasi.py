@@ -748,8 +748,8 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
 
     query_start_date = ""
     if start_date and end_date:
-        query_start_date = "WHERE hpl.created_at >=" f"'{start_date}'"
-        query_start_date += " AND hpl.created_at <=" f"'{end_date}'"
+        query_start_date = "WHERE date(hpl.created_at) >=" f"'{start_date}'"
+        query_start_date += " AND date(hpl.created_at) <=" f"'{end_date}'"
 
     if project_ids:
         project_id_split = [f"'{str(req)}'" for req in project_ids.split(',')]
