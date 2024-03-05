@@ -46,6 +46,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                 existing_req.updated_at = datetime.utcnow()
                 existing_req.updated_by_id = updated_by_id
                 existing_req.tanggal_terima_berkas = obj_new.tanggal_terima_berkas
+                existing_req.keterangan_req_petlok_id = req.keterangan_req_petlok_id
+                existing_req.luas_ukur = req.luas_ukur
                 db_session.add(existing_req)
             else:
                 new_request_petlok = RequestPetaLokasi(**req.dict(exclude={"tanggal_terima_berkas", "code"}), 

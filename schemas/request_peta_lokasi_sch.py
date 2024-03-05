@@ -57,6 +57,7 @@ class RequestPetaLokasiSch(RequestPetaLokasiFullBase):
     id_bidang:str | None
     bidang_id:UUID | None
     file_path:str | None
+    keterangan_req_petlok_name:str | None
 
 class RequestPetaLokasiHdbyCodeSch(BaseModel):
     code:str | None
