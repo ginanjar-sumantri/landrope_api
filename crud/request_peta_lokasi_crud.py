@@ -65,7 +65,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         query = select(self.model).where(self.model.id == id
                                         ).options(selectinload(RequestPetaLokasi.kjb_dt
                                                             ).options(selectinload(KjbDt.kjb_hd))
-                                        ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi))
+                                        ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi)
+                                        ).options(selectinload(RequestPetaLokasi.keterangan_req_petlok)
+                                                )
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
