@@ -14,7 +14,7 @@ async def dashboard_outstanding():
     db_session = db.session
 
     query = text(f"""
-            with subquery as (select 
+            with subquery as (select
             b.id,
             b.id_bidang,
             b.alashak,
@@ -28,21 +28,22 @@ async def dashboard_outstanding():
             inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
-            inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'DP'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'DP'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
+            inner join bidang b ON b.id = hpl.bidang_id
+			left outer join spk s ON s.bidang_id = b.id
+            Where 
+				(select count(*) from checklist_kelengkapan_dokumen_dt c_dt
+				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
+				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = b.id
+				and c_dt.jenis_bayar = 'DP'
                 and b_dt.file_path is null
-                ) <= 0
+                ) = 0
             and (select count(*) 
                 from spk ss 
                 where ss.jenis_bayar = 'LUNAS' 
                 and ss.is_void != True 
-                and ss.bidang_id = hpl.bidang_id) <= 0
+                and ss.bidang_id = hpl.bidang_id) = 0
+			and s.id is NULL
             UNION
             select 
             b.id,
@@ -58,21 +59,22 @@ async def dashboard_outstanding():
             inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
-            inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PELUNASAN'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'PELUNASAN'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
+            inner join bidang b ON b.id = hpl.bidang_id
+			left outer join spk s ON s.bidang_id = b.id
+            Where 
+				(select count(*) from checklist_kelengkapan_dokumen_dt c_dt
+				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
+				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                Where c_hd.bidang_id = b.id
+				and c_dt.jenis_bayar = 'PELUNASAN'
                 and b_dt.file_path is null
-                ) <= 0
+                ) = 0
             and (select count(*) 
                 from spk ss 
                 where ss.jenis_bayar = 'LUNAS' 
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) <= 0
+			and s.id is NULL
             UNION
             select 
             b.id,
@@ -85,7 +87,7 @@ async def dashboard_outstanding():
             'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
             from hasil_peta_lokasi hpl
             inner join bidang b ON b.id = hpl.bidang_id
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
+            left outer join spk s ON s.bidang_id = b.id
             Where (select count(*) 
                 from bidang_komponen_biaya kb
                 left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
@@ -101,6 +103,7 @@ async def dashboard_outstanding():
                 Where c_hd.bidang_id = hpl.bidang_id
                 and b_dt.file_path is null
                 ) <= 0
+			and s.id is NULL
             UNION
             select 
             b.id,
@@ -113,16 +116,9 @@ async def dashboard_outstanding():
             'PAJAK' as jenis_bayar
             from hasil_peta_lokasi hpl
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
-            inner join bidang b ON b.id = hpl.bidang_id 
-            left outer join spk s ON s.bidang_id = hpl.bidang_id and s.jenis_bayar = 'PAJAK'
-            Where s.id is null
-            and (select count(*) from checklist_kelengkapan_dokumen_hd c_hd
-                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-                and c_dt.jenis_bayar = 'BIAYA_LAIN'
-                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-                Where c_hd.bidang_id = hpl.bidang_id
-                and b_dt.file_path is null
-                ) <= 0
+            inner join bidang b ON b.id = hpl.bidang_id
+			left outer join spk s ON s.bidang_id = b.id
+			Where s.id is NULL
             Order by id_bidang),
 
 subquery_hasil_petlok as (
