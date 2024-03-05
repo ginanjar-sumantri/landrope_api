@@ -35,7 +35,7 @@ async def dashboard_outstanding():
 				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
 				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
                 Where c_hd.bidang_id = b.id
-				and c_dt.jenis_bayar = 'DP'
+				and c_dt.jenis_bayar IN ('DP', 'UTJ')
                 and b_dt.file_path is null
                 ) = 0
             and (select count(*) 
@@ -66,7 +66,7 @@ async def dashboard_outstanding():
 				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
 				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
                 Where c_hd.bidang_id = b.id
-				and c_dt.jenis_bayar = 'PELUNASAN'
+				and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
                 and b_dt.file_path is null
                 ) = 0
             and (select count(*) 
