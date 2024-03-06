@@ -774,13 +774,12 @@ async def generate_printout(id:UUID|str):
             overlap_details.append(overlap)
 
     rekening:str = ""
-    if obj.jenis_bayar != JenisBayarEnum.PAJAK:
-        rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
-        for r in rekenings:
-            rek = SpkRekeningPrintOut(**dict(r))
-            rekening += f"{rek.rekening}, "
-        
-        rekening = rekening[0:-2]
+    rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
+    for r in rekenings:
+        rek = SpkRekeningPrintOut(**dict(r))
+        rekening += f"{rek.rekening}, "
+    
+    rekening = rekening[0:-2]
 
     
     env = Environment(loader=FileSystemLoader("templates"))
