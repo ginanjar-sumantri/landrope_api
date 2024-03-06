@@ -188,7 +188,7 @@ class Termin(TerminFullBase, table=True):
 class TerminBayarBase(SQLModel):
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
     payment_method:PaymentMethodEnum = Field(nullable=False)
-    rekening_id:UUID = Field(nullable=False, foreign_key="rekening.id")
+    rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
     amount:Decimal = Field(nullable=False, default=0)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
