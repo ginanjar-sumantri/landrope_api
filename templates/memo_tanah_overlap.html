@@ -344,7 +344,8 @@
               <tr>
                 <td style="font-weight: bold; font-size: 19px">
                   {{ loop.index }}. {{item5.payment_method}} Senilai Rp
-                  {{item5.amountExt}},- a.n {{item5.nama_pemilik_rekening}},
+                  {{item5.amountExt}}{% if item.nama_pemilik_rekening != '' %}
+                  ,- a.n {% endif %} {{item5.nama_pemilik_rekening}},
                   {{item5.bank_rekening}} {{item5.nomor_rekening}}
                 </td>
               </tr>

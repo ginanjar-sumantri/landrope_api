@@ -1360,16 +1360,8 @@ async def generate_printout(id:UUID | str):
 
     
     no = 1
-    obj_termin_bayars = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
-    obj_termin_bayar = []
-    for termin_bayar in obj_termin_bayars:
-        termin_b = TerminBayarForPrintout(**termin_bayar.dict())
-        termin_b.nama_pemilik_rekening = termin_b.nama_pemilik_rekening or ''
-        termin_b.nomor_rekening = termin_b.nomor_rekening or ''
-        termin_b.bank_rekening = termin_b.bank_rekening or ''
-        obj_termin_bayar.append(termin_b)
-
-
+    obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
+    
     filename = "memo_tanah_overlap_ext.html" if overlap_exists else "memo_tanah_ext.html"
     env = Environment(loader=FileSystemLoader("templates"))
     template = env.get_template(filename)
