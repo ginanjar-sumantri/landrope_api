@@ -244,14 +244,14 @@ async def update_(
     else:
         jns_byr = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
 
-    if sch.file:
-        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
-        try:
-            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-        except ZeroDivisionError as e:
-            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+    # if sch.file:
+    #     file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+    #     try:
+    #         file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+    #     except ZeroDivisionError as e:
+    #         raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
-        sch.file_upload_path = file_upload_path
+    #     sch.file_upload_path = file_upload_path
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -1416,6 +1416,21 @@ async def generate_printout(id:UUID | str):
         raise HTTPException(status_code=500, detail="Failed generate document")
     
     return file_path
+
+async def merge_memo_signed(id:UUID | str):
+
+    db_session = db.session
+    termin = await crud.termin.get(id=id)
+    details = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+
+    for detail in details:
+        bidang = await crud.bidang.get(id=detail.bidang_id)
+        bundle = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
+        if bundle:
+            await BundleHelper().merge_memo_signed(bundle=bundle, code=f"{termin.code}-{str(termin.updated_at.date())}", tanggal=termin.updated_at.date(), file_path=termin.file_upload_path, worker_id=termin.updated_by_id, db_session=db_session)
+    
+    await db_session.commit()
+    
 
 @router.post("/export/excel")
 async def get_report(
