@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, UploadFile, Request
+from fastapi import APIRouter, status, Depends, UploadFile, Request, HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params
 from models.pemilik_model import Pemilik, Kontak, Rekening
@@ -28,6 +28,10 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
+
+    pemilik_current = await crud.pemilik.get_by_name(name=sch.name)
+    if pemilik_current:
+        raise HTTPException(status_code=422, detail="Nama pemilik tersebut sudah ada")
         
     new_obj = await crud.pemilik.create_pemilik(obj_in=sch, created_by_id=current_worker.id)
     
@@ -69,6 +73,10 @@ async def update(
 
     if not obj_current:
         raise IdNotFoundException(Pemilik, id)
+    
+    pemilik_current = await crud.pemilik.get_by_name(name=sch.name)
+    if pemilik_current:
+        raise HTTPException(status_code=422, detail="Nama pemilik tersebut sudah ada")
     
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
 

@@ -46,6 +46,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                 existing_req.updated_at = datetime.utcnow()
                 existing_req.updated_by_id = updated_by_id
                 existing_req.tanggal_terima_berkas = obj_new.tanggal_terima_berkas
+                existing_req.keterangan_req_petlok_id = req.keterangan_req_petlok_id
+                existing_req.luas_ukur = req.luas_ukur
                 db_session.add(existing_req)
             else:
                 new_request_petlok = RequestPetaLokasi(**req.dict(exclude={"tanggal_terima_berkas", "code"}), 
@@ -63,7 +65,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         query = select(self.model).where(self.model.id == id
                                         ).options(selectinload(RequestPetaLokasi.kjb_dt
                                                             ).options(selectinload(KjbDt.kjb_hd))
-                                        ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi))
+                                        ).options(selectinload(RequestPetaLokasi.hasil_peta_lokasi)
+                                        ).options(selectinload(RequestPetaLokasi.keterangan_req_petlok)
+                                                )
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()

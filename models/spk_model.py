@@ -26,6 +26,7 @@ class SpkBase(SQLModel):
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
     file_path:str|None = Field(nullable=True)
+    file_upload_path: str | None = Field(nullable = True)
     
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
@@ -94,6 +95,10 @@ class Spk(SpkFullBase, table=True):
     @property
     def id_bidang(self) -> str | None:
         return self.bidang.id_bidang
+    
+    @property
+    def id_bidang_lama(self) -> str | None:
+        return self.bidang.id_bidang_lama
     
     @property
     def alashak(self) -> str | None:

@@ -73,7 +73,7 @@ async def download_file(id:UUID):
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.alashak_kjb_dt)
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
     
     ext = obj_current.file_path.split('.')[-1]
 

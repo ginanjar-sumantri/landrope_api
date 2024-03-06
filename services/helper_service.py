@@ -470,7 +470,20 @@ class BundleHelper:
         bytes_data = base64.b64decode(base64_str)
         file_type = filetype.guess(bytes_data)
         file_extension = str(file_type.extension)
-        file_name = f"Bundle-{key_value}-{uuid.uuid4().hex}"
+        file_name = f"Bundle-{key_value.replace('/', '_')}-{uuid.uuid4().hex}"
+        binary_io_data = io.BytesIO(bytes_data)
+
+        file = UploadFile(file=binary_io_data, filename=f"{file_name}.{file_extension}")
+
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{file_name}")
+
+        return file_path
+    
+    async def upload_to_storage_from_base64(self, base64_str:str, file_name:str) -> str | None:
+
+        bytes_data = base64.b64decode(base64_str)
+        file_type = filetype.guess(bytes_data)
+        file_extension = str(file_type.extension)
         binary_io_data = io.BytesIO(bytes_data)
 
         file = UploadFile(file=binary_io_data, filename=f"{file_name}.{file_extension}")
@@ -508,8 +521,7 @@ class BundleHelper:
             
             await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=worker_id)
-
-            
+          
     async def merge_kesepakatan_jual_beli(self, bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession, pemilik_id:UUID|None = None):
 
         #update bundle alashak for default if metadata not exists
@@ -531,9 +543,7 @@ class BundleHelper:
                 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
                             db_session=db_session, worker_id=worker_id)
-    
-
-    
+      
     async def merge_hasil_lokasi(self, bundle_hd_id:UUID, worker_id:UUID, hasil_peta_lokasi_id:UUID, db_session:AsyncSession|None = None):
         
         db_session_ = db_session or db.session
