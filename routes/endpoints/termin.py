@@ -243,6 +243,15 @@ async def update_(
         jns_byr = JenisBayarEnum.UTJ.value
     else:
         jns_byr = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
+
+    if sch.file:
+        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+        try:
+            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+        except ZeroDivisionError as e:
+            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+        
+        sch.file_upload_path = file_upload_path
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -1398,7 +1407,7 @@ async def generate_printout(id:UUID | str):
     file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
 
     try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}")
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}", is_public=True)
         obj_updated = TerminUpdateSch(**obj_current.dict())
         obj_updated.file_path = file_path
         await crud.termin.update(obj_current=obj_current, obj_new=obj_updated)
@@ -1563,6 +1572,27 @@ bulan_dict = {
     "November": "November",
     "December": "Desember"
 }
+
+@router.get("/download-file/{id}")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
+
+    obj_current = await crud.termin.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Termin, id)
+    if obj_current.file_upload_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_upload_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+    
+    ext = obj_current.file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.code}.{ext}"
+    return response
 
 #region not use
 # @router.get("/print-out/{id}")

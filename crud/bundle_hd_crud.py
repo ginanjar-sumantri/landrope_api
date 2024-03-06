@@ -37,8 +37,12 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
 
         return response.scalar_one_or_none()
     
-    async def create_and_generate(self, *, obj_in: BundleHdCreateSch | BundleHd, created_by_id : UUID | str | None = None, 
-                     db_session : AsyncSession | None = None) -> BundleHd :
+    async def create_and_generate(self, *, 
+                                obj_in: BundleHdCreateSch | BundleHd, 
+                                created_by_id : UUID | str | None = None, 
+                                db_session : AsyncSession | None = None,
+                                with_commit : bool | None = True) -> BundleHd :
+        
         db_session = db_session or db.session
         db_obj = self.model.from_orm(obj_in) #type ignore
         db_obj.created_at = datetime.utcnow()
@@ -47,7 +51,7 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
             db_obj.created_by_id = created_by_id
         
         try:
-            db_obj.code = await generate_code_bundle(planing_id=db_obj.planing_id)
+            db_obj.code = await generate_code_bundle(planing_id=db_obj.planing_id, db_session=db_session, with_commit=with_commit)
 
             dokumens = await crud.dokumen.get_all()
             for i in dokumens:
@@ -59,13 +63,16 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
                 db_obj.bundledts.append(bundle_dt)
 
             db_session.add(db_obj)
-            await db_session.commit()
+
+            if with_commit:
+                await db_session.commit()
+                await db_session.refresh(db_obj)
 
         except exc.IntegrityError:
             await db_session.rollback()
             raise HTTPException(status_code=409, detail="Resource already exists")
         
-        await db_session.refresh(db_obj)
+        
         
         return db_obj
     

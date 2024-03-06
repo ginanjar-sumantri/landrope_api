@@ -31,6 +31,7 @@ class TerminBase(SQLModel):
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
+    file_upload_path:str | None = Field(nullable=True)
 
 
 class TerminFullBase(BaseUUIDModel, TerminBase):

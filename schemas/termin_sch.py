@@ -46,6 +46,7 @@ class TerminByIdUtjKhususSch(TerminFullBase):
 class TerminUpdateSch(TerminBase):
     termin_bayars:list[TerminBayarExtSch]|None
     invoices:list[InvoiceExtSch]|None
+    file: str | None 
 
 class TerminByIdForPrintOut(SQLModel):
     id:Optional[UUID]

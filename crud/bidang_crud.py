@@ -205,7 +205,36 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         self, *, idbidang_lama: str, db_session: AsyncSession | None = None
     ) -> Bidang:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama))
+        query = select(Bidang).where(Bidang.id_bidang_lama == idbidang_lama)
+        # query = query.options(selectinload(Bidang.pemilik)
+        #                 ).options(selectinload(Bidang.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
+        #                 ).options(selectinload(Bidang.jenis_surat)
+        #                 ).options(selectinload(Bidang.kategori)
+        #                 ).options(selectinload(Bidang.kategori_sub)
+        #                 ).options(selectinload(Bidang.kategori_proyek)
+        #                 ).options(selectinload(Bidang.penampung)
+        #                 ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+        #                 ).options(selectinload(Bidang.manager)
+        #                 ).options(selectinload(Bidang.sales)
+        #                 ).options(selectinload(Bidang.notaris)
+        #                 ).options(selectinload(Bidang.bundlehd)
+        #                 ).options(selectinload(Bidang.hasil_peta_lokasi
+        #                                     ).options(selectinload(HasilPetaLokasi.kjb_dt))
+        #                 ).options(selectinload(Bidang.sub_project)
+        #                 ).options(selectinload(Bidang.invoices
+        #                         ).options(selectinload(Invoice.payment_details)
+        #                         ).options(selectinload(Invoice.termin))
+        #                 ).options(selectinload(Bidang.overlaps)
+        #                 ).options(selectinload(Bidang.komponen_biayas
+        #                         ).options(selectinload(BidangKomponenBiaya.bidang)
+        #                         ).options(selectinload(BidangKomponenBiaya.invoice_details
+        #                                     ).options(selectinload(InvoiceDetail.invoice))
+        #                         )
+        #                 ).options(selectinload(Bidang.tahap_details
+        #                                     ).options(selectinload(TahapDetail.tahap))
+        #                 ).options(selectinload(Bidang.bidang_histories)
+        #                 )
+        obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
     
     async def get_kulit_bintang(

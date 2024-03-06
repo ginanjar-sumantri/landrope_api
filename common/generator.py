@@ -43,10 +43,10 @@ async def generate_id_bidang(planing_id:UUID | str,
     id_bidang = f"{code_section}{code_project}{code_desa}{number}"
     return id_bidang
 
-async def generate_code_bundle(planing_id:UUID | None) -> str:
+async def generate_code_bundle(planing_id:UUID | None, db_session : AsyncSession | None = None, with_commit: bool | None = True) -> str:
     if planing_id is not None:
         planing = await crud.planing.get_by_id(id=planing_id)
-        bundle_code = await generate_code(entity=CodeCounterEnum.Bundle)
+        bundle_code = await generate_code(entity=CodeCounterEnum.Bundle, db_session=db_session, with_commit=with_commit)
         project_code = planing.project.code
         desa_code = planing.desa.code
 
