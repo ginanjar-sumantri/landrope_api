@@ -163,6 +163,26 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_by_bidang_id_jenis_bayar(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  jenis_bayar:JenisBayarEnum | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Spk | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk).where(and_(
+                        Spk.bidang_id == bidang_id, 
+                        Spk.jenis_bayar == jenis_bayar,
+                        Spk.is_void != True
+                        )
+                        )
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
         
     async def get_multi_history_by_bidang_id(self, 
                   *, 
