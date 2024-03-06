@@ -31,6 +31,7 @@ class TerminBase(SQLModel):
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
+    file_upload_path:str | None = Field(nullable=True)
 
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
@@ -187,7 +188,7 @@ class Termin(TerminFullBase, table=True):
 class TerminBayarBase(SQLModel):
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
     payment_method:PaymentMethodEnum = Field(nullable=False)
-    rekening_id:UUID = Field(nullable=False, foreign_key="rekening.id")
+    rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
     amount:Decimal = Field(nullable=False, default=0)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
@@ -211,15 +212,15 @@ class TerminBayar(TerminBayarFullBase, table=True):
 
     @property
     def nama_pemilik_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "nama_pemilik_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "nama_pemilik_rekening", '')
     
     @property
     def bank_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "bank_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "bank_rekening", '')
     
     @property
     def nomor_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "nomor_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "nomor_rekening", '')
     
     @property
     def amountExt(self) -> str|None:

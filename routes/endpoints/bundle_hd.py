@@ -1,8 +1,9 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends
+from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_, or_
+from sqlmodel import select, and_, or_, update
 from models.bundle_model import BundleHd
 from models.worker_model import Worker
 from models.bidang_model import Bidang
@@ -10,10 +11,16 @@ from models.kjb_model import KjbHd, KjbDt
 from models.planing_model import Planing
 from schemas.bundle_hd_sch import (BundleHdSch, BundleHdCreateSch, BundleHdUpdateSch, BundleHdByIdSch)
 from schemas.bundle_dt_sch import BundleDtCreateSch
+from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from io import BytesIO
+from shapely import wkt, wkb
+from itertools import islice
 import crud
 import json
 
@@ -78,7 +85,7 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(BundleHd, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[BundleHdSch])
-async def update(id:UUID, 
+async def update_(id:UUID, 
                  sch:BundleHdUpdateSch,
                  current_worker: Worker = Depends(crud.worker.get_active_worker)):
     
@@ -132,4 +139,80 @@ async def regenerate(id:UUID,
     
     return create_response(data=obj_updated)
 
-   
+@router.get("/generate/bundle/hd")
+async def generate_bundle(start:int, size:int):
+
+    """Get an object by id"""
+
+    db_session = db.session
+    notes = []
+
+    db_session_a = db.session
+
+    query = "select * from import_id_bidang_lama"
+
+    response = await db_session_a.execute(query)
+    result = response.all()
+    counter:int = 1
+
+    for id_bidang in islice(result, start, None):
+        if counter == size:
+            break
+        
+        id_bidang_lama = id_bidang.id_bidang_lama
+        if id_bidang_lama is None:
+            counter += 1
+            continue
+        
+        bidang = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=id_bidang_lama.replace(' ', ''))
+        if bidang is None:
+            counter += 1
+            bidang_not_found = {"id_bidang" : id_bidang_lama, "note" : "Bidang Not Found"}
+            notes.append(bidang_not_found)
+            continue
+
+        if bidang.bundle_hd_id:
+            bidang_has_bundle = {"id_bidang" : id_bidang_lama, "note" : "Bidang Has Bundle"}
+            notes.append(bidang_has_bundle)
+            counter += 1
+            continue
+
+        bundle_sch = BundleHdCreateSch(planing_id=bidang.planing_id, keyword=bidang.alashak)
+        bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch, db_session=db_session, with_commit=False)
+
+        update_query = update(Bidang).where(Bidang.id == bidang.id).values(bundle_hd_id=bundle.id)
+        await db_session.execute(update_query)
+
+        bidang_has_create_bundle = {"id_bidang" : id_bidang_lama, "note" : "Bidang Has Create Bundle"}
+        notes.append(bidang_has_create_bundle)
+
+        counter += 1
+        
+    
+    wb = Workbook()
+    ws = wb.active
+
+    header_string = ["Id Bidang", "Note"]
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=1, column=idx + 1, value=val).font = Font(bold=True)
+    
+    x = 1
+    for row_data in notes:
+        x += 1
+        ws.cell(row=x, column=1, value=row_data["id_bidang"])
+        ws.cell(row=x, column=2, value=row_data["note"])
+    
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
+
+    await db_session.commit()
+    
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=Status Bidang Generate Bundle.xlsx"})

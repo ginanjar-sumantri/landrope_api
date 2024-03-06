@@ -12,7 +12,7 @@ class TerminBayarCreateSch(TerminBayarBase):
 class TerminBayarExtSch(SQLModel):
     id:UUID|None
     payment_method:PaymentMethodEnum
-    rekening_id:UUID
+    rekening_id:UUID|None
     amount:Decimal
 
 
