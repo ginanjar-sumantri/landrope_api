@@ -398,6 +398,8 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
     obj_return.created_name = obj.created_name
     obj_return.updated_name = obj.updated_name
+    obj_return.step_name_workflow = obj.step_name_workflow
+    obj_return.status_workflow = obj.status_workflow
 
     return obj_return
 
@@ -444,14 +446,22 @@ async def update(id:UUID,
     
     sch.is_void = obj_current.is_void
 
-    if sch.file:
-        file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
-        try:
-            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-        except ZeroDivisionError as e:
-            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+    # if sch.file:
+    #     file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
+    #     try:
+    #         file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+    #     except ZeroDivisionError as e:
+    #         raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
-        sch.file_upload_path = file_upload_path
+    #     sch.file_upload_path = file_upload_path
+
+    #     bundle = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
+    #     if bundle:
+    #         await BundleHelper().merge_spk_signed(bundle=bundle, 
+    #                                               code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
+    #                                               tanggal=obj_current.created_at.date(), 
+    #                                               file_path=obj_current.file_upload_path, 
+    #                                               worker_id=obj_current.updated_by_id, db_session=db_session)
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
