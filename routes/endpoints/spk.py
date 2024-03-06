@@ -443,6 +443,15 @@ async def update(id:UUID,
         await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
     
     sch.is_void = obj_current.is_void
+
+    if sch.file:
+        file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
+        try:
+            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+        except ZeroDivisionError as e:
+            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+        
+        sch.file_upload_path = file_upload_path
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
@@ -815,7 +824,8 @@ async def generate_printout(id:UUID|str):
     file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
 
     try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}")
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}", is_public=True)
+
         obj_updated = SpkUpdateSch(**obj_current.dict())
         obj_updated.file_path = file_path
         await crud.spk.update(obj_current=obj_current, obj_new=obj_updated)
@@ -933,3 +943,24 @@ async def create_workflow(payload:Dict):
         await db_session.commit()
 
     return {"message" : "successfully"}
+
+@router.get("/download-file/{id}")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
+
+    obj_current = await crud.termin.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Spk, id)
+    if obj_current.file_upload_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_upload_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+    
+    ext = obj_current.file_path.split('.')[-1]
+
+    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.code}.{ext}"
+    return response

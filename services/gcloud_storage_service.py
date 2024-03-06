@@ -83,9 +83,10 @@ class GCStorageService:
         bucket = self.storage_client.get_bucket(self.bucket_name)
         file_path = await self.path_and_rename_dokumen(upload_file=file, file_name=file_name)
         blob = bucket.blob(file_path)
-
         blob.upload_from_file(file_obj=file.file,
                               content_type=file.content_type)
+        if is_public:
+            blob.make_public()
 
         return file_path
     

@@ -56,6 +56,7 @@ class SpkByIdSch(SpkFullBase):
 class SpkUpdateSch(SpkBase):
     spk_beban_biayas:list[BidangKomponenBiayaExtSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenUpdateExtSch] | None
+    file: str | None
 
 
 class SpkPrintOut(SQLModel):
