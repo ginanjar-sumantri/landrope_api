@@ -923,7 +923,7 @@ async def create_workflow(payload:Dict):
         bidang = await crud.bidang.get(id=obj.bidang_id)
         bundle = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
         if bundle:
-            await BundleHelper().merge_spk(bundle=bundle, code=obj.code, tanggal=obj.created_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
+            await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
             with_commit = True
 
     public_url = await GCStorageService().public_url(file_path=obj.file_path)
