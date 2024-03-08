@@ -8,14 +8,14 @@ from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
-from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch
+from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch
 from schemas.giro_sch import GiroSch, GiroCreateSch, GiroUpdateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -72,6 +72,7 @@ async def create(
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False, db_session=db_session)
     
     bidang_ids = []
+    invoice_ids = []
     for dt in sch.details:
         invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
         if (invoice_current.invoice_outstanding - dt.amount) < 0:
@@ -81,15 +82,17 @@ async def create(
         #     await bidang_komponen_biaya_add_pay_update_is_paid()
         
         bidang_ids.append(invoice_current.bidang_id)
+        invoice_ids.append(invoice_current.id)
 
         detail = PaymentDetailCreateSch(payment_id=new_obj.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False, allocation_date=dt.allocation_date)
         await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
 
-    background_task.add_task(bidang_update_status, bidang_ids)
-
     new_obj = await crud.payment.get_by_id(id=new_obj.id)
+
+    background_task.add_task(bidang_update_status, bidang_ids)
+    background_task.add_task(invoice_update_payment_status, new_obj.id)
     
     return create_response(data=new_obj)
 
@@ -241,10 +244,12 @@ async def update(id:UUID, sch:PaymentUpdateSch,
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
-
-    background_task.add_task(bidang_update_status, bidang_ids)
     
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
+
+    background_task.add_task(bidang_update_status, bidang_ids)
+    background_task.add_task(invoice_update_payment_status, obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
@@ -395,7 +400,6 @@ async def get_list(
     
     return create_response(data=objs)
 
-
 @router.get("/search/invoiceExt", response_model=GetResponseBaseSch[list[InvoiceSearchSch]])
 async def get_list(
                 keyword:str = None,
@@ -491,6 +495,29 @@ async def bidang_update_status(bidang_ids:list[UUID]):
             bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
 
+async def invoice_update_payment_status(payment_id:UUID):
+    
+    db_session = db.session
+    payment_current = await crud.payment.get_by_id(id=payment_id)
+    payment_details_current = await crud.payment_detail.get_by_payment_id(payment_id=payment_id)
+
+    for payment_detail in payment_details_current:
+        if payment_detail.is_void:
+            payment_detais = await crud.payment_detail.get_multi_payment_actived_by_invoice_id()
+            continue
+        else:
+            invoice_current = await crud.invoice.get(id=payment_detail.invoice_id)
+            invoice_updated = InvoiceUpdateSch.from_orm(invoice_current)
+            if payment_current.tanggal_buka is None and payment_current.tanggal_cair is None:
+                invoice_updated.payment_status = None
+            if payment_current.tanggal_buka:
+                invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
+            if payment_current.tanggal_cair:
+                invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
+        
+        await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated, db_session=db_session, with_commit=False)
+    
+    await db_session.commit()
 
 
 

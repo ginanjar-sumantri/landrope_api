@@ -408,7 +408,7 @@ class BundleHelper:
                                                         db_session=db_session)
 
     async def get_key_value(self, dokumen_name:str, bidang_id:UUID) -> str | None:
-        value = None
+        value = ''
         bundle_dt_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name=dokumen_name, bidang_id=bidang_id)
         if bundle_dt_meta_data:
             if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":

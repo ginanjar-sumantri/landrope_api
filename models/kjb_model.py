@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from models.workflow_model import Workflow
 from common.enum import (CategoryEnum, KategoriPenjualEnum, JenisAlashakEnum, 
                          PosisiBidangEnum, SatuanBayarEnum, SatuanHargaEnum, 
-                         JenisBayarEnum, StatusPetaLokasiEnum)
+                         JenisBayarEnum, StatusPetaLokasiEnum, WorkflowLastStatusEnum)
 from common.rounder import RoundTwo
 from decimal import Decimal
 from datetime import datetime, date
@@ -328,6 +328,14 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def keterangan_req_petlok_name(self) -> str | None:
         return getattr(getattr(getattr(self, "request_peta_lokasi", None), "keterangan_req_petlok", None), "name", None)
+    
+    @property
+    def step_name_workflow(self) -> str | None:
+        return getattr(getattr(self, 'kjb_hd', None), 'step_name_workflow', None)
+    
+    @property
+    def status_workflow(self) -> WorkflowLastStatusEnum | None:
+        return getattr(getattr(self, 'kjb_hd', None), 'status_workflow', None)
 
 ##########################################################################
 
