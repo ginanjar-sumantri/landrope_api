@@ -162,6 +162,10 @@ class StatusPembebasanEnum(str, Enum):
     PEMBAYARAN_LUNAS = "PEMBAYARAN_LUNAS"
     PEMBAYARAN_PELUNASAN = "PEMBAYARAN_PELUNASAN"
 
+class PaymentStatusEnum(str, Enum):
+    BUKA_GIRO = "BUKA_GIRO"
+    CAIR_GIRO = "CAIR_GIRO"
+
 jenis_bayar_to_text = {
     JenisBayarEnum.UTJ : "UTJ",
     JenisBayarEnum.UTJ_KHUSUS : "UTJ",

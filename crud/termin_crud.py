@@ -81,7 +81,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         tr.created_at,
                         tr.tanggal_transaksi,
                         tr.tanggal_rencana_transaksi,
-                        (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(b.luas_bayar) || 'M2)' ) as jenis_bayar_ext,
+                        (tr.jenis_bayar || ' ' || Count(i.id) || 'BID' || ' (' || 'L Bayar' || ' ' || Sum(COALESCE(b.luas_bayar, 0)) || 'M2)' ) as jenis_bayar_ext,
                         t.nomor_tahap,
                         tr.nomor_memo,
                         SUM(i.amount) as amount,

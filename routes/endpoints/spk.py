@@ -60,6 +60,11 @@ async def create(
     
     # if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
     #     await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
+        
+    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+        if spk_exists:
+            raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
@@ -175,18 +180,20 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
-                start_date:date|None = None,
-                end_date:date|None = None,
-                outstanding:bool|None = False,
-                params: Params=Depends(), 
-                order_by:str = None, 
-                keyword:str = None, 
-                filter_query:str=None,
+                start_date: date | None = None,
+                end_date: date | None = None,
+                outstanding: bool | None = False,
+                params: Params = Depends(), 
+                order_by: str | None = None, 
+                keyword: str | None = None, 
+                filter_query: str | None = None,
+                filter_list: str | None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id)
+    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id
+                    ).join()
     
     if keyword:
         query = query.filter(
@@ -398,6 +405,8 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
     obj_return.created_name = obj.created_name
     obj_return.updated_name = obj.updated_name
+    obj_return.step_name_workflow = obj.step_name_workflow
+    obj_return.status_workflow = obj.status_workflow
 
     return obj_return
 
@@ -444,14 +453,22 @@ async def update(id:UUID,
     
     sch.is_void = obj_current.is_void
 
-    if sch.file:
-        file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
-        try:
-            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-        except ZeroDivisionError as e:
-            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+    # if sch.file:
+    #     file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
+    #     try:
+    #         file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+    #     except ZeroDivisionError as e:
+    #         raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
-        sch.file_upload_path = file_upload_path
+    #     sch.file_upload_path = file_upload_path
+
+    #     bundle = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
+    #     if bundle:
+    #         await BundleHelper().merge_spk_signed(bundle=bundle, 
+    #                                               code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
+    #                                               tanggal=obj_current.created_at.date(), 
+    #                                               file_path=obj_current.file_upload_path, 
+    #                                               worker_id=obj_current.updated_by_id, db_session=db_session)
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
@@ -764,13 +781,12 @@ async def generate_printout(id:UUID|str):
             overlap_details.append(overlap)
 
     rekening:str = ""
-    if obj.jenis_bayar != JenisBayarEnum.PAJAK:
-        rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
-        for r in rekenings:
-            rek = SpkRekeningPrintOut(**dict(r))
-            rekening += f"{rek.rekening}, "
-        
-        rekening = rekening[0:-2]
+    rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
+    for r in rekenings:
+        rek = SpkRekeningPrintOut(**dict(r))
+        rekening += f"{rek.rekening}, "
+    
+    rekening = rekening[0:-2]
 
     
     env = Environment(loader=FileSystemLoader("templates"))
@@ -824,7 +840,7 @@ async def generate_printout(id:UUID|str):
     file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
 
     try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}", is_public=True)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')-{str(obj_current.id)}}", is_public=True)
 
         obj_updated = SpkUpdateSch(**obj_current.dict())
         obj_updated.file_path = file_path
@@ -914,7 +930,7 @@ async def create_workflow(payload:Dict):
         bidang = await crud.bidang.get(id=obj.bidang_id)
         bundle = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
         if bundle:
-            await BundleHelper().merge_spk(bundle=bundle, code=obj.code, tanggal=obj.created_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
+            await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
             with_commit = True
 
     public_url = await GCStorageService().public_url(file_path=obj.file_path)

@@ -48,6 +48,8 @@ class SpkByIdSch(SpkFullBase):
     bidang:BidangForSPKByIdSch | None
     created_name:str|None
     updated_name:str|None
+    status_workflow:str|None
+    step_name_workflow:str|None
 
     spk_beban_biayas:list[BidangKomponenBiayaSch] | None
     spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenSch] | None

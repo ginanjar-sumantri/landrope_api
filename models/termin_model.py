@@ -212,15 +212,15 @@ class TerminBayar(TerminBayarFullBase, table=True):
 
     @property
     def nama_pemilik_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "nama_pemilik_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "nama_pemilik_rekening", '')
     
     @property
     def bank_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "bank_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "bank_rekening", '')
     
     @property
     def nomor_rekening(self) -> str|None:
-        return getattr(getattr(self, "rekening", None), "nomor_rekening", None)
+        return getattr(getattr(self, "rekening", ''), "nomor_rekening", '')
     
     @property
     def amountExt(self) -> str|None:

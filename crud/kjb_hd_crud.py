@@ -20,7 +20,7 @@ from services.gcloud_storage_service import GCStorageService
 from services.history_service import HistoryService
 from services.workflow_service import WorkflowService
 from typing import Any, Dict, Generic, List, Type, TypeVar
-from uuid import UUID
+from uuid import UUID, uuid4
 from datetime import datetime
 from sqlalchemy import exc
 import crud
@@ -153,7 +153,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             db_obj.penjuals.append(penjual)
 
         if obj_in.file:
-            db_obj.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_in.file, file_name=obj_in.code.replace('/', '_'))
+            db_obj.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_in.file, file_name=f"{obj_in.code.replace('/', '_')}-{str(db_obj.id)}")
 
         db_session.add(db_obj)
 
@@ -220,7 +220,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             obj_current.updated_by_id = updated_by_id
         
         if obj_new.file:
-            obj_current.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_new.file, file_name=obj_new.code.replace('/', '_'))
+            obj_current.file_path = await GCStorageService().base64ToFilePath(base64_str=obj_new.file, file_name=f"{obj_current.code.replace('/', '_')}-{str(obj_current.id)}")
         
         db_session.add(obj_current)
 
