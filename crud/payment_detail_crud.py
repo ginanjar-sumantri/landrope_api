@@ -36,6 +36,14 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
 
         return response.fetchall()
     
+    async def get_by_payment_id(self, *, payment_id: UUID | str, db_session: AsyncSession | None = None) -> list[PaymentDetail]:
+        
+        db_session = db_session or db.session
+        query = select(PaymentDetail).where(PaymentDetail.payment_id == payment_id)
+
+        response = await db_session.execute(query)
+        return response.scalars().all()
+    
     async def get_payment_not_in_by_ids(self, *, list_ids: List[UUID | str], payment_id:UUID, db_session : AsyncSession | None = None
                                 ) -> List[PaymentDetail] | None:
         
@@ -81,6 +89,23 @@ class CRUDPaymentDetail(CRUDBase[PaymentDetail, PaymentDetailCreateSch, PaymentD
         query = select(PaymentDetail)
         query = query.where(and_(
             PaymentDetail.invoice_id.in_(list_ids),
+            PaymentDetail.is_void != True
+            )
+        )
+        
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_payment_detail_by_invoice_id(self, 
+                                *, 
+                                invoice_id: UUID | str,
+                                db_session : AsyncSession | None = None
+                                ) -> List[PaymentDetail] | None:
+        
+        db_session = db_session or db.session
+        query = select(PaymentDetail)
+        query = query.where(and_(
+            PaymentDetail.invoice_id == invoice_id,
             PaymentDetail.is_void != True
             )
         )

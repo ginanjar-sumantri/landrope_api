@@ -17,7 +17,7 @@ class SpkBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
     bidang_id:UUID = Field(foreign_key="bidang.id", nullable=False)
     jenis_bayar:Optional[JenisBayarEnum] = Field(nullable=True)
-    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    amount:Optional[Decimal] = Field(nullable=True)
     satuan_bayar:SatuanBayarEnum | None = Field(nullable=True)
     kjb_termin_id:Optional[UUID] = Field(nullable=True, foreign_key="kjb_termin.id")
     remark:Optional[str] = Field(nullable=True)

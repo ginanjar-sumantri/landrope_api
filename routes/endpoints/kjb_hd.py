@@ -40,26 +40,26 @@ async def create(sch: KjbHdCreateSch,
 
     return create_response(data=new_obj)
 
-@router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
-async def upload_dokumen(
-            id:UUID, 
-            file: UploadFile,
-            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+# @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
+# async def upload_dokumen(
+#             id:UUID, 
+#             file: UploadFile,
+#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-    """Update a obj by its id"""
+#     """Update a obj by its id"""
 
-    obj_current = await crud.kjb_hd.get_by_id(id=id)
-    if not obj_current:
-        raise IdNotFoundException(KjbHd, id)
+#     obj_current = await crud.kjb_hd.get_by_id(id=id)
+#     if not obj_current:
+#         raise IdNotFoundException(KjbHd, id)
 
-    if file:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{obj_current.code}', is_public=True)
-        object_updated = KjbHdUpdateSch(file_path=file_path)
+#     if file:
+#         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{obj_current.code}', is_public=True)
+#         object_updated = KjbHdUpdateSch(file_path=file_path)
     
-    obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
-    obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
+#     obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
+#     obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
 
-    return create_response(data=obj_updated)
+#     return create_response(data=obj_updated)
 
 @router.get("/download-file/{id}")
 async def download_file(id:UUID):
@@ -79,7 +79,7 @@ async def download_file(id:UUID):
 
     # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
     response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename=Hasil Peta Lokasi-{id}-{obj_current.code}.{ext}"
+    response.headers["Content-Disposition"] = f"attachment; filename=KJB-{id}-{obj_current.code}.{ext}"
     return response
 
 # @router.post("/cloud-task-workflow")

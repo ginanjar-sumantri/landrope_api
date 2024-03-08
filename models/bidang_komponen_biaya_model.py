@@ -22,7 +22,7 @@ class BidangKomponenBiayaBase(SQLModel):
     remark:Optional[str] = Field(nullable=True)
     satuan_bayar:Optional[SatuanBayarEnum] = Field(nullable=True)
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
-    amount:Optional[condecimal(decimal_places=2)] = Field(nullable=True)
+    amount:Optional[Decimal] = Field(nullable=True)
     paid_amount:Optional[Decimal] = Field(nullable=True)
     estimated_amount:Optional[Decimal] = Field(nullable=True)
     formula:Optional[str] = Field(nullable=True)

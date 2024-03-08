@@ -44,6 +44,7 @@ async def dashboard_outstanding():
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) = 0
 			and s.id is NULL
+            and s.is_void != True
             UNION
             select 
             b.id,
@@ -75,6 +76,7 @@ async def dashboard_outstanding():
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) <= 0
 			and s.id is NULL
+            and s.is_void != True
             UNION
             select 
             b.id,
@@ -104,6 +106,7 @@ async def dashboard_outstanding():
                 and b_dt.file_path is null
                 ) <= 0
 			and s.id is NULL
+            and s.is_void != True
             UNION
             select 
             b.id,
@@ -119,6 +122,7 @@ async def dashboard_outstanding():
             inner join bidang b ON b.id = hpl.bidang_id
 			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK'
 			Where s.id is NULL
+            and s.is_void != True
             Order by id_bidang),
 
 subquery_hasil_petlok as (
