@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response, Backgro
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_, text, or_
+from sqlmodel import select, and_, text, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
@@ -193,12 +193,15 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id)
+    query = select(Spk)
+    query = query.join(Bidang, Spk.bidang_id == Bidang.id)
 
     if filter_list == "list_approval":
-        query = query.outerjoin(Workflow, Workflow.reference_id == Spk.id)
-        query = query.outerjoin(WorkflowNextApprover, WorkflowNextApprover.workflow_id == Workflow.id)
-        query = query.filter(WorkflowNextApprover.email == current_worker.email)
+        subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, Workflow.entity == WorkflowEntityEnum.SPK))
+                    ).distinct()
+        
+        query = query.filter(Spk.id.in_(subquery_workflow))
     
     if keyword:
         query = query.filter(

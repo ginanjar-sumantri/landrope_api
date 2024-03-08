@@ -7,7 +7,7 @@ from sqlmodel import select, or_, and_, func, update
 from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
-from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar, PaymentDetail, Payment, Planing
+from models import Termin, Worker, Invoice, InvoiceDetail, Tahap, KjbHd, Spk, Bidang, TerminBayar, PaymentDetail, Payment, Planing, Workflow, WorkflowNextApprover
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
@@ -36,7 +36,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.ordered import OrderEnumSch
 from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, 
-                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum, 
+                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum,
                         jenis_bayar_to_termin_status_pembebasan_dict, jenis_bayar_to_code_counter_enum,
                         jenis_bayar_to_text)
 from common.rounder import RoundTwo
@@ -152,6 +152,7 @@ async def get_list(
             keyword:str = None,
             is_utj:bool = False,
             filter_query:str = None,
+            filter_list: str | None = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -175,6 +176,13 @@ async def get_list(
                         ).outerjoin(Spk, Spk.id == Invoice.spk_id
                         ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
+    
+    if filter_list == "list_approval":
+        subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, Workflow.entity == WorkflowEntityEnum.TERMIN))
+                    ).distinct()
+        
+        query = query.filter(Termin.id.in_(subquery_workflow))
     
     if keyword and keyword != '':
         query = query.filter(
