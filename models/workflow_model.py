@@ -3,6 +3,7 @@ from common.enum import WorkflowLastStatusEnum, WorkflowEntityEnum
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from datetime import datetime
+from pydantic import EmailStr
 
 class WorkflowBase(SQLModel):
     reference_id:UUID = Field(nullable=False) #id object (spk, memo tanah dll)
@@ -30,6 +31,30 @@ class Workflow(WorkflowFullBase, table=True):
         back_populates="workflow"
     )
 
+    workflow_next_approvers:list["WorkflowNextApprover"] = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        },
+        back_populates="workflow"
+    )
+
+class WorkflowNextApproverBase(SQLModel):
+    workflow_id: UUID = Field(nullable=False, foreign_key="workflow.id")
+    email: EmailStr | None = Field(nullable=True)
+    name: str | None = Field(nullable=True)
+
+class WorkflowNextApproverFullBase(BaseUUIDModel, WorkflowNextApproverBase):
+    pass
+
+class WorkflowNextApprover(WorkflowNextApproverFullBase, table=True):
+    workflow:"Workflow" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        },
+        back_populates="workflow_next_approvers"
+    )
 
 class WorkflowHistoryBase(SQLModel):
     workflow_id:UUID|None = Field(foreign_key="workflow.id", nullable=False)
@@ -53,7 +78,6 @@ class WorkflowHistory(WorkflowHistoryFullBase, table=True):
         },
         back_populates="workflow_histories"
     )
-
 
 class WorkflowTemplateBase(SQLModel):
     entity:WorkflowEntityEnum | None
