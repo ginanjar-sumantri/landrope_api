@@ -97,7 +97,7 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                         td.id,
                         b.id as bidang_id,
                         b.id_bidang,
-                        b.group,
+                        th.group,
                         b.jenis_bidang,
                         case
                             when b.skpt_id is Null then ds.name || '-' || pr.name || '-' || pn.name || ' (PENAMPUNG)'
@@ -122,6 +122,7 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                         COALESCE(b.harga_transaksi,0) as harga_transaksi,
                         (b.harga_transaksi * b.luas_bayar) as total_harga
                         from tahap_detail td
+                        inner join tahap th on th.id = td.tahap_id
                         inner join bidang b on b.id = td.bidang_id
                         inner join planing pl on pl.id = b.planing_id
                         inner join project pr on pr.id = pl.project_id
