@@ -37,5 +37,5 @@ from .invoice_model import Invoice, InvoiceDetail
 from .payment_model import Payment, PaymentDetail
 
 
-from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate
+from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover
 

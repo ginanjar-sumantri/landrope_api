@@ -7,7 +7,8 @@ from sqlmodel import select, and_, text, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
-from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, Invoice, Termin, Planing)
+from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
+                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
@@ -192,8 +193,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id
-                    ).join()
+    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id)
+
+    if filter_list == "list_approval":
+        query = query.outerjoin(Workflow, Workflow.reference_id == Spk.id)
+        query = query.outerjoin(WorkflowNextApprover, WorkflowNextApprover.workflow_id == Workflow.id)
+        query = query.filter(WorkflowNextApprover.email == current_worker.email)
     
     if keyword:
         query = query.filter(
