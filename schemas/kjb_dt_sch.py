@@ -1,6 +1,6 @@
 from models.kjb_model import KjbDt, KjbDtBase, KjbDtFullBase
 from common.partial import optional
-from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, StatusPetaLokasiEnum
+from common.enum import JenisAlashakEnum, PosisiBidangEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, StatusPetaLokasiEnum, WorkflowLastStatusEnum
 from sqlmodel import Field, SQLModel
 from typing import List, Optional
 from uuid import UUID
@@ -39,6 +39,8 @@ class KjbDtSch(KjbDtFullBase):
     kjb_hd_group:str|None
     gu_exists:bool|None = Field(default=False)
     pbt_exists:bool|None = Field(default=False)
+    step_name_workflow: str | None
+    status_workflow: WorkflowLastStatusEnum | None
 
 class KjbDtListRequestPetlokSch(KjbDtSch):
     has_input_petlok:bool | None = Field(alias="has_input_petlok")
@@ -65,6 +67,8 @@ class KjbDtListSch(SQLModel):
     luas_surat_by_ttn:Decimal|None
     created_at:datetime|None
     harga_standard:Decimal|None
+    step_name_workflow: str | None
+    status_workflow: WorkflowLastStatusEnum | None
     
 
 @optional

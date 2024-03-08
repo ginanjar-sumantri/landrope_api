@@ -180,18 +180,20 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
-                start_date:date|None = None,
-                end_date:date|None = None,
-                outstanding:bool|None = False,
-                params: Params=Depends(), 
-                order_by:str = None, 
-                keyword:str = None, 
-                filter_query:str=None,
+                start_date: date | None = None,
+                end_date: date | None = None,
+                outstanding: bool | None = False,
+                params: Params = Depends(), 
+                order_by: str | None = None, 
+                keyword: str | None = None, 
+                filter_query: str | None = None,
+                filter_list: str | None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 
-    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id)
+    query = select(Spk).join(Bidang, Spk.bidang_id == Bidang.id
+                    ).join()
     
     if keyword:
         query = query.filter(
