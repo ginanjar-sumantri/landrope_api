@@ -8,10 +8,11 @@ from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 from models.kjb_model import KjbDt
 from models.worker_model import Worker
 from models.notaris_model import Notaris
-from models import BundleHd
+from models import BundleHd, HasilPetaLokasi
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.kjb_dt_sch import KjbDtUpdateSch, KjbDtListSch
+from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, 
                                ImportFailedException, DocumentFileNotFoundException)
@@ -203,6 +204,15 @@ async def update(id:UUID,
         await BundleHelper().merge_alashak(bundle=bundle, alashak=kjb_dt.alashak, worker_id=current_worker.id, db_session=db_session)
         await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
         await BundleHelper().merge_tanda_terima_notaris(bundle=bundle, nomor_ttn=sch.nomor_tanda_terima, tanggal=sch.tanggal_tanda_terima, file_path=sch.file_path, worker_id=current_worker.id, db_session=db_session)
+
+    bidang_id: UUID | None = getattr(getattr(getattr(kjb_dt, 'hasil_peta_lokasi', None), 'bidang', None), 'id', None)
+    if bidang_id:
+        bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
+        bidang_updated.notaris_id = sch.notaris_id
+
+        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
 
