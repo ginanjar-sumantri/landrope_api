@@ -20,6 +20,7 @@ from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService, BundleHelper
 from typing import Dict, Any
+from shapely import wkt, wkb
 import uuid
 import crud
 import json
@@ -208,6 +209,13 @@ async def update(id:UUID,
     bidang_id: UUID | None = getattr(getattr(getattr(kjb_dt, 'hasil_peta_lokasi', None), 'bidang', None), 'id', None)
     if bidang_id:
         bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+
+        if bidang_current.geom :
+            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
+        if bidang_current.geom_ori :
+            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
         bidang_updated = BidangUpdateSch.from_orm(bidang_current)
         bidang_updated.notaris_id = sch.notaris_id
 
