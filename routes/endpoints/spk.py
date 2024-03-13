@@ -296,7 +296,8 @@ async def get_report(
              "Luas Surat" : spk.bidang.luas_surat, 
              "Jenis Bayar" : spk.jenis_bayar,
              "Manager" : spk.manager_name,
-             "Tanggal Buat": spk.created_at, 
+             "Tanggal Buat": spk.created_at,
+             "Status Workflow": spk.status_workflow if spk.status_workflow == WorkflowLastStatusEnum.COMPLETED else spk.step_name_workflow or "-",
              "Created By" : spk.created_name} for spk in objs]
 
     
