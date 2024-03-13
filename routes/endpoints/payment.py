@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
-from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya
+from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya, Workflow
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch
@@ -490,7 +490,10 @@ async def get_list(
     invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
     list_id = [invoice.termin_id for invoice in invoice_outstandings]
 
-    objs = await crud.termin.get_multi_by_ids(list_ids=list_id)
+    query = select(Termin).where(and_(Termin.status_workflow == WorkflowLastStatusEnum.COMPLETED,
+                                    Termin.id.in_(list_id)))
+
+    objs = await crud.termin.get_multi_no_page(query=query)
     
     return create_response(data=objs)
 
