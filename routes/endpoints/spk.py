@@ -916,7 +916,7 @@ async def create_workflow(payload:Dict):
     id = payload.get("id", None)
     additional_info = payload.get("additional_info", None)
 
-    obj = await crud.spk.get(id=id)
+    obj = await crud.spk.get_by_id(id=id)
 
     if not obj:
         raise IdNotFoundException(Spk, id)
@@ -950,6 +950,7 @@ async def create_workflow(payload:Dict):
                                             descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                     Tanggal: {obj.created_at.date()}<br>
                                                     Dokumen: {obj.code}<br><br>
+                                                    KJB: {obj.kjb_hd_code or ""}<br><br>
                                                     Berikut lampiran dokumen terkait : """, 
                                             additional_info={"jenis_bayar" : str(additional_info)}, 
                                             attachments=[vars(wf_system_attachment)],
