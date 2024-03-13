@@ -124,3 +124,9 @@ class TerminHistoriesSch(SQLModel):
     index_bidang:str|None
     beban_biayas:list[TerminBebanBiayaForPrintOut]|None
 
+class TerminSearchSch(SQLModel):
+    id: UUID | None
+    code: str | None
+    nomor_memo: str | None
+    nomor_tahap: int | None
+

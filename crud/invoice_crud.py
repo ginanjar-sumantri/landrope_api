@@ -325,6 +325,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     AND (lower(b.id_bidang) LIKE lower('%{keyword}%') OR 
                     lower(b.alashak) LIKE lower('%{keyword}%') OR 
                     lower(i.code) LIKE lower('%{keyword}%') OR 
+                    lower(t.code) LIKE lower('%{keyword}%') OR 
                     lower(t.nomor_memo) LIKE lower('%{keyword}%'))
                     """
 

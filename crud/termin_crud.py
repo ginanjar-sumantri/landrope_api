@@ -66,6 +66,13 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return response.scalar_one_or_none()
     
+    async def get_multi_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[Termin] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.id.in_(list_ids))
+        query = query.options(selectinload(Termin.tahap))
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+
     async def get_by_id_for_printout(self, 
                   *, 
                   id: UUID | str, db_session: AsyncSession | None = None
