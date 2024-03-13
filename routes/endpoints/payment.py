@@ -11,6 +11,7 @@ from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpda
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch
 from schemas.giro_sch import GiroSch, GiroCreateSch, GiroUpdateSch
 from schemas.bidang_sch import BidangUpdateSch
+from schemas.termin_sch import TerminSearchSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
@@ -477,6 +478,20 @@ async def get_list(
     query = query.distinct()
 
     objs = await crud.giro.get_multi_no_page(query=query)
+    return create_response(data=objs)
+
+@router.get("/search/termin", response_model=GetResponseBaseSch[list[TerminSearchSch]])
+async def get_list(
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets all list objects"""
+
+    invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
+    list_id = [invoice.termin_id for invoice in invoice_outstandings]
+
+    objs = await crud.termin.get_multi_by_ids(list_ids=list_id)
+    
     return create_response(data=objs)
 
 async def bidang_update_status(bidang_ids:list[UUID]):
