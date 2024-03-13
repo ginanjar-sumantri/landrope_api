@@ -492,6 +492,8 @@ async def get_list(
 
     query = select(Termin).where(and_(Termin.status_workflow == WorkflowLastStatusEnum.COMPLETED,
                                     Termin.id.in_(list_id)))
+    
+    query = query.options(selectinload(Termin.tahap))
 
     objs = await crud.termin.get_multi_no_page(query=query)
     
