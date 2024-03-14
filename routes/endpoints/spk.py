@@ -231,6 +231,7 @@ async def get_list(
         )
         query = query.filter(~Spk.jenis_bayar.in_(['BEGINNING_BALANCE', 'PAJAK']))
         query = query.filter(~Spk.id.in_(subquery))
+        query = query.filter(Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED)
 
 
     query = query.distinct()
