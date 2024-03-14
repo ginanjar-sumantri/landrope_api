@@ -849,7 +849,7 @@ async def generate_printout(id:UUID|str):
     file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
 
     try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')-{str(obj_current.id)}}", is_public=True)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}-{str(obj_current.id)}", is_public=True)
 
         obj_updated = SpkUpdateSch(**obj_current.dict())
         obj_updated.file_path = file_path
