@@ -49,9 +49,10 @@ async def notification(sch: WorkflowSystemCallbackSch, request:Request):
 
         obj_updated = await crud.workflow.update(obj_current=obj_current, obj_new=obj_new, db_session=db_session, with_commit=False)
 
-        for next_approver in sch.next_approver:
-            obj_next_approver_new = WorkflowNextApproverCreateSch(**next_approver.dict(), workflow_id=obj_updated.id)
-            await crud.workflow_next_approver.create(obj_in=obj_next_approver_new, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+        if sch.next_approver is not None:
+            for next_approver in sch.next_approver:
+                obj_next_approver_new = WorkflowNextApproverCreateSch(**next_approver.dict(), workflow_id=obj_updated.id)
+                await crud.workflow_next_approver.create(obj_in=obj_next_approver_new, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
 
         obj_in = WorkflowHistoryCreateSch(
             workflow_id=obj_updated.id,
