@@ -583,7 +583,7 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload.kjb_dt_id)
     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
 
-    bidang_current = await crud.bidang.get(id=payload.bidang_id)
+    bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
     if bidang_current.geom :
         if isinstance(bidang_current.geom, str):
             pass

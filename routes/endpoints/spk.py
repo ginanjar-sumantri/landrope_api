@@ -198,7 +198,9 @@ async def get_list(
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
-                                ).where(and_(WorkflowNextApprover.email == current_worker.email, Workflow.entity == WorkflowEntityEnum.SPK))
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, 
+                                            Workflow.entity == WorkflowEntityEnum.SPK,
+                                            Workflow.last_status != WorkflowLastStatusEnum.COMPLETED))
                     ).distinct()
         
         query = query.filter(Spk.id.in_(subquery_workflow))
@@ -849,7 +851,7 @@ async def generate_printout(id:UUID|str):
     file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
 
     try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')-{str(obj_current.id)}}", is_public=True)
+        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}-{str(obj_current.id)}", is_public=True)
 
         obj_updated = SpkUpdateSch(**obj_current.dict())
         obj_updated.file_path = file_path
