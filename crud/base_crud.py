@@ -77,7 +77,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> ModelType:
         db_session = db_session or db.session
-        query = select(self.model).where(func.lower(func.trim(func.replace(func.replace(self.model.name, ' ', ''), '-', ''))) == name.strip().lower().replace(' ', '').replace('-', ''))
+        query = select(self.model).where(func.lower(func.trim(func.replace(self.model.name, '-', ''))) == name.strip().lower().replace('-', ''))
         
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
