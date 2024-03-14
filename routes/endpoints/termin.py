@@ -179,7 +179,9 @@ async def get_list(
     
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
-                                ).where(and_(WorkflowNextApprover.email == current_worker.email, Workflow.entity == WorkflowEntityEnum.TERMIN))
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, 
+                                            Workflow.entity == WorkflowEntityEnum.TERMIN,
+                                            Workflow.last_status != WorkflowLastStatusEnum.COMPLETED))
                     ).distinct()
         
         query = query.filter(Termin.id.in_(subquery_workflow))
