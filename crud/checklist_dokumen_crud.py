@@ -64,6 +64,8 @@ class CRUDChecklistDokumen(CRUDBase[ChecklistDokumen, ChecklistDokumenCreateSch,
                                             Dokumen.is_active != False
                                             )
         
+        query = query.options(selectinload(self.model.dokumen))
+        
         response =  await db_session.execute(query)
         return response.scalars().all()
 
