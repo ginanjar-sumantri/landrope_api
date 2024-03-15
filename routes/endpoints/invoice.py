@@ -4,7 +4,8 @@ from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, case, cast, Float, and_
 from sqlalchemy.orm import selectinload
-from models import Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya, Planing, Ptsk, Skpt
+from models import (Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya,
+                    Planing, Ptsk, Skpt, Project, Desa)
 from models.code_counter_model import CodeCounterEnum
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch, InvoiceByIdVoidSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
@@ -46,7 +47,12 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Invoice).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
-                            ).outerjoin(Termin, Termin.id == Invoice.termin_id)
+                        ).outerjoin(Termin, Termin.id == Invoice.termin_id
+                        ).outerjoin(Planing, Planing.id == Bidang.planing_id
+                        ).outerjoin(Project, Project.id == Planing.project_id
+                        ).outerjoin(Desa, Desa.id == Planing.desa_id
+                        ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id
+                        ).outerjoin(Ptsk, Ptsk.id == Skpt.ptsk_id)
         
     if keyword:
         query = query.filter(
@@ -54,7 +60,11 @@ async def get_list(
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
                 Bidang.alashak.ilike(f'%{keyword}%'),
                 Termin.code.ilike(f'%{keyword}%'),
-                Invoice.code.ilike(f'%{keyword}%')
+                Termin.nomor_memo.ilike(f'%{keyword}%'),
+                Invoice.code.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%'),
+                Ptsk.name.ilike(f'%{keyword}%')
             )
         )
     
