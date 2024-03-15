@@ -9,7 +9,7 @@ from sqlalchemy import exc
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
 from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, SpkKelengkapanDokumen, BundleDt, 
-                    TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya, Planing)
+                    TahapDetail, Tahap, Invoice, Termin, BidangKomponenBiaya, Planing, Skpt)
 from schemas.spk_sch import (SpkCreateSch, SpkUpdateSch, SpkInTerminSch, SpkPrintOut, 
                              SpkDetailPrintOut, SpkOverlapPrintOut, SpkRekeningPrintOut)
 from common.enum import JenisBayarEnum
@@ -131,13 +131,15 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                             ).options(selectinload(Bidang.komponen_biayas)
                                             ).options(selectinload(Bidang.planing
                                                             ).options(selectinload(Planing.project)
-                                                            )
+                                                            ).options(selectinload(Planing.desa))
                                             ).options(selectinload(Bidang.sub_project)
                                             ).options(selectinload(Bidang.tahap_details
                                                                 ).options(selectinload(TahapDetail.tahap))
                                             ).options(selectinload(Bidang.manager)
                                             ).options(selectinload(Bidang.sales)
                                             ).options(selectinload(Bidang.notaris)
+                                            ).options(selectinload(Bidang.skpt
+                                                                ).options(selectinload(Skpt.ptsk))
                                             )
                                 )
         

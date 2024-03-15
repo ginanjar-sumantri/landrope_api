@@ -570,7 +570,8 @@ async def get_by_id(id:UUID,
                             sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id,
                             jenis_bayar=obj.jenis_bayar, manager_id=obj.bidang.manager_id, manager_name=obj.bidang.manager_name,
                             sales_id=obj.bidang.sales_id, sales_name=obj.bidang.sales_name, notaris_id=obj.bidang.notaris_id, 
-                            notaris_name=obj.bidang.notaris_name, mediator=obj.bidang.mediator
+                            notaris_name=obj.bidang.notaris_name, mediator=obj.bidang.mediator, desa_name=obj.bidang.desa_name, 
+                            ptsk_name=obj.bidang.ptsk_name
                             )
 
     if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:

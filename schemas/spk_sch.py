@@ -123,6 +123,8 @@ class SpkInTerminSch(SQLModel):
     group:Optional[str]
     project_id:Optional[UUID]
     project_name:Optional[str]
+    desa_name:Optional[str]
+    ptsk_name:Optional[str]
     sub_project_id:Optional[UUID]
     sub_project_name:Optional[str]
     nomor_tahap:Optional[int]
