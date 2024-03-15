@@ -78,6 +78,7 @@ async def get_by_id(id:UUID):
 @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[HasilPetaLokasiSch])
 async def upload_dokumen(
             id:UUID, 
+            background_task:BackgroundTasks,
             file: UploadFile = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
@@ -93,6 +94,9 @@ async def upload_dokumen(
     
     obj_updated = await crud.hasil_peta_lokasi.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
     obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
+
+    background_task.add_task(BundleHelper().merge_hasil_lokasi, obj_updated.kjb_dt.bundle_hd_id, current_worker.id, obj_updated.id)
+
     return create_response(data=obj_updated)
 
 @router.get("/download-file/{id}")
