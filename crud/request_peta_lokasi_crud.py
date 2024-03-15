@@ -353,15 +353,15 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                         bundle_dt dt ON hd.id = dt.bundle_hd_id
                     INNER JOIN
                         dokumen dk ON dk.id = dt.dokumen_id 
-                        and dk.name IN ('GAMBAR UKUR NIB PT', 'GAMBAR UKUR NIB PERORANGAN', 'PBT PERORANGAN', 'PBT PT')
+                        and dk.name IN ('GAMBAR UKUR PBT', 'GAMBAR UKUR PERORANGAN', 'PBT PERORANGAN', 'PBT PT')
                     )
                     SELECT 
                         hpl.id
                     FROM hasil_peta_lokasi hpl
                     LEFT OUTER JOIN 
-                        subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR NIB PT'
+                        subquery_hasil_petlok gu_pt ON gu_pt.id = hpl.id AND gu_pt.name = 'GAMBAR UKUR PBT'
                     LEFT OUTER JOIN 
-                        subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR NIB PERORANGAN'
+                        subquery_hasil_petlok gu_perorangan ON gu_perorangan.id = hpl.id AND gu_perorangan.name = 'GAMBAR UKUR PERORANGAN'
                     LEFT OUTER JOIN 
                         subquery_hasil_petlok pbt_pt ON pbt_pt.id = hpl.id AND pbt_pt.name = 'PBT PT'
                     LEFT OUTER JOIN 
