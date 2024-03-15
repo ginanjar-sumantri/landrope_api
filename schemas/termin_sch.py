@@ -37,6 +37,7 @@ class TerminByIdSch(TerminFullBase):
     notaris_name:str|None = Field(alias="notaris_name")
     manager_name:str|None = Field(alias="manager_name")
     sales_name:str|None = Field(alias="sales_name")
+    desa_name: str | None
     termin_bayars:list[TerminBayarSch]
     invoices:list[InvoiceInTerminSch]
 

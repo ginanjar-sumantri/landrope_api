@@ -27,7 +27,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         query = select(Termin).where(Termin.id == id)
         query = query.options(selectinload(Termin.tahap
                         ).options(selectinload(Tahap.planing
-                                ).options(selectinload(Planing.project))
+                                ).options(selectinload(Planing.project)
+                                ).options(selectinload(Planing.desa))
                         ).options(selectinload(Tahap.ptsk))
                 ).options(selectinload(Termin.kjb_hd)
                 ).options(selectinload(Termin.invoices
