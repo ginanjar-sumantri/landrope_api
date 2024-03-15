@@ -22,6 +22,7 @@ class TerminSch(TerminFullBase):
     notaris_name:str|None = Field(alias="notaris_name")
     manager_name:str|None = Field(alias="manager_name")
     sales_name:str|None = Field(alias="sales_name")
+    project_name:str|None
     status_workflow:str|None
     step_name_workflow:str|None
 
