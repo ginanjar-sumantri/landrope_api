@@ -10,6 +10,7 @@ from .bidang_crud import bidang
 from .bidang_overlap_crud import bidangoverlap
 from .bidang_komponen_biaya_crud import bidang_komponen_biaya
 from .bidang_history_crud import bidang_history
+from .bidang_origin_crud import bidang_origin
 
 from .draft_crud import draft
 from .draft_detail_crud import draft_detail

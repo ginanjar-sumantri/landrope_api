@@ -11,6 +11,7 @@ from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, St
                          SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum, StatusPembebasanEnum)
 from geoalchemy2 import Geometry
 import json
+from datetime import datetime
 
 if TYPE_CHECKING:
     from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
@@ -532,3 +533,18 @@ class BidangHistory(BidangHistoryFullBase, table=True):
     @property
     def trans_worker_name(self) -> str | None:
         return getattr(getattr(self, "trans_worker", None), "name", None)
+
+
+class BidangOriginBase(BidangBase):
+    geom:str | None = Field(sa_column=Column(Geometry))
+    geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
+
+class BidangOriginFullBase(BidangOriginBase):
+    id: UUID = Field(primary_key=True, index=True, nullable=False)
+    updated_at : datetime | None = Field(default=datetime.now())
+    created_at : datetime | None = Field(default=datetime.now())
+    created_by_id: UUID | None = Field(default=None, foreign_key='worker.id', nullable=True)
+    updated_by_id: UUID | None = Field(default=None, foreign_key='worker.id', nullable=True)
+
+class BidangOrigin(BidangOriginFullBase, table=True):
+    pass

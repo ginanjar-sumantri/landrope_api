@@ -23,6 +23,7 @@ from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
 from schemas.utj_khusus_detail_sch import UtjKhususDetailUpdateSch
+from schemas.bidang_origin_sch import BidangOriginSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
@@ -193,7 +194,10 @@ async def create(
                 pass
             else:
                 bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-
+        
+        #add to bidang origin
+        new_bidang_origin = BidangOriginSch.from_orm(bidang_current)
+        await crud.bidang_origin.create_(obj_in=new_bidang_origin, db_session=db_session, with_commit=False)
 
         bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
@@ -648,19 +652,55 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
     db_session = db.session
 
     #bidang
-    bidang_old = await crud.bidang.get_by_id(id=bidang_id)
-    if bidang_old.geom :
-        bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+    #rollback from bidang origin when exists
+    bidang_origin = await crud.bidang_origin.get(id=bidang_id)
+    if bidang_origin:
+        if bidang_origin.geom :
+            bidang_origin.geom = wkt.dumps(wkb.loads(bidang_origin.geom.data, hex=True))
 
-    if bidang_old.geom_ori :
-        bidang_old.geom_ori = wkt.dumps(wkb.loads(bidang_old.geom_ori.data, hex=True))
+        if bidang_origin.geom_ori :
+            bidang_origin.geom_ori = wkt.dumps(wkb.loads(bidang_origin.geom_ori.data, hex=True))
 
-    bidang_old_updated = BidangUpdateSch(bundle_hd_id=None, 
-                                         status=StatusBidangEnum.Belum_Bebas, 
-                                         jenis_bidang=JenisBidangEnum.Standard,
-                                         status_pembebasan=None)
+        bidang_old_updated = BidangUpdateSch.from_orm(bidang_origin)
+        await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 
-    await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
+        await crud.bidang_origin.delete(id=bidang_origin.id, db_session=db_session, with_commit=False)
+    else:
+        bidang_old = await crud.bidang.get_by_id(id=bidang_id)
+        if bidang_old.geom :
+            bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+
+        if bidang_old.geom_ori :
+            bidang_old.geom_ori = wkt.dumps(wkb.loads(bidang_old.geom_ori.data, hex=True))
+        
+        bidang_old_updated = BidangUpdateSch(jenis_bidang=JenisBidangEnum.Standard,
+                                    status=StatusBidangEnum.Belum_Bebas,
+                                    group=None,
+                                    jenis_surat_id=None,
+                                    manager_id=None,
+                                    sales_id=None,
+                                    mediator=None,
+                                    telepon_mediator=None,
+                                    notaris_id=None,
+                                    bundle_hd_id=None,
+                                    harga_akta=None,
+                                    harga_transaksi=None,
+                                    status_pembebasan=None,
+                                    luas_bayar=None,
+                                    luas_clear=None,
+                                    luas_gu_perorangan=None,
+                                    luas_gu_pt=None,
+                                    luas_nett=None,
+                                    luas_pbt_perorangan=None,
+                                    luas_pbt_pt=None,
+                                    luas_produk=None,
+                                    luas_proses=None,
+                                    luas_ukur=None,
+                                    #planing_id=None,
+                                    #skpt_id=None
+                                    )
+
+        await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 
     #kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_old.id)
