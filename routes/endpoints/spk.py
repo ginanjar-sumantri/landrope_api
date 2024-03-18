@@ -438,11 +438,12 @@ async def update(id:UUID,
         raise IdNotFoundException(Spk, id)
         
     #workflow
-    # if sch.jenis_bayar != JenisBayarEnum.PAJAK:
-    #     msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+    if sch.jenis_bayar != JenisBayarEnum.PAJAK:
+        msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
         
-    #     if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-    #         raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+        if sch.file is None:
+            if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+                raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
     #filter
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
@@ -548,8 +549,8 @@ async def update(id:UUID,
     if obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
         wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
         if wf_current:
-            if wf_current.last_status == WorkflowLastStatusEnum.REJECTED:
-                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            if wf_current.last_status in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
                 await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
                 GCloudTaskService().create_task(payload={
                                                         "id":str(obj_updated.id), 
