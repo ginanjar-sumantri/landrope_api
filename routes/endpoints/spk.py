@@ -981,7 +981,7 @@ async def create_workflow(payload:Dict):
 async def download_file(id:UUID):
     """Download File Dokumen"""
 
-    obj_current = await crud.termin.get(id=id)
+    obj_current = await crud.spk.get(id=id)
     if not obj_current:
         raise IdNotFoundException(Spk, id)
     if obj_current.file_upload_path is None:
