@@ -254,14 +254,14 @@ async def update_(
     else:
         jns_byr = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
 
-    # if sch.file:
-    #     file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
-    #     try:
-    #         file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-    #     except ZeroDivisionError as e:
-    #         raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+    if sch.file:
+        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+        try:
+            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+        except ZeroDivisionError as e:
+            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
-    #     sch.file_upload_path = file_upload_path
+        sch.file_upload_path = file_upload_path
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 

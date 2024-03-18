@@ -438,11 +438,11 @@ async def update(id:UUID,
         raise IdNotFoundException(Spk, id)
         
     #workflow
-    if sch.jenis_bayar != JenisBayarEnum.PAJAK:
-        msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+    # if sch.jenis_bayar != JenisBayarEnum.PAJAK:
+    #     msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
         
-        if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-            raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+    #     if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+    #         raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
     #filter
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
@@ -465,22 +465,22 @@ async def update(id:UUID,
     
     sch.is_void = obj_current.is_void
 
-    # if sch.file:
-    #     file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
-    #     try:
-    #         file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-    #     except ZeroDivisionError as e:
-    #         raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+    if sch.file:
+        file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
+        try:
+            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+        except ZeroDivisionError as e:
+            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
-    #     sch.file_upload_path = file_upload_path
+        sch.file_upload_path = file_upload_path
 
-    #     bundle = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
-    #     if bundle:
-    #         await BundleHelper().merge_spk_signed(bundle=bundle, 
-    #                                               code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
-    #                                               tanggal=obj_current.created_at.date(), 
-    #                                               file_path=obj_current.file_upload_path, 
-    #                                               worker_id=obj_current.updated_by_id, db_session=db_session)
+        bundle = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
+        if bundle:
+            await BundleHelper().merge_spk_signed(bundle=bundle, 
+                                                  code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
+                                                  tanggal=obj_current.created_at.date(), 
+                                                  file_path=obj_current.file_upload_path, 
+                                                  worker_id=obj_current.updated_by_id, db_session=db_session)
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
@@ -548,22 +548,25 @@ async def update(id:UUID,
     if obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
         wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
         if wf_current:
-            if wf_current.last_status != WorkflowLastStatusEnum.REJECTED:
-                raise HTTPException(status_code=422, detail="Failed update spk. Detail : Workflow is running")
-            
-            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+            if wf_current.last_status == WorkflowLastStatusEnum.REJECTED:
+                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+                await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+                GCloudTaskService().create_task(payload={
+                                                        "id":str(obj_updated.id), 
+                                                        "additional_info":obj_updated.jenis_bayar
+                                                    }, 
+                                            base_url=f'{request.base_url}landrope/spk/task-workflow')
         else:
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
             wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
         
-        GCloudTaskService().create_task(payload={
-                                                    "id":str(obj_updated.id), 
-                                                    "additional_info":obj_updated.jenis_bayar
-                                                }, 
-                                        base_url=f'{request.base_url}landrope/spk/task-workflow')
+            GCloudTaskService().create_task(payload={
+                                                        "id":str(obj_updated.id), 
+                                                        "additional_info":obj_updated.jenis_bayar
+                                                    }, 
+                                            base_url=f'{request.base_url}landrope/spk/task-workflow')
 
     await db_session.commit()
     await db_session.refresh(obj_updated)
