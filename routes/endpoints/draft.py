@@ -121,7 +121,7 @@ async def analisa(
 
         intersected_geometry = gdf1.geometry.intersection(gdf2.geometry)
 
-        if intersected_geometry[0].geom_type != "Polygon":
+        if intersected_geometry[0].geom_type not in ["Polygon", "MultiPolygon"]:
             print(intersected_geometry[0].geom_type)
             is_polygon = intersected_geometry.geometry[0].is_ring
             if is_polygon:
