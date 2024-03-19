@@ -24,6 +24,7 @@ from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
 from schemas.utj_khusus_detail_sch import UtjKhususDetailUpdateSch
 from schemas.bidang_origin_sch import BidangOriginSch
+from schemas.kjb_dt_sch import KjbDtUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
@@ -524,7 +525,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         mediator=kjb_hd_current.mediator,
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
-        bundle_hd_id=kjb_dt_current.bundle_hd_id,
+        bundle_hd_id=kjb_dt_current.bundle_hd_id if kjb_dt_current.bundle_hd_id else bidang_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
         harga_transaksi=kjb_dt_current.harga_transaksi,
         status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
@@ -534,6 +535,17 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
                             updated_by_id=hasil_peta_lokasi.updated_by_id,
                             db_session=db_session,
                             with_commit=False)
+    
+    #jika kjb_dt belum memiliki bundle akan tetapi bidang sudah punya (case bidang dan bundle naik duluan diimport)
+    if kjb_dt_current.bundle_hd_id is None:
+        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_hd_current)
+        kjb_dt_updated.bundle_hd_id = bidang_current.bundle_hd_id
+
+        await crud.kjb_dt.update(obj_current=kjb_dt_current, 
+                                obj_new=kjb_dt_updated, 
+                                updated_by_id=hasil_peta_lokasi.updated_by_id, 
+                                db_session=db_session, 
+                                with_commit=False)
     
     # jika kjb_dt memiliki utj khusus
     bidang_ids = []

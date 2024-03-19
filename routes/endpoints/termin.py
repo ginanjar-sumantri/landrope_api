@@ -242,6 +242,13 @@ async def update_(
         if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
             raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
     
+    if sch.jenis_bayar in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+        kjb_hd_current = await crud.kjb_hd.get(id=sch.kjb_hd_id)
+        total_utj = sum([dt.amount for dt in sch.invoices])
+
+        if total_utj > kjb_hd_current.utj_amount:
+            raise HTTPException(status_code=422, detail="Total UTJ tidak boleh lebih besar dari UTJ amount di KJB")
+    
     sch.is_void = obj_current.is_void
 
     today = date.today()
