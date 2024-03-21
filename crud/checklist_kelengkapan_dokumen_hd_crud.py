@@ -9,7 +9,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Bidang
+from models import ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Bidang, HasilPetaLokasi, KjbDt
 from schemas.checklist_kelengkapan_dokumen_hd_sch import ChecklistKelengkapanDokumenHdCreateSch, ChecklistKelengkapanDokumenHdUpdateSch
 from typing import List
 from uuid import UUID
@@ -29,7 +29,12 @@ class CRUDChecklistKelengkapanDokumenHd(CRUDBase[ChecklistKelengkapanDokumenHd, 
                                                                                     ).options(selectinload(ChecklistKelengkapanDokumenDt.bundle_dt)
                                                                                     ).options(selectinload(ChecklistKelengkapanDokumenDt.dokumen))
                                                             ).options(selectinload(ChecklistKelengkapanDokumenHd.bidang
-                                                                                    ).options(selectinload(Bidang.bundlehd))
+                                                                                    ).options(selectinload(Bidang.bundlehd)
+                                                                                    ).options(selectinload(Bidang.hasil_peta_lokasi
+                                                                                                    ).options(selectinload(HasilPetaLokasi.kjb_dt
+                                                                                                                    ).options(selectinload(KjbDt.kjb_hd))
+                                                                                                    )
+                                                                                    )
                                                             )
                                                     
                                                    
