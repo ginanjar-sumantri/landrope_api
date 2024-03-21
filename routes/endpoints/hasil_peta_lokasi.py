@@ -19,6 +19,7 @@ from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch
                                                   HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
 from schemas.bidang_sch import BidangSch, BidangUpdateSch, BidangSrcSch
+from schemas.bundle_hd_sch import BundleHdUpdateSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
@@ -546,6 +547,12 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
                                 updated_by_id=hasil_peta_lokasi.updated_by_id, 
                                 db_session=db_session, 
                                 with_commit=False)
+        
+    #bundle update planing
+    bundle_current = await crud.bundlehd.get(id=kjb_dt_current.bundle_hd_id if kjb_dt_current.bundle_hd_id else bidang_current.bundle_hd_id)
+    bundle_updated = BundleHdUpdateSch.from_orm(bundle_current)
+    bundle_updated.planing_id = hasil_peta_lokasi.planing_id
+    await crud.bundlehd.update(obj_current=bundle_current, obj_new=bundle_updated, db_session=db_session, with_commit=False)
     
     # jika kjb_dt memiliki utj khusus
     bidang_ids = []

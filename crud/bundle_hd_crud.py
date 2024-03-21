@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from common.generator import generate_code_bundle
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models import BundleHd, BundleDt, Planing
+from models import BundleHd, BundleDt, Planing, KjbDt, Bidang
 from schemas.bundle_hd_sch import BundleHdCreateSch, BundleHdUpdateSch
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from datetime import datetime
@@ -27,8 +27,15 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
         db_session = db_session or db.session
         
         query = select(BundleHd).where(BundleHd.id == id).options(selectinload(BundleHd.planing).options(selectinload(Planing.project)).options(selectinload(Planing.desa))
-                                                        ).options(selectinload(BundleHd.kjb_dt)
-                                                        ).options(selectinload(BundleHd.bidang)
+                                                        ).options(selectinload(BundleHd.kjb_dt
+                                                                        ).options(selectinload(KjbDt.kjb_hd)
+                                                                        )
+                                                        ).options(selectinload(BundleHd.bidang
+                                                                        ).options(selectinload(Bidang.planing
+                                                                                            ).options(selectinload(Planing.project)
+                                                                                            ).options(selectinload(Planing.desa)
+                                                                                            )
+                                                                        )
                                                         ).options(selectinload(BundleHd.bundledts
                                                                     ).options(selectinload(BundleDt.dokumen))
                                                         )

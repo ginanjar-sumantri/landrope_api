@@ -55,15 +55,17 @@ class BundleHd(BundleHdFullBase, table=True):
     
     @property
     def project_name(self) -> str | None:
-        if self.planing is None:
-            return ""
-        return self.planing.project.name or ""
+        kjb_dt_project_name = getattr(getattr(getattr(self, "kjb_dt", None), "project_by_ttn", None), "name", None)
+        bidang_project_name = getattr(getattr(self, "bidang", None), "project_name", None)
+
+        return kjb_dt_project_name or bidang_project_name
     
     @property
     def desa_name(self) -> str | None:
-        if self.planing is None:
-            return ""
-        return self.planing.desa.name or ""
+        kjb_dt_desa_name = getattr(getattr(getattr(self, "kjb_dt", None), "desa_by_ttn", None), "name", None)
+        bidang_desa_name = getattr(getattr(self, "bidang", None), "desa_name", None)
+
+        return kjb_dt_desa_name or bidang_desa_name
     
     @property
     def alashak(self) -> str | None:
@@ -80,6 +82,10 @@ class BundleHd(BundleHdFullBase, table=True):
             return None
         
         return self.bidang.id_bidang
+    
+    @property
+    def kjb_hd_code(self) -> str | None:
+        return getattr(getattr(getattr(self, "kjb_dt", None), "kjb_hd", None), "code", None)
 
 # -----------------------------------------------------------------------------------------------
 

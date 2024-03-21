@@ -14,6 +14,7 @@ class BundleHdSch(BundleHdFullBase):
     alashak:str|None = Field(alias="alashak")
     idbidang:str|None = Field(alias="idbidang")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    kjb_hd_code: str | None
 
 class BundleHdByIdSch(BundleHdFullBase):
     planing:str|None = Field(alias="planing_name")
@@ -22,6 +23,7 @@ class BundleHdByIdSch(BundleHdFullBase):
     alashak:str|None = Field(alias="alashak")
     idbidang:str|None = Field(alias="idbidang")
     updated_by_name:str|None = Field(alias="updated_by_name")
+    kjb_hd_code: str | None
 
 @optional
 class BundleHdUpdateSch(BundleHdBase):
