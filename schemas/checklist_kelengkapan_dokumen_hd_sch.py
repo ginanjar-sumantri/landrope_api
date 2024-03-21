@@ -18,6 +18,7 @@ class ChecklistKelengkapanDokumenHdSch(ChecklistKelengkapanDokumenHdFullBase):
     jenis_alashak:str | None = Field(alias="jenis_alashak")
     alashak:str | None = Field(alias="alashak")
     bundle_hd_code:str | None = Field(alias="bundle_hd_code")
+    kjb_hd_code: str | None
 
 class ChecklistKelengkapanDokumenHdByIdSch(SQLModel):
     id:UUID | None 
@@ -26,6 +27,7 @@ class ChecklistKelengkapanDokumenHdByIdSch(SQLModel):
     alashak:str | None
     bundle_hd_id:UUID | None
     bundle_hd_code:str | None
+    kjb_hd_code: str | None
     details:list[ChecklistKelengkapanDokumenDtForHdSch] | None
     detail_bayars:list[ChecklistKelengkapanDokumenDtBayarSch] | None
 

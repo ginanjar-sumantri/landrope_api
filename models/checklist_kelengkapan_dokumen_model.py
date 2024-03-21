@@ -64,6 +64,10 @@ class ChecklistKelengkapanDokumenHd(ChecklistKelengkapanDokumenHdFullBase, table
     def bundle_hd_id(self) -> str | None :
         return getattr(getattr(getattr(self, "bidang", None), "bundlehd", None), "id", None)
 
+    @property
+    def kjb_hd_code(self) -> str | None:
+        return getattr(getattr(self, "bidang", None), "kjb_no", None)
+
     
 
     
