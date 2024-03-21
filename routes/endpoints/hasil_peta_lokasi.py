@@ -14,7 +14,7 @@ from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiTa
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
                                            HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang,
-                                           HasilPetaLokasiReadySpkSch)
+                                           HasilPetaLokasiReadySpkSch, HasilPetaLokasiRemoveLink)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
@@ -664,7 +664,7 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     return {"message":"successfully"} 
 
 @router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
-async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
+async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
 
     """Task Remove link bundle and remove existing kelengkapan dokumen"""
 
@@ -672,7 +672,7 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
 
     #bidang
     #rollback from bidang origin when exists
-    bidang_origin = await crud.bidang_origin.get(id=bidang_id)
+    bidang_origin = await crud.bidang_origin.get(id=payload.bidang_id)
     if bidang_origin:
         if bidang_origin.geom :
             bidang_origin.geom = wkt.dumps(wkb.loads(bidang_origin.geom.data, hex=True))
@@ -684,7 +684,7 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
         await crud.bidang.update(obj_current=bidang_origin, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
        
     else:
-        bidang_old = await crud.bidang.get_by_id(id=bidang_id)
+        bidang_old = await crud.bidang.get_by_id(id=payload.bidang_id)
         if bidang_old.geom :
             bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
 
@@ -721,13 +721,13 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 
     #kelengkapan dokumen
-    checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_id)
+    checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
 
     await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
     if bidang_origin:
         await crud.bidang_origin.remove(id=bidang_origin.id, db_session=db_session, with_commit=False)
 
-    await db_session.commit()
+    # await db_session.commit()
 
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
 

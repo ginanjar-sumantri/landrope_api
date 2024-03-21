@@ -73,6 +73,10 @@ class HasilPetaLokasiTaskUpdate(SQLModel):
     from_updated:bool | None = Field(default=False)
     details:list[HasilPetaLokasiDetailTaskUpdate]
 
+class HasilPetaLokasiRemoveLink(SQLModel):
+    bidang_id:str
+    worker_id:str
+
 class HasilPetaLokasiTaskUpdateKulitBintang(SQLModel):
     hasil_peta_lokasi_id:str
     draft_id:str
