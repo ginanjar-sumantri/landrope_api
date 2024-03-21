@@ -674,7 +674,6 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
     #rollback from bidang origin when exists
     bidang_origin = await crud.bidang_origin.get(id=bidang_id)
     if bidang_origin:
-        bidang_id = bidang_origin.id
         if bidang_origin.geom :
             bidang_origin.geom = wkt.dumps(wkb.loads(bidang_origin.geom.data, hex=True))
 
@@ -683,12 +682,9 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
 
         bidang_old_updated = BidangUpdateSch.from_orm(bidang_origin)
         await crud.bidang.update(obj_current=bidang_origin, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
-
-        await crud.bidang_origin.delete(id=bidang_origin.id, db_session=db_session, with_commit=False)
        
     else:
         bidang_old = await crud.bidang.get_by_id(id=bidang_id)
-        bidang_id = bidang_old.id
         if bidang_old.geom :
             bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
 
@@ -727,7 +723,11 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
     #kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang_id)
 
-    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session)
+    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
+    if bidang_origin:
+        await crud.bidang_origin.remove(id=bidang_origin.id, db_session=db_session, with_commit=False)
+
+    await db_session.commit()
 
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
 

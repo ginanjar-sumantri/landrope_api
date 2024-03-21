@@ -423,14 +423,15 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             await db_session.refresh(obj_current)
         return obj_current
         
-    async def remove(self, *, id:UUID | str, db_session : AsyncSession | None = None) -> ModelType:
+    async def remove(self, *, id:UUID | str, db_session : AsyncSession | None = None, with_commit: bool | None = True) -> ModelType:
         db_session = db_session or db.session
         query = select(self.model).where(self.model.id == id)
         response = await db_session.execute(query)
 
         obj = response.scalar_one()
         await db_session.delete(obj)
-        await db_session.commit()
+        if with_commit:
+            await db_session.commit()
         return obj
     
     async def remove_multiple_data(self, *, list_obj: list[ModelType],

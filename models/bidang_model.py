@@ -534,7 +534,6 @@ class BidangHistory(BidangHistoryFullBase, table=True):
     def trans_worker_name(self) -> str | None:
         return getattr(getattr(self, "trans_worker", None), "name", None)
 
-
 class BidangOriginBase(BidangBase):
     geom:str | None = Field(sa_column=Column(Geometry))
     geom_ori:str | None = Field(sa_column=Column(Geometry), nullable=True)
