@@ -680,7 +680,7 @@ async def remove_link_bidang_and_kelengkapan(bidang_id:UUID, worker_id:UUID):
         if bidang_origin.geom_ori :
             bidang_origin.geom_ori = wkt.dumps(wkb.loads(bidang_origin.geom_ori.data, hex=True))
 
-        bidang_old_updated = BidangUpdateSch.from_orm(bidang_origin)
+        bidang_old_updated = BidangUpdateSch(**bidang_origin.dict())
         await crud.bidang.update(obj_current=bidang_origin, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
        
     else:
