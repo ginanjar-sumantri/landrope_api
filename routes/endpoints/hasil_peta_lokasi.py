@@ -727,7 +727,7 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
     if bidang_origin:
         await crud.bidang_origin.remove(id=bidang_origin.id, db_session=db_session, with_commit=False)
 
-    # await db_session.commit()
+    await db_session.commit()
 
     return {"message" : "successfully remove link bidang and kelengkapan dokumen"}
 
