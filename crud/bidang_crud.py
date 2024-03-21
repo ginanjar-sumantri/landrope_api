@@ -29,11 +29,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                      obj_new : BidangUpdateSch | Dict[str, Any] | Bidang,
                      updated_by_id: UUID | str | None = None,
                      db_session : AsyncSession | None = None,
-                     with_commit: bool | None = True) -> Bidang :
+                     with_commit: bool | None = True,
+                     origin: bool | None = False) -> Bidang :
         db_session =  db_session or db.session
 
-        #add history
-        await HistoryService().create_history_bidang(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
+        if origin == False:
+            #add history
+            await HistoryService().create_history_bidang(obj_current=obj_current, worker_id=updated_by_id, db_session=db_session)
 
         obj_data = jsonable_encoder(obj_current)
 
