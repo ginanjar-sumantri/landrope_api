@@ -737,13 +737,14 @@ async def generate_printout(id:UUID|str):
 
     obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
 
+    if spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
     #alashak mesti nomor 1
-    alashak_kel = next((SpkDetailPrintOut(name=alashak["name"], tanggapan=alashak["tanggapan"]) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
-    if alashak_kel:
-        alashak_kel.no = 1
-        alashak_kel.name = f"{alashak_kel.name} ({spk_header.alashak})"
-        no = 2
-        spk_details.append(alashak_kel)
+        alashak_kel = next((SpkDetailPrintOut(name=alashak["name"], tanggapan=alashak["tanggapan"]) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
+        if alashak_kel:
+            alashak_kel.no = 1
+            alashak_kel.name = f"{alashak_kel.name} ({spk_header.alashak})"
+            no = 2
+            spk_details.append(alashak_kel)
     
     obj_beban_biayas = []
     obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
