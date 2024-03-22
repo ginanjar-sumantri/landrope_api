@@ -960,7 +960,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
             inner join bidang b ON b.id = hpl.bidang_id
-			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'DP'
+			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is not True
             Where 
 				(select count(*) from checklist_kelengkapan_dokumen_dt c_dt
 				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
@@ -975,7 +975,6 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) = 0
 			and s.id is NULL
-            or s.is_void != True
             UNION
             select 
             b.id,
@@ -992,7 +991,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN'
             inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
             inner join bidang b ON b.id = hpl.bidang_id
-			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN'
+			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is not True
             Where 
 				(select count(*) from checklist_kelengkapan_dokumen_dt c_dt
 				inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
@@ -1007,7 +1006,6 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) <= 0
 			and s.id is NULL
-            or s.is_void != True
             UNION
             select 
             b.id,
@@ -1020,7 +1018,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
             from hasil_peta_lokasi hpl
             inner join bidang b ON b.id = hpl.bidang_id
-            left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL'
+            left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is not True
             Where (select count(*) 
                 from bidang_komponen_biaya kb
                 left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
@@ -1037,7 +1035,6 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and b_dt.file_path is null
                 ) <= 0
 			and s.id is NULL
-            or s.is_void != True
             UNION
             select 
             b.id,
@@ -1051,9 +1048,8 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             from hasil_peta_lokasi hpl
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
             inner join bidang b ON b.id = hpl.bidang_id
-			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK'
-			Where s.id is NULL
-            or s.is_void != True
+			left outer join spk s ON s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is not True
+			Where s.id is null 
             Order by id_bidang)
             select * from subquery
             {searching}
