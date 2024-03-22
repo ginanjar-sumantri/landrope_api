@@ -480,7 +480,7 @@ async def update(id:UUID,
             await BundleHelper().merge_spk_signed(bundle=bundle, 
                                                   code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
                                                   tanggal=obj_current.created_at.date(), 
-                                                  file_path=obj_current.file_upload_path, 
+                                                  file_path=sch.file_upload_path, 
                                                   worker_id=obj_current.updated_by_id, db_session=db_session)
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
