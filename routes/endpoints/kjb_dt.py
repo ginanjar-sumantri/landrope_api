@@ -185,7 +185,7 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
                     bidang_updated = BidangUpdateSch(harga_akta=sch.harga_akta, harga_transaksi=sch.harga_transaksi, alashak=sch.alashak)
                     await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
                 else:
-                    if bidang_current.alashak != obj_current.alashak:
+                    if bidang_current.alashak != sch.alashak:
                         bidang_updated = BidangUpdateSch(alashak=sch.alashak)
                         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
                         bundle = await crud.bundlehd.get_by_id(id=obj_current.bundle_hd_id)
