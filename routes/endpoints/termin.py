@@ -269,6 +269,7 @@ async def update_(
             raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
         
         sch.file_upload_path = file_upload_path
+        
     
     obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
@@ -384,6 +385,7 @@ async def update_(
         background_task.add_task(generate_printout, obj_updated.id)
     else:
         background_task.add_task(generate_printout_utj, obj_updated.id)
+        background_task.add_task(merge_memo_signed, obj_updated.id)
 
     obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
 
