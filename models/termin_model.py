@@ -132,6 +132,10 @@ class Termin(TerminFullBase, table=True):
         return getattr(getattr(self, 'tahap', None), 'ptsk_name', None)
     
     @property
+    def group(self) -> str | None:
+        return getattr(getattr(self, 'tahap', None), 'group', None)
+    
+    @property
     def kjb_hd_code(self) -> str | None:
         return getattr(getattr(self, 'kjb_hd', None), 'code', None)
     
