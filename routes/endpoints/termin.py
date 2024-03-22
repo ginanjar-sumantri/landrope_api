@@ -383,9 +383,10 @@ async def update_(
 
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         background_task.add_task(generate_printout, obj_updated.id)
+        background_task.add_task(merge_memo_signed, obj_updated.id)
     else:
         background_task.add_task(generate_printout_utj, obj_updated.id)
-        background_task.add_task(merge_memo_signed, obj_updated.id)
+       
 
     obj_updated = await crud.termin.get_by_id(id=obj_updated.id)
 
