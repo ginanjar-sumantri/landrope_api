@@ -423,7 +423,7 @@ class BundleHelper:
         if meta_data_current:
             meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
 
-            data = meta_data_current.get("data", None)
+            data = meta_datas_current.get("data", None)
             if data is None:
                 meta_datas_current = {"data" : []}
         else:
