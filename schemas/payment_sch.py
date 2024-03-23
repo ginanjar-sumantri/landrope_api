@@ -51,3 +51,6 @@ class PaymentUpdateSch(PaymentBase):
     tanggal_cair:date|None
     nomor_giro:str|None
     details:list[PaymentDetailExtSch]|None
+    giros:list[PaymentGiroDetailExtSch]|None
+    komponens:list[PaymentKomponenBiayaDetailExtSch]|None
+

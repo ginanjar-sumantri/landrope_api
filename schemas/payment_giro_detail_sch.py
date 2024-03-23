@@ -12,6 +12,7 @@ class PaymentGiroDetailCreateSch(PaymentGiroDetailBase):
     pass
 
 class PaymentGiroDetailExtSch(SQLModel):
+    id:UUID | None
     giro_id: UUID | None
     id_index: UUID | None
     nomor_giro: str | None
