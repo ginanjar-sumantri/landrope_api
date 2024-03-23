@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from models import Giro, Worker, Invoice, InvoiceDetail, BebanBiaya, Termin
 
 class PaymentBase(SQLModel):
-    payment_method:PaymentMethodEnum = Field(nullable=False)
+    payment_method:PaymentMethodEnum | None = Field(nullable=True)
     amount:Decimal | None = Field(nullable=True)
     giro_id:Optional[UUID] = Field(foreign_key="giro.id", nullable=True)
     bank_code:Optional[str] = Field(nullable=True)
     code:Optional[str] = Field(nullable=True)
-    pay_to: str | None = Field(nullable=False)
+    pay_to: str | None = Field(nullable=True)
     remark:str | None = Field(nullable=True)
     payment_date: date | None = Field(nullable=True)
     reference:str|None = Field(nullable=True)
@@ -24,7 +24,6 @@ class PaymentBase(SQLModel):
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
-    termin_id: UUID | None = Field(nullable=True, foreign_key="termin.id")
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -56,13 +55,6 @@ class Payment(PaymentFullBase, table=True):
 
     giro:"Giro" = Relationship(
         back_populates="payment",
-        sa_relationship_kwargs=
-        {
-            "lazy" : "select"
-        }
-    )
-
-    termin:"Termin" = Relationship(
         sa_relationship_kwargs=
         {
             "lazy" : "select"
