@@ -3,6 +3,7 @@ from common.partial import optional
 from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 from uuid import UUID
+from decimal import Decimal
 
 class BebanBiayaCreateSch(BebanBiayaBase):
     pass
@@ -24,3 +25,11 @@ class BebanBiayaForSpkSch(SQLModel):
 @optional
 class BebanBiayaUpdateSch(BebanBiayaBase):
     pass
+
+class BebanBiayaGroupingSch(SQLModel):
+    beban_biaya_id:UUID | None
+    beban_biaya_name:str | None
+    amount:Decimal | None
+    memo_code:str | None
+    nomor_memo:str | None
+    termin_id:UUID | None

@@ -1,5 +1,7 @@
 from models.payment_model import Payment, PaymentBase, PaymentFullBase
 from schemas.payment_detail_sch import PaymentDetailSch, PaymentDetailExtSch
+from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch
+from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch
 from common.partial import optional
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
@@ -7,11 +9,13 @@ from uuid import UUID
 from datetime import date
 
 class PaymentCreateSch(PaymentBase):
-    nomor_giro:str|None
-    tanggal:date|None
-    tanggal_buka:date|None
-    tanggal_cair:date|None
+    # nomor_giro:str|None
+    # tanggal:date|None
+    # tanggal_buka:date|None
+    # tanggal_cair:date|None
     details:list[PaymentDetailExtSch]|None
+    giros:list[PaymentGiroDetailExtSch]|None
+    komponens:list[PaymentKomponenBiayaDetailExtSch]|None
 
 class PaymentSch(PaymentFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")

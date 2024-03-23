@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.invoice_model import InvoiceDetail
+from models import InvoiceDetail, Invoice, BidangKomponenBiaya
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from typing import List
 from uuid import UUID
@@ -22,6 +22,25 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         db_session = db_session or db.session
 
         query = select(self.model).where(and_(~self.model.id.in_(id for id in list_ids), self.model.invoice_id == invoice_id))
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_multi_by_invoice_ids(self, 
+                            *,
+                            list_ids:List[UUID] | None = None,
+                            beban_biaya_id:UUID,
+                            db_session : AsyncSession | None = None
+                            ) -> List[InvoiceDetail] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                    ).join(BidangKomponenBiaya, BidangKomponenBiaya.id == InvoiceDetail.bidang_komponen_biaya_id
+                                    ).where(and_(Invoice.id.in_(list_ids)),
+                                                BidangKomponenBiaya.beban_biaya_id == beban_biaya_id,
+                                                BidangKomponenBiaya.beban_pembeli == True
+                                                ).distinct()
 
         response =  await db_session.execute(query)
         return response.scalars().all()

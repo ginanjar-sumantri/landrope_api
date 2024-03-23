@@ -8,7 +8,7 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Giro, Worker, Invoice
+    from models import Giro, Worker, Invoice, InvoiceDetail, BebanBiaya, Termin
 
 class PaymentBase(SQLModel):
     payment_method:PaymentMethodEnum = Field(nullable=False)
@@ -24,6 +24,7 @@ class PaymentBase(SQLModel):
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
+    termin_id: UUID | None = Field(nullable=True, foreign_key="termin.id")
 
 class PaymentFullBase(BaseUUIDModel, PaymentBase):
     pass
@@ -37,8 +38,31 @@ class Payment(PaymentFullBase, table=True):
         }
     )
 
+    giro_details:list["PaymentGiroDetail"] = Relationship(
+        back_populates="payment",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    komponen_biaya_details:list["PaymentKomponenBiayaDetail"] = Relationship(
+        back_populates="payment",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
     giro:"Giro" = Relationship(
         back_populates="payment",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    termin:"Termin" = Relationship(
         sa_relationship_kwargs=
         {
             "lazy" : "select"
@@ -92,6 +116,47 @@ class Payment(PaymentFullBase, table=True):
         
         return Decimal(self.amount - total_payment)
 
+
+class PaymentGiroDetailBase(SQLModel):
+    payment_id: UUID | None = Field(foreign_key="payment.id", nullable=False)
+    payment_method: PaymentMethodEnum | None = Field(nullable=False)
+    giro_id: UUID | None = Field(foreign_key="giro.id", nullable=False)
+    amount: Decimal = Field(nullable=True, default=0)
+
+class PaymentGiroDetailFullBase(BaseUUIDModel, PaymentGiroDetailBase):
+    pass
+
+class PaymentGiroDetail(PaymentGiroDetailFullBase, table=True):
+    payment: "Payment" = Relationship(
+        back_populates="giro_details",
+        sa_relationship_kwargs={
+        "lazy":"select"
+    })
+
+    giro: "Giro" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy":"select"
+        }
+    )
+
+    payment_details: list["PaymentDetail"] = Relationship(
+        back_populates="payment_giro",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    payment_komponen_biaya_details: list["PaymentKomponenBiayaDetail"] = Relationship(
+        back_populates="payment_giro",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+
 class PaymentDetailBase(SQLModel):
     payment_id:UUID = Field(foreign_key="payment.id")
     invoice_id:UUID = Field(foreign_key="invoice.id")
@@ -102,6 +167,8 @@ class PaymentDetailBase(SQLModel):
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
     allocation_date:Optional[date] = Field(nullable=True)
+    payment_giro_detail_id: UUID | None = Field(foreign_key="payment_giro_detail.id", nullable=True)
+    realisasi:bool | None = Field(nullable=True, default=False)
 
 class PaymentDetailFullBase(BaseUUIDModel, PaymentDetailBase):
     pass
@@ -116,6 +183,14 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     )
 
     invoice:"Invoice" = Relationship(
+        back_populates="payment_details",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    payment_giro:"PaymentGiroDetail" = Relationship(
         back_populates="payment_details",
         sa_relationship_kwargs=
         {
@@ -214,5 +289,44 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def luas_bayar(self) -> Decimal | None:
         return getattr(getattr(getattr(self, "invoice", None), "bidang", None), "luas_bayar")
+
     
-    
+class PaymentKomponenBiayaDetailBase(SQLModel):
+    payment_id: UUID = Field(foreign_key="payment.id", nullable=False)
+    invoice_detail_id: UUID = Field(foreign_key="invoice_detail.id")
+    payment_giro_detail_id: UUID = Field(foreign_key="payment_giro_detail.id", nullable=False)
+    beban_biaya_id: UUID = Field(foreign_key="beban_biaya.id", nullable=False)
+    amount: Decimal = Field(nullable=False, default=0)
+
+class PaymentKomponenBiayaDetailFullBase(BaseUUIDModel, PaymentKomponenBiayaDetailBase):
+    pass
+
+class PaymentKomponenBiayaDetail(PaymentKomponenBiayaDetailFullBase, table=True):
+    payment:"Payment" = Relationship(
+        back_populates="komponen_biaya_details",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    invoice_detail:"InvoiceDetail" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    payment_giro:"PaymentGiroDetail" = Relationship(
+        back_populates="payment_komponen_biaya_details",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    beban_biaya:"BebanBiaya" = Relationship(
+        sa_relationship_kwargs={
+            "lazy" : "select"
+        }
+    )

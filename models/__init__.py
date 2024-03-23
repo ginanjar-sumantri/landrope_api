@@ -34,7 +34,7 @@ from .tahap_model import Tahap, TahapDetail
 from .termin_model import Termin, TerminBayar
 from .utj_khusus_model import UtjKhusus, UtjKhususDetail
 from .invoice_model import Invoice, InvoiceDetail
-from .payment_model import Payment, PaymentDetail
+from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKomponenBiayaDetail
 
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover

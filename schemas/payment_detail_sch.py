@@ -15,6 +15,9 @@ class PaymentDetailExtSch(SQLModel):
     invoice_id:UUID|None
     amount:Decimal|None
     allocation_date:date|None
+    giro_id: UUID | None
+    giro_index: UUID | None
+    realisasi: bool | None
 
 class PaymentDetailSch(PaymentDetailFullBase):
     code_giro:str | None = Field(alias="code_giro")

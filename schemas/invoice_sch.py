@@ -71,6 +71,18 @@ class InvoiceByIdSch(InvoiceFullBase):
     details:list[InvoiceDetailSch]
     updated_by_name:str|None = Field(alias="updated_by_name")
 
+class InvoiceOnMemoSch(InvoiceFullBase):
+    id_bidang:str|None
+    alashak:str|None 
+    ptsk_name:str|None 
+    planing_name:str|None 
+    jenis_bayar:Optional[JenisBayarEnum]
+    nomor_tahap:Optional[int]
+    nomor_memo:Optional[str]
+    code_termin:Optional[str]
+    invoice_outstanding:Optional[Decimal]
+    amount_nett:Optional[Decimal]
+
 class InvoiceByIdVoidSch(InvoiceFullBase):
     pass
 

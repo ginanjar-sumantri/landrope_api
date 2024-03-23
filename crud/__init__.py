@@ -80,6 +80,7 @@ from .utj_khusus_crud import utj_khusus
 from .utj_khusus_detail_crud import utj_khusus_detail
 from .payment_crud import payment
 from .payment_detail_crud import payment_detail
+from .payment_giro_detail_crud import payment_giro_detail
 
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error

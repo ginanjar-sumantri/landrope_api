@@ -299,6 +299,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                             ).options(selectinload(Invoice.payment_details))
                                 )
                     )
+        
         query = query.options(selectinload(Invoice.details
                                 ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
                                             ).options(selectinload(BidangKomponenBiaya.bidang))
@@ -406,6 +407,38 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
         return [InvoiceLuasBayarSch(**dict(ret)) for ret in result]
     
+    #to get invoice utj for payment memo bayar include utj
+    async def get_multi_by_bidang_ids(self, 
+                  *, 
+                  bidang_ids: List[UUID]| list[str] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Invoice] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Invoice).join(Termin, Termin.id == Invoice.termin_id)
 
+        query = query.filter(Invoice.is_void != True)
+        query = query.filter(Invoice.bidang_id.in_(bidang_ids))
+        query = query.filter(Termin.jenis_bayar.in_([JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]))
+        
+        query = query.options(selectinload(Invoice.spk))
+        query = query.options(selectinload(Invoice.termin))
+        query = query.options(selectinload(Invoice.bidang
+                                ).options(selectinload(Bidang.invoices
+                                            ).options(selectinload(Invoice.termin)
+                                            ).options(selectinload(Invoice.payment_details))
+                                )
+                    )
+        query = query.options(selectinload(Invoice.details
+                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                            ).options(selectinload(BidangKomponenBiaya.bidang))
+                                )
+                    )
+        query = query.options(selectinload(Invoice.payment_details))
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 invoice = CRUDInvoice(Invoice)

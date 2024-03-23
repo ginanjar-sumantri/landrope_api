@@ -25,6 +25,7 @@ class InvoiceBase(SQLModel):
     void_reason:Optional[str] = Field(nullable=True)
     void_at:Optional[date] = Field(nullable=True)
     payment_status:Optional[PaymentStatusEnum] = Field(nullable=True)
+    realisasi: bool | None = Field(nullable=True, default=False)
 
 class InvoiceFullBase(BaseUUIDModel, InvoiceBase):
     pass
