@@ -106,7 +106,11 @@ class Payment(PaymentFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        return Decimal(self.amount - total_payment)
+        amount = sum([giro.amount for giro in self.giro_details])
+
+        return Decimal(amount- total_payment)
+        
+        # return Decimal((self.amount or 0) - total_payment)
 
 
 class PaymentGiroDetailBase(SQLModel):
