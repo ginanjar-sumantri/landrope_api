@@ -15,6 +15,7 @@ class PaymentKomponenBiayaDetailExtSch(SQLModel):
     giro_id: UUID | None
     giro_index: UUID | None
     amount: Decimal | None 
+    termin_id: UUID | None
 
 
 class PaymentKomponenBiayaDetailSch(PaymentKomponenBiayaDetailFullBase):

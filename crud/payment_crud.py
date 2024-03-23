@@ -88,7 +88,9 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
 
         for payment_komponen_biaya_dt in obj_in.komponens:
             obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["giro_index"] == payment_komponen_biaya_dt.giro_index), None)
-            obj_invoices_dt = await crud.invoice_detail.get_multi_by_invoice_ids(list_ids=[dt.invoice_id for dt in obj_in.details], beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id)
+            obj_invoices_dt = await crud.invoice_detail.get_multi_by_invoice_ids(list_ids=[dt.invoice_id for dt in obj_in.details], 
+                                                                                beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
+                                                                                termin_id=payment_komponen_biaya_dt.termin_id)
 
             for inv_dt in obj_invoices_dt:
                 obj_payment_komponen_biaya_dt = PaymentKomponenBiayaDetail(invoice_detail_id=inv_dt.id,
