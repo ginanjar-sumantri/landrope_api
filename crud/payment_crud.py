@@ -43,6 +43,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                 if obj_giro:
                     obj_giro.tanggal_buka = giro_dt.tanggal_buka
                     obj_giro.tanggal_cair = giro_dt.tanggal_cair
+                    obj_giro.tanggal = giro_dt.payment_date
                     obj_giro.updated_by_id = created_by_id
                     obj_giro.updated_at = datetime.utcnow()
 
