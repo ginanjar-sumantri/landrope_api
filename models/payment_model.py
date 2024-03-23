@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class PaymentBase(SQLModel):
     payment_method:PaymentMethodEnum = Field(nullable=False)
-    amount:Decimal = Field(nullable=True)
+    amount:Decimal | None = Field(nullable=True)
     giro_id:Optional[UUID] = Field(foreign_key="giro.id", nullable=True)
     bank_code:Optional[str] = Field(nullable=True)
     code:Optional[str] = Field(nullable=True)
