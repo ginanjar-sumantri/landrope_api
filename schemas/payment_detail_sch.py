@@ -16,7 +16,7 @@ class PaymentDetailExtSch(SQLModel):
     amount:Decimal|None
     allocation_date:date|None
     giro_id: UUID | None
-    giro_index: UUID | None
+    id_index: UUID | None
     realisasi: bool | None
 
 class PaymentDetailSch(PaymentDetailFullBase):

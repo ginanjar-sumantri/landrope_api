@@ -65,7 +65,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                 )
                     db_session.add(obj_giro)
 
-            obj_payment_giro_detail = PaymentGiroDetail(**giro_dt.dict(exclude={"giro_id", "giro_index"}), 
+            obj_payment_giro_detail = PaymentGiroDetail(**giro_dt.dict(exclude={"giro_id", "id_index"}), 
                                                     giro_id=obj_giro.id if obj_giro else None, 
                                                     created_by_id=created_by_id, 
                                                     updated_by_id=created_by_id, 
@@ -74,11 +74,11 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             
             db_obj.giro_details.append(obj_payment_giro_detail)
 
-            giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "giro_index" : giro_dt.giro_index})
+            giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "id_index" : giro_dt.id_index})
 
         for payment_dt in obj_in.details:
-            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["giro_index"] == payment_dt.giro_index), None)
-            obj_payment_dt = PaymentDetail(**payment_dt.dict(exclude={"giro_index"}), 
+            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_dt.id_index), None)
+            obj_payment_dt = PaymentDetail(**payment_dt.dict(exclude={"id_index"}), 
                                             payment_giro_detail_id=obj_payment_giro_detail_id,
                                             created_by_id=created_by_id,
                                             updated_by_id=created_by_id,
@@ -88,7 +88,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             db_obj.details.append(obj_payment_dt)
 
         for payment_komponen_biaya_dt in obj_in.komponens:
-            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["giro_index"] == payment_komponen_biaya_dt.giro_index), None)
+            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_komponen_biaya_dt.id_index), None)
             obj_invoices_dt = await crud.invoice_detail.get_multi_by_invoice_ids(list_ids=[dt.invoice_id for dt in obj_in.details], 
                                                                                 beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
                                                                                 termin_id=payment_komponen_biaya_dt.termin_id)

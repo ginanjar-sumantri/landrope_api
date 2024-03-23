@@ -13,7 +13,7 @@ class PaymentKomponenBiayaDetailCreateSch(PaymentKomponenBiayaDetailBase):
 class PaymentKomponenBiayaDetailExtSch(SQLModel):
     beban_biaya_id: UUID
     giro_id: UUID | None
-    giro_index: UUID | None
+    id_index: UUID | None
     amount: Decimal | None 
     termin_id: UUID | None
 

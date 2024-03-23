@@ -13,7 +13,7 @@ class PaymentGiroDetailCreateSch(PaymentGiroDetailBase):
 
 class PaymentGiroDetailExtSch(SQLModel):
     giro_id: UUID | None
-    giro_index: UUID | None
+    id_index: UUID | None
     nomor_giro: str | None
     tanggal_buka: date | None
     tanggal_cair: date | None
