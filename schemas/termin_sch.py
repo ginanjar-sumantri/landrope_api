@@ -71,8 +71,11 @@ class TerminByIdForPrintOut(SQLModel):
     notaris_name:str|None 
     manager_name:str|None 
     sales_name:str|None 
+    k_manager_name:str|None 
+    k_sales_name:str|None 
     mediator:str|None
     remark:str|None
+    section_name:str|None
 
 class TerminInvoiceforPrintOut(SQLModel):
     id_bidang:Optional[UUID]

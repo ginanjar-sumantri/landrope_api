@@ -99,9 +99,12 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         Coalesce(tr.mediator, '') as mediator,
                         Coalesce(mng.name, '') as manager_name,
                         Coalesce(sls.name, '') as sales_name,
+                        Coalesce(k_mng.name, '') as k_manager_name,
+                        Coalesce(k_sls.name, '') as k_sales_name,
                         Coalesce(nt.name, '') as notaris_name,
                         tr.jenis_bayar,
-                        tr.remark
+                        tr.remark,
+                        sc.name as section_name
                         from termin tr
                         inner join invoice i on i.termin_id = tr.id
                         inner join bidang b on b.id = i.bidang_id
@@ -109,10 +112,14 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         left outer join planing pl on pl.id = t.planing_id
                         left outer join project pr on pr.id = pl.project_id
                         left outer join desa ds on ds.id = pl.desa_id
+                        left outer join section sc on sc.id = pr.section_id
                         left outer join ptsk pt on pt.id = t.ptsk_id
                         left outer join manager mng on mng.id = tr.manager_id
                         left outer join sales sls on sls.id = tr.sales_id
                         left outer join notaris nt on nt.id = tr.notaris_id
+                        left outer join kjb_hd k_hd on k_hd.id = tr.kjb_hd_id
+                        left outer join manager k_mng on k_mng.id = k_hd.manager_id
+                        left outer join sales k_sls on k_sls.id = k_hd.sales_id
                         where tr.id = '{str(id)}'
                         group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id
                     """)

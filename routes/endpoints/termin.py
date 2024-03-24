@@ -1193,6 +1193,8 @@ async def generate_printout_utj(id:UUID | str):
     template = env.get_template(filename)
 
     render_template = template.render(code=termin_header.code,
+                                    manager_name=termin_header.k_manager_name,
+                                    sales_name=termin_header.k_sales_name,
                                     data=data,
                                     total_luas_surat=total_luas_surat,
                                     total_amount=total_amount)
@@ -1393,6 +1395,7 @@ async def generate_printout(id:UUID | str):
     render_template = template.render(code=termin_header.nomor_memo or "",
                                     created_at=created_at,
                                     nomor_tahap=termin_header.nomor_tahap,
+                                    section_name=termin_header.section_name,
                                     project_name=termin_header.project_name,
                                     desa_name=termin_header.desa_name,
                                     ptsk_name=termin_header.ptsk_name,
