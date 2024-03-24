@@ -407,6 +407,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     for kb in komponen_biayas:
         komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
         komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
+        komponen_biaya_sch.is_tax = kb.is_tax
         list_komponen_biaya.append(komponen_biaya_sch)
     
     list_kelengkapan_dokumen = []
