@@ -169,12 +169,26 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
     def gu_exists(self) -> bool | None:
         if self.kjb_dt:
             if self.kjb_dt.bundlehd:
-                gu_pt = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PT" and als.meta_data), None)
+                gu_pt = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR PBT" and als.meta_data), None)
                 if gu_pt:
                     return True
                 
-                gu_perorangan = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR NIB PERORANGAN" and als.meta_data), None)
+                gu_perorangan = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "GAMBAR UKUR PERORANGAN" and als.meta_data), None)
                 if gu_perorangan:
+                    return True
+            
+        return False
+    
+    @property
+    def pbt_exists(self) -> bool | None:
+        if self.kjb_dt:
+            if self.kjb_dt.bundlehd:
+                pbt_pt = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "PBT PT" and als.meta_data), None)
+                if pbt_pt:
+                    return True
+                
+                pbt_perorangan = next((als for als in self.kjb_dt.bundlehd.bundledts if als.dokumen_name == "PBT PERORANGAN" and als.meta_data), None)
+                if pbt_perorangan:
                     return True
             
         return False
