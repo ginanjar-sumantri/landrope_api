@@ -91,7 +91,6 @@ async def create(
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
                                                                 beban_pembeli=komponen_biaya.beban_pembeli,
-                                                                order_number=komponen_biaya.order_number,
                                                                 remark=komponen_biaya.remark)
             
             
