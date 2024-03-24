@@ -200,7 +200,6 @@ async def update(id:UUID, sch:PaymentUpdateSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
-    db_session = db.session
 
     obj_current = await crud.payment.get_by_id(id=id)
 
@@ -210,95 +209,130 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    amount_dtls = []
-
-    for dt in sch.details:
-        if dt.id:
-            dt_current = next((x for x in obj_current.details if x.id == dt.id), None)
-            if dt_current.is_void != True:
-                amount_dtls.append(dt_current.amount)
-        else:
-            amount_dtls.append(dt.amount)
-    
-    if (sch.amount - sum(amount_dtls)) < 0:
-            raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
-    
-    giro_current = None
-    if sch.giro_id is None and sch.payment_method != PaymentMethodEnum.Tunai:
-        giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
-        if giro_current is None:
-            entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
-            last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
-            code_giro = f"{sch.payment_method.value}/{last_number_giro}"
-            sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
-            giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        else:
-            sch_giro = GiroUpdateSch(**giro_current.dict())
-            sch_giro.tanggal_buka = sch.tanggal_buka
-            sch_giro.tanggal_cair = sch.tanggal_cair
-
-            giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        sch.giro_id = giro_current.id    
-    
-    if sch.giro_id and sch.payment_method == PaymentMethodEnum.Giro:
-        giro_current = await crud.giro.get(id=sch.giro_id)
-        sch_giro = GiroUpdateSch(**giro_current.dict())
-        sch_giro.tanggal_buka = sch.tanggal_buka
-        sch_giro.tanggal_cair = sch.tanggal_cair
-
-        giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
-    sch.is_void = obj_current.is_void
-    
-    obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-    
     bidang_ids = []
-
-    #delete detail
-    id_dtls = [dt.id for dt in sch.details if dt.id is not None]
-    if len(id_dtls) > 0:
-        removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
-        if len(removed_dtls) > 0:
-            r_dtl = [rm.invoice.bidang_id for rm in removed_dtls]
-            bidang_ids = bidang_ids + r_dtl
-            await crud.payment_detail.remove_multiple_data(list_obj=removed_dtls, db_session=db_session)
-            
-    
-    if len(id_dtls) == 0 and len(obj_current.details) > 0:
-        r_dtl = [rm.invoice.bidang_id for rm in obj_current.details]
-        bidang_ids = bidang_ids + r_dtl
-        await crud.payment_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
-
+    invoice_ids = []
     for dt in sch.details:
-        if dt.id is None:
-            invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
-            if (invoice_current.invoice_outstanding - dt.amount) < 0:
-                raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
-            
-            bidang_ids.append(invoice_current.bidang_id)
-            detail = PaymentDetailCreateSch(payment_id=obj_current.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False, allocation_date=dt.allocation_date)
-            await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        else:
-            payment_dtl_current = await crud.payment_detail.get(id=dt.id)
-            invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
-            if (invoice_current.invoice_outstanding + payment_dtl_current.amount) - dt.amount < 0 and payment_dtl_current.invoice_id == dt.invoice_id:
-                raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
-            # elif (invoice_current.invoice_outstanding - dt.amount) < 0:
-            #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
-            
-            bidang_ids.append(invoice_current.bidang_id)
-            payment_dtl_updated = PaymentDetailUpdateSch(payment_id=obj_updated.id, invoice_id=dt.invoice_id, amount=dt.amount, allocation_date=dt.allocation_date)
-            await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
+        invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
+        if (invoice_current.invoice_outstanding - dt.amount) < 0:
+            raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+        
+        bidang_ids.append(invoice_current.bidang_id)
+        if invoice_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+            invoice_ids.append(invoice_current.id)
     
+    obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
 
     background_task.add_task(bidang_update_status, bidang_ids)
     background_task.add_task(invoice_update_payment_status, obj_updated.id)
 
     return create_response(data=obj_updated)
+
+# @router.put("/{id}", response_model=PutResponseBaseSch[PaymentSch])
+# async def update(id:UUID, sch:PaymentUpdateSch,
+#                  background_task:BackgroundTasks,
+#                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Update a obj by its id"""
+#     db_session = db.session
+
+#     obj_current = await crud.payment.get_by_id(id=id)
+
+#     if obj_current.is_void:
+#         raise ContentNoChangeException(detail="Payment telah di void")
+
+#     if not obj_current:
+#         raise IdNotFoundException(Payment, id)
+    
+#     amount_dtls = []
+
+#     for dt in sch.details:
+#         if dt.id:
+#             dt_current = next((x for x in obj_current.details if x.id == dt.id), None)
+#             if dt_current.is_void != True:
+#                 amount_dtls.append(dt_current.amount)
+#         else:
+#             amount_dtls.append(dt.amount)
+    
+#     if (sch.amount - sum(amount_dtls)) < 0:
+#             raise ContentNoChangeException(detail=f"Invalid Amount: Amount payment detail tidak boleh lebih besar dari payment!!")
+    
+#     giro_current = None
+#     if sch.giro_id is None and sch.payment_method != PaymentMethodEnum.Tunai:
+#         giro_current = await crud.giro.get_by_nomor_giro(code=sch.nomor_giro)
+#         if giro_current is None:
+#             entity = CodeCounterEnum.Giro if sch.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
+#             last_number_giro = await generate_code(entity=entity, db_session=db_session, with_commit=False)
+#             code_giro = f"{sch.payment_method.value}/{last_number_giro}"
+#             sch_giro = GiroCreateSch(**sch.dict(exclude={"code"}), code=code_giro, is_active=True, from_master=False)
+#             giro_current = await crud.giro.create(obj_in=sch_giro, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+#         else:
+#             sch_giro = GiroUpdateSch(**giro_current.dict())
+#             sch_giro.tanggal_buka = sch.tanggal_buka
+#             sch_giro.tanggal_cair = sch.tanggal_cair
+
+#             giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+#         sch.giro_id = giro_current.id    
+    
+#     if sch.giro_id and sch.payment_method == PaymentMethodEnum.Giro:
+#         giro_current = await crud.giro.get(id=sch.giro_id)
+#         sch_giro = GiroUpdateSch(**giro_current.dict())
+#         sch_giro.tanggal_buka = sch.tanggal_buka
+#         sch_giro.tanggal_cair = sch.tanggal_cair
+
+#         giro_current = await crud.giro.update(obj_current=giro_current, obj_new=sch_giro, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+#     sch.is_void = obj_current.is_void
+    
+#     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    
+#     bidang_ids = []
+
+#     #delete detail
+#     id_dtls = [dt.id for dt in sch.details if dt.id is not None]
+#     if len(id_dtls) > 0:
+#         removed_dtls = await crud.payment_detail.get_payment_not_in_by_ids(list_ids=id_dtls, payment_id=obj_updated.id)
+#         if len(removed_dtls) > 0:
+#             r_dtl = [rm.invoice.bidang_id for rm in removed_dtls]
+#             bidang_ids = bidang_ids + r_dtl
+#             await crud.payment_detail.remove_multiple_data(list_obj=removed_dtls, db_session=db_session)
+            
+    
+#     if len(id_dtls) == 0 and len(obj_current.details) > 0:
+#         r_dtl = [rm.invoice.bidang_id for rm in obj_current.details]
+#         bidang_ids = bidang_ids + r_dtl
+#         await crud.payment_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
+
+#     for dt in sch.details:
+#         if dt.id is None:
+#             invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
+#             if (invoice_current.invoice_outstanding - dt.amount) < 0:
+#                 raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+            
+#             bidang_ids.append(invoice_current.bidang_id)
+#             detail = PaymentDetailCreateSch(payment_id=obj_current.id, invoice_id=dt.invoice_id, amount=dt.amount, is_void=False, allocation_date=dt.allocation_date)
+#             await crud.payment_detail.create(obj_in=detail, created_by_id=current_worker.id, db_session=db_session, with_commit=False)
+#         else:
+#             payment_dtl_current = await crud.payment_detail.get(id=dt.id)
+#             invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
+#             if (invoice_current.invoice_outstanding + payment_dtl_current.amount) - dt.amount < 0 and payment_dtl_current.invoice_id == dt.invoice_id:
+#                 raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+#             # elif (invoice_current.invoice_outstanding - dt.amount) < 0:
+#             #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+            
+#             bidang_ids.append(invoice_current.bidang_id)
+#             payment_dtl_updated = PaymentDetailUpdateSch(payment_id=obj_updated.id, invoice_id=dt.invoice_id, amount=dt.amount, allocation_date=dt.allocation_date)
+#             await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+#     await db_session.commit()
+#     await db_session.refresh(obj_updated)
+    
+#     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
+
+#     background_task.add_task(bidang_update_status, bidang_ids)
+#     background_task.add_task(invoice_update_payment_status, obj_updated.id)
+
+#     return create_response(data=obj_updated)
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
 async def void(id:UUID, sch:PaymentVoidSch,

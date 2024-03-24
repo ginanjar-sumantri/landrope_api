@@ -118,6 +118,7 @@ class PaymentGiroDetailBase(SQLModel):
     payment_method: PaymentMethodEnum | None = Field(nullable=False)
     giro_id: UUID | None = Field(foreign_key="giro.id", nullable=True)
     amount: Decimal = Field(nullable=True, default=0)
+    pay_to: str | None = Field(nullable=True)
 
 class PaymentGiroDetailFullBase(BaseUUIDModel, PaymentGiroDetailBase):
     pass

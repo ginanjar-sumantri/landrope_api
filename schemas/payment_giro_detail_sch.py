@@ -22,6 +22,7 @@ class PaymentGiroDetailExtSch(SQLModel):
     payment_date: date | None
     amount: Decimal | None
     payment_method: PaymentMethodEnum | None
+    pay_to: str | None
 
 
 class PaymentGiroDetailSch(PaymentGiroDetailFullBase):
