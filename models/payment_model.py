@@ -37,7 +37,7 @@ class Payment(PaymentFullBase, table=True):
         }
     )
 
-    giro_details:list["PaymentGiroDetail"] = Relationship(
+    giros:list["PaymentGiroDetail"] = Relationship(
         back_populates="payment",
         sa_relationship_kwargs=
         {
@@ -45,7 +45,7 @@ class Payment(PaymentFullBase, table=True):
         }
     )
 
-    komponen_biaya_details:list["PaymentKomponenBiayaDetail"] = Relationship(
+    komponens:list["PaymentKomponenBiayaDetail"] = Relationship(
         back_populates="payment",
         sa_relationship_kwargs=
         {
@@ -116,7 +116,7 @@ class Payment(PaymentFullBase, table=True):
 class PaymentGiroDetailBase(SQLModel):
     payment_id: UUID | None = Field(foreign_key="payment.id", nullable=False)
     payment_method: PaymentMethodEnum | None = Field(nullable=False)
-    giro_id: UUID | None = Field(foreign_key="giro.id", nullable=False)
+    giro_id: UUID | None = Field(foreign_key="giro.id", nullable=True)
     amount: Decimal = Field(nullable=True, default=0)
 
 class PaymentGiroDetailFullBase(BaseUUIDModel, PaymentGiroDetailBase):
@@ -124,7 +124,7 @@ class PaymentGiroDetailFullBase(BaseUUIDModel, PaymentGiroDetailBase):
 
 class PaymentGiroDetail(PaymentGiroDetailFullBase, table=True):
     payment: "Payment" = Relationship(
-        back_populates="giro_details",
+        back_populates="giros",
         sa_relationship_kwargs={
         "lazy":"select"
     })
@@ -151,6 +151,26 @@ class PaymentGiroDetail(PaymentGiroDetailFullBase, table=True):
             "lazy" : "select"
         }
     )
+
+    @property
+    def giro_code(self) -> Decimal | None:
+        return getattr(getattr(self, "giro", None), "code", None)
+    
+    @property
+    def nomor_giro(self) -> str | None:
+        return getattr(getattr(self, "giro", None), "nomor_giro", None)
+    
+    @property
+    def bank_code(self) -> str | None:
+        return getattr(getattr(self, "giro", None), "bank_code", None)
+    
+    @property
+    def tanggal_buka(self) -> date | None:
+        return getattr(getattr(self, "giro", None), "tanggal_buka", None)
+    
+    @property
+    def tanggal_cair(self) -> date | None:
+        return getattr(getattr(self, "giro", None), "tanggal_cair", None)
 
 
 class PaymentDetailBase(SQLModel):
@@ -299,7 +319,7 @@ class PaymentKomponenBiayaDetailFullBase(BaseUUIDModel, PaymentKomponenBiayaDeta
 
 class PaymentKomponenBiayaDetail(PaymentKomponenBiayaDetailFullBase, table=True):
     payment:"Payment" = Relationship(
-        back_populates="komponen_biaya_details",
+        back_populates="komponens",
         sa_relationship_kwargs=
         {
             "lazy" : "select"
@@ -326,3 +346,20 @@ class PaymentKomponenBiayaDetail(PaymentKomponenBiayaDetailFullBase, table=True)
             "lazy" : "select"
         }
     )
+
+    @property
+    def beban_biaya_name(self) -> str | None:
+        return getattr(getattr(self, "beban_biaya", None), "name", None)
+    
+
+    @property
+    def memo_code(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, "invoice_detail", None), "invoice", None), "termin", None), "code", None)
+    
+    @property
+    def nomor_memo(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, "invoice_detail", None), "invoice", None), "termin", None), "nomor_memo", None)
+    
+    @property
+    def termin_id(self) -> str | None:
+        return getattr(getattr(getattr(getattr(self, "invoice_detail", None), "invoice", None), "termin", None), "id", None)

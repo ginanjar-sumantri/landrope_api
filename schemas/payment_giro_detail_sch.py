@@ -25,7 +25,11 @@ class PaymentGiroDetailExtSch(SQLModel):
 
 
 class PaymentGiroDetailSch(PaymentGiroDetailFullBase):
-    pass
+    giro_code:str|None = Field(alias="giro_code")
+    nomor_giro:str|None = Field(alias="nomor_giro")
+    bank_code:str|None
+    tanggal_buka:date|None
+    tanggal_cair:date|None
 
 @optional
 class PaymentGiroDetailUpdateSch(PaymentGiroDetailBase):

@@ -1,7 +1,8 @@
 from models.payment_model import Payment, PaymentBase, PaymentFullBase
 from schemas.payment_detail_sch import PaymentDetailSch, PaymentDetailExtSch
-from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch
-from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch
+from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch, PaymentGiroDetailSch
+from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch, PaymentKomponenBiayaDetailSch
+from schemas.beban_biaya_sch import BebanBiayaGroupingSch
 from common.partial import optional
 from sqlmodel import SQLModel, Field
 from decimal import Decimal
@@ -30,6 +31,8 @@ class PaymentByIdSch(PaymentFullBase):
     nomor_giro:str|None = Field(alias="nomor_giro")
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
     details:list[PaymentDetailSch]
+    giros:list[PaymentGiroDetailSch]
+    komponens:list[BebanBiayaGroupingSch] | None
     tanggal_buka:date|None
     tanggal_cair:date|None
 

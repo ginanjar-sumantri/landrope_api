@@ -9,7 +9,7 @@ from crud.base_crud import CRUDBase
 from models import Payment, PaymentDetail, PaymentGiroDetail, PaymentKomponenBiayaDetail, Invoice, Termin, Giro, Bidang, Skpt, InvoiceDetail, BidangKomponenBiaya
 from schemas.payment_sch import PaymentCreateSch, PaymentUpdateSch
 from schemas.giro_sch import GiroCreateSch, GiroUpdateSch
-from schemas.payment_giro_detail_sch import PaymentGiroDetailCreateSch
+from schemas.payment_giro_detail_sch import PaymentGiroDetailCreateSch, PaymentGiroDetailExtSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
 from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailCreateSch
 from common.enum import PaymentMethodEnum
@@ -74,13 +74,13 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
 
             obj_payment_giro_detail_crt = PaymentGiroDetailCreateSch(**giro_dt.dict(exclude={"giro_id", "id_index"}),
                                                     payment_id=db_obj.id,
-                                                    giro_id=obj_giro.id if obj_giro else None, 
-                                                    created_by_id=created_by_id, 
-                                                    updated_by_id=created_by_id, 
+                                                    giro_id=obj_giro.id if obj_giro else None,
                                                     created_at=datetime.utcnow, 
                                                     updated_at=datetime.utcnow)
             
             obj_payment_giro_detail = PaymentGiroDetail.from_orm(obj_payment_giro_detail_crt)
+            obj_payment_giro_detail.created_by_id=created_by_id
+            obj_payment_giro_detail.updated_by_id=created_by_id
             
             db_session.add(obj_payment_giro_detail)
 
@@ -91,12 +91,12 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             obj_payment_dt_crt = PaymentDetailCreateSch(**payment_dt.dict(exclude={"id_index"}),
                                             payment_id=db_obj.id,
                                             payment_giro_detail_id=obj_payment_giro_detail_id,
-                                            created_by_id=created_by_id,
-                                            updated_by_id=created_by_id,
                                             created_at=datetime.utcnow,
                                             updated_at=datetime.utcnow)
             
             obj_payment_dt = PaymentDetail.from_orm(obj_payment_dt_crt)
+            obj_payment_dt.created_by_id=created_by_id
+            obj_payment_dt.updated_by_id=created_by_id
             
             db_session.add(obj_payment_dt)
 
@@ -111,13 +111,13 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                             payment_id=db_obj.id,
                                                                             payment_giro_detail_id=obj_payment_giro_detail_id,
                                                                             beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
-                                                                            amount=payment_komponen_biaya_dt.amount,
-                                                                            created_by_id=created_by_id,
-                                                                            updated_by_id=created_by_id,
+                                                                            amount=inv_dt.amount,
                                                                             created_at=datetime.utcnow,
                                                                             updated_at=datetime.utcnow)
                 
                 obj_payment_komponen_biaya_dt = PaymentKomponenBiayaDetail.from_orm(obj_payment_komponen_biaya_dt_crt)
+                obj_payment_komponen_biaya_dt.created_by_id=created_by_id
+                obj_payment_komponen_biaya_dt.updated_by_id=created_by_id
                 
                 db_session.add(obj_payment_komponen_biaya_dt)
         
@@ -132,97 +132,176 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             await db_session.refresh(db_obj)
         return db_obj
     
-    # async def update(self, 
-    #                  *, 
-    #                  obj_current : Payment, 
-    #                  obj_new : PaymentUpdateSch | Dict[str, Any] | Payment,
-    #                  updated_by_id: UUID | str | None = None,
-    #                  db_session : AsyncSession | None = None,
-    #                  with_commit: bool | None = True) -> Payment :
-    #     db_session =  db_session or db.session
-    #     obj_data = jsonable_encoder(obj_current)
+    async def update(self, 
+                     *, 
+                     obj_current : Payment, 
+                     obj_new : PaymentUpdateSch | Dict[str, Any] | Payment,
+                     updated_by_id: UUID | str | None = None,
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True) -> Payment :
+        db_session =  db_session or db.session
+        obj_data = jsonable_encoder(obj_current)
 
-    #     if isinstance(obj_new, dict):
-    #         update_data =  obj_new
-    #     else:
-    #         update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
+        if isinstance(obj_new, dict):
+            update_data =  obj_new
+        else:
+            update_data = obj_new.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
         
-    #     for field in obj_data:
-    #         if field in update_data:
-    #             setattr(obj_current, field, update_data[field])
-    #         if field == "updated_at":
-    #             setattr(obj_current, field, datetime.utcnow())
+        for field in obj_data:
+            if field in update_data:
+                setattr(obj_current, field, update_data[field])
+            if field == "updated_at":
+                setattr(obj_current, field, datetime.utcnow())
         
-    #     if updated_by_id:
-    #         obj_current.updated_by_id = updated_by_id
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
             
-    #     db_session.add(obj_current)
+        db_session.add(obj_current)
 
-    #     await db_session.execute(delete(PaymentDetail).where(and_(PaymentDetail.id.notin_(p_dt.id for p_dt in obj_new.details if p_dt.id is not None),
-    #                                                               PaymentDetail.payment_id == obj_current.id)))
+        await db_session.execute(delete(PaymentDetail).where(and_(PaymentDetail.id.notin_(p_dt.id for p_dt in obj_new.details if p_dt.id is not None),
+                                                                  PaymentDetail.payment_id == obj_current.id)))
         
         
-    #     await db_session.execute(delete(PaymentKomponenBiayaDetail).where(and_(PaymentKomponenBiayaDetail.beban_biaya_id.notin_(k_dt.beban_biaya_id for k_dt in obj_new.komponen_biaya_details if k_dt.id is not None),
-    #                                                               PaymentKomponenBiayaDetail.payment_id == obj_current.id)))
+        await db_session.execute(delete(PaymentKomponenBiayaDetail).where(and_(PaymentKomponenBiayaDetail.beban_biaya_id.notin_(k_dt.beban_biaya_id for k_dt in obj_new.komponens if k_dt.id is not None),
+                                                                  PaymentKomponenBiayaDetail.payment_id == obj_current.id)))
         
-    #     giro_temp = []
-    #     for giro_dt in obj_new.giros:
-    #         obj_giro: Giro | None = None
-    #         obj_payment_giro_detail: PaymentGiroDetail | None = None
-    #         if giro_dt.id is None:
-    #             if giro_dt.giro_id is None and giro_dt.payment_method != PaymentMethodEnum.Tunai:
+        giro_temp = []
+        for giro_dt in obj_new.giros:
+            obj_giro: Giro | None = None
+            obj_payment_giro_detail: PaymentGiroDetail | None = None
+
+            existing_payment_giro_detail = next((g for g in obj_current.giros if g.id == giro_dt.id), None)
+
+            if existing_payment_giro_detail is None:
+                obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
+                obj_payment_giro_detail = PaymentGiroDetail(**giro_dt.dict(exclude={"giro_id", "id_index"}), 
+                                                        giro_id=obj_giro.id if obj_giro else None, 
+                                                        created_by_id=updated_by_id, 
+                                                        updated_by_id=updated_by_id, 
+                                                        created_at=datetime.utcnow, 
+                                                        updated_at=datetime.utcnow)
+                
+                obj_payment_giro_detail = PaymentGiroDetail.from_orm(obj_payment_giro_detail)
+                
+                db_session.add(obj_payment_giro_detail)
+                giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "id_index" : giro_dt.id_index})
+            else:
+                obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
+                giro = giro_dt.dict(exclude_unset=True)
+                for key, value in giro.items():
+                    if key in ["id_index", "giro_id", "nomor_giro"]:
+                        continue
+                    setattr(existing_payment_giro_detail, key, value)
+
+                existing_payment_giro_detail.giro_id = obj_giro.id if obj_giro else None,
+                existing_payment_giro_detail.nomor_giro
+                existing_payment_giro_detail.updated_at = datetime.utcnow()
+                existing_payment_giro_detail.updated_by_id = updated_by_id
+
+                db_session.add(existing_payment_giro_detail)
+                giro_temp.append({"payment_giro_detail_id" : existing_payment_giro_detail.id, "id_index" : giro_dt.id_index})
+        
+        for payment_dt in obj_new.details:
+            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_dt.id_index), None)
+            existing_payment_detail = next((dt for dt in obj_current.details if dt.id == payment_dt.id), None)
+            if existing_payment_detail:
+                dt = payment_dt.dict(exclude_unset=True)
+                for key, value in dt.items():
+                    if key == "id_index":
+                        continue
+
+                    setattr(existing_payment_detail, key, value)
+                existing_payment_detail.payment_giro_detail_id = obj_payment_giro_detail_id
+                existing_payment_detail.updated_at = datetime.utcnow()
+                existing_payment_detail.updated_by_id = updated_by_id
+                db_session.add(existing_payment_detail)
+            else:
+                obj_payment_dt_crt = PaymentDetailCreateSch(**payment_dt.dict(exclude={"id_index"}),
+                                                payment_id=obj_current.id,
+                                                payment_giro_detail_id=obj_payment_giro_detail_id,
+                                                created_at=datetime.utcnow,
+                                                updated_at=datetime.utcnow)
+                
+                obj_payment_dt = PaymentDetail.from_orm(obj_payment_dt_crt)
+                obj_payment_dt.updated_by_id=updated_by_id
+                
+                db_session.add(obj_payment_dt)
+        
+        for payment_komponen_biaya_dt in obj_new.komponens:
+            obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_komponen_biaya_dt.id_index), None)
+            obj_invoices_dt = await crud.invoice_detail.get_multi_by_invoice_ids(list_ids=[dt.invoice_id for dt in obj_new.details], 
+                                                                                beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
+                                                                                termin_id=payment_komponen_biaya_dt.termin_id)
+
+            for inv_dt in obj_invoices_dt:
+                existing_payment_komponen_biaya_detail = next((kompo for kompo in obj_current.komponens if kompo.beban_biaya_id == payment_komponen_biaya_dt.beban_biaya_id 
+                                                                                                            and kompo.invoice_detail_id == inv_dt.id
+                                                                                                            ), None)
+                
+                if existing_payment_komponen_biaya_detail:
+                    existing_payment_komponen_biaya_detail.payment_giro_detail_id = obj_payment_giro_detail_id
+                    existing_payment_komponen_biaya_detail.updated_at = datetime.utcnow
+                    existing_payment_komponen_biaya_detail.updated_by_id = updated_by_id
+
+                    db_session.add(existing_payment_komponen_biaya_detail)
+                else:
+                    obj_payment_komponen_biaya_dt_crt = PaymentKomponenBiayaDetailCreateSch(invoice_detail_id=inv_dt.id,
+                                                                                payment_id=obj_current.id,
+                                                                                payment_giro_detail_id=obj_payment_giro_detail_id,
+                                                                                beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
+                                                                                amount=inv_dt.amount,
+                                                                                created_at=datetime.utcnow,
+                                                                                updated_at=datetime.utcnow)
                     
-    #                 obj_giro = await crud.giro.get_by_nomor_giro_and_payment_method(nomor_giro=giro_dt.nomor_giro, 
-    #                                                                                         payment_method=giro_dt.payment_method)
-    #                 if obj_giro:
-    #                     obj_giro.tanggal_buka = giro_dt.tanggal_buka
-    #                     obj_giro.tanggal_cair = giro_dt.tanggal_cair
-    #                     obj_giro.tanggal = giro_dt.payment_date
-    #                     obj_giro.updated_by_id = updated_by_id
-    #                     obj_giro.updated_at = datetime.utcnow()
+                    obj_payment_komponen_biaya_dt = PaymentKomponenBiayaDetail.from_orm(obj_payment_komponen_biaya_dt_crt)
+                    obj_payment_komponen_biaya_dt.created_by_id=updated_by_id
+                    obj_payment_komponen_biaya_dt.updated_by_id=updated_by_id
 
-    #                     db_session.add(obj_giro)
+                    db_session.add(obj_payment_komponen_biaya_dt)
+            
+        await db_session.execute(delete(PaymentGiroDetail).where(and_(PaymentGiroDetail.id.notin_(gr.id for gr in obj_new.giros if gr.id is not None),
+                                                                  PaymentGiroDetail.payment_id == obj_current.id)))
+            
+
+        if with_commit:
+            await db_session.commit()
+            await db_session.refresh(obj_current)
+        return obj_current
+    
+    async def add_new_giro(self, giro_dt:PaymentGiroDetailExtSch, updated_by_id: UUID, db_session : AsyncSession | None = None) -> Giro:
+        obj_giro: Giro | None = None
+        if giro_dt.giro_id is None and giro_dt.payment_method != PaymentMethodEnum.Tunai:
+                    
+                    obj_giro = await crud.giro.get_by_nomor_giro_and_payment_method(nomor_giro=giro_dt.nomor_giro, 
+                                                                                            payment_method=giro_dt.payment_method)
+                    if obj_giro:
+                        obj_giro.tanggal_buka = giro_dt.tanggal_buka
+                        obj_giro.tanggal_cair = giro_dt.tanggal_cair
+                        obj_giro.tanggal = giro_dt.payment_date
+                        obj_giro.updated_by_id = updated_by_id
+                        obj_giro.updated_at = datetime.utcnow()
+
+                        db_session.add(obj_giro)
                         
-    #                 else:
-    #                     entity = CodeCounterEnum.Giro if giro_dt.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
-    #                     last = await generate_code(entity=entity, db_session=db_session, with_commit=False)
-    #                     obj_giro = Giro(code=f"{giro_dt.payment_method.value}-{last}",
-    #                                                 nomor_giro=giro_dt.nomor_giro,
-    #                                                 amount=giro_dt.amount,
-    #                                                 is_active=True,
-    #                                                 from_master=False,
-    #                                                 tanggal=giro_dt.payment_date,
-    #                                                 bank_code=giro_dt.bank_code,
-    #                                                 payment_method=giro_dt.payment_method,
-    #                                                 tanggal_buka=giro_dt.tanggal_buka,
-    #                                                 tanggal_cair=giro_dt.tanggal_cair
-    #                                                 )
-    #                     db_session.add(obj_giro)
-    #             else:
-    #                 obj_giro = await crud.giro.get(id=giro_dt.giro_id)
+                    else:
+                        entity = CodeCounterEnum.Giro if giro_dt.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
+                        last = await generate_code(entity=entity, db_session=db_session, with_commit=False)
+                        obj_giro = Giro(code=f"{giro_dt.payment_method.value}-{last}",
+                                                    nomor_giro=giro_dt.nomor_giro,
+                                                    amount=giro_dt.amount,
+                                                    is_active=True,
+                                                    from_master=False,
+                                                    tanggal=giro_dt.payment_date,
+                                                    bank_code=giro_dt.bank_code,
+                                                    payment_method=giro_dt.payment_method,
+                                                    tanggal_buka=giro_dt.tanggal_buka,
+                                                    tanggal_cair=giro_dt.tanggal_cair
+                                                    )
+                        db_session.add(obj_giro)
+        else:
+            obj_giro = await crud.giro.get(id=giro_dt.giro_id)
 
-    #             obj_payment_giro_detail = PaymentGiroDetail(**giro_dt.dict(exclude={"giro_id", "id_index"}), 
-    #                                                     giro_id=obj_giro.id if obj_giro else None, 
-    #                                                     created_by_id=updated_by_id, 
-    #                                                     updated_by_id=updated_by_id, 
-    #                                                     created_at=datetime.utcnow, 
-    #                                                     updated_at=datetime.utcnow)
-                
-                
-    #             db_session.add(obj_payment_giro_detail)
-    #         else:
-
-
-    #         giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "id_index" : giro_dt.id_index})
-        
-    #     for payment_detail in obj_new.details:
-    #         exist_payment_detail = next((dt for dt in obj_current.details if dt.id == payment_detail.id), None)
-    #         if exist
-
-    #     if with_commit:
-    #         await db_session.commit()
-    #         await db_session.refresh(obj_current)
-    #     return obj_current
+        return obj_giro
     
 
     async def get_by_id(self, 
@@ -256,8 +335,16 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                                             )
                                                                         )
                                                     )
-                                ).options(selectinload(Payment.giro_details)
-                                ).options(selectinload(Payment.komponen_biaya_details))
+                                ).options(selectinload(Payment.giros
+                                                    ).options(selectinload(PaymentGiroDetail.giro))
+                                ).options(selectinload(Payment.komponens
+                                                    ).options(selectinload(PaymentKomponenBiayaDetail.beban_biaya)
+                                                    ).options(selectinload(PaymentKomponenBiayaDetail.invoice_detail
+                                                                        ).options(selectinload(InvoiceDetail.invoice
+                                                                                            ).options(selectinload(Invoice.termin))
+                                                                        )
+                                                    )
+                                )
                                     
         
         response = await db_session.execute(query)

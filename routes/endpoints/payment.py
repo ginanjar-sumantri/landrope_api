@@ -20,6 +20,7 @@ from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, Wor
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
+from collections import defaultdict
 import crud
 import json
 
@@ -171,7 +172,25 @@ async def get_by_id(id:UUID):
 
     obj = await crud.payment.get_by_id(id=id)
     if obj:
-        return create_response(data=obj)
+
+        result = PaymentByIdSch.from_orm(obj)
+        komponens = result.komponens
+
+        new_komponens: list[BebanBiayaGroupingSch] = []
+        for group_komponen in komponens:
+            existing_komponen = next((bb for bb in new_komponens if bb.beban_biaya_id == group_komponen.beban_biaya_id and bb.termin_id == group_komponen.termin_id), None)
+            if existing_komponen:
+                continue
+
+            total_amount = sum([kompo.amount for kompo in komponens if kompo.beban_biaya_id == group_komponen.beban_biaya_id and kompo.termin_id == group_komponen.termin_id])
+            
+            group_komponen.amount = total_amount
+            new_komponens.append(group_komponen)
+
+        result.komponens = new_komponens
+
+
+        return create_response(data=result)
     else:
         raise IdNotFoundException(Payment, id)
 
