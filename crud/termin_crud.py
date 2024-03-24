@@ -121,7 +121,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         left outer join manager k_mng on k_mng.id = k_hd.manager_id
                         left outer join sales k_sls on k_sls.id = k_hd.sales_id
                         where tr.id = '{str(id)}'
-                        group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id
+                        group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id, k_mng.id, k_sls.id, sc.id
                     """)
 
         response = await db_session.execute(query)
