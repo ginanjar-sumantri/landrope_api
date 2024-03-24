@@ -674,14 +674,21 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
     #rollback from bidang origin when exists
     bidang_origin = await crud.bidang_origin.get(id=payload.bidang_id)
     if bidang_origin:
+        bidang_old = await crud.bidang.get_by_id(id=payload.bidang_id)
         if bidang_origin.geom :
             bidang_origin.geom = wkt.dumps(wkb.loads(bidang_origin.geom.data, hex=True))
 
         if bidang_origin.geom_ori :
             bidang_origin.geom_ori = wkt.dumps(wkb.loads(bidang_origin.geom_ori.data, hex=True))
 
+        if bidang_old.geom :
+            bidang_old.geom = wkt.dumps(wkb.loads(bidang_old.geom.data, hex=True))
+
+        if bidang_old.geom_ori :
+            bidang_old.geom_ori = wkt.dumps(wkb.loads(bidang_old.geom_ori.data, hex=True))
+
         bidang_old_updated = BidangUpdateSch(**bidang_origin.dict())
-        await crud.bidang.update(obj_current=bidang_origin, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
+        await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
        
     else:
         bidang_old = await crud.bidang.get_by_id(id=payload.bidang_id)
@@ -720,7 +727,7 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
 
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False)
 
-    #kelengkapan dokumen
+    # kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
 
     await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
