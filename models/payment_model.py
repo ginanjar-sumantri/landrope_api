@@ -85,7 +85,36 @@ class Payment(PaymentFullBase, table=True):
     
     @property
     def nomor_giro(self) -> str | None:
-        return getattr(getattr(self, "giro", None), "nomor_giro", None)
+        if self.giro:
+            return getattr(getattr(self, "giro", None), "nomor_giro", None)
+        else:
+            nomor_giro_ = []
+            for giro in self.giros:
+                if giro.nomor_giro not in nomor_giro_:
+                    nomor_giro_.append(giro.nomor_giro)
+            
+            return ",".join(nomor_giro_)
+        
+    @property
+    def nomor_memo(self) -> str | None:
+        nomor_memo_ = []
+        for dt in self.details:
+            nomor = getattr(getattr(getattr(dt, "invoice", None), "termin", None), "nomor_memo", None)
+            if nomor:
+                if nomor not in nomor_memo_:
+                    nomor_memo_.append(nomor)
+        
+        return ",".join(nomor_memo_)
+    
+    @property
+    def pay_to(self) -> str | None:
+        
+        pay_to_ = []
+        for giro in self.giros:
+            if giro.pay_to not in pay_to_:
+                pay_to_.append(giro.pay_to)
+        
+        return ",".join(pay_to_)
     
     @property
     def bank_code(self) -> str | None:
@@ -111,6 +140,14 @@ class Payment(PaymentFullBase, table=True):
         return Decimal(amount- total_payment)
         
         # return Decimal((self.amount or 0) - total_payment)
+    
+    @property
+    def total_memo(self) -> Decimal | None:
+        return sum([dt.amount for dt in self.details if dt.is_void != True and dt.realisasi != True])
+    
+    @property
+    def total_komponen(self) -> Decimal | None:
+        return sum([dt.amount for dt in self.komponens])
 
 
 class PaymentGiroDetailBase(SQLModel):

@@ -25,6 +25,10 @@ class PaymentSch(PaymentFullBase):
     payment_outstanding:Decimal|None = Field(alias="payment_outstanding")
     tanggal_buka:date|None
     tanggal_cair:date|None
+    nomor_memo:str|None
+    pay_to:str | None
+    total_memo:Decimal | None
+    total_komponen:Decimal | None
 
 class PaymentByIdSch(PaymentFullBase):
     giro_code:str|None = Field(alias="giro_code")
