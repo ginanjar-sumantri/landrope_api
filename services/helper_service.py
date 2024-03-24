@@ -614,7 +614,7 @@ class BundleHelper:
                 
                 meta_data = json.dumps(meta_datas_current)
 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=file_path,
                                 db_session=db_session, worker_id=worker_id)
     
     async def merge_spk(self, bundle:BundleHd, code:str, tanggal:date, file_path:str, worker_id:UUID, db_session:AsyncSession):
@@ -650,7 +650,7 @@ class BundleHelper:
                 
                 meta_data = json.dumps(meta_datas_current)
 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=file_path,
                                 db_session=db_session, worker_id=worker_id)
     
     async def merge_spk_signed(self, bundle:BundleHd, code:str, tanggal:date, file_path:str, worker_id:UUID, db_session:AsyncSession):
@@ -686,7 +686,7 @@ class BundleHelper:
                 
                 meta_data = json.dumps(meta_datas_current)
 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=file_path,
                                 db_session=db_session, worker_id=worker_id)
     
     async def merge_memo_signed(self, bundle:BundleHd, code:str, tanggal:date, file_path:str, worker_id:UUID, db_session:AsyncSession):
@@ -722,7 +722,7 @@ class BundleHelper:
                 
                 meta_data = json.dumps(meta_datas_current)
 
-                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+                await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=file_path,
                                 db_session=db_session, worker_id=worker_id)
 
     

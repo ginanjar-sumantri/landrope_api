@@ -131,8 +131,12 @@ class BundleDt(BundleDtFullBase, table=True):
     
     @property
     def file_exists(self) -> bool:
-        if self.file_path:
-            return True
+        if self.dokumen.is_multiple:
+            if self.meta_data:
+                return True
+        else:    
+            if self.file_path:
+                return True
         
         return False
     
