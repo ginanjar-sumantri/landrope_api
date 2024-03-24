@@ -5,6 +5,7 @@ from schemas.bundle_dt_sch import BundleDtCreateSch, BundleDtUpdateSch, BundleDt
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select, and_, text
 from fastapi_async_sqlalchemy import db
+from typing import Any, Dict, Generic, List, Type, TypeVar
 
 from uuid import UUID
 
@@ -134,6 +135,13 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
 
         response = await db_session.execute(query)
 
+        return response.scalars().all()
+    
+    async def get_by_ids(self, *, list_ids: List[UUID | str], db_session : AsyncSession | None = None) -> List[BundleDt] | None:
+        db_session = db_session or db.session
+        query = select(self.model).where(self.model.id.in_(list_ids))
+        query = query.options(selectinload(BundleDt.dokumen))
+        response =  await db_session.execute(query)
         return response.scalars().all()
     
 
