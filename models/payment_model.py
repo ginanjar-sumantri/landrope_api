@@ -315,7 +315,7 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
         return getattr(getattr(getattr(self, "invoice", None), "bidang", None), "luas_bayar")
     
     @property
-    def giro_id(self) -> Decimal | None:
+    def giro_id(self) -> UUID | None:
         return getattr(getattr(self, "payment_giro", None), "giro_id", None)
 
     

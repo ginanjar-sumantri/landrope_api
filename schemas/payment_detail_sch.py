@@ -38,6 +38,7 @@ class PaymentDetailSch(PaymentDetailFullBase):
     invoice_amount:Decimal|None = Field(alias="invoice_amount")
     luas_bayar:Decimal|None = Field(alias="luas_bayar")
     invoice_outstanding:Decimal|None = Field(alias="invoice_outstanding")
+    giro_id: UUID | None
 
 class PaymentDetailForPrintout(SQLModel):
     no:int|None
