@@ -33,3 +33,4 @@ class BebanBiayaGroupingSch(SQLModel):
     memo_code:str | None
     nomor_memo:str | None
     termin_id:UUID | None
+    payment_giro_detail_id:UUID | None
