@@ -47,5 +47,27 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
 
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    async def get_by_invoice_id_and_beban_biaya_id_and_termin_id(self, 
+                            *,
+                            invoice_id:UUID | None = None,
+                            beban_biaya_id:UUID,
+                            termin_id:UUID,
+                            db_session : AsyncSession | None = None
+                            ) -> InvoiceDetail | None:
+        
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                    ).join(BidangKomponenBiaya, BidangKomponenBiaya.id == InvoiceDetail.bidang_komponen_biaya_id
+                                    ).join(Termin, Termin.id == Invoice.termin_id
+                                    ).where(and_(Invoice.id == invoice_id,
+                                                BidangKomponenBiaya.beban_biaya_id == beban_biaya_id,
+                                                BidangKomponenBiaya.beban_pembeli == True,
+                                                Termin.id == termin_id)
+                                                ).distinct()
+
+        response =  await db_session.execute(query)
+        return response.scalars().one()
 
 invoice_detail = CRUDInvoiceDetail(InvoiceDetail)

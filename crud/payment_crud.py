@@ -162,7 +162,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                   PaymentDetail.payment_id == obj_current.id)))
         
         
-        await db_session.execute(delete(PaymentKomponenBiayaDetail).where(and_(PaymentKomponenBiayaDetail.beban_biaya_id.notin_(k_dt.beban_biaya_id for k_dt in obj_new.komponens if k_dt.id is not None),
+        await db_session.execute(delete(PaymentKomponenBiayaDetail).where(and_(PaymentKomponenBiayaDetail.beban_biaya_id.notin_(k_dt.beban_biaya_id for k_dt in obj_new.komponens),
                                                                   PaymentKomponenBiayaDetail.payment_id == obj_current.id)))
         
         giro_temp = []
@@ -187,18 +187,17 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                 giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "id_index" : giro_dt.id_index})
             else:
                 obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
-                giro = giro_dt.dict(exclude_unset=True)
-                for key, value in giro.items():
-                    if key in ["id_index", "giro_id", "nomor_giro"]:
-                        continue
-                    setattr(existing_payment_giro_detail, key, value)
+                # giro = giro_dt.dict(exclude_unset=True)
+                # for key, value in giro.items():
+                #     if key in ["id_index", "giro_id", "nomor_giro", "tanggal_buka", "tanggal_cair", "nomor_giro", "bank_code", "payment_date"]:
+                #         continue
+                #     setattr(existing_payment_giro_detail, key, value)
 
-                existing_payment_giro_detail.giro_id = obj_giro.id if obj_giro else None,
-                existing_payment_giro_detail.nomor_giro
-                existing_payment_giro_detail.updated_at = datetime.utcnow()
-                existing_payment_giro_detail.updated_by_id = updated_by_id
+                # existing_payment_giro_detail.giro_id = obj_giro.id if obj_giro else None,
+                # existing_payment_giro_detail.updated_at = datetime.utcnow()
+                # existing_payment_giro_detail.updated_by_id = updated_by_id
 
-                db_session.add(existing_payment_giro_detail)
+                # db_session.add(existing_payment_giro_detail)
                 giro_temp.append({"payment_giro_detail_id" : existing_payment_giro_detail.id, "id_index" : giro_dt.id_index})
         
         for payment_dt in obj_new.details:
@@ -207,7 +206,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             if existing_payment_detail:
                 dt = payment_dt.dict(exclude_unset=True)
                 for key, value in dt.items():
-                    if key == "id_index":
+                    if key in ["id_index", "giro_id"]:
                         continue
 
                     setattr(existing_payment_detail, key, value)
@@ -229,27 +228,31 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
         
         for payment_komponen_biaya_dt in obj_new.komponens:
             obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_komponen_biaya_dt.id_index), None)
-            obj_invoices_dt = await crud.invoice_detail.get_multi_by_invoice_ids(list_ids=[dt.invoice_id for dt in obj_new.details], 
+            for dt in obj_new.details:
+                obj_invoices_dt = await crud.invoice_detail.get_by_invoice_id_and_beban_biaya_id_and_termin_id(invoice_id=dt.invoice_id, 
                                                                                 beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
                                                                                 termin_id=payment_komponen_biaya_dt.termin_id)
 
-            for inv_dt in obj_invoices_dt:
+            
+            
+
+            
                 existing_payment_komponen_biaya_detail = next((kompo for kompo in obj_current.komponens if kompo.beban_biaya_id == payment_komponen_biaya_dt.beban_biaya_id 
-                                                                                                            and kompo.invoice_detail_id == inv_dt.id
+                                                                                                            and kompo.invoice_detail_id == obj_invoices_dt.id
                                                                                                             ), None)
                 
                 if existing_payment_komponen_biaya_detail:
                     existing_payment_komponen_biaya_detail.payment_giro_detail_id = obj_payment_giro_detail_id
-                    existing_payment_komponen_biaya_detail.updated_at = datetime.utcnow
-                    existing_payment_komponen_biaya_detail.updated_by_id = updated_by_id
+                    # existing_payment_komponen_biaya_detail.updated_at = datetime.utcnow
+                    # existing_payment_komponen_biaya_detail.updated_by_id = updated_by_id
 
                     db_session.add(existing_payment_komponen_biaya_detail)
                 else:
-                    obj_payment_komponen_biaya_dt_crt = PaymentKomponenBiayaDetailCreateSch(invoice_detail_id=inv_dt.id,
+                    obj_payment_komponen_biaya_dt_crt = PaymentKomponenBiayaDetailCreateSch(invoice_detail_id=obj_invoices_dt.id,
                                                                                 payment_id=obj_current.id,
                                                                                 payment_giro_detail_id=obj_payment_giro_detail_id,
                                                                                 beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
-                                                                                amount=inv_dt.amount,
+                                                                                amount=obj_invoices_dt.amount,
                                                                                 created_at=datetime.utcnow,
                                                                                 updated_at=datetime.utcnow)
                     

@@ -19,6 +19,7 @@ class BidangKomponenBiayaExtSch(SQLModel):
     satuan_bayar:Optional[SatuanBayarEnum]
     satuan_harga:Optional[SatuanHargaEnum]
     amount:Optional[Decimal]
+    order_number:int | None
 
 
 class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
@@ -28,6 +29,7 @@ class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     is_tax:Optional[bool] = Field(alias="is_tax")
     komponen_biaya_outstanding:Optional[Decimal] = Field(alias="komponen_biaya_outstanding")
     invoice_detail_amount:Optional[Decimal] = Field(alias="invoice_detail_amount")
+    is_exclude_printout:bool | None
 
     
 

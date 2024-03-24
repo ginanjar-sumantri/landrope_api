@@ -170,7 +170,7 @@ class Invoice(InvoiceFullBase, table=True):
             return total_payment
         
         if len(self.payment_details) > 0:
-            array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True]
+            array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True and payment_dtl.realisasi != True]
             total_payment = sum(array_payment)
         
         return Decimal(self.amount - Decimal(total_payment) - self.amount_beban - self.utj_amount)

@@ -26,6 +26,7 @@ class BidangKomponenBiayaBase(SQLModel):
     paid_amount:Optional[Decimal] = Field(nullable=True)
     estimated_amount:Optional[Decimal] = Field(nullable=True)
     formula:Optional[str] = Field(nullable=True)
+    order_number:int | None = Field(nullable=True)
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass
@@ -65,7 +66,7 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
         return getattr(getattr(self, 'worker', None), 'name', None)
     
     @property
-    def beban_biaya_name(self) -> str :
+    def beban_biaya_name(self) -> str | None:
         return getattr(getattr(self, 'beban_biaya', None), 'name', None)
     
     @property
@@ -75,6 +76,10 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     @property
     def is_edit(self) -> bool | None :
         return getattr(getattr(self, 'beban_biaya', False), 'is_edit', False)
+    
+    @property
+    def is_exclude_printout(self) -> bool | None :
+        return getattr(getattr(self, 'beban_biaya', None), 'is_exclude_printout', None)
     
     @property
     def komponen_biaya_outstanding(self) -> Decimal | None:

@@ -28,6 +28,7 @@ class SpkBase(SQLModel):
     file_path:str|None = Field(nullable=True)
     file_upload_path: str | None = Field(nullable = True)
     
+    
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
 
@@ -210,6 +211,7 @@ class SpkKelengkapanDokumenBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
     bundle_dt_id:UUID = Field(foreign_key="bundle_dt.id", nullable=False)
     tanggapan:str | None = Field(nullable=True)
+    order_number: int | None = Field(nullable=True)
 
 class SpkKelengkapanDokumenFullBase(BaseUUIDModel, SpkKelengkapanDokumenBase):
     pass
@@ -242,6 +244,10 @@ class SpkKelengkapanDokumen(SpkKelengkapanDokumenFullBase, table=True):
     @property
     def file_path(self) -> bool | None:
         return getattr(getattr(self, "bundledt", None), "file_path", None)
+    
+    @property
+    def is_exclude_printout(self) -> bool | None:
+        return getattr(getattr(getattr(self, "bundledt", False), "dokumen", False), "is_exclude_printout", False)
     
 
 class SpkHistoryBase(SQLModel):

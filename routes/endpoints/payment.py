@@ -213,8 +213,8 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     invoice_ids = []
     for dt in sch.details:
         invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
-        if (invoice_current.invoice_outstanding - dt.amount) < 0:
-            raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+        # if (invoice_current.invoice_outstanding - dt.amount) < 0:
+        #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
         
         bidang_ids.append(invoice_current.bidang_id)
         if invoice_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:

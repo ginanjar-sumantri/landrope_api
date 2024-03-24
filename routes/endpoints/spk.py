@@ -91,6 +91,7 @@ async def create(
         if komponen_biaya_current:
             komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
                                                                 beban_pembeli=komponen_biaya.beban_pembeli,
+                                                                order_number=komponen_biaya.order_number,
                                                                 remark=komponen_biaya.remark)
             
             
@@ -111,12 +112,16 @@ async def create(
                                                         satuan_bayar=beban_biaya.satuan_bayar,
                                                         satuan_harga=beban_biaya.satuan_harga,
                                                         formula=beban_biaya.formula,
-                                                        amount=beban_biaya.amount)
+                                                        amount=beban_biaya.amount,
+                                                        order_number=komponen_biaya.order_number)
             
             await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
 
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
-        kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
+        kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, 
+                                                                 bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, 
+                                                                 tanggapan=kelengkapan_dokumen.tanggapan, 
+                                                                 order_number=kelengkapan_dokumen.order_number)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
