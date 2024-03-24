@@ -488,6 +488,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bb.is_tax = true
                         and bkb.is_void != true
+                    order by bkb.order_number asc
                     """)
             
         elif jenis_bayar ==  JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
@@ -687,6 +688,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     inner join dokumen d on d.id = bdt.dokumen_id
                     where s.id = '{str(id)}'
                     and Coalesce(d.is_exclude_printout, False) = False 
+                    order by kd.order_number asc
                     """)
 
             response = await db_session.execute(query)

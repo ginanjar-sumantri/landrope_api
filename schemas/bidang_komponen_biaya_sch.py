@@ -30,6 +30,7 @@ class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
     komponen_biaya_outstanding:Optional[Decimal] = Field(alias="komponen_biaya_outstanding")
     invoice_detail_amount:Optional[Decimal] = Field(alias="invoice_detail_amount")
     is_exclude_printout:bool | None
+    order_number:int | None
 
     
 

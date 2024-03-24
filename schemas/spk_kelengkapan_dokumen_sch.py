@@ -17,6 +17,7 @@ class SpkKelengkapanDokumenSch(SpkKelengkapanDokumenFullBase):
     has_meta_data:bool | None = Field(alias="has_meta_data")
     file_path:str | None = Field(alias="file_path")
     is_exclude_printout:bool | None
+    order_number:int | None
 
 class SpkKelengkapanDokumenByIdSch(SpkKelengkapanDokumenFullBase):
     pass
