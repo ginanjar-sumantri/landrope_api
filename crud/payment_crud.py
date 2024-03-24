@@ -343,6 +343,8 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                         ).options(selectinload(InvoiceDetail.invoice
                                                                                             ).options(selectinload(Invoice.termin))
                                                                         )
+                                                    ).options(selectinload(PaymentKomponenBiayaDetail.payment_giro
+                                                                        ).options(selectinload(PaymentGiroDetail.giro))
                                                     )
                                 )
                                     

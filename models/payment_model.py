@@ -240,6 +240,8 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     def code_giro(self) -> str | None:
         if self.payment.giro:
             return self.payment.giro.code
+        else:
+            return getattr(getattr(getattr(self, "payment_giro", None), "giro", None), "code")
         
         return self.payment.code
     
@@ -247,12 +249,17 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     def nomor_giro(self) -> str | None:
         if self.payment.giro:
             return self.payment.giro.nomor_giro
+        else:
+            return getattr(getattr(getattr(self, "payment_giro", None), "giro", None), "nomor_giro")
         
         return None
     
     @property
     def payment_method(self) -> PaymentMethodEnum | None:
-        return getattr(getattr(self, "payment", None), "payment_method", None)
+        if self.payment.payment_method:
+            return getattr(getattr(self, "payment", None), "payment_method", None)
+        else:
+            return getattr(getattr(getattr(self, "payment_giro", None), "giro", None), "payment_method")
 
     @property
     def payment_date(self) -> date | None:
@@ -305,6 +312,10 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def luas_bayar(self) -> Decimal | None:
         return getattr(getattr(getattr(self, "invoice", None), "bidang", None), "luas_bayar")
+    
+    @property
+    def giro_id(self) -> Decimal | None:
+        return getattr(getattr(self, "payment_giro", None), "giro_id", None)
 
     
 class PaymentKomponenBiayaDetailBase(SQLModel):
@@ -363,3 +374,11 @@ class PaymentKomponenBiayaDetail(PaymentKomponenBiayaDetailFullBase, table=True)
     @property
     def termin_id(self) -> str | None:
         return getattr(getattr(getattr(getattr(self, "invoice_detail", None), "invoice", None), "termin", None), "id", None)
+    
+    @property
+    def giro_id(self) -> Decimal | None:
+        return getattr(getattr(self, "payment_giro", None), "giro_id", None)
+    
+    @property
+    def nomor_giro(self) -> Decimal | None:
+        return getattr(getattr(self, "payment_giro", None), "nomor_giro", None)
