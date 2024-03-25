@@ -229,14 +229,15 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
         
         inv_dt_temp : list[UUID] | None = []
         for payment_komponen_biaya_dt in obj_new.komponens:
-
             obj_payment_giro_detail_id = next((giro_detail["payment_giro_detail_id"] for giro_detail in giro_temp if giro_detail["id_index"] == payment_komponen_biaya_dt.id_index), None)
             for dt in obj_new.details:
+                if dt.invoice_id in inv_dt_temp:
+                    continue
                 obj_invoices_dt = await crud.invoice_detail.get_by_invoice_id_and_beban_biaya_id_and_termin_id(invoice_id=dt.invoice_id, 
                                                                                 beban_biaya_id=payment_komponen_biaya_dt.beban_biaya_id,
                                                                                 termin_id=payment_komponen_biaya_dt.termin_id)
                 
-                if obj_invoices_dt.id in inv_dt_temp:
+                if obj_invoices_dt is None:
                     continue
 
                 inv_dt_temp.append(obj_invoices_dt.id)

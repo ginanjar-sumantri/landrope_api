@@ -68,6 +68,6 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
                                                 ).distinct()
 
         response =  await db_session.execute(query)
-        return response.scalars().one()
+        return response.scalar_one_or_none()
 
 invoice_detail = CRUDInvoiceDetail(InvoiceDetail)

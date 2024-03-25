@@ -408,6 +408,7 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
         komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
         komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
         komponen_biaya_sch.is_tax = kb.is_tax
+        komponen_biaya_sch.order_number = kb.order_number
         list_komponen_biaya.append(komponen_biaya_sch)
     
     list_kelengkapan_dokumen = []
@@ -416,6 +417,8 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
         kelengkapan_dokumen_sch.dokumen_name = kd.dokumen_name
         kelengkapan_dokumen_sch.has_meta_data = kd.has_meta_data
         kelengkapan_dokumen_sch.file_path = kd.file_path
+        kelengkapan_dokumen_sch.order_number = kd.order_number
+        kelengkapan_dokumen_sch.is_exclude_printout = kd.is_exclude_printout
         list_kelengkapan_dokumen.append(kelengkapan_dokumen_sch)
 
     obj_return.spk_beban_biayas = list_komponen_biaya
