@@ -81,6 +81,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             obj_payment_giro_detail = PaymentGiroDetail.from_orm(obj_payment_giro_detail_crt)
             obj_payment_giro_detail.created_by_id=created_by_id
             obj_payment_giro_detail.updated_by_id=created_by_id
+            obj_payment_giro_detail.pay_to=giro_dt.pay_to
             
             db_session.add(obj_payment_giro_detail)
 
@@ -167,15 +168,15 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
         
         giro_temp = []
         for giro_dt in obj_new.giros:
-            obj_giro: Giro | None = None
+            giro_id: UUID | None = None
             obj_payment_giro_detail: PaymentGiroDetail | None = None
 
             existing_payment_giro_detail = next((g for g in obj_current.giros if g.id == giro_dt.id), None)
 
             if existing_payment_giro_detail is None:
-                obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
+                giro_id = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
                 obj_payment_giro_detail = PaymentGiroDetail(**giro_dt.dict(exclude={"giro_id", "id_index"}), 
-                                                        giro_id=obj_giro.id if obj_giro else None, 
+                                                        giro_id=giro_id if giro_id else None, 
                                                         created_by_id=updated_by_id, 
                                                         updated_by_id=updated_by_id, 
                                                         created_at=datetime.utcnow, 
@@ -186,18 +187,18 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                 db_session.add(obj_payment_giro_detail)
                 giro_temp.append({"payment_giro_detail_id" : obj_payment_giro_detail.id, "id_index" : giro_dt.id_index})
             else:
-                # obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
-                # giro = giro_dt.dict(exclude_unset=True)
-                # for key, value in giro.items():
-                #     if key in ["id_index", "giro_id", "nomor_giro", "tanggal_buka", "tanggal_cair", "nomor_giro", "bank_code", "payment_date"]:
-                #         continue
-                #     setattr(existing_payment_giro_detail, key, value)
+                giro_id = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
+                giro = giro_dt.dict(exclude_unset=True)
+                for key, value in giro.items():
+                    if key in ["id_index", "giro_id", "nomor_giro", "tanggal_buka", "tanggal_cair", "nomor_giro", "bank_code", "payment_date"]:
+                        continue
+                    setattr(existing_payment_giro_detail, key, value)
 
-                # existing_payment_giro_detail.giro_id = obj_giro.id if obj_giro else None,
+                existing_payment_giro_detail.giro_id = giro_id if giro_id else None
                 # existing_payment_giro_detail.updated_at = datetime.utcnow()
                 # existing_payment_giro_detail.updated_by_id = updated_by_id
 
-                # db_session.add(existing_payment_giro_detail)
+                db_session.add(existing_payment_giro_detail)
                 giro_temp.append({"payment_giro_detail_id" : existing_payment_giro_detail.id, "id_index" : giro_dt.id_index})
         
         for payment_dt in obj_new.details:
@@ -211,8 +212,8 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
 
                     setattr(existing_payment_detail, key, value)
                 existing_payment_detail.payment_giro_detail_id = obj_payment_giro_detail_id
-                existing_payment_detail.updated_at = datetime.utcnow()
-                existing_payment_detail.updated_by_id = updated_by_id
+                # existing_payment_detail.updated_at = datetime.utcnow()
+                # existing_payment_detail.updated_by_id = updated_by_id
                 db_session.add(existing_payment_detail)
             else:
                 obj_payment_dt_crt = PaymentDetailCreateSch(**payment_dt.dict(exclude={"id_index"}),
@@ -263,25 +264,6 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                     obj_payment_komponen_biaya_dt.updated_by_id=updated_by_id
 
                     db_session.add(obj_payment_komponen_biaya_dt)
-        
-
-        for giro_dt in obj_new.giros:
-            existing_payment_giro_detail = next((g for g in obj_current.giros if g.id == giro_dt.id), None)
-            if existing_payment_giro_detail:
-
-                obj_giro = await self.add_new_giro(giro_dt=giro_dt, updated_by_id=updated_by_id, db_session=db_session)
-                giro = giro_dt.dict(exclude_unset=True)
-                for key, value in giro.items():
-                    if key in ["id_index", "giro_id", "nomor_giro", "tanggal_buka", "tanggal_cair", "nomor_giro", "bank_code", "payment_date"]:
-                        continue
-                    setattr(existing_payment_giro_detail, key, value)
-
-                existing_payment_giro_detail.giro_id = obj_giro.id if obj_giro else None,
-                existing_payment_giro_detail.updated_at = datetime.utcnow()
-                existing_payment_giro_detail.updated_by_id = updated_by_id
-
-                db_session.add(existing_payment_giro_detail)
-
 
         await db_session.execute(delete(PaymentGiroDetail).where(and_(PaymentGiroDetail.id.notin_(gr.id for gr in obj_new.giros if gr.id is not None),
                                                                   PaymentGiroDetail.payment_id == obj_current.id)))
@@ -292,40 +274,42 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
             await db_session.refresh(obj_current)
         return obj_current
     
-    async def add_new_giro(self, giro_dt:PaymentGiroDetailExtSch, updated_by_id: UUID, db_session : AsyncSession | None = None) -> Giro:
-        obj_giro: Giro | None = None
+    async def add_new_giro(self, giro_dt:PaymentGiroDetailExtSch, updated_by_id: UUID, db_session : AsyncSession | None = None) -> UUID | None:
+        giro_id: UUID | None = None
         if giro_dt.giro_id is None and giro_dt.payment_method != PaymentMethodEnum.Tunai:
                     
-                    obj_giro = await crud.giro.get_by_nomor_giro_and_payment_method(nomor_giro=giro_dt.nomor_giro, 
-                                                                                            payment_method=giro_dt.payment_method)
-                    if obj_giro:
-                        obj_giro.tanggal_buka = giro_dt.tanggal_buka
-                        obj_giro.tanggal_cair = giro_dt.tanggal_cair
-                        obj_giro.tanggal = giro_dt.payment_date
-                        obj_giro.updated_by_id = updated_by_id
-                        obj_giro.updated_at = datetime.utcnow()
+                obj_giro = await crud.giro.get_by_nomor_giro_and_payment_method(nomor_giro=giro_dt.nomor_giro, 
+                                                                                        payment_method=giro_dt.payment_method)
+                if obj_giro:
+                    obj_giro.tanggal_buka = giro_dt.tanggal_buka
+                    obj_giro.tanggal_cair = giro_dt.tanggal_cair
+                    obj_giro.tanggal = giro_dt.payment_date
+                    obj_giro.updated_by_id = updated_by_id
+                    obj_giro.updated_at = datetime.utcnow()
 
-                        db_session.add(obj_giro)
-                        
-                    else:
-                        entity = CodeCounterEnum.Giro if giro_dt.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
-                        last = await generate_code(entity=entity, db_session=db_session, with_commit=False)
-                        obj_giro = Giro(code=f"{giro_dt.payment_method.value}-{last}",
-                                                    nomor_giro=giro_dt.nomor_giro,
-                                                    amount=giro_dt.amount,
-                                                    is_active=True,
-                                                    from_master=False,
-                                                    tanggal=giro_dt.payment_date,
-                                                    bank_code=giro_dt.bank_code,
-                                                    payment_method=giro_dt.payment_method,
-                                                    tanggal_buka=giro_dt.tanggal_buka,
-                                                    tanggal_cair=giro_dt.tanggal_cair
-                                                    )
-                        db_session.add(obj_giro)
+                    db_session.add(obj_giro)
+                    
+                else:
+                    entity = CodeCounterEnum.Giro if giro_dt.payment_method == PaymentMethodEnum.Giro else CodeCounterEnum.Cek
+                    last = await generate_code(entity=entity, db_session=db_session, with_commit=False)
+                    obj_giro = Giro(code=f"{giro_dt.payment_method.value}-{last}",
+                                                nomor_giro=giro_dt.nomor_giro,
+                                                amount=giro_dt.amount,
+                                                is_active=True,
+                                                from_master=False,
+                                                tanggal=giro_dt.payment_date,
+                                                bank_code=giro_dt.bank_code,
+                                                payment_method=giro_dt.payment_method,
+                                                tanggal_buka=giro_dt.tanggal_buka,
+                                                tanggal_cair=giro_dt.tanggal_cair
+                                                )
+                    db_session.add(obj_giro)
+                    giro_id = obj_giro.id
         else:
-            obj_giro = await crud.giro.get(id=giro_dt.giro_id)
+            obj_giro = await crud.giro.get_by_id(id=giro_dt.giro_id)
+            giro_id = obj_giro.id
 
-        return obj_giro
+        return giro_id
     
 
     async def get_by_id(self, 
@@ -360,7 +344,8 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                                                                         )
                                                     )
                                 ).options(selectinload(Payment.giros
-                                                    ).options(selectinload(PaymentGiroDetail.giro))
+                                                    ).options(selectinload(PaymentGiroDetail.giro)
+                                                    ).options(selectinload(PaymentGiroDetail.payment))
                                 ).options(selectinload(Payment.komponens
                                                     ).options(selectinload(PaymentKomponenBiayaDetail.beban_biaya)
                                                     ).options(selectinload(PaymentKomponenBiayaDetail.invoice_detail
