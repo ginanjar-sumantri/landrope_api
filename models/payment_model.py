@@ -111,8 +111,7 @@ class Payment(PaymentFullBase, table=True):
         
         pay_to_ = []
         for giro in self.giros:
-            if giro.pay_to not in pay_to_:
-                pay_to_.append(giro.pay_to)
+            pay_to_.append(giro.pay_to)
         
         return ",".join(pay_to_)
     
@@ -143,7 +142,7 @@ class Payment(PaymentFullBase, table=True):
     
     @property
     def total_memo(self) -> Decimal | None:
-        return sum([dt.amount for dt in self.details if dt.is_void != True and dt.realisasi != True])
+        return sum([dt.amount for dt in self.details if dt.is_void != True])
     
     @property
     def total_komponen(self) -> Decimal | None:
