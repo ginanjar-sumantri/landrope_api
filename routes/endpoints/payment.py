@@ -33,16 +33,24 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
+    
+    sum_amount_giro = sum([giro.amount for giro in sch.giros])
+    sum_amount_invoice = sum([invoice.amount for invoice in sch.details])
+    sum_amount_komponen = sum([komponen.amount for komponen in sch.komponens])
+
+    if (sum_amount_invoice + sum_amount_komponen) > sum_amount_giro:
+        HTTPException(status_code=422, detail="Total semua pembayaran tidak boleh lebih besar dari Total Giro/Cek")
 
     bidang_ids = []
     invoice_ids = []
     for dt in sch.details:
-        invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
-        # if (invoice_current.invoice_outstanding - dt.amount) < 0:
-        #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
-        
-        bidang_ids.append(invoice_current.bidang_id)
-        if invoice_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+        if dt.realisasi != True:
+            invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
+            dt_amount = sum([new_dt.amount for new_dt in sch.details if new_dt.invoice_id == dt.invoice_id]) #handle dalam satu payment ada 2 row invoice yg sama, yg split giro/cek nya.
+            if (invoice_current.invoice_outstanding - dt_amount) < 0:
+                raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+            
+            bidang_ids.append(invoice_current.bidang_id)
             invoice_ids.append(invoice_current.id)
 
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id)
@@ -201,6 +209,13 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     
     """Update a obj by its id"""
 
+    sum_amount_giro = sum([giro.amount for giro in sch.giros])
+    sum_amount_invoice = sum([invoice.amount for invoice in sch.details])
+    sum_amount_komponen = sum([komponen.amount for komponen in sch.komponens])
+
+    if (sum_amount_invoice + sum_amount_komponen) > sum_amount_giro:
+        HTTPException(status_code=422, detail="Total semua pembayaran tidak boleh lebih besar dari Total Giro/Cek")
+
     obj_current = await crud.payment.get_by_id(id=id)
 
     if obj_current.is_void:
@@ -212,13 +227,24 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     bidang_ids = []
     invoice_ids = []
     for dt in sch.details:
-        invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
-        # if (invoice_current.invoice_outstanding - dt.amount) < 0:
-        #     raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
-        
-        bidang_ids.append(invoice_current.bidang_id)
-        if invoice_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+        if dt.realisasi != True:
+            invoice_current = await crud.invoice.get_by_id(id=dt.invoice_id)
+            if dt.id is None:
+                dt_amount = sum([new_dt.amount for new_dt in sch.details if new_dt.invoice_id == dt.invoice_id]) #handle dalam satu payment ada 2 row invoice yg sama, yg split giro/cek nya.
+                if (invoice_current.invoice_outstanding - dt_amount) < 0:
+                    raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+                
+            else:
+                dt_current = next((x for x in obj_current.details if x.id == dt.id), None)
+                if dt_current.is_void != True:
+                    dt_current_amount = sum([new_dt.amount for new_dt in obj_current.details if new_dt.invoice_id == dt.invoice_id]) #handle dalam satu payment ada 2 row invoice yg sama, yg split giro/cek nya.
+                    dt_amount = sum([new_dt.amount for new_dt in sch.details if new_dt.invoice_id == dt.invoice_id]) #handle dalam satu payment ada 2 row invoice yg sama, yg split giro/cek nya.
+                    if ((invoice_current.invoice_outstanding + dt_current_amount) - dt_amount) < 0:
+                        raise ContentNoChangeException(detail="Invalid Amount: Amount payment tidak boleh lebih besar dari invoice outstanding!!")
+
+            bidang_ids.append(invoice_current.bidang_id)
             invoice_ids.append(invoice_current.id)
+
     
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
