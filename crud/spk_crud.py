@@ -554,6 +554,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     inner join bidang_komponen_biaya bkb on bkb.bidang_id = b.id
                     inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
                     where s.id = '{str(id)}'
+                    and bb.is_tax = true
                     and bkb.is_void != true
                     """)
 
