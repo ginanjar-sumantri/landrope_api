@@ -129,6 +129,10 @@ class ChecklistKelengkapanDokumenDt(ChecklistKelengkapanDokumenDtFullBase, table
     def file_path(self) -> str | None:
         return getattr(getattr(self, "bundle_dt", None), "file_path", None)
     
+    @property
+    def is_exclude_printout(self) -> str | None:
+        return getattr(getattr(self, "dokumen", None), "is_exclude_printout", None)
+    
             
 
     

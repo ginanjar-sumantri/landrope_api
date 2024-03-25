@@ -15,6 +15,7 @@ class BundleDtSch(BundleDtFullBase):
     updated_by_name:str | None = Field(alias="updated_by_name")
     kategori_dokumen_name:str | None = Field(alias="kategori_dokumen_name")
     is_multiple:bool | None
+    is_exclude_printout:bool | None
 
 class BundleDtMetaDynSch(SQLModel):
     meta_data:str|None

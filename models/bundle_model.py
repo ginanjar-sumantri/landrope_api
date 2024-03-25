@@ -142,7 +142,6 @@ class BundleDt(BundleDtFullBase, table=True):
     
     @property
     def have_riwayat(self) -> bool:
-
         return getattr(getattr(self, 'dokumen', False), 'is_riwayat', False)
     
     @property
@@ -156,3 +155,8 @@ class BundleDt(BundleDtFullBase, table=True):
     @property
     def kategori_dokumen_name(self) -> str | None:
         return getattr(getattr(getattr(self, 'dokumen', None), 'kategori_dokumen', None), 'name', None)
+    
+    
+    @property
+    def is_exclude_printout(self) -> bool:
+        return getattr(getattr(self, 'dokumen', False), 'is_exclude_printout', False)
