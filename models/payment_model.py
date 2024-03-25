@@ -107,8 +107,11 @@ class Payment(PaymentFullBase, table=True):
         return ",".join(nomor_memo_)
     
     @property
-    def pay_to(self) -> str | None:
+    def pay_to_giros(self) -> str | None:
         
+        if self.pay_to:
+            return self.pay_to
+
         pay_to_ = []
         for giro in self.giros:
             pay_to_.append(giro.pay_to)

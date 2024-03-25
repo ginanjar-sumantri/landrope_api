@@ -26,7 +26,7 @@ class PaymentSch(PaymentFullBase):
     tanggal_buka:date|None
     tanggal_cair:date|None
     nomor_memo:str|None
-    pay_to:str | None
+    pay_to_giros:str | None
     total_memo:Decimal | None
     total_komponen:Decimal | None
 
