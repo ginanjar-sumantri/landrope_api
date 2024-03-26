@@ -212,6 +212,7 @@ class Invoice(InvoiceFullBase, table=True):
 
         return Decimal(utj)
     
+    @property
     def utj_outstanding(self) -> Decimal | None:
         utj = 0
         if self.bidang.utj_has_use == False:
