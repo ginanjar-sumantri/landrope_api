@@ -51,7 +51,7 @@ class InvoiceInTerminSch(InvoiceSch):
     harga_transaksi:Optional[Decimal] = Field(alias="harga_transaksi")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
-    utj_outstandaing:Decimal | None
+    utj_outstanding:Decimal | None
 
 class InvoiceInTerminUtjKhususSch(InvoiceFullBase):
     pass
