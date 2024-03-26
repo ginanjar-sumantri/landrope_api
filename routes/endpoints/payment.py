@@ -167,8 +167,7 @@ async def get_list(
         filter_query = json.loads(filter_query)
         for key, value in filter_query.items():
             query = query.where(getattr(Payment, key) == value)
-
-    query = query.filter(Payment.id == '4af4bb2b-b9b4-4140-99e9-1155dace3665')
+            
     query = query.distinct()
 
     objs = await crud.payment.get_multi_paginated_ordered(params=params, query=query)
