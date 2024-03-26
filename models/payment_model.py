@@ -90,8 +90,9 @@ class Payment(PaymentFullBase, table=True):
         else:
             nomor_giro_ = []
             for giro in self.giros:
-                if giro.nomor_giro not in nomor_giro_:
-                    nomor_giro_.append(giro.nomor_giro or "")
+                nomor_giro = giro.nomor_giro if giro.payment_method != PaymentMethodEnum.Tunai else "Tunai"
+                if nomor_giro not in nomor_giro_:
+                    nomor_giro_.append(nomor_giro or "")
             
             return ",".join(nomor_giro_)
         
