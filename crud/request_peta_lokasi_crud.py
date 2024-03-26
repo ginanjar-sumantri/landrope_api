@@ -58,7 +58,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
         if with_commit:
             await db_session.commit()
 
-        return existing_req
+        return existing_req if existing_req else new_request_petlok
     
     async def get_by_id(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> RequestPetaLokasi | None:
         db_session = db_session or db.session
