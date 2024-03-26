@@ -221,12 +221,22 @@ class Invoice(InvoiceFullBase, table=True):
         return Decimal(utj)
     
     @property
+    def spk_nilai(self) -> Decimal | None:
+        return getattr(getattr(self, "spk", None), "amount", None)
+    
+    @property
+    def satuan_bayar(self) -> SatuanBayarEnum | None:
+        return getattr(getattr(self, "spk", None), "satuan_bayar", None)
+    
+    @property
     def step_name_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "step_name_workflow", None)
     
     @property
     def status_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "status_workflow", None)
+    
+
 
     
 

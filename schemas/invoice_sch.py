@@ -52,6 +52,8 @@ class InvoiceInTerminSch(InvoiceSch):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     utj_amount:Optional[Decimal] = Field(alias="utj_amount")
     utj_outstanding:Decimal | None
+    spk_nilai: Decimal | None
+    satuan_bayar: SatuanBayarEnum | None
 
 class InvoiceInTerminUtjKhususSch(InvoiceFullBase):
     pass

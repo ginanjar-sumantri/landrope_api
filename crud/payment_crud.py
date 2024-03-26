@@ -308,7 +308,7 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreateSch, PaymentUpdateSch]):
                     giro_id = obj_giro.id
         else:
             obj_giro = await crud.giro.get_by_id(id=giro_dt.giro_id)
-            giro_id = obj_giro.id
+            giro_id = obj_giro.id if obj_giro else None
 
         return giro_id
     
