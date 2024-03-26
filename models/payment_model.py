@@ -91,7 +91,7 @@ class Payment(PaymentFullBase, table=True):
             nomor_giro_ = []
             for giro in self.giros:
                 if giro.nomor_giro not in nomor_giro_:
-                    nomor_giro_.append(giro.nomor_giro)
+                    nomor_giro_.append(giro.nomor_giro or "")
             
             return ",".join(nomor_giro_)
         
@@ -137,9 +137,12 @@ class Payment(PaymentFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.details if payment_dtl.is_void != True]
             total_payment = sum(array_payment)
         
-        amount = sum([giro.amount for giro in self.giro_details])
+        if self.giro:
+            amount = self.amount
+        else:
+            amount = sum([giro.amount for giro in self.giros])
 
-        return Decimal(amount- total_payment)
+        return Decimal(amount - total_payment)
         
         # return Decimal((self.amount or 0) - total_payment)
     
