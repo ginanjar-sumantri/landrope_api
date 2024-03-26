@@ -212,6 +212,13 @@ class Invoice(InvoiceFullBase, table=True):
 
         return Decimal(utj)
     
+    def utj_outstanding(self) -> Decimal | None:
+        utj = 0
+        if self.bidang.utj_has_use == False:
+            utj = self.bidang.utj_amount
+
+        return Decimal(utj)
+    
     @property
     def step_name_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "step_name_workflow", None)

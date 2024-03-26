@@ -482,6 +482,16 @@ class Bidang(BidangFullBase, table=True):
         return Decimal(utj)
     
     @property
+    def utj_has_use(self) -> bool | None:
+        utj = False
+        
+        invoice_use_utj = next((invoice for invoice in self.invoices if invoice.use_utj == True and invoice.is_void != True), None)
+        if invoice_use_utj:
+            return True
+        
+        return utj
+    
+    @property
     def has_invoice_lunas(self) -> bool | None:
         invoice_lunas = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar == JenisBayarEnum.LUNAS or x.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
         if invoice_lunas:
