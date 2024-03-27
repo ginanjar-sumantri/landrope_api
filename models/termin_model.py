@@ -194,6 +194,7 @@ class TerminBayarBase(SQLModel):
     payment_method:PaymentMethodEnum = Field(nullable=False)
     rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
     amount:Decimal = Field(nullable=False, default=0)
+    remark:str | None = Field(nullable=True)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
     pass
