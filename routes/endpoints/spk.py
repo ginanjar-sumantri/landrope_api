@@ -8,7 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
-                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya)
+                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, SpkKelengkapanDokumen)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
@@ -561,15 +561,8 @@ async def update(id:UUID,
             await crud.bidang_komponen_biaya.create(obj_in=obj_komponen_biaya_new, created_by_id=current_worker.id, with_commit=False)
 
     #remove kelengkapan dokumen 
-    list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
-    if len(list_ids) > 0:
-        kelengkapan_biaya_will_removed = await crud.spk_kelengkapan_dokumen.get_multi_not_in_id_removed(spk_id=obj_updated.id, list_ids=list_ids)
-
-        if len(kelengkapan_biaya_will_removed) > 0:
-            await crud.spk_kelengkapan_dokumen.remove_multiple_data(list_obj=kelengkapan_biaya_will_removed, db_session=db_session)
-    
-    elif len(list_ids) == 0 and len(obj_current.spk_kelengkapan_dokumens) > 0:
-        await crud.spk_kelengkapan_dokumen.remove_multiple_data(list_obj=obj_current.spk_kelengkapan_dokumens, db_session=db_session)
+    await db_session.execute(delete(SpkKelengkapanDokumen).where(and_(SpkKelengkapanDokumen.id.notin_(r.id for r in sch.spk_kelengkapan_dokumens if r.id is not None), 
+                                                        SpkKelengkapanDokumen.spk_id == obj_updated.id)))
     
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         if kelengkapan_dokumen.id is None:

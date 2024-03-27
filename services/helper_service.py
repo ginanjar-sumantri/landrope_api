@@ -185,6 +185,25 @@ class KomponenBiayaHelper:
  
         return round(result.estimated_amount)
     
+    async def get_estimated_amount_v2(self, bidang_id:UUID, formula:str | None = None) -> Decimal | None:
+
+        """Calculate estimated amount from formula"""
+
+        db_session = db.session
+
+        if formula is None:
+            return 0
+
+        query = f"""select  
+                coalesce(round({formula}, 2), 0) As estimated_amount
+                from bidang
+                where bidang.id = '{bidang_id}'"""
+    
+        response = await db_session.execute(query)
+        result = response.fetchone()
+ 
+        return round(result.estimated_amount)
+    
     async def calculated_all_komponen_biaya(self, bidang_ids:list[UUID]):
         """Calculated all komponen bidang when created or updated spk"""
 

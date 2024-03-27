@@ -36,3 +36,8 @@ class BebanBiayaGroupingSch(SQLModel):
     payment_giro_detail_id:UUID | None
     giro_id: UUID | None
     nomor_giro: str | None
+
+class BebanBiayaEstimatedAmountSch(SQLModel):
+    estimated_amount: Decimal | None
+    bidang_id: UUID | None
+    beban_biaya_id: UUID | None
