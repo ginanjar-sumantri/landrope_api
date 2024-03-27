@@ -503,6 +503,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bb.is_tax = true
                         and bkb.is_void != true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     order by bkb.order_number asc
                     """)
             
@@ -529,6 +530,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bkb.is_void != true
                         and bkb.is_retur = true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
         elif jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
 
@@ -553,6 +555,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bkb.is_void != true
                         and bkb.is_add_pay = true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
         else:
 
@@ -571,6 +574,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     where s.id = '{str(id)}'
                     and bb.is_tax = true
                     and bkb.is_void != true
+                    and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
 
         response = await db_session.execute(query)
