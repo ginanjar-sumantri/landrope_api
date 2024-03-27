@@ -98,26 +98,32 @@ async def create(
         new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
         #remove bidang komponen biaya
-        await db_session.execute(delete(BidangKomponenBiaya).where(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted)))
+        await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
+
+        master_beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[bb.beban_biaya_id for bb in invoice.details if bb.beban_biaya_id is not None])
 
         #add invoice_detail
         for dt in invoice.details:
+            if dt.is_deleted:
+                continue
+
             if dt.bidang_komponen_biaya_id is None and dt.beban_biaya_id and dt.is_deleted != True:
-                master_beban_biaya = await crud.bebanbiaya.get(id=dt.beban_biaya_id)
-                bidang_komponen_biaya_new: BidangKomponenBiayaCreateSch = None
-                bidang_komponen_biaya_new.amount = master_beban_biaya.amount
-                bidang_komponen_biaya_new.formula = master_beban_biaya.formula
-                bidang_komponen_biaya_new.satuan_bayar = master_beban_biaya.satuan_bayar
-                bidang_komponen_biaya_new.satuan_harga = master_beban_biaya.satuan_harga
-                bidang_komponen_biaya_new.is_add_pay = master_beban_biaya.is_add_pay
-                bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
-                bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                bidang_komponen_biaya_new.estimated_amount = dt.amount
-                bidang_komponen_biaya_new.bidang_id = invoice.bidang_id
-                bidang_komponen_biaya_new.is_paid = False
-                bidang_komponen_biaya_new.is_exclude_spk = True
-                bidang_komponen_biaya_new.is_retur = False
-                bidang_komponen_biaya_new.is_void = False
+                master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                bidang_komponen_biaya_new = BidangKomponenBiayaCreateSch(
+                amount = master_beban_biaya.amount,
+                formula = master_beban_biaya.formula,
+                satuan_bayar = master_beban_biaya.satuan_bayar,
+                satuan_harga = master_beban_biaya.satuan_harga,
+                is_add_pay = master_beban_biaya.is_add_pay,
+                beban_biaya_id = dt.beban_biaya_id,
+                beban_pembeli = dt.beban_pembeli,
+                estimated_amount = dt.amount,
+                bidang_id = invoice.bidang_id,
+                is_paid = False,
+                is_exclude_spk = True,
+                is_retur = False,
+                is_void = False)
 
                 obj_bidang_komponen_biaya = await crud.bidang_komponen_biaya.create(obj_in=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
                 dt.bidang_komponen_biaya_id = obj_bidang_komponen_biaya.id
@@ -303,6 +309,11 @@ async def update_(
                                                         Invoice.termin_id == obj_updated.id)))
 
     for invoice in sch.invoices:
+
+        #remove bidang komponen biaya
+        await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
+
         if invoice.id:
             invoice_current = await crud.invoice.get_by_id(id=invoice.id)
             if invoice_current:
@@ -315,6 +326,8 @@ async def update_(
                                                         InvoiceDetail.invoice_id == obj_updated.id)))
 
                 for dt in invoice.details:
+                    if dt.is_deleted:
+                        continue
                     if dt.id is None:
                         if dt.bidang_komponen_biaya_id is None and dt.beban_biaya_id and dt.is_deleted != True:
                             master_beban_biaya = await crud.bebanbiaya.get(id=dt.beban_biaya_id)
@@ -353,6 +366,8 @@ async def update_(
 
             #add invoice_detail
             for dt in invoice.details:
+                if dt.is_deleted:
+                    continue
                 if dt.bidang_komponen_biaya_id is None and dt.beban_biaya_id and dt.is_deleted != True:
                     master_beban_biaya = await crud.bebanbiaya.get(id=dt.beban_biaya_id)
                     bidang_komponen_biaya_new: BidangKomponenBiayaCreateSch = None
