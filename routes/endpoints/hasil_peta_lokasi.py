@@ -974,7 +974,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
                 Where c_hd.bidang_id = b.id
 				and c_dt.jenis_bayar IN ('DP', 'UTJ')
-                and b_dt.file_path is null
+                and b_dt.meta_data is null
                 ) = 0
             and (select count(*) 
                 from spk ss 
@@ -982,6 +982,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) = 0
 			and s.id is NULL
+            and tr.nilai > 0
             UNION
             select 
             b.id,
@@ -1005,7 +1006,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 				inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
                 Where c_hd.bidang_id = b.id
 				and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
-                and b_dt.file_path is null
+                and b_dt.meta_data is null
                 ) = 0
             and (select count(*) 
                 from spk ss 
@@ -1013,6 +1014,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and ss.is_void != True 
                 and ss.bidang_id = hpl.bidang_id) <= 0
 			and s.id is NULL
+            and tr.nilai > 0
             UNION
             select 
             b.id,
@@ -1039,7 +1041,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                 and c_dt.jenis_bayar = 'BIAYA_LAIN'
                 inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
                 Where c_hd.bidang_id = hpl.bidang_id
-                and b_dt.file_path is null
+                and b_dt.meta_data is null
                 ) <= 0
 			and s.id is NULL
             UNION
