@@ -202,6 +202,7 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         db_session = db_session or db.session
         query = select(BidangKomponenBiaya)
         query = query.filter(BidangKomponenBiaya.bidang_id == bidang_id)
+        query = query.filter(BidangKomponenBiaya.is_exclude_spk != True)
         query = query.options(selectinload(BidangKomponenBiaya.beban_biaya))
 
         response = await db_session.execute(query)

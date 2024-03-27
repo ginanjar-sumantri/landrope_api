@@ -27,6 +27,7 @@ class BidangKomponenBiayaBase(SQLModel):
     estimated_amount:Optional[Decimal] = Field(nullable=True)
     formula:Optional[str] = Field(nullable=True)
     order_number:int | None = Field(nullable=True)
+    is_exclude_spk:bool | None = Field(nullable=True)
     
 class BidangKomponenBiayaFullBase(BaseUUIDModel, BidangKomponenBiayaBase):
     pass

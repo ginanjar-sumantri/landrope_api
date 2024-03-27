@@ -222,6 +222,21 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    async def get_multi_spk_active_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Spk] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk)
+        query = query.where(and_(Spk.bidang_id == bidang_id, Spk.is_void != True))
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
     async def get_by_id_for_termin(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> SpkInTerminSch | None:
         db_session = db_session or db.session
