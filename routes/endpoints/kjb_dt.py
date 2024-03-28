@@ -113,7 +113,7 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtListRequestPetlokSch])
-async def get_list_for_petlok(keyword:str | None, kjb_hd_id:UUID | None, no_order:str | None = None, params: Params=Depends()):
+async def get_list_for_petlok(kjb_hd_id:UUID | None, keyword:str | None = None, no_order:str | None = None, params: Params=Depends()):
     
     """Gets a paginated list objects"""
 
@@ -142,7 +142,7 @@ async def get_list_for_petlok(keyword:str | None, kjb_hd_id:UUID | None, no_orde
     return create_response(data=objs)
 
 @router.get("/request/petlok/no-page", response_model=GetResponseBaseSch[list[KjbDtListRequestPetlokSch]])
-async def get_list_for_petlok_no_page(keyword:str | None, kjb_hd_id:UUID | None, no_order:str | None = None):
+async def get_list_for_petlok_no_page(kjb_hd_id:UUID | None, keyword:str | None = None, no_order:str | None = None):
     
     """Gets a paginated list objects"""
 
