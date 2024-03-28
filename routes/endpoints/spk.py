@@ -99,12 +99,12 @@ async def create(
 
         if obj_komponen_biaya_current:
             if sch_komponen_biaya:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark"}), 
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
                                                                             beban_pembeli=sch_komponen_biaya.beban_pembeli,
                                                                             is_exclude_spk=False,
                                                                             remark=sch_komponen_biaya.remark)
             else:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
                                                                             beban_pembeli=obj_komponen_biaya_current.beban_pembeli,
                                                                             is_exclude_spk=True,
                                                                             remark=obj_komponen_biaya_current.remark)
