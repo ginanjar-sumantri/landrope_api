@@ -113,12 +113,11 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/request/petlok", response_model=GetResponsePaginatedSch[KjbDtListRequestPetlokSch])
-async def get_list_for_petlok(kjb_hd_id:UUID | None, no_order:str | None = None, params: Params=Depends()):
+async def get_list_for_petlok(keyword:str | None, kjb_hd_id:UUID | None, no_order:str | None = None, params: Params=Depends()):
     
     """Gets a paginated list objects"""
 
-    query = select(KjbDt
-                       ).select_from(KjbDt
+    query = select(KjbDt).select_from(KjbDt
                                      ).outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                                      ).where(and_(
                                                     KjbDt.kjb_hd_id == kjb_hd_id,
@@ -129,9 +128,46 @@ async def get_list_for_petlok(kjb_hd_id:UUID | None, no_order:str | None = None,
                                                     )
                                                 )
                                             )
+    if keyword:
+            query = query.filter(
+                or_(
+                    RequestPetaLokasi.code.ilike(f'%{keyword}%'),
+                    KjbDt.alashak.ilike(f'%{keyword}%')
+                )
+            )
+
     query = query.distinct()
 
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
+    return create_response(data=objs)
+
+@router.get("/request/petlok/no-page", response_model=GetResponseBaseSch[list[KjbDtListRequestPetlokSch]])
+async def get_list_for_petlok_no_page(keyword:str | None, kjb_hd_id:UUID | None, no_order:str | None = None):
+    
+    """Gets a paginated list objects"""
+
+    query = select(KjbDt).select_from(KjbDt
+                                     ).outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+                                     ).where(and_(
+                                                    KjbDt.kjb_hd_id == kjb_hd_id,
+                                                    KjbDt.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi,
+                                                    or_(
+                                                        RequestPetaLokasi.code == no_order,
+                                                        KjbDt.request_peta_lokasi == None
+                                                    )
+                                                )
+                                            )
+    if keyword:
+            query = query.filter(
+                or_(
+                    RequestPetaLokasi.code.ilike(f'%{keyword}%'),
+                    KjbDt.alashak.ilike(f'%{keyword}%')
+                )
+            )
+
+    query = query.distinct()
+
+    objs = await crud.kjb_dt.get_multi_no_page(query=query)
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[KjbDtSch])
