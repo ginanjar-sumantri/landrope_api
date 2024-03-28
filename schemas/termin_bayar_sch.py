@@ -13,7 +13,8 @@ class TerminBayarExtSch(SQLModel):
     id:UUID|None
     payment_method:PaymentMethodEnum
     rekening_id:UUID|None
-    amount:Decimal
+    amount:Decimal | None
+    remark:str | None
 
 
 class TerminBayarSch(TerminBayarFullBase):
