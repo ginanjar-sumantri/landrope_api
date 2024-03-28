@@ -191,7 +191,7 @@ class KjbDt(KjbDtFullBase, table=True):
         return self.desa.name
     
     @property
-    def desa_name_by_ttn(self) -> str :
+    def desa_name_by_ttn(self) -> str | None :
         if self.desa_by_ttn is None:
             return ""
         
@@ -204,7 +204,7 @@ class KjbDt(KjbDtFullBase, table=True):
         return self.project.name
     
     @property
-    def project_name_by_ttn(self) -> str :
+    def project_name_by_ttn(self) -> str | None :
         if self.project_by_ttn is None:
             return ""
         
@@ -215,7 +215,7 @@ class KjbDt(KjbDtFullBase, table=True):
         return self.jenis_surat.name
     
     @property
-    def kjb_code(self) -> str :
+    def kjb_code(self) -> str | None :
         return self.kjb_hd.code
     
     @property

@@ -3,7 +3,8 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
-from models import KjbDt, KjbHd, Pemilik, Manager, Sales, KjbPenjual
+from sqlalchemy.orm import selectinload
+from models import KjbDt, KjbHd, Pemilik, Manager, Sales, KjbPenjual, BundleHd, BundleDt
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch)
@@ -138,6 +139,8 @@ async def get_list_for_petlok(kjb_hd_id:UUID | None, keyword:str | None = None, 
 
     query = query.distinct()
 
+    query = query.options(selectinload(KjbDt.kjb_hd))
+
     objs = await crud.kjb_dt.get_multi_paginated(params=params, query=query)
     return create_response(data=objs)
 
@@ -166,6 +169,16 @@ async def get_list_for_petlok_no_page(kjb_hd_id:UUID | None, keyword:str | None 
             )
 
     query = query.distinct()
+    query = query.options(selectinload(KjbDt.kjb_hd)
+                ).options(selectinload(KjbDt.pemilik)
+                ).options(selectinload(KjbDt.jenis_surat)
+                ).options(selectinload(KjbDt.bundlehd
+                            ).options(selectinload(BundleHd.bundledts
+                                        ).options(selectinload(BundleDt.dokumen))
+                            )
+                ).options(selectinload(KjbDt.tanda_terima_notaris_hd)
+                ).options(selectinload(KjbDt.request_peta_lokasi)
+                ).options(selectinload(KjbDt.hasil_peta_lokasi))
 
     objs = await crud.kjb_dt.get_multi_no_page(query=query)
     return create_response(data=objs)
