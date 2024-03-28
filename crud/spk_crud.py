@@ -337,6 +337,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 Spk.code.ilike(f"%{keyword}%")
             ))
 
+        query = query.filter(Spk.is_void != True)
+
         query = query.options(selectinload(Spk.bidang)
                     ).options(selectinload(Spk.invoices))
         query = query.distinct()
