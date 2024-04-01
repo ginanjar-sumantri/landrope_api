@@ -74,7 +74,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
             query = query.filter(BebanBiaya.is_tax == True)
         
         query = query.filter(self.model.is_void != True)
-
+        query = query.filter(self.model.is_exclude_spk != True)
+        
         query = query.options(selectinload(BidangKomponenBiaya.invoice_details
                                     ).options(selectinload(InvoiceDetail.invoice))
                     ).options(selectinload(BidangKomponenBiaya.beban_biaya))
