@@ -1,5 +1,5 @@
 from models.termin_model import TerminBayar, TerminBayarBase, TerminBayarFullBase
-from common.enum import PaymentMethodEnum
+from common.enum import PaymentMethodEnum, ActivityEnum
 from sqlmodel import Field, SQLModel
 from uuid import UUID
 from decimal import Decimal
@@ -11,10 +11,12 @@ class TerminBayarCreateSch(TerminBayarBase):
 
 class TerminBayarExtSch(SQLModel):
     id:UUID|None
+    id_index: UUID | None
     payment_method:PaymentMethodEnum
     rekening_id:UUID|None
     amount:Decimal | None
     remark:str | None
+    activity: ActivityEnum | None
 
 
 class TerminBayarSch(TerminBayarFullBase):

@@ -1,5 +1,6 @@
 from models.invoice_model import Invoice, InvoiceBase, InvoiceFullBase
 from schemas.invoice_detail_sch import InvoiceDetailExtSch, InvoiceDetailSch
+from schemas.invoice_bayar_sch import InvoiceBayarExtSch, InvoiceBayarSch
 from schemas.payment_detail_sch import PaymentDetailSch
 from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from common.partial import optional
@@ -19,7 +20,8 @@ class InvoiceExtSch(SQLModel):
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
     use_utj:Optional[bool]
-    details:list[InvoiceDetailExtSch]|None
+    details: list[InvoiceDetailExtSch]|None
+    bayars: list[InvoiceBayarExtSch] | None
 
 class InvoiceSch(InvoiceFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
@@ -43,6 +45,7 @@ class InvoiceSch(InvoiceFullBase):
 
     payment_details:list[PaymentDetailSch]|None
     details:list[InvoiceDetailSch]|None
+    bayars: list[InvoiceBayarSch] | None
     updated_by_name:str|None = Field(alias="updated_by_name")
 
 class InvoiceInTerminSch(InvoiceSch):
@@ -54,6 +57,7 @@ class InvoiceInTerminSch(InvoiceSch):
     utj_outstanding:Decimal | None
     spk_nilai: Decimal | None
     satuan_bayar: SatuanBayarEnum | None
+
 
 class InvoiceInTerminUtjKhususSch(InvoiceFullBase):
     pass

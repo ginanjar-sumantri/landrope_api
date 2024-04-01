@@ -4,7 +4,7 @@ from models.base_model import BaseUUIDModel
 from models.workflow_model import Workflow
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import JenisBayarEnum, PaymentMethodEnum
+from common.enum import JenisBayarEnum, PaymentMethodEnum, ActivityEnum
 from decimal import Decimal
 from datetime import date
 import numpy
@@ -195,6 +195,7 @@ class TerminBayarBase(SQLModel):
     rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
     amount:Decimal = Field(nullable=False, default=0)
     remark:str | None = Field(nullable=True)
+    activity:ActivityEnum | None = Field(nullable=True)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
     pass
