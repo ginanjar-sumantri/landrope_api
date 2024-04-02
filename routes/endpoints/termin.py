@@ -1722,7 +1722,7 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID) -> Decimal:
     if master_beban_biaya is None:
         raise HTTPException(status_code=422, detail="master beban biaya tidak ditemukan")
 
-    if master_beban_biaya.formula is not None or master_beban_biaya.formula != '':
+    if master_beban_biaya.formula is not None and master_beban_biaya.formula != '':
         estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula)
     else:
         estimated_amount = 0
