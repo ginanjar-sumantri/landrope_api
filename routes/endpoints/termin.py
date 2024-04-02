@@ -513,7 +513,7 @@ async def get_list_bidang_by_kjb_hd_id(
     return create_response(data=obj_return)
 
 @router.get("/search/tahap", response_model=GetResponseBaseSch[list[TahapSch]])
-async def get_list_kjb_hd(
+async def get_list_tahap(
                 keyword: str | None = None,
                 jenis_bayar: JenisBayarEnum | None = None, 
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -542,7 +542,7 @@ async def get_list_kjb_hd(
     return create_response(data=objs)
 
 @router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[list[SpkJenisBayarSch]])
-async def get_list_kjb_hd(
+async def get_list_tahap_by_id(
                 id: UUID | None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
