@@ -21,7 +21,7 @@ from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForP
                                  InvoiceHistoryInTermin, InvoiceLuasBayarSch)
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.invoice_bayar_sch import InvoiceBayarCreateSch, InvoiceBayarlUpdateSch
-from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch
+from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch, SpkIdSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch, BidangExcelSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch, BidangKomponenBiayaCreateSch
@@ -671,6 +671,40 @@ async def get_by_id(id:UUID,
         return create_response(data=spk)
     else:
         raise IdNotFoundException(Bidang, id)
+
+@router.post("/search/spk/by-ids", response_model=GetResponseBaseSch[list[SpkInTerminSch]])
+async def get_by_ids(sch:SpkIdSch,
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Get an object by id"""
+
+    objs = await crud.spk.get_by_ids_in_termin(list_id=sch.spk_ids)
+
+    if any(obj for obj in objs if obj.status_workflow != WorkflowLastStatusEnum.COMPLETED):
+        raise HTTPException(status_code=422, detail=f"All SPK must be completed approval")
+
+    spks = []
+    for obj in objs:
+        spk = SpkInTerminSch(spk_id=obj.id, spk_code=obj.code, spk_amount=obj.amount, spk_satuan_bayar=obj.satuan_bayar,
+                                bidang_id=obj.bidang_id, id_bidang=obj.id_bidang, alashak=obj.alashak, group=obj.bidang.group,
+                                luas_bayar=obj.bidang.luas_bayar, harga_transaksi=obj.bidang.harga_transaksi, harga_akta=obj.bidang.harga_akta, 
+                                amount=round(obj.spk_amount,0), utj_amount=obj.utj_amount, project_id=obj.bidang.planing.project_id, 
+                                project_name=obj.bidang.project_name, sub_project_id=obj.bidang.sub_project_id,
+                                sub_project_name=obj.bidang.sub_project_name, nomor_tahap=obj.bidang.nomor_tahap, tahap_id=obj.bidang.tahap_id,
+                                jenis_bayar=obj.jenis_bayar, manager_id=obj.bidang.manager_id, manager_name=obj.bidang.manager_name,
+                                sales_id=obj.bidang.sales_id, sales_name=obj.bidang.sales_name, notaris_id=obj.bidang.notaris_id, 
+                                notaris_name=obj.bidang.notaris_name, mediator=obj.bidang.mediator, desa_name=obj.bidang.desa_name, 
+                                ptsk_name=obj.bidang.ptsk_name
+                                )
+
+        if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+            bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+            spk.amount = bidang.sisa_pelunasan
+
+        spks.append(spk)
+
+    return create_response(data=spks)
+    
 
 @router.get("/history/memo/{bidang_id}", response_model=GetResponseBaseSch[list[InvoiceHistoryInTermin]])
 async def get_list_history_memo_by_bidang_id(bidang_id:UUID,

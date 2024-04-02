@@ -146,6 +146,39 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+
+    async def get_by_ids_in_termin(self, 
+                  *, 
+                  list_id: list[UUID] | list[str] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) ->list[Spk] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk).where(Spk.id.in_(list_id)
+                                ).options(selectinload(Spk.bidang
+                                            ).options(selectinload(Bidang.invoices
+                                                            ).options(selectinload(Invoice.termin)
+                                                            ).options(selectinload(Invoice.payment_details)
+                                                            )
+                                            ).options(selectinload(Bidang.komponen_biayas)
+                                            ).options(selectinload(Bidang.planing
+                                                            ).options(selectinload(Planing.project)
+                                                            ).options(selectinload(Planing.desa))
+                                            ).options(selectinload(Bidang.sub_project)
+                                            ).options(selectinload(Bidang.tahap_details
+                                                                ).options(selectinload(TahapDetail.tahap))
+                                            ).options(selectinload(Bidang.manager)
+                                            ).options(selectinload(Bidang.sales)
+                                            ).options(selectinload(Bidang.notaris)
+                                            ).options(selectinload(Bidang.skpt
+                                                                ).options(selectinload(Skpt.ptsk))
+                                            )
+                                )
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
     
     async def get_by_bidang_id_kjb_termin_id(self, 
                   *, 

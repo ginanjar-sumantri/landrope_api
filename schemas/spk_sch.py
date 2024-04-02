@@ -145,6 +145,9 @@ class SpkInTerminSch(SQLModel):
 class SpkVoidSch(SQLModel):
     void_reason:str
 
+class SpkIdSch(SQLModel):
+    spk_ids: list[UUID] | None
+
 
     
 
