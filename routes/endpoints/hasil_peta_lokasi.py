@@ -284,11 +284,11 @@ async def update(
     await HistoryService().create_history_hasil_peta_lokasi(obj_current=obj_current, worker_id=current_worker.id, db_session=db_session)
     
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
-    if obj_current.bidang_id != sch.bidang_id and obj_current.bidang_id is not None:
-
-        url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
-        payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
-        GCloudTaskService().create_task(payload=payload, base_url=url)
+    if obj_current.bidang_id != sch.bidang_id:
+        if obj_current.bidang_id is not None:
+            url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
+            payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
+            GCloudTaskService().create_task(payload=payload, base_url=url)
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
@@ -539,7 +539,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     
     #jika kjb_dt belum memiliki bundle akan tetapi bidang sudah punya (case bidang dan bundle naik duluan diimport)
     if kjb_dt_current.bundle_hd_id is None:
-        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_hd_current)
+        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_dt_current)
         kjb_dt_updated.bundle_hd_id = bidang_current.bundle_hd_id
 
         await crud.kjb_dt.update(obj_current=kjb_dt_current, 
@@ -611,6 +611,9 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
 
     bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
+    if bidang_current.bundle_hd_id is None:
+        raise HTTPException(status_code=422, detail="bidang belum punya bundle")
+    
     if bidang_current.geom :
         if isinstance(bidang_current.geom, str):
             pass
