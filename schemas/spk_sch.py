@@ -148,6 +148,9 @@ class SpkVoidSch(SQLModel):
 class SpkIdSch(SQLModel):
     spk_ids: list[UUID] | None
 
+class SpkJenisBayarSch(SQLModel):
+    jenis_bayar: JenisBayarEnum | None
+
 
     
 

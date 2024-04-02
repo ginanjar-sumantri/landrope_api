@@ -185,7 +185,7 @@ class KomponenBiayaHelper:
  
         return round(result.estimated_amount)
     
-    async def get_estimated_amount_v2(self, bidang_id:UUID, formula:str | None = None) -> Decimal | None:
+    async def get_estimated_amount_v2(self, bidang_id:UUID, beban_biaya_id:UUID, formula:str | None = None) -> Decimal | None:
 
         """Calculate estimated amount from formula"""
 
@@ -196,8 +196,10 @@ class KomponenBiayaHelper:
 
         query = f"""select  
                 coalesce(round({formula}, 2), 0) As estimated_amount
-                from bidang
-                where bidang.id = '{bidang_id}'"""
+                from bidang, beban_biaya
+                where bidang.id = '{bidang_id}'
+                and beban_biaya.id = '{beban_biaya_id}'
+                """
     
         response = await db_session.execute(query)
         result = response.fetchone()

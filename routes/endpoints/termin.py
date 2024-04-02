@@ -7,10 +7,10 @@ from sqlmodel import select, or_, and_, func, update, delete
 from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
-from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, KjbHd, Spk, Bidang, TerminBayar, 
-                    PaymentDetail, Payment, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya)
+from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, 
+                    PaymentDetail, Payment, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa)
 from models.code_counter_model import CodeCounterEnum
-from schemas.tahap_sch import TahapForTerminByIdSch
+from schemas.tahap_sch import TahapForTerminByIdSch, TahapSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
@@ -21,7 +21,7 @@ from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForP
                                  InvoiceHistoryInTermin, InvoiceLuasBayarSch)
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.invoice_bayar_sch import InvoiceBayarCreateSch, InvoiceBayarlUpdateSch
-from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch, SpkIdSch
+from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkHistorySch, SpkIdSch, SpkJenisBayarSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
 from schemas.bidang_sch import BidangForUtjSch, BidangExcelSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch, BidangKomponenBiayaCreateSch
@@ -512,6 +512,61 @@ async def get_list_bidang_by_kjb_hd_id(
 
     return create_response(data=obj_return)
 
+@router.get("/search/tahap", response_model=GetResponseBaseSch[list[TahapSch]])
+async def get_list_kjb_hd(
+                keyword: str | None = None,
+                jenis_bayar: JenisBayarEnum | None = None, 
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Tahap)
+    query = query.join(TahapDetail, Tahap.id == TahapDetail.tahap_id)
+    query = query.join(Spk, TahapDetail.bidang_id == Spk.bidang_id)
+    query = query.join(Planing, Planing.id == Tahap.planing_id)
+    query = query.join(Project, Project.id == Planing.project_id)
+    query = query.outerjoin(Invoice, Spk.id == Invoice.spk_id)
+    query = query.where(and_(Spk.jenis_bayar != JenisBayarEnum.PAJAK,
+                            Invoice.id is None))
+    
+    if jenis_bayar:
+        query = query.filter(Spk.jenis_bayar == jenis_bayar)
+    
+    if keyword:
+        query = query.filter(or_(cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
+                                Project.name.ilike(f'%{keyword}%')))
+
+    query = query.distinct()
+
+    objs = await crud.tahap.get_multi_no_page(query=query)
+    return create_response(data=objs)
+
+@router.get("/search/tahap/{id}", response_model=GetResponseBaseSch[list[SpkJenisBayarSch]])
+async def get_list_kjb_hd(
+                id: UUID | None = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Spk).join(TahapDetail, TahapDetail.bidang_id == Spk.bidang_id
+                        ).outerjoin(Invoice, Spk.id == Invoice.spk_id
+                        ).where(and_(TahapDetail.tahap_id == id,
+                                    Spk.jenis_bayar != JenisBayarEnum.PAJAK,
+                                    Invoice.id is None))
+
+    objs = await crud.spk.get_multi_no_page(query=query)
+
+    spk_jenis_bayars = []
+    jenis_bayars = []
+    for spk in objs:
+        if spk.jenis_bayar not in jenis_bayars:
+            spk_ = SpkJenisBayarSch(jenis_bayar=spk.jenis_bayar)
+            spk_jenis_bayars.append(spk_)
+            jenis_bayars.append(spk.jenis_bayar)
+
+    return create_response(data=spk_jenis_bayars)
+
+
 @router.get("/search/komponen_biaya", response_model=GetResponseBaseSch[list[BidangKomponenBiayaSch]])
 async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
                 bidang_id:UUID,
@@ -705,7 +760,6 @@ async def get_by_ids(sch:SpkIdSch,
 
     return create_response(data=spks)
     
-
 @router.get("/history/memo/{bidang_id}", response_model=GetResponseBaseSch[list[InvoiceHistoryInTermin]])
 async def get_list_history_memo_by_bidang_id(bidang_id:UUID,
                                             current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -1569,7 +1623,6 @@ async def merge_memo_signed(id:UUID | str):
             await BundleHelper().merge_memo_signed(bundle=bundle, code=f"{termin.code}-{str(termin.updated_at.date())}", tanggal=termin.updated_at.date(), file_path=termin.file_upload_path, worker_id=termin.updated_by_id, db_session=db_session)
     
     await db_session.commit()
-    
 
 @router.post("/export/excel")
 async def get_report(
@@ -1757,412 +1810,10 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID) -> Decimal:
         raise HTTPException(status_code=422, detail="master beban biaya tidak ditemukan")
 
     if master_beban_biaya.formula is not None and master_beban_biaya.formula != '':
-        estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula)
+        estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id)
     else:
         estimated_amount = 0
 
     result = BebanBiayaEstimatedAmountSch(estimated_amount=estimated_amount, bidang_id=bidang_id, beban_biaya_id=beban_biaya_id)
 
     return create_response(data=result)
-
-#region not use
-# @router.get("/print-out/{id}")
-# async def printout(id:UUID | str,
-#                    current_worker:Worker = Depends(crud.worker.get_active_worker)):
-
-#     """Print out DP Pelunasan"""
-#     try:
-#         obj = await crud.termin.get_by_id_for_printout(id=id)
-#         if obj is None:
-#             raise IdNotFoundException(Termin, id)
-        
-#         termin_header = TerminByIdForPrintOut(**dict(obj))
-    
-
-#         date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
-#         nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
-#         nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
-#         tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
-    
-#         day_of_week = date_obj.strftime("%A")
-#         hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
-        
-#         obj_bidangs = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
-    
-#         bidangs = []
-#         overlap_exists = False
-#         amount_utj_used = []
-#         for bd in obj_bidangs:
-#             bidang = InvoiceForPrintOutExt(**dict(bd), total_hargaExt="{:,.0f}".format(bd.total_harga),
-#                                         harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
-#                                         luas_suratExt = "{:,.0f}".format(bd.luas_surat),
-#                                         luas_nettExt = "{:,.0f}".format(bd.luas_nett),
-#                                         luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
-#                                         luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
-#                                         luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-#                                         luas_bayarExt = "{:,.0f}".format(bd.luas_bayar))
-            
-#             invoice_curr = await crud.invoice.get_utj_amount_by_id(id=bd.id)
-            
-#             amount_utj_used.append(invoice_curr.utj_amount)
-
-#             overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
-#             list_overlap = []
-#             for ov in overlaps:
-#                 overlap = BidangOverlapForPrintout(**dict(ov))
-#                 bidang_utama = await crud.bidang.get_by_id(id=bd.bidang_id)
-#                 if (bidang_utama.status_sk == StatusSKEnum.Sudah_Il and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Overlap) or (bidang_utama.status_sk == StatusSKEnum.Belum_IL and bidang_utama.hasil_analisa_peta_lokasi == HasilAnalisaPetaLokasiEnum.Clear):
-#                     nib_perorangan:str = ""
-#                     nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
-#                     if nib_perorangan_meta_data:
-#                         if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
-#                             metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
-#                             nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
-#                     overlap.nib = nib_perorangan
-
-#                 list_overlap.append(overlap)
-
-#             bidang.overlaps = list_overlap
-
-#             if len(bidang.overlaps) > 0:
-#                 overlap_exists = True
-
-#             bidangs.append(bidang)
-        
-#         amount_utj = sum(amount_utj_used) or 0
-            
-#         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
-        
-#         array_total_luas_surat = numpy.array([b.luas_surat for b in obj_bidangs])
-#         total_luas_surat = numpy.sum(array_total_luas_surat)
-#         total_luas_surat = "{:,.0f}".format(total_luas_surat)
-
-#         array_total_luas_ukur = numpy.array([b.luas_ukur for b in obj_bidangs])
-#         total_luas_ukur = numpy.sum(array_total_luas_ukur)
-#         total_luas_ukur = "{:,.0f}".format(total_luas_ukur)
-
-#         array_total_luas_gu_perorangan = numpy.array([b.luas_gu_perorangan for b in obj_bidangs])
-#         total_luas_gu_perorangan = numpy.sum(array_total_luas_gu_perorangan)
-#         total_luas_gu_perorangan = "{:,.0f}".format(total_luas_gu_perorangan)
-
-#         array_total_luas_nett = numpy.array([b.luas_nett for b in obj_bidangs])
-#         total_luas_nett = numpy.sum(array_total_luas_nett)
-#         total_luas_nett = "{:,.0f}".format(total_luas_nett)
-
-#         array_total_luas_pbt_perorangan = numpy.array([b.luas_pbt_perorangan for b in obj_bidangs])
-#         total_luas_pbt_perorangan = numpy.sum(array_total_luas_pbt_perorangan)
-#         total_luas_pbt_perorangan = "{:,.0f}".format(total_luas_pbt_perorangan)
-
-#         array_total_luas_bayar = numpy.array([b.luas_bayar for b in obj_bidangs])
-#         total_luas_bayar = numpy.sum(array_total_luas_bayar)
-#         total_luas_bayar = "{:,.0f}".format(total_luas_bayar)
-
-#         array_total_harga = numpy.array([b.total_harga for b in obj_bidangs])
-#         total_harga = numpy.sum(array_total_harga)
-#         total_harga = "{:,.0f}".format(total_harga)
-
-
-#         invoices_history = []
-#         obj_invoices_history = await crud.invoice.get_history_invoice_by_bidang_ids_for_printout(list_id=list_bidang_id, termin_id=id)
-#         for his in obj_invoices_history:
-#             history = InvoiceHistoryforPrintOut(**dict(his))
-#             history.amountExt = "{:,.0f}".format(history.amount)
-#             invoices_history.append(history)
-
-#         komponen_biayas = []
-
-#         obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
-#         for bb in obj_komponen_biayas:
-#             beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
-#             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
-#             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
-#             komponen_biayas.append(beban_biaya)
-        
-#         amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
-#         amount_beban_biaya = sum(amount_beban_biayas)
-
-#         harga_aktas = []
-#         obj_kjb_hargas = await crud.kjb_harga.get_harga_akta_by_termin_id_for_printout(termin_id=id)
-#         for hg in obj_kjb_hargas:
-#             harga_akta = KjbHargaAktaSch(**dict(hg))
-#             harga_akta.harga_aktaExt = "{:,.0f}".format(hg.harga_akta)
-#             harga_aktas.append(harga_akta)
-
-#         termin_bayars = []
-#         no = 1
-#         obj_termin_bayar = await crud.termin_bayar.get_multi_by_termin_id_for_printout(termin_id=id)
-#         filename = "memo_tanah_overlap.html" if overlap_exists else "memo_tanah.html"
-#         env = Environment(loader=FileSystemLoader("templates"))
-#         template = env.get_template(filename)
-
-#         render_template = template.render(code=termin_header.nomor_memo or "",
-#                                         created_at=termin_header.created_at.date(),
-#                                         nomor_tahap=termin_header.nomor_tahap,
-#                                         project_name=termin_header.project_name,
-#                                         desa_name=termin_header.desa_name,
-#                                         ptsk_name=termin_header.ptsk_name,
-#                                         notaris_name=termin_header.notaris_name,
-#                                         manager_name=termin_header.manager_name.upper(),
-#                                         sales_name=termin_header.sales_name.upper(),
-#                                         mediator=termin_header.mediator.upper(),
-#                                         data=bidangs,
-#                                         total_luas_surat=total_luas_surat,
-#                                         total_luas_ukur=total_luas_ukur,
-#                                         total_luas_gu_perorangan=total_luas_gu_perorangan,
-#                                         total_luas_nett=total_luas_nett,
-#                                         total_luas_pbt_perorangan=total_luas_pbt_perorangan,
-#                                         total_luas_bayar=total_luas_bayar,
-#                                         total_harga=total_harga,
-#                                         data_invoice_history=invoices_history,
-#                                         data_beban_biaya=komponen_biayas,
-#                                         data_harga_akta=harga_aktas,
-#                                         data_payment=obj_termin_bayar,
-#                                         tanggal_transaksi=termin_header.tanggal_transaksi,
-#                                         tanggal_rencana_transaksi=tanggal_hasil,
-#                                         hari_transaksi=hari_transaksi,
-#                                         jenis_bayar=termin_header.jenis_bayar.value.replace('_', ' '),
-#                                         amount="{:,.0f}".format(((termin_header.amount - amount_beban_biaya) - amount_utj)),
-#                                         remark=termin_header.remark
-#                                         )
-        
-#         try:
-#             doc = await PdfService().get_pdf(render_template)
-#         except Exception as e:
-#             raise HTTPException(status_code=500, detail="Failed generate document")
-        
-#         response = Response(doc, media_type='application/pdf')
-#         response.headers["Content-Disposition"] = f"attachment; filename={termin_header.project_name}.pdf"
-#         return response
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=422, detail=str(e))
-
-# @router.get("/export/excel/memo")
-# async def export_excel():
-
-#     data_rumah = {
-#     'id': [1, 2, 3, 4],
-#     'luas': [100, 120, 80, 150],
-#     'harga': [200000, 250000, 180000, 300000],
-#     }
-
-#     data_pembayaran = {
-#         'property_id': [1, 2, 1, 3, 1, 2],
-#         'id_rumah': ['A', 'B', 'C', 'D', 'A', 'B'],
-#         'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
-#         'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
-#         'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
-#     }
-
-#     df_rumah = pd.DataFrame(data_rumah)
-#     df_pembayaran = pd.DataFrame(data_pembayaran)
-
-#     # Gabungkan data berdasarkan property_id
-#     df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='property_id', right_on='id', how='right')
-
-#     # Ubah kolom tanggal_pembayaran menjadi datetime
-#     df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
-
-#     # Pivot table untuk pembayaran
-#     df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
-
-#     # Mengatasi kolom yang memiliki multi-level
-#     df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
-
-#     # Reset index agar index menjadi kolom biasa
-#     df_pivot.reset_index(inplace=True)
-
-#     try:
-#         # Simpan DataFrame ke file Excel
-#         excel_output = BytesIO()
-#         df_pivot.to_excel(excel_output, index=False)
-        
-#         excel_output.seek(0)
-
-#         return StreamingResponse(BytesIO(excel_output.getvalue()), 
-#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @router.get("/export/excel/memo")
-# async def export_excel():
-
-#     data_rumah = {
-#     'id': [1, 2, 3, 4],
-#     'luas': [100, 120, 80, 150],
-#     'harga': [200000, 250000, 180000, 300000],
-# }
-
-#     # Data Pembayaran
-#     data_pembayaran = {
-#         'id': [1, 2, 3, 4, 5, 6],
-#         'rumah_id': [1, 2, 1, 3, 1, 2],
-#         'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
-#         'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
-#         'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
-#     }
-
-#     # Membuat DataFrame untuk data Rumah dan Pembayaran
-#     df_rumah = pd.DataFrame(data_rumah)
-#     df_pembayaran = pd.DataFrame(data_pembayaran)
-
-#     # Menggunakan pd.MultiIndex.from_frame untuk membuat MultiIndex berdasarkan 'id_rumah'
-#     multiindex = pd.MultiIndex.from_frame(df_rumah.set_index('id'))
-
-#     # Menambahkan MultiIndex ke DataFrame Pembayaran
-#     df_pembayaran.set_index('rumah_id', inplace=True)
-#     df_pembayaran.index.rename('id_rumah', inplace=True)
-#     df_pembayaran = df_pembayaran.reindex(multiindex, level='id_rumah')
-
-#     # Menggabungkan DataFrame Rumah dan Pembayaran
-#     df_merge = pd.concat([df_rumah.set_index('id'), df_pembayaran], axis=1)
-
-#     # Mengganti NaN dengan string kosong
-#     df_merge = df_merge.fillna('')
-
-
-#     try:
-#         # Simpan DataFrame ke file Excel
-#         excel_output = BytesIO()
-#         df_merge.to_excel(excel_output, index=True, merge_cells=False)
-        
-#         excel_output.seek(0)
-
-#         return StreamingResponse(BytesIO(excel_output.getvalue()), 
-#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-    
-
-# @router.get("/export/excel/memo")
-# async def export_excel():
-
-#     # data_tahap = await crud.tahap.get_by_id(id=tahap_id)
-#     # list_id = [thp.bidang_id for thp in data_tahap.details]
-#     # data_pembayaran = await crud.termin.get_termin_by_bidang_ids_for_excel(list_id=list_id)
-
-#     # bidangs = await crud.bidang.get_by_ids(list_ids=list_id)
-#     # data_bidang = []
-#     # nomor:int = 1
-#     # for data in bidangs:
-#     #     bidang = BidangExcelSch(
-#     #         no=nomor,
-#     #         id_bidang=data.id_bidang,
-#     #         alias=data.group,
-#     #         desa=data.desa_name,
-#     #         project=data.project_name,
-#     #         ptsk=data.ptsk_name,
-#     #         pemilik=data.pemilik_name,
-#     #         alashak=data.alashak,
-#     #         luas_surat="{:,.0f}".format(data.luas_surat),
-#     #         luas_ukur="{:,.0f}".format(data.luas_ukur),
-#     #         luas_pbt="{:,.0f}".format(data.luas_pbt_perorangan),
-#     #         luas_bayar="{:,.0f}".format(data.luas_bayar),
-#     #         harga_transaksi="{:,.0f}".format(data.harga_transaksi),
-#     #         total_harga="{:,.0f}".format(data.total_harga_transaksi)
-#     #     )
-#     #     nomor = nomor + 1
-#     #     data_bidang.append(bidang)
-    
-#     # overlaps = await crud.bidangoverlap.get_multi_by_parent_bidang_ids(list_parent_id=list_id)
-#     # data_overlap = [BidangOverlapExcelSch(id_bidang_parent=overlap.id_bidang_parent, 
-#     #                                     alashak=overlap.alashak_intersect,
-#     #                                     luas=overlap.luas_surat_intersect,
-#     #                                     luas_overlap=overlap.luas,
-#     #                                     id_bidang=overlap.id_bidang_intersect) for overlap in overlaps]
-
-#     # df_bidang = pd.DataFrame([bidang.dict() for bidang in data_bidang])
-#     # df_pembayaran = pd.DataFrame([bayar.dict() for bayar in data_pembayaran])
-#     # df_overlap = pd.DataFrame([overlap.dict() for overlap in data_overlap])
-
-
-#     # df_gabung = pd.merge(df_pembayaran, df_bidang, left_on='id_bidang', right_on='id_bidang', how='right')
-#     # print(df_gabung)
-#     # df_pivot = df_gabung.pivot_table(index=['no', 'id_bidang', 'alias', 'desa', 'project', 'ptsk', 'pemilik', 
-#     #                                     'alashak', 'luas_surat', 'luas_ukur', 'luas_pbt', 'luas_bayar', 
-#     #                                     'harga_transaksi', 'total_harga'], 
-#     #                                     columns=['jenis_bayar', 'percentage'], 
-#     #                                     values='amount', aggfunc='sum')
-#     # print(df_pivot)
-#     # df_pivot.columns = ['{} {}'.format(col[0], str(col[1])) for col in df_pivot.columns]
-#     # df_pivot.reset_index(inplace=True)
-    
-
-#     data_rumah = {
-#     'id': [1, 2, 3, 4],
-#     'luas': [100, 120, 80, 150],
-#     'harga': [200000, 250000, 180000, 300000],
-#     }
-
-#     data_pembayaran = {
-#         'id_pembayaran' : [1,2,3,4,5,6],
-#         'rumah_id': [1, 2, 1, 3, 1, 2],
-#         'tanggal_pembayaran': ['2023-01-01', '2023-01-02', '2023-01-01', '2023-01-03', '2023-01-02', '2023-01-04'],
-#         'jenis_pembayaran': ['DP', 'LUNAS', 'DP', 'DP', 'LUNAS', 'DP'],
-#         'jumlah': [50000, 200000, 40000, 100000, 180000, 150000],
-#     }
-
-#     df_rumah = pd.DataFrame(data_rumah)
-#     df_pembayaran = pd.DataFrame(data_pembayaran)
-
-#     # Gabungkan data berdasarkan property_id
-#     df_gabung = pd.merge(df_pembayaran, df_rumah, left_on='rumah_id', right_on='id', how='right')
-
-#     # Ubah kolom tanggal_pembayaran menjadi datetime
-#     df_gabung['tanggal_pembayaran'] = pd.to_datetime(df_gabung['tanggal_pembayaran'])
-
-#     # Pivot table untuk pembayaran
-#     df_pivot = df_gabung.pivot_table(index=['id', 'luas', 'harga'], columns=['jenis_pembayaran', 'tanggal_pembayaran'], values='jumlah', aggfunc='sum')
-
-#     # Mengatasi kolom yang memiliki multi-level
-#     df_pivot.columns = ['{}_{}'.format(col[0], col[1].strftime('%Y-%m-%d')) for col in df_pivot.columns]
-
-#     # Reset index agar index menjadi kolom biasa
-#     df_pivot.reset_index(inplace=True)
-
-#     try:
-#         # Simpan DataFrame ke file Excel
-#         excel_output = BytesIO()
-#         df_pivot.to_excel(excel_output, index=False)
-        
-#         excel_output.seek(0)
-
-#         return StreamingResponse(BytesIO(excel_output.getvalue()), 
-#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-    
-
-# @router.get("/export/excel/memo")
-# async def export_excel():
-
-    
-#     data_bidang = await crud.bidang.get_multi_by_tahap_id_excel()
-#     df_bidang = pd.DataFrame([bidang.dict() for bidang in data_bidang])
-#     my_index_cols = ['id_bidang', 'luas_surat', 'pemilik_name']
-#     df_bidang = df_bidang.set_index(my_index_cols)
-#     df_bidang.columns = [col for col in df_bidang.columns]
-
-
-
-#     print(df_bidang)
-#     print(df_bidang.columns)
-#     print(df_bidang.to_html())
-
-    
-#     try:
-#         # Simpan DataFrame ke file Excel
-#         excel_output = BytesIO()
-#         df_bidang.to_excel(excel_output, index=False)
-        
-#         excel_output.seek(0)
-
-#         return StreamingResponse(BytesIO(excel_output.getvalue()), 
-#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                             headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-#endregion
