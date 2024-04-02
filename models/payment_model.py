@@ -174,6 +174,7 @@ class PaymentGiroDetail(PaymentGiroDetailFullBase, table=True):
     })
 
     giro: "Giro" = Relationship(
+        back_populates="payment_giros",
         sa_relationship_kwargs=
         {
             "lazy":"select"

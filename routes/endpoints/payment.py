@@ -559,7 +559,10 @@ async def get_list(
     query = select(Giro)
 
     if payment_id is None:
-        query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True))
+        query = query.outerjoin(Giro.payment
+                    ).outerjoin(Giro.payment_giros
+                    ).filter(and_(or_(Giro.payment == None, Payment.is_void == True),
+                                  Giro.payment_giros == None))
     else:
         query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True, Payment.id == payment_id))
 

@@ -10,7 +10,7 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -190,6 +190,7 @@ class Termin(TerminFullBase, table=True):
         )
     
 class TerminBayarBase(SQLModel):
+    name: str | None = Field(nullable=True)
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
     payment_method:PaymentMethodEnum = Field(nullable=False)
     rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
@@ -203,6 +204,14 @@ class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
 class TerminBayar(TerminBayarFullBase, table=True):
     termin:"Termin" = Relationship(
         back_populates="termin_bayars",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    invoice_bayars:"InvoiceBayar" =  Relationship(
+        back_populates="termin_bayar",
         sa_relationship_kwargs=
         {
             "lazy" : "select"
