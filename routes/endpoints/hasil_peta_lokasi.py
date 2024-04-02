@@ -285,10 +285,10 @@ async def update(
     
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
     if obj_current.bidang_id != sch.bidang_id:
-
-        url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
-        payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
-        GCloudTaskService().create_task(payload=payload, base_url=url)
+        if obj_current.bidang_id is not None:
+            url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
+            payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
+            GCloudTaskService().create_task(payload=payload, base_url=url)
     
     sch.hasil_analisa_peta_lokasi = HasilAnalisaPetaLokasiEnum.Clear
 
