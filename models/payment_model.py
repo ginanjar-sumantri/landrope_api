@@ -311,6 +311,10 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
         return getattr(getattr(self, "payment", None), "payment_date", None)
     
     @property
+    def payment_code(self) -> str | None:
+        return getattr(getattr(self, "payment", None), "code", None)
+    
+    @property
     def id_bidang(self) -> str | None:
         return getattr(getattr(self, "invoice", None), "id_bidang", None)
     
