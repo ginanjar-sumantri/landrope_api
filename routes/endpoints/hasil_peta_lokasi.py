@@ -539,7 +539,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     
     #jika kjb_dt belum memiliki bundle akan tetapi bidang sudah punya (case bidang dan bundle naik duluan diimport)
     if kjb_dt_current.bundle_hd_id is None:
-        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_hd_current)
+        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_dt_current)
         kjb_dt_updated.bundle_hd_id = bidang_current.bundle_hd_id
 
         await crud.kjb_dt.update(obj_current=kjb_dt_current, 
@@ -611,6 +611,9 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
 
     bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
+    if bidang_current.bundle_hd_id is None:
+        raise HTTPException(status_code=422, detail="bidang belum punya bundle")
+    
     if bidang_current.geom :
         if isinstance(bidang_current.geom, str):
             pass
