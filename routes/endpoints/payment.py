@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya, Workflow
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
-from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch, InvoiceOnMemoSch
+from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch, InvoiceOnMemoSch, InvoiceOnUTJSch
 from schemas.giro_sch import GiroSch, GiroCreateSch, GiroUpdateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.termin_sch import TerminSearchSch
@@ -649,6 +649,46 @@ async def get_invoice_by_id(id:UUID):
     komponens = await crud.bebanbiaya.get_multi_grouping_beban_biaya_by_termin_id(termin_id=id)
 
     return create_response(data=komponens)
+
+@router.get("/search/termin/utj", response_model=GetResponseBaseSch[list[TerminSearchSch]])
+async def get_list_termin_utj(
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets all list objects"""
+
+    invoice_outstandings = await crud.invoice.get_multi_outstanding_utj_invoice(keyword=keyword)
+    list_id = [invoice.termin_id for invoice in invoice_outstandings]
+
+    query = select(Termin).where(Termin.id.in_(list_id))
+    
+    query = query.options(selectinload(Termin.tahap))
+
+    objs = await crud.termin.get_multi_no_page(query=query)
+    
+    return create_response(data=objs)
+
+@router.get("/search/utj/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnUTJSch]])
+async def get_invoice_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+
+    bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+    utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+
+    merge_invoices = memo_bayar_invoices + utj_invoices
+
+    invoices:list[InvoiceOnUTJSch] = []
+    for inv in merge_invoices:
+        inv_in = InvoiceOnUTJSch.from_orm(inv)
+        inv_in.realisasi = False
+        
+        invoices.append(inv_in)
+
+    return create_response(data=invoices)
+
 
 async def bidang_update_status(bidang_ids:list[UUID]):
     for id in bidang_ids:

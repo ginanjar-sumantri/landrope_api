@@ -90,6 +90,14 @@ class InvoiceOnMemoSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal]
     amount_nett:Optional[Decimal]
 
+class InvoiceOnUTJSch(InvoiceFullBase):
+    id_bidang:str|None
+    alashak:str|None 
+    jenis_bayar:Optional[JenisBayarEnum]
+    code_termin:Optional[str]
+    invoice_outstanding:Optional[Decimal]
+    amount_nett:Optional[Decimal]
+
 class InvoiceByIdVoidSch(InvoiceFullBase):
     pass
 

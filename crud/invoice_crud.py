@@ -384,6 +384,61 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
         return response.fetchall()
     
+    async def get_multi_outstanding_utj_invoice(self, 
+                  *, 
+                  keyword: str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Invoice] | None:
+        
+        db_session = db_session or db.session
+
+        filter:str = ""
+        
+        if keyword:
+             filter = f"""
+                    AND (lower(b.id_bidang) LIKE lower('%{keyword}%') OR 
+                    lower(b.alashak) LIKE lower('%{keyword}%') OR 
+                    lower(i.code) LIKE lower('%{keyword}%') OR 
+                    lower(t.code) LIKE lower('%{keyword}%') OR 
+                    lower(t.nomor_memo) LIKE lower('%{keyword}%'))
+                    """
+
+        query = text(f"""
+                    SELECT i.*
+                    FROM invoice i
+                    inner join bidang b on b.id = i.bidang_id
+                    inner join termin t on t.id = i.termin_id
+                    WHERE 
+                    i.amount - (
+                        select coalesce(sum(amount), 0) 
+                        from payment_detail py
+                        where i.id = py.invoice_id
+                        and py.is_void != true
+                        ) > 0
+                    and i.is_void != true
+                    and t.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
+                    {filter}
+        """)
+
+        query = query.options(selectinload(Invoice.bidang)
+                            ).options(selectinload(Invoice.termin
+                                                ).options(selectinload(Termin.tahap))
+                            ).options(selectinload(Invoice.payment_details)
+                            ).options(selectinload(Invoice.details
+                                                ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                    ).options(selectinload(BidangKomponenBiaya.beban_biaya))
+                                                )
+                            ).options(selectinload(Invoice.bidang
+                                                ).options(selectinload(Bidang.invoices
+                                                                    ).options(selectinload(Invoice.termin)
+                                                                    ).options(selectinload(Invoice.payment_details))
+                                                )
+                            )
+        
+        response = await db_session.execute(query)
+
+        return response.fetchall()
+    
     async def get_multi_invoice_id_luas_bayar_by_termin_id(self, 
                   *, 
                   termin_id: UUID,
