@@ -208,5 +208,5 @@ jenis_bayar_to_termin_status_pembebasan_dict = {
 
 class ActivityEnum(str, Enum):
     UTJ = "UTJ"
-    BIAYA_TANAH = "BIAYA_TANAH"
-    BEBAN_BIAYA = "BEBAN_BIAYA"
+    BIAYA_TANAH = "Biaya_Tanah"
+    BEBAN_BIAYA = "Beban_Biaya"
