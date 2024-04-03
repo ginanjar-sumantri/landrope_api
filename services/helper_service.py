@@ -190,14 +190,14 @@ class KomponenBiayaHelper:
         """Calculate estimated amount from formula"""
 
         db_session = db.session
-
-        if formula is None:
-            return 0
         
         master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
         if master_beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and master_beban_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
             return master_beban_biaya.amount or 0
         else:
+            if formula is None:
+                return 0
+            
             query = f"""select  
                     coalesce(round({formula}, 2), 0) As estimated_amount
                     from bidang, beban_biaya

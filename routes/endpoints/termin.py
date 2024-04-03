@@ -10,7 +10,7 @@ import crud
 from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, 
                     PaymentDetail, Payment, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa)
 from models.code_counter_model import CodeCounterEnum
-from schemas.tahap_sch import TahapForTerminByIdSch, TahapSch
+from schemas.tahap_sch import TahapForTerminByIdSch, TahapSch, TahapSrcSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
@@ -512,7 +512,7 @@ async def get_list_bidang_by_kjb_hd_id(
 
     return create_response(data=obj_return)
 
-@router.get("/search/tahap", response_model=GetResponseBaseSch[list[TahapSch]])
+@router.get("/search/tahap", response_model=GetResponseBaseSch[list[TahapSrcSch]])
 async def get_list_tahap(
                 keyword: str | None = None,
                 jenis_bayar: JenisBayarEnum | None = None, 
@@ -527,7 +527,8 @@ async def get_list_tahap(
     query = query.join(Project, Project.id == Planing.project_id)
     query = query.outerjoin(Invoice, Spk.id == Invoice.spk_id)
     query = query.where(and_(Spk.jenis_bayar != JenisBayarEnum.PAJAK,
-                            Invoice.id is None))
+                            or_(Invoice.id == None,
+                                Invoice.is_void == True)))
     
     if jenis_bayar:
         query = query.filter(Spk.jenis_bayar == jenis_bayar)
@@ -537,6 +538,9 @@ async def get_list_tahap(
                                 Project.name.ilike(f'%{keyword}%')))
 
     query = query.distinct()
+    query = query.options(selectinload(Tahap.planing
+                        ).options(selectinload(Planing.project))
+                )
 
     objs = await crud.tahap.get_multi_no_page(query=query)
     return create_response(data=objs)
@@ -552,7 +556,8 @@ async def get_list_tahap_by_id(
                         ).outerjoin(Invoice, Spk.id == Invoice.spk_id
                         ).where(and_(TahapDetail.tahap_id == id,
                                     Spk.jenis_bayar != JenisBayarEnum.PAJAK,
-                                    Invoice.id is None))
+                                    or_(Invoice.id == None,
+                                        Invoice.is_void == True)))
 
     objs = await crud.spk.get_multi_no_page(query=query)
 
@@ -1813,10 +1818,7 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID) -> Decimal:
     if master_beban_biaya is None:
         raise HTTPException(status_code=422, detail="master beban biaya tidak ditemukan")
 
-    if master_beban_biaya.formula is not None and master_beban_biaya.formula != '':
-        estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id)
-    else:
-        estimated_amount = 0
+    estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id)
 
     result = BebanBiayaEstimatedAmountSch(estimated_amount=estimated_amount, bidang_id=bidang_id, beban_biaya_id=beban_biaya_id)
 

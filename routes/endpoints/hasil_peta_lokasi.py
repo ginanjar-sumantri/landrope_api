@@ -1088,3 +1088,21 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 
     return create_response(data=data)
 
+@router.get("/generate-kelengkapan")
+async def generate_kelengkapan_bidang():
+
+    db_session = db.session
+    query = """
+            select h.id as hasil_peta_lokasi_id, h.bidang_id, h.kjb_dt_id from hasil_peta_lokasi h
+            left outer join checklist_kelengkapan_dokumen_hd c on h.bidang_id = c.bidang_id
+            inner join bidang b on b.id = h.bidang_id
+            where h.bidang_id is not null and c.id is null and status_hasil_peta_lokasi != 'Batal' 
+            and b.bundle_hd_id is not null
+            """
+    
+    response = await db_session.execute(query)
+    result = response.fetchall()
+
+    bidang_ids = []
+    for res in result:
+        bidang_ids.append({"hasil_peta_lokasi_id" : res[0], "bidang_id" : res[1], "kjb_dt_id" : res[2]})
