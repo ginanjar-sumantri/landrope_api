@@ -1108,7 +1108,11 @@ async def generate_kelengkapan_bidang():
     for res in result:
         bidang_ids.append({"hasil_peta_lokasi_id" : res[0], "bidang_id" : res[1], "kjb_dt_id" : res[2]})
 
+    row = 0
     for payload in bidang_ids:
+        if row == 10:
+            break
+
         hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload["hasil_peta_lokasi_id"])
         kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload["kjb_dt_id"])
         kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
@@ -1165,3 +1169,8 @@ async def generate_kelengkapan_bidang():
                                                                             created_by_id=hasil_peta_lokasi.updated_by_id, 
                                                                             db_session=db_session, 
                                                                             with_commit=False)
+            
+            row += 1
+
+    await db_session.commit()
+    return {"message" : "successfully"}
