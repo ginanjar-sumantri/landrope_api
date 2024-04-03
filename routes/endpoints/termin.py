@@ -355,20 +355,20 @@ async def update_(
                     if dt.id is None:
                         if dt.bidang_komponen_biaya_id is None and dt.beban_biaya_id and dt.is_deleted != True:
                             master_beban_biaya = await crud.bebanbiaya.get(id=dt.beban_biaya_id)
-                            bidang_komponen_biaya_new: BidangKomponenBiayaCreateSch = None
-                            bidang_komponen_biaya_new.amount = master_beban_biaya.amount
-                            bidang_komponen_biaya_new.formula = master_beban_biaya.formula
-                            bidang_komponen_biaya_new.satuan_bayar = master_beban_biaya.satuan_bayar
-                            bidang_komponen_biaya_new.satuan_harga = master_beban_biaya.satuan_harga
-                            bidang_komponen_biaya_new.is_add_pay = master_beban_biaya.is_add_pay
-                            bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
-                            bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                            bidang_komponen_biaya_new.estimated_amount = dt.amount
-                            bidang_komponen_biaya_new.bidang_id = invoice.bidang_id
-                            bidang_komponen_biaya_new.is_paid = False
-                            bidang_komponen_biaya_new.is_exclude_spk = True
-                            bidang_komponen_biaya_new.is_retur = False
-                            bidang_komponen_biaya_new.is_void = False
+                            bidang_komponen_biaya_new = BidangKomponenBiayaCreateSch(
+                            amount = master_beban_biaya.amount,
+                            formula = master_beban_biaya.formula,
+                            satuan_bayar = master_beban_biaya.satuan_bayar,
+                            satuan_harga = master_beban_biaya.satuan_harga,
+                            is_add_pay = master_beban_biaya.is_add_pay,
+                            beban_biaya_id = dt.beban_biaya_id,
+                            beban_pembeli = dt.beban_pembeli,
+                            estimated_amount = dt.amount,
+                            bidang_id = invoice.bidang_id,
+                            is_paid = False,
+                            is_exclude_spk = True,
+                            is_retur = False,
+                            is_void = False)
 
                             obj_bidang_komponen_biaya = await crud.bidang_komponen_biaya.create(obj_in=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
                             dt.bidang_komponen_biaya_id = obj_bidang_komponen_biaya.id
@@ -387,7 +387,7 @@ async def update_(
                         await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
                     else:
                         invoice_bayar_current = await crud.invoice_bayar.get(id=dt_bayar.id)
-                        invoice_bayar_updated = InvoiceBayarlUpdateSch.from_orm(dt_bayar)
+                        invoice_bayar_updated = InvoiceBayarlUpdateSch.from_orm(invoice_bayar_current)
                         invoice_bayar_updated.termin_bayar_id = termin_bayar_id
                         invoice_bayar_updated.amount = dt_bayar.amount
                         await crud.invoice_bayar.update(obj_current=invoice_bayar_current, obj_new=invoice_bayar_updated, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
@@ -408,20 +408,20 @@ async def update_(
                     continue
                 if dt.bidang_komponen_biaya_id is None and dt.beban_biaya_id and dt.is_deleted != True:
                     master_beban_biaya = await crud.bebanbiaya.get(id=dt.beban_biaya_id)
-                    bidang_komponen_biaya_new: BidangKomponenBiayaCreateSch = None
-                    bidang_komponen_biaya_new.amount = master_beban_biaya.amount
-                    bidang_komponen_biaya_new.formula = master_beban_biaya.formula
-                    bidang_komponen_biaya_new.satuan_bayar = master_beban_biaya.satuan_bayar
-                    bidang_komponen_biaya_new.satuan_harga = master_beban_biaya.satuan_harga
-                    bidang_komponen_biaya_new.is_add_pay = master_beban_biaya.is_add_pay
-                    bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
-                    bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                    bidang_komponen_biaya_new.estimated_amount = dt.amount
-                    bidang_komponen_biaya_new.bidang_id = invoice.bidang_id
-                    bidang_komponen_biaya_new.is_paid = False
-                    bidang_komponen_biaya_new.is_exclude_spk = True
-                    bidang_komponen_biaya_new.is_retur = False
-                    bidang_komponen_biaya_new.is_void = False
+                    bidang_komponen_biaya_new = BidangKomponenBiayaCreateSch(
+                    amount = master_beban_biaya.amount,
+                    formula = master_beban_biaya.formula,
+                    satuan_bayar = master_beban_biaya.satuan_bayar,
+                    satuan_harga = master_beban_biaya.satuan_harga,
+                    is_add_pay = master_beban_biaya.is_add_pay,
+                    beban_biaya_id = dt.beban_biaya_id,
+                    beban_pembeli = dt.beban_pembeli,
+                    estimated_amount = dt.amount,
+                    bidang_id = invoice.bidang_id,
+                    is_paid = False,
+                    is_exclude_spk = True,
+                    is_retur = False,
+                    is_void = False)
 
                     obj_bidang_komponen_biaya = await crud.bidang_komponen_biaya.create(obj_in=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
                     dt.bidang_komponen_biaya_id = obj_bidang_komponen_biaya.id
