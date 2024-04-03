@@ -510,13 +510,13 @@ async def update(id:UUID,
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
     bidang_komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=sch.bidang_id)
+    kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=sch.bidang_id)
     
     if len(bidang_komponen_biayas) > 0:
         bidang_komponen_biaya_ids = [beban.beban_biaya_id for beban in bidang_komponen_biayas]
         sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in bidang_komponen_biaya_ids]
         beban_biaya_ids = bidang_komponen_biaya_ids + sch_beban_biaya_ids
     else:
-        kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=sch.bidang_id)
         kjb_beban_biaya_ids = [beban.beban_biaya_id for beban in kjb_beban_biayas]
         sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in kjb_beban_biaya_ids]
         beban_biaya_ids = kjb_beban_biaya_ids + sch_beban_biaya_ids
