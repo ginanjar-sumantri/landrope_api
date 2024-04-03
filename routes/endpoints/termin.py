@@ -554,7 +554,7 @@ async def get_list_tahap_by_id(
     """Gets a paginated list objects"""
 
     query = select(Spk).join(TahapDetail, TahapDetail.bidang_id == Spk.bidang_id
-                        ).outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void == True)
+                        ).outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void != True)
                         ).where(and_(TahapDetail.tahap_id == id,
                                     Spk.jenis_bayar != JenisBayarEnum.PAJAK,
                                     Spk.is_void != True,
