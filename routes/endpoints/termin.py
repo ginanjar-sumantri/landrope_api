@@ -525,10 +525,11 @@ async def get_list_tahap(
     query = query.join(Spk, TahapDetail.bidang_id == Spk.bidang_id)
     query = query.join(Planing, Planing.id == Tahap.planing_id)
     query = query.join(Project, Project.id == Planing.project_id)
-    query = query.outerjoin(Invoice, Spk.id == Invoice.spk_id)
+    query = query.outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void != True))
     query = query.where(and_(Spk.jenis_bayar != JenisBayarEnum.PAJAK,
-                            or_(Invoice.id == None,
-                                Invoice.is_void == True)))
+                            Spk.is_void != True,
+                            Invoice.id == None,
+                            Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED))
     
     if jenis_bayar:
         query = query.filter(Spk.jenis_bayar == jenis_bayar)
@@ -553,11 +554,12 @@ async def get_list_tahap_by_id(
     """Gets a paginated list objects"""
 
     query = select(Spk).join(TahapDetail, TahapDetail.bidang_id == Spk.bidang_id
-                        ).outerjoin(Invoice, Spk.id == Invoice.spk_id
+                        ).outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void == True)
                         ).where(and_(TahapDetail.tahap_id == id,
                                     Spk.jenis_bayar != JenisBayarEnum.PAJAK,
-                                    or_(Invoice.id == None,
-                                        Invoice.is_void == True)))
+                                    Spk.is_void != True,
+                                    Invoice.id == None,
+                                    Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED))
 
     objs = await crud.spk.get_multi_no_page(query=query)
 
@@ -683,7 +685,7 @@ async def get_list_spk_by_tahap_id(
 
     if tahap_id == None and termin_id == None:
         objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
-        objs = [spk for spk in objs if len([invoice for invoice in spk.invoices if invoice.is_void == False]) == 0 and spk.is_void != True]
+        objs = [spk for spk in objs if len([invoice for invoice in spk.invoices if invoice.is_void != True]) == 0 and spk.is_void != True]
 
     if tahap_id and termin_id == None:
         objs_with_tahap = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword, 
