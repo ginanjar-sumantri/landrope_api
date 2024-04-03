@@ -193,18 +193,22 @@ class KomponenBiayaHelper:
 
         if formula is None:
             return 0
-
-        query = f"""select  
-                coalesce(round({formula}, 2), 0) As estimated_amount
-                from bidang, beban_biaya
-                where bidang.id = '{bidang_id}'
-                and beban_biaya.id = '{beban_biaya_id}'
-                """
+        
+        master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
+        if master_beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and master_beban_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
+            return master_beban_biaya.amount
+        else:
+            query = f"""select  
+                    coalesce(round({formula}, 2), 0) As estimated_amount
+                    from bidang, beban_biaya
+                    where bidang.id = '{bidang_id}'
+                    and beban_biaya.id = '{beban_biaya_id}'
+                    """
+        
+            response = await db_session.execute(query)
+            result = response.fetchone()
     
-        response = await db_session.execute(query)
-        result = response.fetchone()
- 
-        return round(result.estimated_amount)
+            return round(result.estimated_amount)
     
     async def calculated_all_komponen_biaya(self, bidang_ids:list[UUID]):
         """Calculated all komponen bidang when created or updated spk"""
@@ -219,6 +223,8 @@ class KomponenBiayaHelper:
                 sch_updated.estimated_amount = await KomponenBiayaHelper().get_estimated_amount(formula=komponen_biaya.formula, bidang_id=komponen_biaya.bidang_id, bidang_komponen_biaya_id=komponen_biaya.id)
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
+    
+
 
 class BundleHelper:
 

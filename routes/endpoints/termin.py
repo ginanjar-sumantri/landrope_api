@@ -566,7 +566,6 @@ async def get_list_tahap_by_id(
 
     return create_response(data=spk_jenis_bayars)
 
-
 @router.get("/search/komponen_biaya", response_model=GetResponseBaseSch[list[BidangKomponenBiayaSch]])
 async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
                 bidang_id:UUID,
