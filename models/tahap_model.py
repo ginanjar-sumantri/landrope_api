@@ -15,7 +15,8 @@ class TahapBase(SQLModel):
     ptsk_id:Optional[UUID] = Field(foreign_key="ptsk.id", nullable=True)
     sub_project_id:Optional[UUID] = Field(foreign_key="sub_project.id")
     group:Optional[str] = Field(nullable=True)
-    harga_standard: Decimal | None = Field(nullable=True)
+    harga_standard_girik: Decimal | None = Field(nullable=True)
+    harga_standard_sertifikat: Decimal | None = Field(nullable=True)
 
 class TahapFullBase(BaseUUIDModel, TahapBase):
     pass

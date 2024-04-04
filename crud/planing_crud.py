@@ -24,7 +24,8 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
                                                             ).options(selectinload(Project.section)
                                                             ).options(selectinload(Project.main_project)
                                                             ).options(selectinload(Project.sub_projects))
-                                        ).options(selectinload(Planing.desa))
+                                        ).options(selectinload(Planing.desa)
+                                        ).options(selectinload(Planing.harga_standards))
         
         response = await db_session.execute(query)
 

@@ -23,6 +23,7 @@ class InvoiceDetailSch(InvoiceDetailFullBase):
     amount:Decimal|None = Field(alias="amount")
     is_void:bool|None = Field(alias="is_void")
     beban_biaya_name:str|None = Field(alias="beban_biaya_name")
+    beban_biaya_id: UUID | None
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):

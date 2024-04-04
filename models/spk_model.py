@@ -3,7 +3,7 @@ from sqlalchemy import Column, String
 from sqlalchemy.orm import column_property, declared_attr, aliased
 from models.workflow_model import Workflow
 from models.base_model import BaseUUIDModel, BaseHistoryModel
-from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum
+from common.enum import JenisBayarEnum, HasilAnalisaPetaLokasiEnum, SatuanBayarEnum, JenisAlashakEnum
 from uuid import UUID
 from pydantic import condecimal
 from typing import TYPE_CHECKING, Optional
@@ -189,7 +189,10 @@ class Spk(SpkFullBase, table=True):
         harga_standard = 0
         tahap_detail = next((tahap_dt for tahap_dt in self.bidang.tahap_details if tahap_dt.is_void != True), None)
         if tahap_detail:
-            harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard", 0)
+            if self.bidang.jenis_alashak == JenisAlashakEnum.Girik:
+                harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard_girik", 0)
+            else:
+                harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard_sertifikat", 0)
 
         return harga_standard
 

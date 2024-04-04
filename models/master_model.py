@@ -70,7 +70,7 @@ class HargaStandardFullBase(HargaStandardBase, BaseUUIDModel):
     pass
 
 class HargaStandard(HargaStandardFullBase, table=True):
-    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    planing:"Planing" = Relationship(back_populates="harga_standards", sa_relationship_kwargs={'lazy':'selectin'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",

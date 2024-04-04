@@ -292,6 +292,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def beban_biaya_name(self) -> str | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_biaya_name', None)
+    
+    @property
+    def beban_biaya_id(self) -> str | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_biaya_id', None)
 
 
 class InvoiceBayarBase(SQLModel):
