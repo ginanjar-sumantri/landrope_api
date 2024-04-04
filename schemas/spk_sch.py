@@ -141,6 +141,7 @@ class SpkInTerminSch(SQLModel):
     notaris_id:Optional[UUID]
     notaris_name:Optional[str]
     mediator:Optional[str]
+    harga_standard: Decimal | None
 
 class SpkVoidSch(SQLModel):
     void_reason:str

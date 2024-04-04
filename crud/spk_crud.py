@@ -125,7 +125,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = select(Spk).where(Spk.id == id
                                 ).options(selectinload(Spk.bidang
                                             ).options(selectinload(Bidang.invoices
-                                                            ).options(selectinload(Invoice.termin)
+                                                            ).options(selectinload(Invoice.termin
+                                                                                ).options(selectinload(Termin.tahap))
                                                             ).options(selectinload(Invoice.payment_details)
                                                             )
                                             ).options(selectinload(Bidang.komponen_biayas)
