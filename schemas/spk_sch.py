@@ -3,7 +3,7 @@ from common.partial import optional
 from schemas.bidang_sch import BidangForSPKByIdSch
 from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateExtSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateExtSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaExtSch, BidangKomponenBiayaSch
-from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum, JenisBidangEnum, StatusSKEnum, TipeOverlapEnum
+from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum, JenisBidangEnum, StatusSKEnum, TipeOverlapEnum, JenisAlashakEnum
 from sqlmodel import Field, SQLModel
 from typing import Optional
 from decimal import Decimal
@@ -117,6 +117,7 @@ class SpkInTerminSch(SQLModel):
     spk_amount:Optional[Decimal]
     spk_satuan_bayar:Optional[str]
     jenis_bayar:Optional[JenisBayarEnum]
+    jenis_alashak: JenisAlashakEnum | None
     bidang_id:Optional[UUID]
     id_bidang:Optional[str]
     alashak:Optional[str]
