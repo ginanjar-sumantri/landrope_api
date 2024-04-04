@@ -89,6 +89,8 @@ class InvoiceOnMemoSch(InvoiceFullBase):
     code_termin:Optional[str]
     invoice_outstanding:Optional[Decimal]
     amount_nett:Optional[Decimal]
+    termin_bayar_id: UUID | None
+    invoice_bayar_amount: Decimal | None
 
 class InvoiceOnUTJSch(InvoiceFullBase):
     id_bidang:str|None

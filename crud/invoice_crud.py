@@ -304,6 +304,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                                 ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
                                             ).options(selectinload(BidangKomponenBiaya.bidang))
                                 )
+                    ).options(selectinload(Invoice.bayars)
                     )
         query = query.options(selectinload(Invoice.payment_details))
         

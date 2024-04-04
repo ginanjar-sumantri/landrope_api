@@ -16,7 +16,7 @@ from schemas.beban_biaya_sch import BebanBiayaGroupingSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum, ActivityEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -609,6 +609,34 @@ async def get_list(
     
     return create_response(data=objs)
 
+# @router.get("/search/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnMemoSch]])
+# async def get_invoice_by_id(id:UUID):
+
+#     """Get an object by id"""
+
+#     termin_current = await crud.termin.get_by_id(id=id)
+#     if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+#         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
+
+#     memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+
+#     bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+#     utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+
+#     merge_invoices = memo_bayar_invoices + utj_invoices
+
+#     invoices:list[InvoiceOnMemoSch] = []
+#     for inv in merge_invoices:
+#         inv_in = InvoiceOnMemoSch.from_orm(inv)
+#         if inv_in.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+#             inv_in.realisasi = True
+#         else:
+#             inv_in.realisasi = False
+        
+#         invoices.append(inv_in)
+
+#     return create_response(data=invoices)
+
 @router.get("/search/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnMemoSch]])
 async def get_invoice_by_id(id:UUID):
 
@@ -618,21 +646,34 @@ async def get_invoice_by_id(id:UUID):
     if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
 
-    memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
-
-    bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+    invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+    
+    bidang_ids = [inv.bidang_id for inv in invoices if inv.use_utj == True and inv.is_void != True]
     utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
-
-    merge_invoices = memo_bayar_invoices + utj_invoices
+    
+    invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=id)
 
     invoices:list[InvoiceOnMemoSch] = []
-    for inv in merge_invoices:
-        inv_in = InvoiceOnMemoSch.from_orm(inv)
-        if inv_in.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+    for invoice_bayar in invoice_bayars:
+        if invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:
+            utj_invoice = next((utj for utj in utj_invoices if utj.bidang_id == invoice_bayar.invoice.bidang_id), None)
+            if utj_invoice is None:
+                continue
+
+            inv_in = InvoiceOnMemoSch.from_orm(utj_invoice)
             inv_in.realisasi = True
+            inv_in.invoice_bayar_amount = invoice_bayar.amount
+            inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
         else:
+            regular_invoice = next((inv for inv in invoices if inv.id == invoice_bayar.invoice_id))
+            if regular_invoice is None:
+                continue
+
+            inv_in = InvoiceOnMemoSch.from_orm(regular_invoice)
             inv_in.realisasi = False
-        
+            inv_in.invoice_bayar_amount = invoice_bayar.amount
+            inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
+
         invoices.append(inv_in)
 
     return create_response(data=invoices)
