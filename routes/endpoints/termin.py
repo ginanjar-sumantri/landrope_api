@@ -746,7 +746,9 @@ async def get_by_id(id:UUID,
                         mediator=obj.bidang.mediator, 
                         desa_name=obj.bidang.desa_name, 
                         ptsk_name=obj.bidang.ptsk_name, 
-                        harga_standard=obj.harga_standard
+                        harga_standard=obj.harga_standard,
+                        harga_standard_girik=obj.harga_standard_girik,
+                        harga_standard_sertifikat=obj.harga_standard_sertifikat
                         )
 
     if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:

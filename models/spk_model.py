@@ -195,8 +195,26 @@ class Spk(SpkFullBase, table=True):
                 harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard_sertifikat", 0)
 
         return harga_standard
+    
+    @property
+    def harga_standard_girik(self) -> Decimal | None:
 
+        harga_standard = 0
+        tahap_detail = next((tahap_dt for tahap_dt in self.bidang.tahap_details if tahap_dt.is_void != True), None)
+        if tahap_detail:
+            harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard_girik", 0)
+           
+        return harga_standard
+    
+    @property
+    def harga_standard_sertifikat(self) -> Decimal | None:
 
+        harga_standard = 0
+        tahap_detail = next((tahap_dt for tahap_dt in self.bidang.tahap_details if tahap_dt.is_void != True), None)
+        if tahap_detail:
+            harga_standard = getattr(getattr(tahap_detail, "tahap", 0), "harga_standard_sertifikat", 0)
+
+        return harga_standard
     
     @declared_attr
     def step_name_workflow(self) -> column_property:

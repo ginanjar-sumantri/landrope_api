@@ -112,6 +112,14 @@ class Termin(TerminFullBase, table=True):
         return getattr(getattr(self, 'tahap', None), 'nomor_tahap', None)
     
     @property
+    def harga_standard_girik(self) -> Decimal | None:
+        return getattr(getattr(self, 'tahap', 0), 'harga_standard_girik', 0)
+    
+    @property
+    def harga_standard_sertifikat(self) -> Decimal | None:
+        return getattr(getattr(self, 'tahap', 0), 'harga_standard_sertifikat', 0)
+    
+    @property
     def project_id(self) -> UUID | None:
         return getattr(getattr(self, 'tahap', None), 'project_id', None)
     

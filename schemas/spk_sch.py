@@ -142,6 +142,8 @@ class SpkInTerminSch(SQLModel):
     notaris_name:Optional[str]
     mediator:Optional[str]
     harga_standard: Decimal | None
+    harga_standard_girik: Decimal | None
+    harga_standard_sertifikat: Decimal | None
 
 class SpkVoidSch(SQLModel):
     void_reason:str
