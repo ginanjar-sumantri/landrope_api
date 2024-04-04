@@ -373,7 +373,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    obj_updated = obj_current
+    obj_updated = PaymentUpdateSch.from_orm(obj_current)
     obj_updated.is_void = True
     obj_updated.void_reason = sch.void_reason
     obj_updated.void_by_id = current_worker.id
@@ -383,7 +383,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
 
     bidang_ids = []
     for dt in obj_current.details:
-        payment_dtl_updated = dt
+        payment_dtl_updated = PaymentDetailUpdateSch.from_orm(dt)
         payment_dtl_updated.is_void = True
         payment_dtl_updated.void_reason = sch.void_reason
         payment_dtl_updated.void_by_id = current_worker.id
