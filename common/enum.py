@@ -205,3 +205,8 @@ jenis_bayar_to_termin_status_pembebasan_dict = {
     JenisBayarEnum.PELUNASAN : StatusPembebasanEnum.PEMBAYARAN_PELUNASAN,
     JenisBayarEnum.LUNAS : StatusPembebasanEnum.PEMBAYARAN_LUNAS
 }
+
+class ActivityEnum(str, Enum):
+    UTJ = "UTJ"
+    BIAYA_TANAH = "Biaya_Tanah"
+    BEBAN_BIAYA = "Beban_Biaya"

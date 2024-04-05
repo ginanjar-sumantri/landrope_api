@@ -4,13 +4,13 @@ from models.base_model import BaseUUIDModel
 from models.workflow_model import Workflow
 from uuid import UUID
 from typing import TYPE_CHECKING, Optional
-from common.enum import JenisBayarEnum, PaymentMethodEnum
+from common.enum import JenisBayarEnum, PaymentMethodEnum, ActivityEnum
 from decimal import Decimal
 from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -112,6 +112,14 @@ class Termin(TerminFullBase, table=True):
         return getattr(getattr(self, 'tahap', None), 'nomor_tahap', None)
     
     @property
+    def harga_standard_girik(self) -> Decimal | None:
+        return getattr(getattr(self, 'tahap', 0), 'harga_standard_girik', 0)
+    
+    @property
+    def harga_standard_sertifikat(self) -> Decimal | None:
+        return getattr(getattr(self, 'tahap', 0), 'harga_standard_sertifikat', 0)
+    
+    @property
     def project_id(self) -> UUID | None:
         return getattr(getattr(self, 'tahap', None), 'project_id', None)
     
@@ -190,10 +198,13 @@ class Termin(TerminFullBase, table=True):
         )
     
 class TerminBayarBase(SQLModel):
+    name: str | None = Field(nullable=True)
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
     payment_method:PaymentMethodEnum = Field(nullable=False)
     rekening_id:UUID | None = Field(nullable=True, foreign_key="rekening.id")
     amount:Decimal = Field(nullable=False, default=0)
+    remark:str | None = Field(nullable=True)
+    activity:ActivityEnum | None = Field(nullable=True)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
     pass
@@ -201,6 +212,14 @@ class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
 class TerminBayar(TerminBayarFullBase, table=True):
     termin:"Termin" = Relationship(
         back_populates="termin_bayars",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    invoice_bayars:"InvoiceBayar" =  Relationship(
+        back_populates="termin_bayar",
         sa_relationship_kwargs=
         {
             "lazy" : "select"

@@ -125,7 +125,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = select(Spk).where(Spk.id == id
                                 ).options(selectinload(Spk.bidang
                                             ).options(selectinload(Bidang.invoices
-                                                            ).options(selectinload(Invoice.termin)
+                                                            ).options(selectinload(Invoice.termin
+                                                                                ).options(selectinload(Termin.tahap))
                                                             ).options(selectinload(Invoice.payment_details)
                                                             )
                                             ).options(selectinload(Bidang.komponen_biayas)
@@ -146,6 +147,39 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+
+    async def get_by_ids_in_termin(self, 
+                  *, 
+                  list_id: list[UUID] | list[str] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) ->list[Spk] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk).where(Spk.id.in_(list_id)
+                                ).options(selectinload(Spk.bidang
+                                            ).options(selectinload(Bidang.invoices
+                                                            ).options(selectinload(Invoice.termin)
+                                                            ).options(selectinload(Invoice.payment_details)
+                                                            )
+                                            ).options(selectinload(Bidang.komponen_biayas)
+                                            ).options(selectinload(Bidang.planing
+                                                            ).options(selectinload(Planing.project)
+                                                            ).options(selectinload(Planing.desa))
+                                            ).options(selectinload(Bidang.sub_project)
+                                            ).options(selectinload(Bidang.tahap_details
+                                                                ).options(selectinload(TahapDetail.tahap))
+                                            ).options(selectinload(Bidang.manager)
+                                            ).options(selectinload(Bidang.sales)
+                                            ).options(selectinload(Bidang.notaris)
+                                            ).options(selectinload(Bidang.skpt
+                                                                ).options(selectinload(Skpt.ptsk))
+                                            )
+                                )
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
     
     async def get_by_bidang_id_kjb_termin_id(self, 
                   *, 
@@ -218,6 +252,21 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         
         query = select(Spk)
         query = query.where(and_(Spk.bidang_id == bidang_id, or_(Spk.is_void == False, Spk.is_void == None)))
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+    
+    async def get_multi_spk_active_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Spk] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Spk)
+        query = query.where(and_(Spk.bidang_id == bidang_id, Spk.is_void != True))
         
         response = await db_session.execute(query)
 
@@ -490,6 +539,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bb.is_tax = true
                         and bkb.is_void != true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     order by bkb.order_number asc
                     """)
             
@@ -516,6 +566,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bkb.is_void != true
                         and bkb.is_retur = true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
         elif jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
 
@@ -540,6 +591,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                         s.id = '{str(id)}'
                         and bkb.is_void != true
                         and bkb.is_add_pay = true
+                        and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
         else:
 
@@ -558,6 +610,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     where s.id = '{str(id)}'
                     and bb.is_tax = true
                     and bkb.is_void != true
+                    and COALESCE(bkb.is_exclude_spk, False) != True
                     """)
 
         response = await db_session.execute(query)

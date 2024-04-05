@@ -15,6 +15,8 @@ class TahapBase(SQLModel):
     ptsk_id:Optional[UUID] = Field(foreign_key="ptsk.id", nullable=True)
     sub_project_id:Optional[UUID] = Field(foreign_key="sub_project.id")
     group:Optional[str] = Field(nullable=True)
+    harga_standard_girik: Decimal | None = Field(nullable=True)
+    harga_standard_sertifikat: Decimal | None = Field(nullable=True)
 
 class TahapFullBase(BaseUUIDModel, TahapBase):
     pass
@@ -104,9 +106,16 @@ class Tahap(TahapFullBase, table=True):
     
     @property
     def lunas_count(self) -> int | None:
-        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.LUNAS]
+        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar in  [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]]
         return len(lunas_termins) or 0    
     
+    @property
+    def has_memo_active(self) -> bool | None:
+        termin_active = next((termin for termin in self.termins if termin.is_void != True and termin.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]), None)
+        if termin_active:
+            return True
+        
+        return False
     
 class TahapDetailBase(SQLModel):
     tahap_id:UUID = Field(foreign_key="tahap.id", nullable=False)

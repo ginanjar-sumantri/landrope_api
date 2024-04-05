@@ -9,7 +9,7 @@ from pydantic import condecimal
 import numpy
 
 if TYPE_CHECKING:
-    from models import Worker, Termin, Spk, Bidang, BidangKomponenBiaya, PaymentDetail
+    from models import Worker, Termin, Spk, Bidang, BidangKomponenBiaya, PaymentDetail, TerminBayar
     
 
 class InvoiceBase(SQLModel):
@@ -61,6 +61,16 @@ class Invoice(InvoiceFullBase, table=True):
             "lazy" : "select",
             "cascade" : "delete, all",
              "foreign_keys" : "[InvoiceDetail.invoice_id]"
+        }
+    )
+
+    bayars:list["InvoiceBayar"] = Relationship(
+        back_populates="invoice",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select",
+            "cascade" : "delete, all",
+             "foreign_keys" : "[InvoiceBayar.invoice_id]"
         }
     )
 
@@ -235,10 +245,7 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def status_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "status_workflow", None)
-    
 
-
-    
 
 class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
@@ -285,3 +292,33 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def beban_biaya_name(self) -> str | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_biaya_name', None)
+    
+    @property
+    def beban_biaya_id(self) -> str | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'beban_biaya_id', None)
+
+
+class InvoiceBayarBase(SQLModel):
+    termin_bayar_id: UUID | None = Field(nullable=False, foreign_key="termin_bayar.id")
+    invoice_id: UUID | None = Field(nullable=False, foreign_key="invoice.id")
+    amount:Decimal | None = Field(nullable=True, default=0)
+
+class InvoiceBayarFullBase(BaseUUIDModel, InvoiceBayarBase):
+    pass
+
+class InvoiceBayar(InvoiceBayarFullBase, table=True):
+    termin_bayar:"TerminBayar" = Relationship(
+        back_populates="invoice_bayars",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+    invoice:"Invoice" = Relationship(
+        back_populates="bayars",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )

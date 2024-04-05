@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya, Workflow
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
-from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch, InvoiceOnMemoSch
+from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch, InvoiceOnMemoSch, InvoiceOnUTJSch
 from schemas.giro_sch import GiroSch, GiroCreateSch, GiroUpdateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.termin_sch import TerminSearchSch
@@ -16,7 +16,7 @@ from schemas.beban_biaya_sch import BebanBiayaGroupingSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum, ActivityEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -373,7 +373,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
     if not obj_current:
         raise IdNotFoundException(Payment, id)
     
-    obj_updated = obj_current
+    obj_updated = PaymentUpdateSch.from_orm(obj_current)
     obj_updated.is_void = True
     obj_updated.void_reason = sch.void_reason
     obj_updated.void_by_id = current_worker.id
@@ -383,7 +383,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
 
     bidang_ids = []
     for dt in obj_current.details:
-        payment_dtl_updated = dt
+        payment_dtl_updated = PaymentDetailUpdateSch.from_orm(dt)
         payment_dtl_updated.is_void = True
         payment_dtl_updated.void_reason = sch.void_reason
         payment_dtl_updated.void_by_id = current_worker.id
@@ -559,7 +559,10 @@ async def get_list(
     query = select(Giro)
 
     if payment_id is None:
-        query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True))
+        query = query.outerjoin(Giro.payment
+                    ).outerjoin(Giro.payment_giros
+                    ).filter(and_(or_(Giro.payment == None, Payment.is_void == True),
+                                  Giro.payment_giros == None))
     else:
         query = query.outerjoin(Giro.payment).filter(or_(Giro.payment == None, Payment.is_void == True, Payment.id == payment_id))
 
@@ -606,6 +609,34 @@ async def get_list(
     
     return create_response(data=objs)
 
+# @router.get("/search/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnMemoSch]])
+# async def get_invoice_by_id(id:UUID):
+
+#     """Get an object by id"""
+
+#     termin_current = await crud.termin.get_by_id(id=id)
+#     if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+#         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
+
+#     memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+
+#     bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+#     utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+
+#     merge_invoices = memo_bayar_invoices + utj_invoices
+
+#     invoices:list[InvoiceOnMemoSch] = []
+#     for inv in merge_invoices:
+#         inv_in = InvoiceOnMemoSch.from_orm(inv)
+#         if inv_in.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+#             inv_in.realisasi = True
+#         else:
+#             inv_in.realisasi = False
+        
+#         invoices.append(inv_in)
+
+#     return create_response(data=invoices)
+
 @router.get("/search/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnMemoSch]])
 async def get_invoice_by_id(id:UUID):
 
@@ -615,24 +646,39 @@ async def get_invoice_by_id(id:UUID):
     if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
 
-    memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
-
-    bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+    invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+    
+    bidang_ids = [inv.bidang_id for inv in invoices if inv.use_utj == True and inv.is_void != True]
     utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+    
+    invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=id)
 
-    merge_invoices = memo_bayar_invoices + utj_invoices
+    invoices_in:list[InvoiceOnMemoSch] = []
+    for invoice_bayar in invoice_bayars:
+        if invoice_bayar.termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
+            continue
+        elif invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:
+            utj_invoice = next((utj for utj in utj_invoices if utj.bidang_id == invoice_bayar.invoice.bidang_id), None)
+            if utj_invoice is None:
+                continue
 
-    invoices:list[InvoiceOnMemoSch] = []
-    for inv in merge_invoices:
-        inv_in = InvoiceOnMemoSch.from_orm(inv)
-        if inv_in.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+            inv_in = InvoiceOnMemoSch.from_orm(utj_invoice)
             inv_in.realisasi = True
+            inv_in.invoice_bayar_amount = invoice_bayar.amount
+            inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
         else:
-            inv_in.realisasi = False
-        
-        invoices.append(inv_in)
+            regular_invoice = next((inv for inv in invoices if inv.id == invoice_bayar.invoice_id), None)
+            if regular_invoice is None:
+                continue
 
-    return create_response(data=invoices)
+            inv_in = InvoiceOnMemoSch.from_orm(regular_invoice)
+            inv_in.realisasi = False
+            inv_in.invoice_bayar_amount = invoice_bayar.amount
+            inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
+
+        invoices_in.append(inv_in)
+
+    return create_response(data=invoices_in)
 
 @router.get("/search/komponen/by-termin/{id}", response_model=GetResponseBaseSch[list[BebanBiayaGroupingSch]])
 async def get_invoice_by_id(id:UUID):
@@ -646,6 +692,46 @@ async def get_invoice_by_id(id:UUID):
     komponens = await crud.bebanbiaya.get_multi_grouping_beban_biaya_by_termin_id(termin_id=id)
 
     return create_response(data=komponens)
+
+@router.get("/search/termin/utj", response_model=GetResponseBaseSch[list[TerminSearchSch]])
+async def get_list_termin_utj(
+                keyword:str = None,
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets all list objects"""
+
+    invoice_outstandings = await crud.invoice.get_multi_outstanding_utj_invoice(keyword=keyword)
+    list_id = [invoice.termin_id for invoice in invoice_outstandings]
+
+    query = select(Termin).where(Termin.id.in_(list_id))
+    
+    query = query.options(selectinload(Termin.tahap))
+
+    objs = await crud.termin.get_multi_no_page(query=query)
+    
+    return create_response(data=objs)
+
+@router.get("/search/utj/invoice/by-termin/{id}", response_model=GetResponseBaseSch[list[InvoiceOnUTJSch]])
+async def get_invoice_by_id(id:UUID):
+
+    """Get an object by id"""
+
+    memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+
+    bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+    utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+
+    merge_invoices = memo_bayar_invoices + utj_invoices
+
+    invoices:list[InvoiceOnUTJSch] = []
+    for inv in merge_invoices:
+        inv_in = InvoiceOnUTJSch.from_orm(inv)
+        inv_in.realisasi = False
+        
+        invoices.append(inv_in)
+
+    return create_response(data=invoices)
+
 
 async def bidang_update_status(bidang_ids:list[UUID]):
     for id in bidang_ids:

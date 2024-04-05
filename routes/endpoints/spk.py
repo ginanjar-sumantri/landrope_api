@@ -3,12 +3,12 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response, Backgro
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_, text, or_, func
+from sqlmodel import select, and_, text, or_, func, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
 from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
-                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover)
+                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, SpkKelengkapanDokumen)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
@@ -76,45 +76,61 @@ async def create(
 
     code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
     jenis_bayar = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
-
     sch.code = f"SPK-{jenis_bayar}/{code}/{bidang.id_bidang}"
     
     new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
 
-    beban_biaya = None
-    for komponen_biaya in sch.spk_beban_biayas:
-        
-        komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=new_obj.bidang_id, 
-                                                                                                      beban_biaya_id=komponen_biaya.beban_biaya_id)
-        
-        
-        if komponen_biaya_current:
-            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
-                                                                beban_pembeli=komponen_biaya.beban_pembeli,
-                                                                remark=komponen_biaya.remark)
+    bidang_komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=sch.bidang_id)
+    kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=bidang.id)
+    
+    if len(bidang_komponen_biayas) > 0:
+        bidang_komponen_biaya_ids = [beban.beban_biaya_id for beban in bidang_komponen_biayas]
+        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in bidang_komponen_biaya_ids]
+        beban_biaya_ids = bidang_komponen_biaya_ids + sch_beban_biaya_ids
+    else:
+        kjb_beban_biaya_ids = [beban.beban_biaya_id for beban in kjb_beban_biayas]
+        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in kjb_beban_biaya_ids]
+        beban_biaya_ids = kjb_beban_biaya_ids + sch_beban_biaya_ids
+
+    for beban_biaya_id in beban_biaya_ids:
+        obj_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=sch.bidang_id, beban_biaya_id=beban_biaya_id)
+        sch_komponen_biaya = next((schema for schema in sch.spk_beban_biayas if schema.beban_biaya_id == beban_biaya_id), None)
+        kjb_beban_biaya = next((kjb_beban for kjb_beban in kjb_beban_biayas if kjb_beban.beban_biaya_id == beban_biaya_id), None)
+
+        if obj_komponen_biaya_current:
+            if sch_komponen_biaya:
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
+                                                                            beban_pembeli=sch_komponen_biaya.beban_pembeli,
+                                                                            is_exclude_spk=False,
+                                                                            remark=sch_komponen_biaya.remark)
+            else:
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
+                                                                            beban_pembeli=obj_komponen_biaya_current.beban_pembeli,
+                                                                            is_exclude_spk=True,
+                                                                            remark=obj_komponen_biaya_current.remark)
             
-            
-            await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
+            await crud.bidang_komponen_biaya.update(obj_current=obj_komponen_biaya_current, 
+                                                    obj_new=obj_komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
-            
         else:
-            beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
-            komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
-                                                        beban_biaya_id=komponen_biaya.beban_biaya_id, 
-                                                        beban_pembeli=komponen_biaya.beban_pembeli,
+            master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
+            obj_komponen_biaya_new = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
+                                                        beban_biaya_id=beban_biaya_id, 
+                                                        beban_pembeli=sch_komponen_biaya.beban_pembeli if sch_komponen_biaya else kjb_beban_biaya.beban_pembeli,
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_retur=False,
-                                                        is_add_pay=beban_biaya.is_add_pay,
-                                                        remark=komponen_biaya.remark,
-                                                        satuan_bayar=beban_biaya.satuan_bayar,
-                                                        satuan_harga=beban_biaya.satuan_harga,
-                                                        formula=beban_biaya.formula,
-                                                        amount=beban_biaya.amount,
-                                                        order_number=komponen_biaya.order_number)
-            
-            await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+                                                        is_add_pay=master_beban_biaya.is_add_pay,
+                                                        remark=sch_komponen_biaya.remark if sch_komponen_biaya else "",
+                                                        satuan_bayar=master_beban_biaya.satuan_bayar,
+                                                        satuan_harga=master_beban_biaya.satuan_harga,
+                                                        formula=master_beban_biaya.formula,
+                                                        amount=master_beban_biaya.amount,
+                                                        order_number=sch_komponen_biaya.order_number if sch_komponen_biaya else None,
+                                                        is_exclude_spk=False if sch_komponen_biaya else True) 
+            await crud.bidang_komponen_biaya.create(obj_in=obj_komponen_biaya_new, created_by_id=current_worker.id, with_commit=False)
+
 
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, 
@@ -493,56 +509,60 @@ async def update(id:UUID,
     
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
-    #remove beban biaya
-    list_id = [beban_biaya.id for beban_biaya in sch.spk_beban_biayas if beban_biaya.id != None]
-    if len(list_id) > 0:
-        beban_biaya_will_removed = await crud.bidang_komponen_biaya.get_multi_not_in_id_removed(bidang_id=obj_updated.bidang_id, list_ids=list_id)
-
-        if len(beban_biaya_will_removed) > 0:
-            await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=beban_biaya_will_removed, db_session=db_session)
+    bidang_komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=sch.bidang_id)
+    kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=sch.bidang_id)
     
-    elif len(list_id) == 0:
-        list_obj = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj_current.bidang_id)
-        await crud.bidang_komponen_biaya.remove_multiple_data(list_obj=list_obj, db_session=db_session)
+    if len(bidang_komponen_biayas) > 0:
+        bidang_komponen_biaya_ids = [beban.beban_biaya_id for beban in bidang_komponen_biayas]
+        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in bidang_komponen_biaya_ids]
+        beban_biaya_ids = bidang_komponen_biaya_ids + sch_beban_biaya_ids
+    else:
+        kjb_beban_biaya_ids = [beban.beban_biaya_id for beban in kjb_beban_biayas]
+        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in kjb_beban_biaya_ids]
+        beban_biaya_ids = kjb_beban_biaya_ids + sch_beban_biaya_ids
 
-    beban_biaya = None
-    for komponen_biaya in sch.spk_beban_biayas:
-        komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=obj_updated.bidang_id, 
-                                                                                                      beban_biaya_id=komponen_biaya.beban_biaya_id)
-        
-        if komponen_biaya_current:
-            komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**komponen_biaya_current.dict())
-            komponen_biaya_updated.is_void, komponen_biaya_updated.is_paid, komponen_biaya_updated.beban_pembeli, komponen_biaya_updated.remark = [komponen_biaya_current.is_void, komponen_biaya_current.is_paid, komponen_biaya.beban_pembeli, komponen_biaya.remark]
-            await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya_current, obj_new=komponen_biaya_updated,
+    for beban_biaya_id in beban_biaya_ids:
+        obj_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=sch.bidang_id, beban_biaya_id=beban_biaya_id)
+        sch_komponen_biaya = next((schema for schema in sch.spk_beban_biayas if schema.beban_biaya_id == beban_biaya_id), None)
+        kjb_beban_biaya = next((kjb_beban for kjb_beban in kjb_beban_biayas if kjb_beban.beban_biaya_id == beban_biaya_id), None)
+
+        if obj_komponen_biaya_current:
+            if sch_komponen_biaya:
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark"}), 
+                                                                            beban_pembeli=sch_komponen_biaya.beban_pembeli,
+                                                                            is_exclude_spk=False,
+                                                                            remark=sch_komponen_biaya.remark)
+            else:
+                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
+                                                                            beban_pembeli=obj_komponen_biaya_current.beban_pembeli,
+                                                                            is_exclude_spk=True,
+                                                                            remark=obj_komponen_biaya_current.remark)
+            
+            await crud.bidang_komponen_biaya.update(obj_current=obj_komponen_biaya_current, 
+                                                    obj_new=obj_komponen_biaya_updated,
                                                     db_session=db_session, with_commit=False,
                                                     updated_by_id=current_worker.id)
-            beban_biaya = komponen_biaya_current.beban_biaya
         else:
-            beban_biaya = await crud.bebanbiaya.get(id=komponen_biaya.beban_biaya_id)
-            komponen_biaya_sch = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
-                                                        beban_biaya_id=komponen_biaya.beban_biaya_id, 
-                                                        beban_pembeli=komponen_biaya.beban_pembeli,
+            master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
+            obj_komponen_biaya_new = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
+                                                        beban_biaya_id=beban_biaya_id, 
+                                                        beban_pembeli=sch_komponen_biaya.beban_pembeli if sch_komponen_biaya else kjb_beban_biaya.beban_pembeli,
                                                         is_void=False,
                                                         is_paid=False,
                                                         is_retur=False,
-                                                        is_add_pay=beban_biaya.is_add_pay,
-                                                        remark=komponen_biaya.remark,
-                                                        satuan_bayar=beban_biaya.satuan_bayar,
-                                                        satuan_harga=beban_biaya.satuan_harga,
-                                                        amount=beban_biaya.amount)
-            
-            await crud.bidang_komponen_biaya.create(obj_in=komponen_biaya_sch, created_by_id=current_worker.id, with_commit=False)
+                                                        is_add_pay=master_beban_biaya.is_add_pay,
+                                                        remark=sch_komponen_biaya.remark if sch_komponen_biaya else "",
+                                                        satuan_bayar=master_beban_biaya.satuan_bayar,
+                                                        satuan_harga=master_beban_biaya.satuan_harga,
+                                                        formula=master_beban_biaya.formula,
+                                                        amount=master_beban_biaya.amount,
+                                                        order_number=sch_komponen_biaya.order_number if sch_komponen_biaya else None,
+                                                        is_exclude_spk=False if sch_komponen_biaya else True) 
+            await crud.bidang_komponen_biaya.create(obj_in=obj_komponen_biaya_new, created_by_id=current_worker.id, with_commit=False)
 
     #remove kelengkapan dokumen 
-    list_ids = [kelengkapan_dokumen.id for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens if kelengkapan_dokumen.id != None]
-    if len(list_ids) > 0:
-        kelengkapan_biaya_will_removed = await crud.spk_kelengkapan_dokumen.get_multi_not_in_id_removed(spk_id=obj_updated.id, list_ids=list_ids)
-
-        if len(kelengkapan_biaya_will_removed) > 0:
-            await crud.spk_kelengkapan_dokumen.remove_multiple_data(list_obj=kelengkapan_biaya_will_removed, db_session=db_session)
-    
-    elif len(list_ids) == 0 and len(obj_current.spk_kelengkapan_dokumens) > 0:
-        await crud.spk_kelengkapan_dokumen.remove_multiple_data(list_obj=obj_current.spk_kelengkapan_dokumens, db_session=db_session)
+    await db_session.execute(delete(SpkKelengkapanDokumen).where(and_(SpkKelengkapanDokumen.id.notin_(r.id for r in sch.spk_kelengkapan_dokumens if r.id is not None), 
+                                                        SpkKelengkapanDokumen.spk_id == obj_updated.id)))
     
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         if kelengkapan_dokumen.id is None:
@@ -591,7 +611,7 @@ async def update(id:UUID,
     return create_response(data=obj_updated)
 
 @router.delete("/delete", response_model=DeleteResponseBaseSch[SpkSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+async def delete_(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Delete a object"""
 
@@ -649,7 +669,7 @@ async def get_by_id(id:UUID):
 
     beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
     if len(beban) == 0:
-        beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id)
+        beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
     
     ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
     npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
@@ -879,6 +899,7 @@ async def generate_printout(id:UUID|str):
 @router.put("/void/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def void(id:UUID, 
             sch:SpkVoidSch,
+            background_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
@@ -903,10 +924,21 @@ async def void(id:UUID,
     obj_updated.void_at = date.today()
 
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session)
-
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
+    
+    background_task.add_task(delete_all_bidang_komponen_biaya, obj_current.bidang_id)
+
     return create_response(data=obj_updated) 
 
+async def delete_all_bidang_komponen_biaya(bidang_id:UUID):
+
+    """Delete All Bidang Komponen Biaya When all SPK Void"""
+    objs_spk_active = await crud.spk.get_multi_spk_active_by_bidang_id(bidang_id=bidang_id)
+    if len(objs_spk_active) == 0:
+        db_session = db.session
+        await db_session.execute(delete(BidangKomponenBiaya).where(BidangKomponenBiaya.bidang_id == bidang_id))
+        await db_session.commit()
+        
 @router.post("/workflow")
 async def create_workflow():
 

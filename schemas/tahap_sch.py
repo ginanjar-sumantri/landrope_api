@@ -23,7 +23,10 @@ class TahapSch(TahapFullBase):
     lunas_count:Optional[int] = Field(alias="lunas_count")
     updated_by_name:Optional[str] = Field(alias="updated_by_name")
     jumlah_bidang:Optional[int] = Field(alias="jumlah_bidang")
-    
+
+class TahapSrcSch(TahapFullBase):
+    project_name:Optional[str]
+
 
 class TahapByIdSch(TahapFullBase):
     planing_name:Optional[str] = Field(alias="planing_name")
@@ -34,6 +37,7 @@ class TahapByIdSch(TahapFullBase):
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     sub_project_name:Optional[str] = Field(alias="sub_project_name")
     sub_project_code:Optional[str] = Field(alias="sub_project_code")
+    has_memo_active: bool | None
     details:list[TahapDetailSch] | None
 
 class TahapForTerminByIdSch(SQLModel):

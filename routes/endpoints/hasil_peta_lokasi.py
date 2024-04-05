@@ -222,13 +222,13 @@ async def create(
         await db_session.commit()
         await db_session.refresh(new_obj)
 
-        url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
+        url1 = f'{request.base_url}landrope/hasilpetalokasi/task/insert-detail'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
-        url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
+        url2 = f'{request.base_url}landrope/hasilpetalokasi/task/update-bidang'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
 
-        url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
+        url3 = f'{request.base_url}landrope/hasilpetalokasi/task/generate-kelengkapan'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     
     else:
@@ -286,7 +286,7 @@ async def update(
     #remove link bundle dan kelengkapan dokumen jika pada update yg dipilih bidang berbeda
     if obj_current.bidang_id != sch.bidang_id:
         if obj_current.bidang_id is not None:
-            url = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-remove-link-bidang-and-kelengkapan'
+            url = f'{request.base_url}landrope/hasilpetalokasi/task/remove-link-bidang-and-kelengkapan'
             payload = {"bidang_id" : str(obj_current.bidang_id), "worker_id" : str(obj_current.updated_by_id)}
             GCloudTaskService().create_task(payload=payload, base_url=url)
     
@@ -336,13 +336,13 @@ async def update(
         await db_session.commit()
         await db_session.refresh(obj_updated)
 
-        url1 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-insert-detail'
+        url1 = f'{request.base_url}landrope/hasilpetalokasi/task/insert-detail'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url1)
 
-        url2 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-update-bidang'
+        url2 = f'{request.base_url}landrope/hasilpetalokasi/task/update-bidang'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
 
-        url3 = f'{request.base_url}landrope/hasilpetalokasi/cloud-task-generate-kelengkapan'
+        url3 = f'{request.base_url}landrope/hasilpetalokasi/task/generate-kelengkapan'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     else:
         await db_session.commit()
@@ -355,7 +355,7 @@ async def update(
 
     return create_response(data=obj_updated)
 
-@router.post("/cloud-task-insert-detail")
+@router.post("/task/insert-detail")
 async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
     
     db_session = db.session
@@ -483,7 +483,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
 
     return {"message":"successfully"} 
 
-@router.post("/cloud-task-update-bidang")
+@router.post("/task/update-bidang")
 async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_task:BackgroundTasks):
 
     """Task update data bidang from hasil peta lokasi"""
@@ -599,7 +599,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
 
     return {"message":"successfully"} 
 
-@router.post("/cloud-task-generate-kelengkapan")
+@router.post("/task/generate-kelengkapan")
 async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate):
 
     """Task generate checklist kelengkapan dokumen from hasil peta lokasi"""
@@ -666,7 +666,7 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     await db_session.commit()
     return {"message":"successfully"} 
 
-@router.post("/cloud-task-remove-link-bidang-and-kelengkapan")
+@router.post("/task/remove-link-bidang-and-kelengkapan")
 async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
 
     """Task Remove link bundle and remove existing kelengkapan dokumen"""
@@ -1088,3 +1088,89 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 
     return create_response(data=data)
 
+@router.get("/generate-kelengkapan/bidang")
+async def generate_kelengkapan_bidang():
+
+    db_session = db.session
+    db_session1 = db.session
+    query = """
+            select h.id as hasil_peta_lokasi_id, h.bidang_id, h.kjb_dt_id from hasil_peta_lokasi h
+            left outer join checklist_kelengkapan_dokumen_hd c on h.bidang_id = c.bidang_id
+            inner join bidang b on b.id = h.bidang_id
+            where h.bidang_id is not null and c.id is null and status_hasil_peta_lokasi != 'Batal' 
+            and b.bundle_hd_id is not null
+            """
+    
+    response = await db_session1.execute(query)
+    result = response.fetchall()
+
+    bidang_ids = []
+    for res in result:
+        bidang_ids.append({"hasil_peta_lokasi_id" : res[0], "bidang_id" : res[1], "kjb_dt_id" : res[2]})
+
+    row = 0
+    for payload in bidang_ids:
+        if row == 10:
+            break
+
+        hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_id_for_cloud(id=payload["hasil_peta_lokasi_id"])
+        kjb_dt_current = await crud.kjb_dt.get_by_id_for_cloud(id=payload["kjb_dt_id"])
+        kjb_hd_current = await crud.kjb_hd.get_by_id_for_cloud(id=kjb_dt_current.kjb_hd_id)
+
+        bidang_current = await crud.bidang.get_by_id(id=payload["bidang_id"])
+        if bidang_current.bundle_hd_id is None:
+            raise HTTPException(status_code=422, detail="bidang belum punya bundle")
+        
+        if bidang_current.geom :
+            if isinstance(bidang_current.geom, str):
+                pass
+            else:
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+        if bidang_current.geom_ori :
+            if isinstance(bidang_current.geom_ori, str):
+                pass
+            else:
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+
+        #generate kelengkapan dokumen
+        if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
+            checklist_kelengkapan_dokumen_hd_current = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload["bidang_id"])
+            if checklist_kelengkapan_dokumen_hd_current:
+                removed_data = []
+                removed_data.append(checklist_kelengkapan_dokumen_hd_current)
+                await crud.checklist_kelengkapan_dokumen_hd.remove_multiple_data(list_obj=removed_data, db_session=db_session)
+
+            master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+                jenis_alashak=kjb_dt_current.jenis_alashak,
+                kategori_penjual=kjb_hd_current.kategori_penjual)
+            
+            checklist_kelengkapan_dts = []
+            for master in master_checklist_dokumens:
+                bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id_for_cloud(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+                if not bundle_dt_current:
+                    code = bidang_current.bundlehd.code + master.dokumen.code
+                    bundle_dt_current = BundleDtCreateSch(code=code, 
+                                                dokumen_id=master.dokumen_id,
+                                                bundle_hd_id=bidang_current.bundle_hd_id)
+                    
+                    bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
+
+                checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+                    jenis_bayar=master.jenis_bayar,
+                    dokumen_id=master.dokumen_id,
+                    bundle_dt_id=bundle_dt_current.id,
+                    created_by_id=hasil_peta_lokasi.updated_by_id,
+                    updated_by_id=hasil_peta_lokasi.updated_by_id)
+                
+                checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+            
+            checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload["bidang_id"], details=checklist_kelengkapan_dts)
+            await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
+                                                                            created_by_id=hasil_peta_lokasi.updated_by_id, 
+                                                                            db_session=db_session, 
+                                                                            with_commit=False)
+            
+            row += 1
+
+    await db_session.commit()
+    return {"message" : "successfully"}

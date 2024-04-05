@@ -7,8 +7,9 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
+from common.enum import JenisAlashakEnum
 from crud.base_crud import CRUDBase
-from models.kjb_model import KjbBebanBiaya
+from models import KjbBebanBiaya, KjbDt, HasilPetaLokasi, BebanBiaya
 from schemas.kjb_beban_biaya_sch import KjbBebanBiayaCreateSch, KjbBebanBiayaUpdateSch, KjbBebanBiayaSch
 from schemas.beban_biaya_sch import BebanBiayaForSpkSch
 from typing import List
@@ -52,13 +53,38 @@ class CRUDKjbBebanBiaya(CRUDBase[KjbBebanBiaya, KjbBebanBiayaCreateSch, KjbBeban
     
     async def get_kjb_beban_by_kjb_hd_id(self, *, 
                   kjb_hd_id: UUID | str,
+                  jenis_alashak:JenisAlashakEnum,
                   db_session: AsyncSession | None = None) -> List[BebanBiayaForSpkSch] | None:
         
         db_session = db_session or db.session
-        query = select(self.model).where(self.model.kjb_hd_id == kjb_hd_id
-                                        ).options(selectinload(KjbBebanBiaya.beban_biaya))
+        query = select(KjbBebanBiaya)
+        query = query.join(BebanBiaya, BebanBiaya.id == KjbBebanBiaya.beban_biaya_id)
+        query = query.filter(self.model.kjb_hd_id == kjb_hd_id)
+
+        if jenis_alashak == JenisAlashakEnum.Girik:
+            query = query.filter(BebanBiaya.default_spk_girik)
+        else:
+            query = query.filter(BebanBiaya.default_spk_sertifikat)
+
+        query = query.options(selectinload(KjbBebanBiaya.beban_biaya))
+        
         response = await db_session.execute(query)
 
         return response.scalars().all()
 
+    async def get_kjb_beban_by_bidang_id(self, *, 
+                  bidang_id: UUID | str,
+                  db_session: AsyncSession | None = None) -> List[BebanBiayaForSpkSch] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(KjbBebanBiaya)
+        query = query.join(KjbDt, KjbDt.kjb_hd_id == KjbBebanBiaya.kjb_hd_id)
+        query = query.join(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id)
+        query = query.where(HasilPetaLokasi.bidang_id == bidang_id)
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+    
 kjb_bebanbiaya = CRUDKjbBebanBiaya(KjbBebanBiaya)

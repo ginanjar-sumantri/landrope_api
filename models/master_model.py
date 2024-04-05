@@ -21,6 +21,8 @@ class BebanBiayaBase(SQLModel):
     satuan_harga:Optional[SatuanHargaEnum] = Field(nullable=True)
     amount:Optional[Decimal] = Field(nullable=True)
     is_exclude_printout:bool|None = Field(nullable=True)
+    default_spk_girik:Optional[bool] = Field(nullable=True)
+    default_spk_sertifikat:Optional[bool] = Field(nullable=True)
 
 class BebanBiayaFullBase(BebanBiayaBase, BaseUUIDModel):
     pass
@@ -68,7 +70,7 @@ class HargaStandardFullBase(HargaStandardBase, BaseUUIDModel):
     pass
 
 class HargaStandard(HargaStandardFullBase, table=True):
-    planing:"Planing" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
+    planing:"Planing" = Relationship(back_populates="harga_standards", sa_relationship_kwargs={'lazy':'selectin'})
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
             "lazy": "joined",

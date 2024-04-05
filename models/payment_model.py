@@ -174,6 +174,7 @@ class PaymentGiroDetail(PaymentGiroDetailFullBase, table=True):
     })
 
     giro: "Giro" = Relationship(
+        back_populates="payment_giros",
         sa_relationship_kwargs=
         {
             "lazy":"select"
@@ -293,10 +294,10 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     def nomor_giro(self) -> str | None:
         if self.payment.giro:
             return self.payment.giro.nomor_giro
+        elif self.payment_giro:
+            return getattr(getattr(getattr(self, "payment_giro", ''), "giro", ''), "nomor_giro", '') or ''
         else:
-            return getattr(getattr(getattr(self, "payment_giro", None), "giro", None), "nomor_giro")
-        
-        return None
+            return ''
     
     @property
     def payment_method(self) -> PaymentMethodEnum | None:
@@ -308,6 +309,10 @@ class PaymentDetail(PaymentDetailFullBase, table=True):
     @property
     def payment_date(self) -> date | None:
         return getattr(getattr(self, "payment", None), "payment_date", None)
+    
+    @property
+    def payment_code(self) -> str | None:
+        return getattr(getattr(self, "payment", None), "code", None)
     
     @property
     def id_bidang(self) -> str | None:

@@ -41,6 +41,8 @@ class TerminByIdSch(TerminFullBase):
     manager_name:str|None = Field(alias="manager_name")
     sales_name:str|None = Field(alias="sales_name")
     desa_name: str | None
+    harga_standard_girik: Decimal | None
+    harga_standard_sertifikat: Decimal | None
     termin_bayars:list[TerminBayarSch]
     invoices:list[InvoiceInTerminSch]
 

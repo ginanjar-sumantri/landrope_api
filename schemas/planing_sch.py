@@ -19,6 +19,8 @@ class PlaningRawSch(PlaningRawBase):
     sub_project_exists:bool | None = Field(alias="sub_project_exists")
     kota:str | None = Field(alias="kota")
     kecamatan:str | None = Field(alias="kecamatan")
+    harga_standard_girik: Decimal | None
+    harga_standard_sertifikat: Decimal | None
 
 class PlaningSch(PlaningFullBase):
     pass

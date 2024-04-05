@@ -10,12 +10,12 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Payment
+    from models import Payment, PaymentGiroDetail
 
 class GiroBase(SQLModel):
     code:str|None = Field(sa_column=(Column("code", String, unique=True)), nullable=False)
     nomor_giro:str|None = Field(sa_column=(Column("nomor_giro", String, unique=True)), nullable=False)
-    amount:condecimal(decimal_places=2)|None = Field(nullable=False, default=0)
+    amount: Decimal | None = Field(nullable=False, default=0)
     is_active:bool|None = Field(default=True)
     from_master:bool|None = Field(nullable=True) #create from
 
@@ -38,12 +38,25 @@ class Giro(GiroFullBase, table=True):
         }
     )
 
+    payment_giros:list["PaymentGiroDetail"] = Relationship(
+        back_populates="giro",
+        sa_relationship_kwargs=
+        {
+            "lazy" : "select"
+        }
+    )
+
+
+
     @property
     def is_used(self) -> bool | None:
         # if len(self.payment) > 0:
         #     return True
         used = next((y for x in self.payment for y in x.details if y.is_void != True), None)
-
+        if used:
+            return True
+        
+        used = next((y for x in self.payment_giros for y in x.payment_details if y.is_void != True), None)
         if used:
             return True
         
