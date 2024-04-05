@@ -655,7 +655,9 @@ async def get_invoice_by_id(id:UUID):
 
     invoices_in:list[InvoiceOnMemoSch] = []
     for invoice_bayar in invoice_bayars:
-        if invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:
+        if invoice_bayar.termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
+            continue
+        elif invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:
             utj_invoice = next((utj for utj in utj_invoices if utj.bidang_id == invoice_bayar.invoice.bidang_id), None)
             if utj_invoice is None:
                 continue
