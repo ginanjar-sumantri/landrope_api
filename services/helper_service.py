@@ -427,7 +427,7 @@ class BundleHelper:
                                                             updated_by_id=worker_id)
         
         #updated bundle header keyword when dokumen metadata is_keyword true
-        if dokumen.is_keyword == True:
+        if dokumen.is_keyword == True and dokumen.is_multiple != True:
             await self.update_bundle_keyword(meta_data=meta_data,
                                                         bundle_hd_id=bundle_hd_obj.id, 
                                                         worker_id=worker_id, 
