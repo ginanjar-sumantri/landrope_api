@@ -653,7 +653,7 @@ async def get_invoice_by_id(id:UUID):
     
     invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=id)
 
-    invoices:list[InvoiceOnMemoSch] = []
+    invoices_in:list[InvoiceOnMemoSch] = []
     for invoice_bayar in invoice_bayars:
         if invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:
             utj_invoice = next((utj for utj in utj_invoices if utj.bidang_id == invoice_bayar.invoice.bidang_id), None)
@@ -665,7 +665,7 @@ async def get_invoice_by_id(id:UUID):
             inv_in.invoice_bayar_amount = invoice_bayar.amount
             inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
         else:
-            regular_invoice = next((inv for inv in invoices if inv.id == invoice_bayar.invoice_id))
+            regular_invoice = next((inv for inv in invoices if inv.id == invoice_bayar.invoice_id), None)
             if regular_invoice is None:
                 continue
 
@@ -674,9 +674,9 @@ async def get_invoice_by_id(id:UUID):
             inv_in.invoice_bayar_amount = invoice_bayar.amount
             inv_in.termin_bayar_id = invoice_bayar.termin_bayar_id
 
-        invoices.append(inv_in)
+        invoices_in.append(inv_in)
 
-    return create_response(data=invoices)
+    return create_response(data=invoices_in)
 
 @router.get("/search/komponen/by-termin/{id}", response_model=GetResponseBaseSch[list[BebanBiayaGroupingSch]])
 async def get_invoice_by_id(id:UUID):

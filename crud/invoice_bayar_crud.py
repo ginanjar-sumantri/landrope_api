@@ -26,20 +26,7 @@ class CRUDInvoiceBayar(CRUDBase[InvoiceBayar, InvoiceBayarCreateSch, InvoiceBaya
         query = query.filter(Invoice.termin_id == termin_id)
         query = query.filter(Invoice.is_void != True)
 
-        query = query.options(selectinload(InvoiceBayar.invoice
-                                                ).options(selectinload(Invoice.spk)
-                                                ).options(selectinload(Invoice.termin)
-                                                ).options(selectinload(Invoice.bidang
-                                                                        ).options(selectinload(Bidang.invoices
-                                                                                        ).options(selectinload(Invoice.termin)
-                                                                                        ).options(selectinload(Invoice.payment_details))
-                                                                        )
-                                                ).options(selectinload(Invoice.details
-                                                                        ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
-                                                                                        ).options(selectinload(BidangKomponenBiaya.bidang))
-                                                                        )
-                                                ).options(selectinload(Invoice.bayars)
-                                                ).options(selectinload(Invoice.payment_details))
+        query = query.options(selectinload(InvoiceBayar.invoice)
                     ).options(selectinload(InvoiceBayar.termin_bayar))
         
         
