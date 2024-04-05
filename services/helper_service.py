@@ -349,10 +349,11 @@ class BundleHelper:
         obj_json = json.loads(meta_data.replace("'", '"'))
         current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
 
-        metadata_keyword = obj_json[f'{key_field}']
+        metadata_keyword = obj_json.get(f'{key_field}', None)
         if metadata_keyword:
             # periksa apakah keyword belum eksis di bundle hd
-            if metadata_keyword not in current_bundle_hd.keyword:
+            keywords = current_bundle_hd.keyword.split(',')
+            if metadata_keyword not in keywords:
                 edit_keyword_hd = current_bundle_hd
                 if current_bundle_hd.keyword is None or current_bundle_hd.keyword == "":
                     edit_keyword_hd.keyword = metadata_keyword
