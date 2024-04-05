@@ -8,7 +8,7 @@ from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
 from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, 
-                    PaymentDetail, Payment, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa)
+                    PaymentDetail, Payment, PaymentGiroDetail, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa)
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch, TahapSch, TahapSrcSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
@@ -1706,6 +1706,8 @@ async def get_report(
                                 ).options(selectinload(Invoice.payment_details
                                                     ).options(selectinload(PaymentDetail.payment
                                                                 ).options(selectinload(Payment.giro))
+                                                    ).options(selectinload(PaymentDetail.payment_giro
+                                                                ).options(selectinload(PaymentGiroDetail.giro))
                                                     )
                                 ).options(selectinload(Invoice.termin)
                                 )
@@ -1726,7 +1728,7 @@ async def get_report(
              "Jenis Bayar" : invoice.jenis_bayar,
              "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
              "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)), 
-             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
+             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
              for termin in objs for invoice in termin.invoices]
 
     
