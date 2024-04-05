@@ -111,7 +111,7 @@ class Tahap(TahapFullBase, table=True):
     
     @property
     def has_memo_active(self) -> bool | None:
-        termin_active = next((termin for termin in self.termins if termin.is_void != True), None)
+        termin_active = next((termin for termin in self.termins if termin.is_void != True and termin.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]), None)
         if termin_active:
             return True
         

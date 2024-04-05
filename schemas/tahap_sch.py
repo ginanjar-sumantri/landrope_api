@@ -37,6 +37,7 @@ class TahapByIdSch(TahapFullBase):
     ptsk_name:Optional[str] = Field(alias="ptsk_name")
     sub_project_name:Optional[str] = Field(alias="sub_project_name")
     sub_project_code:Optional[str] = Field(alias="sub_project_code")
+    has_memo_active: bool | None
     details:list[TahapDetailSch] | None
 
 class TahapForTerminByIdSch(SQLModel):
