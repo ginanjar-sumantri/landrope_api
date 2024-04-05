@@ -106,7 +106,7 @@ class Tahap(TahapFullBase, table=True):
     
     @property
     def lunas_count(self) -> int | None:
-        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.LUNAS]
+        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar in  [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]]
         return len(lunas_termins) or 0    
     
     @property
