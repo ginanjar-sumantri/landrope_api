@@ -17,6 +17,7 @@ class TerminBayarExtSch(SQLModel):
     amount:Decimal | None
     remark:str | None
     activity: ActivityEnum | None
+    name: str | None
 
 
 class TerminBayarSch(TerminBayarFullBase):
