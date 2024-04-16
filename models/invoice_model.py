@@ -231,6 +231,28 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "spk", None), "satuan_bayar", None)
     
     @property
+    def last_payment_status_at(self) -> date | None:
+
+        tgl_cair:date | None = None
+        tgl_buka:date | None = None
+
+        payment_dtl_1 = next((p_dt for p_dt in self.payment_details if p_dt.is_void != True), None)
+        payment_dtl_2 = next((p_dt for p_dt in self.payment_details if p_dt.is_void != True and p_dt.giro_id is not None), None)
+
+        if payment_dtl_2 is None and payment_dtl_1 is None:
+            return None
+
+        tgl_buka = payment_dtl_2.payment_giro.tanggal_buka if payment_dtl_2 else payment_dtl_1.payment.giro.tanggal_buka
+        tgl_cair = payment_dtl_2.payment_giro.tanggal_cair if payment_dtl_2 else payment_dtl_1.payment.giro.tanggal_cair
+
+        if tgl_cair:
+            return tgl_cair
+        elif tgl_buka:
+            return tgl_buka
+        else:
+            return None
+    
+    @property
     def step_name_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "step_name_workflow", None)
     
