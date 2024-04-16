@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum, SatuanBayarEnum, SatuanHargaEnum, PaymentStatusEnum
 from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 from pydantic import condecimal
 import numpy
 
@@ -149,14 +149,6 @@ class Invoice(InvoiceFullBase, table=True):
         return getattr(getattr(self, "termin", None), "nomor_tahap", None)
     
     @property
-    def step_name_workflow(self) -> int | None:
-        return getattr(getattr(self, "termin", None), "step_name_workflow", None)
-    
-    @property
-    def status_workflow(self) -> int | None:
-        return getattr(getattr(self, "termin", None), "status_workflow", None)
-    
-    @property
     def spk_code(self) -> Decimal | None:
         return getattr(getattr(self, "spk", None), "code", None)
     
@@ -245,6 +237,15 @@ class Invoice(InvoiceFullBase, table=True):
     @property
     def status_workflow(self) -> str | None:
         return getattr(getattr(self, "termin", None), "status_workflow", None)
+    
+    @property
+    def last_status_at(self) -> datetime | None:
+        last_status:datetime | None = getattr(getattr(self, "termin", None), "last_status_at", None)
+
+        if last_status:
+            return last_status.date()
+        
+        return last_status
 
 
 class InvoiceDetailBase(SQLModel):
