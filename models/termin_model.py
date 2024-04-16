@@ -197,6 +197,18 @@ class Termin(TerminFullBase, table=True):
             .scalar_subquery()
         )
     
+    @declared_attr
+    def last_status_at(self) -> column_property:
+        return column_property(
+            select(
+                Workflow.last_status_at
+            )
+            .select_from(
+                Workflow)
+            .where(Workflow.reference_id == self.id)
+            .scalar_subquery()
+        )
+    
 class TerminBayarBase(SQLModel):
     name: str | None = Field(nullable=True)
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")

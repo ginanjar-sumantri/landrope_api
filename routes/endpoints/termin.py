@@ -1702,6 +1702,9 @@ async def get_report(
                                                     ).options(selectinload(Bidang.planing
                                                                 ).options(selectinload(Planing.project)
                                                                 ).options(selectinload(Planing.desa))
+                                                    ).options(selectinload(Bidang.invoices
+                                                                ).options(selectinload(Invoice.payment_details)
+                                                                ).options(selectinload(Invoice.termin))
                                                     )
                                 ).options(selectinload(Invoice.payment_details
                                                     ).options(selectinload(PaymentDetail.payment
@@ -1709,27 +1712,41 @@ async def get_report(
                                                     ).options(selectinload(PaymentDetail.payment_giro
                                                                 ).options(selectinload(PaymentGiroDetail.giro))
                                                     )
-                                ).options(selectinload(Invoice.termin)
+                                ).options(selectinload(Invoice.termin
+                                                    ).options(selectinload(Termin.tahap)
+                                                    )
+                                ).options(selectinload(Invoice.details
+                                                    ).options(selectinload(InvoiceDetail.bidang_komponen_biaya
+                                                                        ).options(selectinload(BidangKomponenBiaya.beban_biaya)
+                                                                        ).options(selectinload(BidangKomponenBiaya.bidang))
+                                                    )
                                 )
                 )
 
     objs = await crud.termin.get_multi_no_page(query=query)
 
-    data = [{"Nomor Memo" : invoice.termin.nomor_memo,
-             "Id Bidang" : invoice.id_bidang, 
-             "Id Bidang Lama" : invoice.id_bidang_lama, 
-             "Group" : invoice.bidang.group,
-             "Pemilik" : invoice.bidang.pemilik_name,
-             "Alashak" : invoice.alashak,
-             "Project" : invoice.bidang.project_name, 
-             "Desa" : invoice.bidang.desa_name,
-             "Luas Surat" : invoice.bidang.luas_surat, 
-             "Luas Bayar" : invoice.bidang.luas_bayar, 
-             "Jenis Bayar" : invoice.jenis_bayar,
-             "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
-             "Harga Transaksi" : RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)), 
-             "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details])} 
-             for termin in objs for invoice in termin.invoices]
+    data = [{
+                "Id Bidang" : invoice.id_bidang, 
+                "Id Bidang Lama" : invoice.id_bidang_lama,
+                "Project" : invoice.bidang.project_name, 
+                "Desa" : invoice.bidang.desa_name,
+                "Nomor Tahap" : invoice.termin.nomor_tahap,
+                "Nomor Memo" : invoice.termin.nomor_memo,
+                "Group" : invoice.bidang.group,
+                "Pemilik" : invoice.bidang.pemilik_name,
+                "Alashak" : invoice.alashak,
+                "Luas Surat" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_surat or 0))}',
+                "Luas Bayar" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_bayar or 0))}', 
+                "Jumlah" :  f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}',
+                "Jenis Bayar" : invoice.jenis_bayar,
+                "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
+                "Tanggal Last Workflow" : invoice.last_status_at,
+                "Harga Transaksi" : f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}', 
+                "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]),
+                "Tanggal Pembayaran" : invoice.termin.tanggal_rencana_transaksi,
+                "Payment Status" : invoice.payment_status
+            }
+            for termin in objs for invoice in termin.invoices]
 
     
     df = pd.DataFrame(data=data)
