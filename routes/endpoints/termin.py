@@ -1744,7 +1744,7 @@ async def get_report(
                 "Harga Transaksi" : f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}', 
                 "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]),
                 "Tanggal Pembayaran" : invoice.termin.tanggal_rencana_transaksi,
-                "Payment Status" : invoice.payment_status,
+                "Payment Status" : invoice.payment_status if invoice.payment_status else invoice.payment_status_ext,
                 "Tanggal Last Payment Status" : invoice.last_payment_status_at
             }
             for termin in objs for invoice in termin.invoices]

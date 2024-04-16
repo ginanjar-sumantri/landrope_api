@@ -251,6 +251,30 @@ class Invoice(InvoiceFullBase, table=True):
             return tgl_buka
         else:
             return None
+        
+    @property
+    def payment_status_ext(self) -> str | None:
+
+        tgl_cair:date | None = None
+        tgl_buka:date | None = None
+
+        payment_dtl_1 = next((p_dt for p_dt in self.payment_details if p_dt.is_void != True), None)
+        payment_dtl_2 = next((p_dt for p_dt in self.payment_details if p_dt.is_void != True and p_dt.giro_id is not None), None)
+
+        if payment_dtl_2 is None and payment_dtl_1 is None:
+            return None
+
+        tgl_buka = payment_dtl_2.payment_giro.tanggal_buka if payment_dtl_2 else payment_dtl_1.payment.giro.tanggal_buka
+        tgl_cair = payment_dtl_2.payment_giro.tanggal_cair if payment_dtl_2 else payment_dtl_1.payment.giro.tanggal_cair
+
+        if tgl_cair:
+            return "CAIR_GIRO"
+        elif tgl_buka:
+            return "BUKA_GIRO"
+        else:
+            return None
+    
+   
     
     @property
     def step_name_workflow(self) -> str | None:
