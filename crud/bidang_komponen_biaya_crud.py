@@ -49,7 +49,8 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         query = select(self.model).where(and_(
                             self.model.bidang_id == bidang_id,
                             self.model.beban_biaya_id == beban_biaya_id
-            )).options(selectinload(BidangKomponenBiaya.beban_biaya))
+            )).options(selectinload(BidangKomponenBiaya.beban_biaya)
+            ).options(selectinload(BidangKomponenBiaya.invoice_details))
         
         response = await db_session.execute(query)
 
