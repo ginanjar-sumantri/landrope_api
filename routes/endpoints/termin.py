@@ -230,6 +230,7 @@ async def get_list(
             or_(
                 Termin.code.ilike(f'%{keyword}%'),
                 Termin.jenis_bayar.ilike(f'%{keyword}%'),
+                Termin.nomor_memo.ilike(f'%{keyword}%'),
                 cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),

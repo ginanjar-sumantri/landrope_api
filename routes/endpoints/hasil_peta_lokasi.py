@@ -628,42 +628,43 @@ async def generate_kelengkapan_bidang_override(payload:HasilPetaLokasiTaskUpdate
     #generate kelengkapan dokumen
     if hasil_peta_lokasi.status_hasil_peta_lokasi != StatusHasilPetaLokasiEnum.Batal:
         checklist_kelengkapan_dokumen_hd_current = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
-        if checklist_kelengkapan_dokumen_hd_current:
-            removed_data = []
-            removed_data.append(checklist_kelengkapan_dokumen_hd_current)
-            await crud.checklist_kelengkapan_dokumen_hd.remove_multiple_data(list_obj=removed_data, db_session=db_session)
+        if checklist_kelengkapan_dokumen_hd_current is None:
+            # removed_data = []
+            # removed_data.append(checklist_kelengkapan_dokumen_hd_current)
+            # await crud.checklist_kelengkapan_dokumen_hd.remove_multiple_data(list_obj=removed_data, db_session=db_session)
 
-        master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
-            jenis_alashak=kjb_dt_current.jenis_alashak,
-            kategori_penjual=kjb_hd_current.kategori_penjual)
-        
-        checklist_kelengkapan_dts = []
-        for master in master_checklist_dokumens:
-            bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id_for_cloud(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
-            if not bundle_dt_current:
-                code = bidang_current.bundlehd.code + master.dokumen.code
-                bundle_dt_current = BundleDtCreateSch(code=code, 
-                                            dokumen_id=master.dokumen_id,
-                                            bundle_hd_id=bidang_current.bundle_hd_id)
-                
-                bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
-
-            checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
-                jenis_bayar=master.jenis_bayar,
-                dokumen_id=master.dokumen_id,
-                bundle_dt_id=bundle_dt_current.id,
-                created_by_id=hasil_peta_lokasi.updated_by_id,
-                updated_by_id=hasil_peta_lokasi.updated_by_id)
+            master_checklist_dokumens = await crud.checklistdokumen.get_multi_by_jenis_alashak_and_kategori_penjual(
+                jenis_alashak=kjb_dt_current.jenis_alashak,
+                kategori_penjual=kjb_hd_current.kategori_penjual)
             
-            checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
-        
-        checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload.bidang_id, details=checklist_kelengkapan_dts)
-        await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
-                                                                        created_by_id=hasil_peta_lokasi.updated_by_id, 
-                                                                        db_session=db_session, 
-                                                                        with_commit=False)
-        
-    await db_session.commit()
+            checklist_kelengkapan_dts = []
+            for master in master_checklist_dokumens:
+                bundle_dt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id_for_cloud(bundle_hd_id=bidang_current.bundle_hd_id, dokumen_id=master.dokumen_id)
+                if not bundle_dt_current:
+                    code = bidang_current.bundlehd.code + master.dokumen.code
+                    bundle_dt_current = BundleDtCreateSch(code=code, 
+                                                dokumen_id=master.dokumen_id,
+                                                bundle_hd_id=bidang_current.bundle_hd_id)
+                    
+                    bundle_dt_current = await crud.bundledt.create(obj_in=bundle_dt_current, db_session=db_session, with_commit=False)
+
+                checklist_kelengkapan_dt = ChecklistKelengkapanDokumenDt(
+                    jenis_bayar=master.jenis_bayar,
+                    dokumen_id=master.dokumen_id,
+                    bundle_dt_id=bundle_dt_current.id,
+                    created_by_id=hasil_peta_lokasi.updated_by_id,
+                    updated_by_id=hasil_peta_lokasi.updated_by_id)
+                
+                checklist_kelengkapan_dts.append(checklist_kelengkapan_dt)
+            
+            checklist_kelengkapan_hd = ChecklistKelengkapanDokumenHd(bidang_id=payload.bidang_id, details=checklist_kelengkapan_dts)
+            await crud.checklist_kelengkapan_dokumen_hd.create_and_generate(obj_in=checklist_kelengkapan_hd, 
+                                                                            created_by_id=hasil_peta_lokasi.updated_by_id, 
+                                                                            db_session=db_session, 
+                                                                            with_commit=False)
+            
+            await db_session.commit()
+            
     return {"message":"successfully"} 
 
 @router.post("/task/remove-link-bidang-and-kelengkapan")
