@@ -7,7 +7,7 @@ from sqlmodel import select, and_, text, or_, func, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
-from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
+from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, KjbHd, Manager, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
                     Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, SpkKelengkapanDokumen)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
@@ -214,7 +214,11 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Spk)
-    query = query.join(Bidang, Spk.bidang_id == Bidang.id)
+    query = query.join(Bidang, Spk.bidang_id == Bidang.id
+                ).join(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
+                ).join(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
+                ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                ).outerjoin(Manager, Manager.id == Bidang.manager_id)
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
@@ -230,7 +234,10 @@ async def get_list(
             or_(
                 Spk.code.ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
-                Bidang.alashak.ilike(f'%{keyword}%')
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Bidang.group.ilike(f'%{keyword}%'),
+                KjbHd.code.ilike(f'%{keyword}%'),
+                Manager.name.ilike(f'%{keyword}%'),
             )
         )
 
