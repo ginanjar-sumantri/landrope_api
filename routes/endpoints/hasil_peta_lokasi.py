@@ -237,7 +237,7 @@ async def create(
         await db_session.refresh(new_obj)
 
     kjb_dt_current = await crud.kjb_dt.get(id=new_obj.kjb_dt_id)
-    background_task.add_task(BundleHelper().merge_hasil_lokasi, kjb_dt_current.bundle_hd_id, current_worker.id, new_obj.id)
+    background_task.add_task(await BundleHelper().merge_hasil_lokasi, kjb_dt_current.bundle_hd_id, current_worker.id, new_obj.id)
 
     new_obj = await crud.hasil_peta_lokasi.get_by_id(id=new_obj.id)
 
@@ -349,7 +349,7 @@ async def update(
         await db_session.refresh(obj_updated)
     
     kjb_dt_current = await crud.kjb_dt.get(id=obj_updated.kjb_dt_id)
-    background_task.add_task(BundleHelper().merge_hasil_lokasi, kjb_dt_current.bundle_hd_id, current_worker.id, obj_updated.id)
+    background_task.add_task(await BundleHelper().merge_hasil_lokasi, kjb_dt_current.bundle_hd_id, current_worker.id, obj_updated.id)
 
     obj_updated = await crud.hasil_peta_lokasi.get_by_id(id=obj_updated.id)
 
