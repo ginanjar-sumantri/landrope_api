@@ -70,6 +70,9 @@ async def create(
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
         await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+        await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
@@ -198,6 +201,11 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
     bundle_dt_no_have_metadata = any(bundledt.file_exists == False for bundledt in bundle_dts)
     if bundle_dt_no_have_metadata:
         raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
+
+async def filter_with_same_kjb_termin(bidang_id:UUID, kjb_termin_id:UUID):
+    exists = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_id, kjb_termin_id=kjb_termin_id)
+    if exists:
+        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
