@@ -84,7 +84,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
             query = query.filter(
                 or_(
                     KjbDt.alashak.ilike(f'%{keyword}%'),
-                    KjbHd.code.ilike(f'%{keyword}%')
+                    KjbHd.code.ilike(f'%{keyword}%'),
+                    KjbDt.jenis_alashak.ilike(f'%{keyword}%')
                 )
             )
         

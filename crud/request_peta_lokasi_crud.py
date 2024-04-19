@@ -209,7 +209,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     KjbHd.code.ilike(f'%{keyword}%'),
                     KjbHd.mediator.ilike(f'%{keyword}%'),
                     Pemilik.name.ilike(f'%{keyword}%'),
-                    Bidang.id_bidang.ilike(f'%{keyword}%')
+                    Bidang.id_bidang.ilike(f'%{keyword}%'),
+                    Desa.name.ilike(f'%{keyword}%')
                 )
             )
 

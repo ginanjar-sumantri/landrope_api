@@ -7,7 +7,7 @@ from sqlmodel import select, and_, text, or_, func, delete
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import cast, Date, exists
 from sqlalchemy.orm import selectinload
-from models import (Spk, Bidang, HasilPetaLokasi, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
+from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, KjbHd, Manager, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
                     Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, SpkKelengkapanDokumen)
 from models.code_counter_model import CodeCounterEnum
 from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
@@ -70,6 +70,9 @@ async def create(
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
         await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+        await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
@@ -199,6 +202,11 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
     if bundle_dt_no_have_metadata:
         raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
 
+async def filter_with_same_kjb_termin(bidang_id:UUID, kjb_termin_id:UUID):
+    exists = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_id, kjb_termin_id=kjb_termin_id)
+    if exists:
+        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
+
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
                 start_date: date | None = None,
@@ -214,7 +222,11 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Spk)
-    query = query.join(Bidang, Spk.bidang_id == Bidang.id)
+    query = query.join(Bidang, Spk.bidang_id == Bidang.id
+                ).join(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
+                ).join(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
+                ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                ).outerjoin(Manager, Manager.id == Bidang.manager_id)
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
@@ -230,7 +242,11 @@ async def get_list(
             or_(
                 Spk.code.ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
-                Bidang.alashak.ilike(f'%{keyword}%')
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Bidang.group.ilike(f'%{keyword}%'),
+                KjbHd.code.ilike(f'%{keyword}%'),
+                Manager.name.ilike(f'%{keyword}%'),
+                Spk.jenis_bayar.ilike(f'%{keyword}%')
             )
         )
 

@@ -3,9 +3,10 @@ from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, case, cast, Float, and_
+from sqlalchemy import String
 from sqlalchemy.orm import selectinload
 from models import (Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya,
-                    Planing, Ptsk, Skpt, Project, Desa)
+                    Planing, Ptsk, Skpt, Project, Desa, Tahap, PaymentGiroDetail)
 from models.code_counter_model import CodeCounterEnum
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch, InvoiceByIdVoidSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
@@ -52,7 +53,8 @@ async def get_list(
                         ).outerjoin(Project, Project.id == Planing.project_id
                         ).outerjoin(Desa, Desa.id == Planing.desa_id
                         ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id
-                        ).outerjoin(Ptsk, Ptsk.id == Skpt.ptsk_id)
+                        ).outerjoin(Ptsk, Ptsk.id == Skpt.ptsk_id
+                        ).outerjoin(Tahap, Tahap.id == Termin.tahap_id)
         
     if keyword:
         query = query.filter(
@@ -64,7 +66,10 @@ async def get_list(
                 Invoice.code.ilike(f'%{keyword}%'),
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
-                Ptsk.name.ilike(f'%{keyword}%')
+                Ptsk.name.ilike(f'%{keyword}%'),
+                cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
+                Termin.jenis_bayar.ilike(f'%{keyword}%'),
+                Planing.name.ilike(f'%{keyword}%')
             )
         )
     
@@ -193,3 +198,58 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated) 
+
+
+@router.get("/updated/payment_status",)
+async def payment_status_updated():
+
+    """Get an object by id"""
+
+    db_session = db.session
+
+    query = select(Invoice
+                ).join(Termin, Termin.id == Invoice.termin_id
+                ).where(and_(Invoice.payment_status == None, Invoice.is_void != True, Termin.jenis_bayar.notin_(["UTJ", "UTJ_KHUSUS"])))
+    query = query.options(selectinload(Invoice.payment_details
+                                ).options(selectinload(PaymentDetail.payment
+                                                ).options(selectinload(Payment.giro))
+                                ).options(selectinload(PaymentDetail.payment_giro
+                                                ).options(selectinload(PaymentGiroDetail.giro))
+                                )
+            )
+    objs = await crud.invoice.get_multi_no_page(query=query)
+
+    for obj in objs:
+        payment_detail = next((pay for pay in obj.payment_details if pay.is_void != True), None)
+        if payment_detail:
+            if payment_detail.giro_id:
+                giro = await crud.giro.get(id=payment_detail.giro_id)
+                if giro:
+                    invoice_updated = InvoiceUpdateSch.from_orm(obj)
+                    if giro.tanggal_buka:
+                        invoice_updated.payment_status = "BUKA_GIRO"
+                    if giro.tanggal_cair:
+                        invoice_updated.payment_status = "CAIR_GIRO"
+                    if giro.tanggal_buka is None and giro.tanggal_cair is None:
+                        invoice_updated.payment_status = None
+                    
+                    await crud.invoice.update(obj_current=obj, obj_new=invoice_updated, db_session=db_session, with_commit=False)
+            elif payment_detail.payment.giro_id:
+                giro = await crud.giro.get(id=payment_detail.payment.giro_id)
+                if giro:
+                    invoice_updated = InvoiceUpdateSch.from_orm(obj)
+                    if giro.tanggal_buka:
+                        invoice_updated.payment_status = "BUKA_GIRO"
+                    if giro.tanggal_cair:
+                        invoice_updated.payment_status = "CAIR_GIRO"
+                    if giro.tanggal_buka is None and giro.tanggal_cair is None:
+                        invoice_updated.payment_status = None
+                    
+                    await crud.invoice.update(obj_current=obj, obj_new=invoice_updated, db_session=db_session, with_commit=False)
+            else:
+                pass
+
+    
+    await db_session.commit()
+
+    return {"message" : "Successfully"}
