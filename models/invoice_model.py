@@ -84,7 +84,7 @@ class Invoice(InvoiceFullBase, table=True):
     
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={
-            "lazy": "select",
+            "lazy": "joined",
             "primaryjoin": "Invoice.updated_by_id==Worker.id",
         }
     )
