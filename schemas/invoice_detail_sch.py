@@ -1,5 +1,6 @@
 from models.invoice_model import InvoiceDetail, InvoiceDetailBase, InvoiceDetailFullBase
 from common.partial import optional
+from common.enum import SatuanBayarEnum, SatuanHargaEnum
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from uuid import UUID
@@ -16,6 +17,9 @@ class InvoiceDetailExtSch(SQLModel):
     amount:Optional[Decimal]
     is_deleted:bool | None
     beban_pembeli:bool | None
+    satuan_bayar: SatuanBayarEnum | None
+    satuan_harga: SatuanHargaEnum | None
+    komponen_biaya_amount: Decimal | None
 
 class InvoiceDetailSch(InvoiceDetailFullBase):
     updated_by_name:str|None = Field(alias="updated_by_name")

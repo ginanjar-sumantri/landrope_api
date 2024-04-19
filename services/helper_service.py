@@ -185,7 +185,7 @@ class KomponenBiayaHelper:
  
         return round(result.estimated_amount)
     
-    async def get_estimated_amount_v2(self, bidang_id:UUID, beban_biaya_id:UUID, formula:str | None = None) -> Decimal | None:
+    async def get_estimated_amount_v2(self, bidang_id:UUID, beban_biaya_id:UUID, formula:str | None = None, amount:Decimal | None = None) -> Decimal | None:
 
         """Calculate estimated amount from formula"""
 
@@ -197,6 +197,9 @@ class KomponenBiayaHelper:
         else:
             if formula is None:
                 return 0
+            
+            if amount:
+                formula = formula.replace("amount", str(amount))
             
             query = f"""select  
                     coalesce(round({formula}, 2), 0) As estimated_amount

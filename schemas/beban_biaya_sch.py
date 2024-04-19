@@ -1,5 +1,6 @@
 from models.master_model import BebanBiaya, BebanBiayaBase, BebanBiayaFullBase
 from common.partial import optional
+from common.enum import SatuanBayarEnum, SatuanHargaEnum
 from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 from uuid import UUID
@@ -37,7 +38,7 @@ class BebanBiayaGroupingSch(SQLModel):
     giro_id: UUID | None
     nomor_giro: str | None
 
-class BebanBiayaEstimatedAmountSch(SQLModel):
+class BebanBiayaEstimatedAmountSch(BebanBiayaBase):
     estimated_amount: Decimal | None
     bidang_id: UUID | None
-    beban_biaya_id: UUID | None
+
