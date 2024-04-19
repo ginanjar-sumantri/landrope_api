@@ -774,7 +774,7 @@ async def invoice_update_payment_status(payment_id:UUID):
                 if payment_current.tanggal_cair:
                     invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
             else:
-                payment_giro_detail = await crud.payment_giro_detail.get(id=payment_detail.giro_id)
+                payment_giro_detail = await crud.payment_giro_detail.get(id=payment_detail.payment_giro_detail_id)
                 if payment_giro_detail.payment_method == PaymentMethodEnum.Giro:
                     giro = await crud.giro.get(id=payment_giro_detail.giro_id)
                     if giro:
