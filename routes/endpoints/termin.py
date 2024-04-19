@@ -39,7 +39,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.ordered import OrderEnumSch
 from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, 
-                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum,
+                        WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum, SatuanBayarEnum, SatuanHargaEnum,
                         jenis_bayar_to_termin_status_pembebasan_dict, jenis_bayar_to_code_counter_enum,
                         jenis_bayar_to_text)
 from common.rounder import RoundTwo
@@ -1888,28 +1888,73 @@ async def download_file(id:UUID):
     return response
 
 @router.get("/estimated/amount", response_model=GetResponseBaseSch[BebanBiayaEstimatedAmountSch])
-async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID, amount:Decimal | None = None):
+async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID):
 
     master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
     if master_beban_biaya is None:
         raise HTTPException(status_code=422, detail="master beban biaya tidak ditemukan")
     
     result = BebanBiayaEstimatedAmountSch.from_orm(master_beban_biaya)
-    
+
     bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=bidang_id, beban_biaya_id=beban_biaya_id)
-    if bidang_komponen_biaya_current:
-        if amount:
-            estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id, amount=amount)
-            estimated_amount = estimated_amount - bidang_komponen_biaya_current.invoice_detail_amount
+
+    if master_beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and master_beban_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
+        if bidang_komponen_biaya_current:
+            result.estimated_amount = master_beban_biaya.amount - bidang_komponen_biaya_current.invoice_detail_amount
+            result.bidang_id = bidang_id
+            result.amount = master_beban_biaya.amount
+        else:
+            result.estimated_amount = master_beban_biaya.amount 
+            result.bidang_id = bidang_id
+            result.amount = master_beban_biaya.amount
+    else:
+        if bidang_komponen_biaya_current:
+            result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
+            result.bidang_id = bidang_id
+        else:
+            estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id)
             result.estimated_amount = estimated_amount
+            result.bidang_id = bidang_id
+
+    return create_response(data=result)
+
+@router.get("/estimated/amount/edited", response_model=GetResponseBaseSch[BebanBiayaEstimatedAmountSch])
+async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID, 
+                                    amount:Decimal | None = None, 
+                                    satuan_bayar:SatuanBayarEnum | None = None, 
+                                    satuan_harga:SatuanHargaEnum | None = None):
+
+    master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
+    if master_beban_biaya is None:
+        raise HTTPException(status_code=422, detail="master beban biaya tidak ditemukan")
+    
+    result = BebanBiayaEstimatedAmountSch.from_orm(master_beban_biaya)
+
+    bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=bidang_id, beban_biaya_id=beban_biaya_id)
+
+    if satuan_bayar == SatuanBayarEnum.Amount and satuan_harga == SatuanHargaEnum.Lumpsum:
+        if bidang_komponen_biaya_current:
+            result.estimated_amount = amount - bidang_komponen_biaya_current.invoice_detail_amount
             result.bidang_id = bidang_id
             result.amount = amount
         else:
-            result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
+            result.estimated_amount = amount 
             result.bidang_id = bidang_id
+            result.amount = amount
     else:
-        estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id, amount=amount)
-        result.estimated_amount = estimated_amount
-        result.bidang_id = bidang_id
+        if bidang_komponen_biaya_current:
+            if amount:
+                estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id, amount=amount)
+                estimated_amount = estimated_amount - bidang_komponen_biaya_current.invoice_detail_amount
+                result.estimated_amount = estimated_amount
+                result.bidang_id = bidang_id
+                result.amount = amount
+            else:
+                result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
+                result.bidang_id = bidang_id
+        else:
+            estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id, amount=amount)
+            result.estimated_amount = estimated_amount
+            result.bidang_id = bidang_id
 
     return create_response(data=result)

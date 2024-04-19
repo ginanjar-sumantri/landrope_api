@@ -190,28 +190,24 @@ class KomponenBiayaHelper:
         """Calculate estimated amount from formula"""
 
         db_session = db.session
-        
-        master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
-        if master_beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and master_beban_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
-            return master_beban_biaya.amount or 0
-        else:
-            if formula is None:
-                return 0
-            
-            if amount:
-                formula = formula.replace("amount", str(amount))
-            
-            query = f"""select  
-                    coalesce(round({formula}, 2), 0) As estimated_amount
-                    from bidang, beban_biaya
-                    where bidang.id = '{bidang_id}'
-                    and beban_biaya.id = '{beban_biaya_id}'
-                    """
-        
-            response = await db_session.execute(query)
-            result = response.fetchone()
     
-            return round(result.estimated_amount)
+        if formula is None:
+            return 0
+        
+        if amount:
+            formula = formula.replace("amount", str(amount))
+        
+        query = f"""select  
+                coalesce(round({formula}, 2), 0) As estimated_amount
+                from bidang, beban_biaya
+                where bidang.id = '{bidang_id}'
+                and beban_biaya.id = '{beban_biaya_id}'
+                """
+    
+        response = await db_session.execute(query)
+        result = response.fetchone()
+
+        return round(result.estimated_amount)
     
     async def calculated_all_komponen_biaya(self, bidang_ids:list[UUID]):
         """Calculated all komponen bidang when created or updated spk"""
