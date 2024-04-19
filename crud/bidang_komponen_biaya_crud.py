@@ -126,7 +126,10 @@ class CRUDBidangKomponenBiaya(CRUDBase[BidangKomponenBiaya, BidangKomponenBiayaC
         query = query.filter(and_(
                                     BidangKomponenBiaya.bidang_id == bidang_id, 
                                     BidangKomponenBiaya.is_void != True,
-                                    (BidangKomponenBiaya.estimated_amount - subquery_invoice_detail) > 0
+                                    or_(
+                                    (BidangKomponenBiaya.estimated_amount - subquery_invoice_detail) == 0, #outstanding
+                                    func.coalesce(BidangKomponenBiaya.paid_amount, 0) == 0,
+                                    func.coalesce(BidangKomponenBiaya.estimated_amount, 0) == 0)
                                 )
                             )
         
