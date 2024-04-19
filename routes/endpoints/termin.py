@@ -1903,6 +1903,7 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID, amount:Decim
             estimated_amount = estimated_amount - bidang_komponen_biaya_current.invoice_detail_amount
             result.estimated_amount = estimated_amount
             result.bidang_id = bidang_id
+            result.amount = amount
         else:
             result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
             result.bidang_id = bidang_id
