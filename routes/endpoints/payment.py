@@ -780,9 +780,9 @@ async def invoice_update_payment_status(payment_id:UUID):
                     if giro:
                         if giro.tanggal_buka:
                             invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
-                        elif giro.tanggal_cair:
+                        if giro.tanggal_cair:
                             invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
-                        else:
+                        if giro.tanggal_buka is None and giro.tanggal_cair is None:
                             invoice_updated.payment_status = None
         
         await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated, db_session=db_session, with_commit=False)
