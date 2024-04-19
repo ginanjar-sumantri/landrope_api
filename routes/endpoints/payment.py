@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
-from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya, Workflow
+from models import Payment, Worker, Giro, PaymentDetail, Invoice, Bidang, Termin, InvoiceDetail, Skpt, BidangKomponenBiaya, Workflow, PaymentGiroDetail
 from schemas.payment_sch import (PaymentSch, PaymentCreateSch, PaymentUpdateSch, PaymentByIdSch, PaymentVoidSch, PaymentVoidExtSch)
 from schemas.payment_detail_sch import PaymentDetailCreateSch, PaymentDetailUpdateSch
 from schemas.invoice_sch import InvoiceSch, InvoiceByIdSch, InvoiceSearchSch, InvoiceUpdateSch, InvoiceOnMemoSch, InvoiceOnUTJSch
@@ -144,11 +144,12 @@ async def get_list(
     
     """Gets a paginated list objects"""
 
-    query = select(Payment).outerjoin(Giro, Giro.id == Payment.giro_id
-                            ).outerjoin(PaymentDetail, PaymentDetail.payment_id == Payment.id
+    query = select(Payment).outerjoin(PaymentDetail, PaymentDetail.payment_id == Payment.id
                             ).outerjoin(Invoice, Invoice.id == PaymentDetail.invoice_id
                             ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
-                            ).outerjoin(Termin, Termin.id == Invoice.termin_id)
+                            ).outerjoin(Termin, Termin.id == Invoice.termin_id
+                            ).outerjoin(PaymentGiroDetail, PaymentGiroDetail.id == PaymentDetail.payment_giro_detail_id
+                            ).outerjoin(Giro, Giro.id == PaymentGiroDetail.giro_id)
     
     if keyword:
         query = query.filter(
@@ -160,6 +161,9 @@ async def get_list(
                 Termin.code.ilike(f"%{keyword}%"),
                 Termin.nomor_memo.ilike(f"%{keyword}%"),
                 Payment.pay_to.ilike(f"%{keyword}%"),
+                PaymentGiroDetail.pay_to.ilike(f"%{keyword}%"),
+                Giro.nomor_giro.ilike(f'%{keyword}%'),
+                Payment.remark.ilike(f'%{keyword}%')
             )
         )
 
@@ -762,12 +766,24 @@ async def invoice_update_payment_status(payment_id:UUID):
         else:
             invoice_current = await crud.invoice.get(id=payment_detail.invoice_id)
             invoice_updated = InvoiceUpdateSch.from_orm(invoice_current)
-            if payment_current.tanggal_buka is None and payment_current.tanggal_cair is None:
-                invoice_updated.payment_status = None
-            if payment_current.tanggal_buka:
-                invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
-            if payment_current.tanggal_cair:
-                invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
+            if payment_current.giro_id:
+                if payment_current.tanggal_buka is None and payment_current.tanggal_cair is None:
+                    invoice_updated.payment_status = None
+                if payment_current.tanggal_buka:
+                    invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
+                if payment_current.tanggal_cair:
+                    invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
+            else:
+                payment_giro_detail = await crud.payment_giro_detail.get(id=payment_detail.giro_id)
+                if payment_giro_detail.payment_method == PaymentMethodEnum.Giro:
+                    giro = await crud.giro.get(id=payment_giro_detail.giro_id)
+                    if giro:
+                        if giro.tanggal_buka:
+                            invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
+                        elif giro.tanggal_cair:
+                            invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
+                        else:
+                            invoice_updated.payment_status = None
         
         await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated, db_session=db_session, with_commit=False)
     

@@ -8,7 +8,8 @@ from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
 from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, 
-                    PaymentDetail, Payment, PaymentGiroDetail, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa)
+                    PaymentDetail, Payment, PaymentGiroDetail, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project,
+                    Desa, Ptsk)
 from models.code_counter_model import CodeCounterEnum
 from schemas.tahap_sch import TahapForTerminByIdSch, TahapSch, TahapSrcSch
 from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
@@ -214,6 +215,10 @@ async def get_list(
                         ).outerjoin(KjbHd, KjbHd.id == Termin.kjb_hd_id
                         ).outerjoin(Spk, Spk.id == Invoice.spk_id
                         ).outerjoin(Bidang, Bidang.id == Invoice.bidang_id
+                        ).outerjoin(Ptsk, Ptsk.id == Tahap.ptsk_id
+                        ).outerjoin(Planing, Planing.id == Tahap.planing_id
+                        ).outerjoin(Project, Project.id == Planing.project_id
+                        ).outerjoin(Desa, Desa.id == Planing.desa_id
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
     if filter_list == "list_approval":
@@ -234,7 +239,11 @@ async def get_list(
                 cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Bidang.id_bidang.ilike(f'%{keyword}%'),
-                Bidang.alashak.ilike(f'%{keyword}%')
+                Bidang.alashak.ilike(f'%{keyword}%'),
+                Ptsk.name.ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%'),
+                Tahap.group.ilike(f'%{keyword}%')
             )
         )
 

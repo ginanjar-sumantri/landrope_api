@@ -46,6 +46,7 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
         
         query = text(f"""
                     select
+                    distinct
                     bi.id as bidang_id,
                     Replace(bo.status_luas, '_', ' ') as ket,
                     Coalesce(pm.name, '') as nama,
@@ -58,7 +59,7 @@ class CRUDBidangOverlap(CRUDBase[BidangOverlap, BidangOverlapCreateSch, BidangOv
                     from bidang_overlap bo
                     inner join bidang bp on bp.id = bo.parent_bidang_id
                     inner join bidang bi on bi.id = bo.parent_bidang_intersect_id
-                    inner join hasil_peta_lokasi_detail hpl on hpl.bidang_overlap_id = bo.id
+                    left outer join hasil_peta_lokasi_detail hpl on hpl.bidang_overlap_id = bo.id
                     left outer join pemilik pm on pm.id = bi.pemilik_id
                     where bp.id = '{str(bidang_id)}'
                     and bo.is_show = true

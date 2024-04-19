@@ -3,9 +3,10 @@ from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, case, cast, Float, and_
+from sqlalchemy import String
 from sqlalchemy.orm import selectinload
 from models import (Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya,
-                    Planing, Ptsk, Skpt, Project, Desa)
+                    Planing, Ptsk, Skpt, Project, Desa, Tahap)
 from models.code_counter_model import CodeCounterEnum
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch, InvoiceByIdVoidSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
@@ -52,7 +53,8 @@ async def get_list(
                         ).outerjoin(Project, Project.id == Planing.project_id
                         ).outerjoin(Desa, Desa.id == Planing.desa_id
                         ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id
-                        ).outerjoin(Ptsk, Ptsk.id == Skpt.ptsk_id)
+                        ).outerjoin(Ptsk, Ptsk.id == Skpt.ptsk_id
+                        ).outerjoin(Tahap, Tahap.id == Termin.tahap_id)
         
     if keyword:
         query = query.filter(
@@ -64,7 +66,10 @@ async def get_list(
                 Invoice.code.ilike(f'%{keyword}%'),
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
-                Ptsk.name.ilike(f'%{keyword}%')
+                Ptsk.name.ilike(f'%{keyword}%'),
+                cast(Tahap.nomor_tahap, String).ilike(f'%{keyword}%'),
+                Termin.jenis_bayar.ilike(f'%{keyword}%'),
+                Planing.name.ilike(f'%{keyword}%')
             )
         )
     

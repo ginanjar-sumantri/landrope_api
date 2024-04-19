@@ -8,7 +8,7 @@ from models.tanda_terima_notaris_model import TandaTerimaNotarisHd
 from models.kjb_model import KjbDt
 from models.worker_model import Worker
 from models.notaris_model import Notaris
-from models import BundleHd, HasilPetaLokasi
+from models import BundleHd, HasilPetaLokasi, Project, Desa, Pemilik
 from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaTerimaNotarisHdCreateSch, TandaTerimaNotarisHdUpdateSch)
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.kjb_dt_sch import KjbDtUpdateSch, KjbDtListSch
@@ -109,7 +109,10 @@ async def get_list(
 
     query = select(TandaTerimaNotarisHd).select_from(TandaTerimaNotarisHd
                                         ).outerjoin(KjbDt, TandaTerimaNotarisHd.kjb_dt_id == KjbDt.id
-                                        ).outerjoin(Notaris, TandaTerimaNotarisHd.notaris_id == Notaris.id)
+                                        ).outerjoin(Notaris, TandaTerimaNotarisHd.notaris_id == Notaris.id
+                                        ).outerjoin(Project, Project.id == TandaTerimaNotarisHd.project_id
+                                        ).outerjoin(Desa, Desa.id == TandaTerimaNotarisHd.desa_id
+                                        ).outerjoin(Pemilik, Pemilik.id == TandaTerimaNotarisHd.pemilik_id)
     
     if keyword:
         query = query.filter(
@@ -117,7 +120,11 @@ async def get_list(
                 TandaTerimaNotarisHd.nomor_tanda_terima.ilike(f'%{keyword}%'),
                 KjbDt.alashak.ilike(f'%{keyword}%'),
                 Notaris.name.ilike(f'%{keyword}%'),
-                func.replace(TandaTerimaNotarisHd.status_peta_lokasi, '_', ' ').ilike(f'%{keyword}%')
+                func.replace(TandaTerimaNotarisHd.status_peta_lokasi, '_', ' ').ilike(f'%{keyword}%'),
+                Project.name.ilike(f'%{keyword}%'),
+                Desa.name.ilike(f'%{keyword}%'),
+                TandaTerimaNotarisHd.group.ilike(f'%{keyword}%'),
+                Pemilik.name.ilike(f'%{keyword}%')
             )
         )
     
