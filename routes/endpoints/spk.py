@@ -82,6 +82,9 @@ async def create(
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
        await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+       await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+
+    
         
     #EndFilter
 
@@ -211,6 +214,12 @@ async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
     bundle_dt_no_have_metadata = any(bundledt.file_exists == False for bundledt in bundle_dts)
     if bundle_dt_no_have_metadata:
         raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
+    
+async def filter_have_input_peta_lokasi(bidang_id:UUID):
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=bidang_id)
+
+    if not hasil_peta_lokasi:
+        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Bidang belum memiliki input hasil peta lokasi")
 
 async def filter_with_same_kjb_termin(bidang_id:UUID, kjb_termin_id:UUID):
     exists = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_id, kjb_termin_id=kjb_termin_id)
@@ -233,7 +242,7 @@ async def get_list(
 
     query = select(Spk)
     query = query.join(Bidang, Spk.bidang_id == Bidang.id
-                ).join(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
+                ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
                 ).join(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
                 ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                 ).outerjoin(Manager, Manager.id == Bidang.manager_id)
@@ -497,6 +506,8 @@ async def update(id:UUID,
         
     #filter
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
+        await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+        
         spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
         meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
 
