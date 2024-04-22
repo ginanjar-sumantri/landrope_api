@@ -68,11 +68,21 @@ async def create(
             raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
-        await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
+        spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
+        meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
+
+        if spk_beginning_balance is None:
+            bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+            await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+        elif spk_beginning_balance and meta_data is None:
+            raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+        else:
+            pass
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
-        await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+       await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+        
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
