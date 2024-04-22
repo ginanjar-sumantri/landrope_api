@@ -539,10 +539,11 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
     
     #jika kjb_dt belum memiliki bundle akan tetapi bidang sudah punya (case bidang dan bundle naik duluan diimport)
     if kjb_dt_current.bundle_hd_id is None:
-        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_dt_current)
+        kjb_dt_curr = await crud.kjb_dt.get(id=kjb_dt_current.id)
+        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_dt_curr)
         kjb_dt_updated.bundle_hd_id = bidang_current.bundle_hd_id
 
-        await crud.kjb_dt.update(obj_current=kjb_dt_current, 
+        await crud.kjb_dt.update(obj_current=kjb_dt_curr, 
                                 obj_new=kjb_dt_updated, 
                                 updated_by_id=hasil_peta_lokasi.updated_by_id, 
                                 db_session=db_session, 
