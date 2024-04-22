@@ -217,6 +217,7 @@ class TerminBayarBase(SQLModel):
     amount:Decimal = Field(nullable=False, default=0)
     remark:str | None = Field(nullable=True)
     activity:ActivityEnum | None = Field(nullable=True)
+    pay_to: str | None = Field(nullable=True)
 
 class TerminBayarFullBase(BaseUUIDModel, TerminBayarBase):
     pass

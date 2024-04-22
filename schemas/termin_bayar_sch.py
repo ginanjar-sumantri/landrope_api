@@ -18,6 +18,7 @@ class TerminBayarExtSch(SQLModel):
     remark:str | None
     activity: ActivityEnum | None
     name: str | None
+    pay_to: str | None
 
 
 class TerminBayarSch(TerminBayarFullBase):
