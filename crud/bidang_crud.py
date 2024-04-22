@@ -461,6 +461,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                     from spk
                     where bidang_id = '{str(bidang_id)}'
                     and (is_void = false or is_void is null)
+                    and jenis_bayar != 'BEGINNING_BALANCE'
                     group by bidang_id
                     """)
 
