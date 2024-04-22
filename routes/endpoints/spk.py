@@ -68,6 +68,8 @@ async def create(
             raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+
         #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
         spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
         meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
@@ -82,10 +84,6 @@ async def create(
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
        await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
-       await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
-
-    
-        
     #EndFilter
 
     bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
@@ -505,9 +503,10 @@ async def update(id:UUID,
                 raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
     #filter
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS]:
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
         await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
-        
+
+        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
         spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
         meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
 
