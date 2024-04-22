@@ -241,8 +241,8 @@ async def get_list(
     query = select(Spk)
     query = query.join(Bidang, Spk.bidang_id == Bidang.id
                 ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
-                ).join(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
-                ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
+                ).outerjoin(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
+                ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                 ).outerjoin(Manager, Manager.id == Bidang.manager_id)
 
     if filter_list == "list_approval":
