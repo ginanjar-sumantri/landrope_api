@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, case, text, and_, or_
+from sqlmodel import select, case, text, and_, or_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
@@ -212,7 +212,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         query = select(Spk).where(and_(
                         Spk.bidang_id == bidang_id, 
                         Spk.jenis_bayar == jenis_bayar,
-                        Spk.is_void != True
+                        func.coalesce(Spk.is_void, False) != True
                         )
                         )
         
