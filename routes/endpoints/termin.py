@@ -39,7 +39,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException, DocumentFileNotFoundException)
 from common.ordered import OrderEnumSch
-from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, 
+from common.enum import (JenisBayarEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ActivityEnum,
                         WorkflowEntityEnum, WorkflowLastStatusEnum, StatusPembebasanEnum, SatuanBayarEnum, SatuanHargaEnum,
                         jenis_bayar_to_termin_status_pembebasan_dict, jenis_bayar_to_code_counter_enum,
                         jenis_bayar_to_text)
@@ -75,6 +75,17 @@ async def create(
 
     db_session = db.session
     sch.is_void = False
+
+    if sch.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+        for termin_bayar in sch.termin_bayars:
+            if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
+                continue
+
+            invoice_bayars = [inv_bayar.amount for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+            invoice_bayar_amount = sum(invoice_bayars)
+            if (termin_bayar.amount - invoice_bayar_amount) < 0:
+                raise HTTPException(status_code=422, detail=f"Nominal Allocation lebih besar dari Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+        
 
     today = date.today()
     month = roman.toRoman(today.month)
@@ -290,6 +301,17 @@ async def update_(
         
         if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
             raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+        
+        for termin_bayar in sch.termin_bayars:
+            if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
+                continue
+
+            invoice_bayars = [inv_bayar.amount for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+            invoice_bayar_amount = sum(invoice_bayars)
+            if (termin_bayar.amount - invoice_bayar_amount) < 0:
+                raise HTTPException(status_code=422, detail=f"Nominal Allocation lebih besar dari Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+        
+
     
     if sch.jenis_bayar in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         kjb_hd_current = await crud.kjb_hd.get(id=sch.kjb_hd_id)
