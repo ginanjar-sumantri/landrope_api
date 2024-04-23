@@ -720,8 +720,8 @@ async def get_by_id(id:UUID):
     
     kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
 
-    percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=id)
-    
+    percentage_lunas = next((termin.nilai for termin in harga.termins if termin.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
+
     obj_return = BidangForSPKByIdExtSch(id=obj.id,
                                     jenis_alashak=obj.jenis_alashak,
                                     id_bidang=obj.id_bidang,
@@ -751,7 +751,7 @@ async def get_by_id(id:UUID):
                                     npwp=npwp_value,
                                     sisa_pelunasan=obj.sisa_pelunasan,
                                     termins=termins,
-                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 100)
+                                    percentage_lunas=percentage_lunas if percentage_lunas else 100)
     
     if obj:
         return create_response(data=obj_return)
