@@ -161,7 +161,7 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
-    if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:
+    if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:
         raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
     
     obj_updated = obj_current
@@ -198,7 +198,6 @@ async def void(id:UUID, sch:InvoiceVoidSch,
 
     obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
     return create_response(data=obj_updated) 
-
 
 @router.get("/updated/payment_status",)
 async def payment_status_updated():

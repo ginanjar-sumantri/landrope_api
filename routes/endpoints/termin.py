@@ -81,7 +81,7 @@ async def create(
             if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
                 continue
 
-            invoice_bayars = [inv_bayar.amount for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+            invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
 
             if termin_bayar.activity == ActivityEnum.UTJ:
                 if len(invoice_bayars) == 0:
@@ -315,7 +315,7 @@ async def update_(
             if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
                 continue
 
-            invoice_bayars = [inv_bayar.amount for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+            invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
 
             if termin_bayar.activity == ActivityEnum.UTJ:
                 if len(invoice_bayars) == 0:
