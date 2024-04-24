@@ -41,4 +41,5 @@ class BebanBiayaGroupingSch(SQLModel):
 class BebanBiayaEstimatedAmountSch(BebanBiayaBase):
     estimated_amount: Decimal | None
     bidang_id: UUID | None
+    beban_biaya_id: UUID | None
 
