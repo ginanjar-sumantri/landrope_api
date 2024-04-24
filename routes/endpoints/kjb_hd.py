@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Request, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_
+from sqlmodel import select, or_, func
 from models import KjbHd, KjbDt, KjbPenjual
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
@@ -160,7 +160,9 @@ async def get_list(
                 Pemilik.name.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
                 Sales.name.ilike(f'%{keyword}%'),
-                KjbDt.alashak.ilike(f'%{keyword}%')
+                KjbDt.alashak.ilike(f'%{keyword}%'),
+                func.lower(KjbHd.status_workflow).contains(func.lower(keyword)),
+                func.lower(KjbHd.step_name_workflow).contains(func.lower(keyword))
             )
         )
     

@@ -254,7 +254,9 @@ async def get_list(
                 Ptsk.name.ilike(f'%{keyword}%'),
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
-                Tahap.group.ilike(f'%{keyword}%')
+                Tahap.group.ilike(f'%{keyword}%'),
+                func.lower(Termin.status_workflow).contains(func.lower(keyword)),
+                func.lower(Termin.step_name_workflow).contains(func.lower(keyword))
             )
         )
 

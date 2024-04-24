@@ -263,7 +263,9 @@ async def get_list(
                 Bidang.group.ilike(f'%{keyword}%'),
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
-                Spk.jenis_bayar.ilike(f'%{keyword}%')
+                Spk.jenis_bayar.ilike(f'%{keyword}%'),
+                func.lower(Spk.status_workflow).contains(func.lower(keyword)),
+                func.lower(Spk.step_name_workflow).contains(func.lower(keyword))
             )
         )
 
