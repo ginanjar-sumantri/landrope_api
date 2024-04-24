@@ -316,6 +316,13 @@ async def update_(
                 continue
 
             invoice_bayars = [inv_bayar.amount for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+
+            if termin_bayar.activity == ActivityEnum.UTJ:
+                if len(invoice_bayars) == 0:
+                    raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum terallocate ke bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
+                elif sum(invoice_bayars) != termin_bayar.amount:
+                    raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
+
             invoice_bayar_amount = sum(invoice_bayars)
             if (termin_bayar.amount - invoice_bayar_amount) < 0:
                 raise HTTPException(status_code=422, detail=f"Nominal Allocation lebih besar dari Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
