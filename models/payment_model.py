@@ -103,7 +103,7 @@ class Payment(PaymentFullBase, table=True):
             nomor = getattr(getattr(getattr(dt, "invoice", None), "termin", None), "nomor_memo", None)
             if nomor:
                 if nomor not in nomor_memo_:
-                    nomor_memo_.append(nomor)
+                    nomor_memo_.append(nomor or "")
         
         return ",".join(nomor_memo_)
     
@@ -115,7 +115,7 @@ class Payment(PaymentFullBase, table=True):
 
         pay_to_ = []
         for giro in self.giros:
-            pay_to_.append(giro.pay_to)
+            pay_to_.append(giro.pay_to or "")
         
         return ",".join(pay_to_)
     

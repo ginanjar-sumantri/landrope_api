@@ -75,8 +75,9 @@ async def update(
         raise IdNotFoundException(Pemilik, id)
     
     pemilik_current = await crud.pemilik.get_by_name(name=sch.name)
-    if pemilik_current.id != obj_current.id:
-        raise HTTPException(status_code=422, detail="Nama pemilik tersebut sudah ada")
+    if pemilik_current:
+        if pemilik_current.id != obj_current.id:
+            raise HTTPException(status_code=422, detail="Nama pemilik tersebut sudah ada")
     
     obj_updated = await crud.pemilik.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
 
