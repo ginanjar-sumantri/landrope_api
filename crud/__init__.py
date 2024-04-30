@@ -73,6 +73,7 @@ from .tahap_detail_crud import tahap_detail
 
 from .termin_crud import termin
 from .termin_bayar_crud import termin_bayar
+from .termin_bayar_dt_crud import termin_bayar_dt
 from .invoice_crud import invoice
 from .invoice_detail_crud import invoice_detail
 from .invoice_bayar_crud import invoice_bayar

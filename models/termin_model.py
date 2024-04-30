@@ -10,7 +10,7 @@ from datetime import date
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar, BebanBiaya
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -208,7 +208,8 @@ class Termin(TerminFullBase, table=True):
             .where(Workflow.reference_id == self.id)
             .scalar_subquery()
         )
-    
+
+   
 class TerminBayarBase(SQLModel):
     name: str | None = Field(nullable=True)
     termin_id:UUID = Field(nullable=False, foreign_key="termin.id")
@@ -261,3 +262,23 @@ class TerminBayar(TerminBayarFullBase, table=True):
     @property
     def amountExt(self) -> str|None:
         return "{:,.0f}".format(self.amount or 0)
+
+
+class TerminBayarDtBase(SQLModel):
+    termin_bayar_id: UUID = Field(nullable=False, foreign_key="termin_bayar.id")
+    beban_biaya_id: UUID = Field(nullable=False, foreign_key="beban_biaya.id")
+
+class TerminBayarDtFullBase(TerminBayarDtBase, BaseUUIDModel):
+    pass
+
+class TerminBayarDt(TerminBayarDtFullBase, table=True):
+    beban_biaya: "BebanBiaya" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "selectin"
+        }
+    )
+
+    @property
+    def beban_biaya_name(self) -> str | None:
+        return self.beban_biaya.name

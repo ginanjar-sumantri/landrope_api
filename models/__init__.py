@@ -31,7 +31,7 @@ from .order_gambar_ukur_model import OrderGambarUkur, OrderGambarUkurBidang, Ord
 from .giro_model import Giro
 from .spk_model import Spk, SpkKelengkapanDokumen, SpkHistory
 from .tahap_model import Tahap, TahapDetail
-from .termin_model import Termin, TerminBayar
+from .termin_model import Termin, TerminBayar, TerminBayarDt
 from .utj_khusus_model import UtjKhusus, UtjKhususDetail
 from .invoice_model import Invoice, InvoiceDetail, InvoiceBayar
 from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKomponenBiayaDetail

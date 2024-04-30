@@ -7,7 +7,7 @@ from sqlmodel import select, or_, and_, func, update, delete
 from sqlalchemy import cast, String
 from sqlalchemy.orm import selectinload
 import crud
-from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, 
+from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, TerminBayarDt,
                     PaymentDetail, Payment, PaymentGiroDetail, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project,
                     Desa, Ptsk)
 from models.code_counter_model import CodeCounterEnum
@@ -18,6 +18,7 @@ from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch,
                                 TerminBidangIDSch, TerminIdSch, TerminHistoriesSch,
                                 TerminBebanBiayaForPrintOut, TerminVoidSch)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch, TerminBayarForPrintout
+from schemas.termin_bayar_dt_sch import TerminBayarDtCreateSch, TerminBayarDtUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
                                  InvoiceHistoryInTermin, InvoiceLuasBayarSch)
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
@@ -79,7 +80,14 @@ async def create(
     if sch.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         for termin_bayar in sch.termin_bayars:
             if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
-                continue
+                invoice_dts = []
+                for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+                    invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
+
+                if sum(invoice_dts) != termin_bayar.amount:
+                    raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai {termin_bayar.name} untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
+                                        Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
+
 
             invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
 
@@ -117,6 +125,10 @@ async def create(
         termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=new_obj.id)
         obj_termin_bayar = await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         termin_bayar_temp.append({"termin_bayar_id" : obj_termin_bayar.id, "id_index" : termin_bayar.id_index})
+
+        for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+            termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+            await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
     #add invoice
     for invoice in sch.invoices:
@@ -313,15 +325,21 @@ async def update_(
         
         for termin_bayar in sch.termin_bayars:
             if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
-                continue
+                invoice_dts = []
+                for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+                    invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
+
+                if sum(invoice_dts) != termin_bayar.amount:
+                    raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
+                                        Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
 
             invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
 
             if termin_bayar.activity == ActivityEnum.UTJ:
                 if len(invoice_bayars) == 0:
-                    raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum terallocate ke bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
+                    raise HTTPException(status_code=422, detail=f"Giro/Cek/Tunai untuk UTJ belum terallocate ke bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
                 elif sum(invoice_bayars) != termin_bayar.amount:
-                    raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
+                    raise HTTPException(status_code=422, detail=f"Giro/Cek/Tunai untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
             invoice_bayar_amount = sum(invoice_bayars)
             if (termin_bayar.amount - invoice_bayar_amount) < 0:
@@ -366,10 +384,27 @@ async def update_(
             termin_bayar_current = await crud.termin_bayar.get(id=termin_bayar.id)
             termin_bayar_updated = TerminBayarUpdateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             obj_termin_bayar = await crud.termin_bayar.update(obj_current=termin_bayar_current, obj_new=termin_bayar_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+        
+            #delete termin_bayar_detail not exists
+            await db_session.execute(delete(TerminBayarDt).where(and_(TerminBayarDt.id.notin_(dt.id for dt in termin_bayar.termin_bayar_dts if dt.id != None), 
+                                                    TerminBayarDt.termin_bayar_id == obj_termin_bayar.id)))
+            
+            for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+                if termin_bayar_dt.id is None:
+                    termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                    await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+                else:
+                    termin_bayar_dt_current = await crud.termin_bayar_dt.get(id=termin_bayar_dt.id)
+                    termin_bayar_dt_updated_sch = TerminBayarDtUpdateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                    await crud.termin_bayar_dt.update(obj_current=termin_bayar_dt_current, obj_new=termin_bayar_dt_updated_sch, db_session=db_session, with_commit=False)
         else:
             termin_bayar_sch = TerminBayarCreateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             obj_termin_bayar = await crud.termin_bayar.create(obj_in=termin_bayar_sch,  db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-        
+
+            for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+                termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+    
         termin_bayar_temp.append({"termin_bayar_id" : obj_termin_bayar.id, "id_index" : termin_bayar.id_index})
 
     #delete invoice

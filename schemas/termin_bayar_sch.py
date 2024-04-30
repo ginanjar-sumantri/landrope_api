@@ -1,4 +1,5 @@
 from models.termin_model import TerminBayar, TerminBayarBase, TerminBayarFullBase
+from schemas.termin_bayar_dt_sch import TerminBayarDtExtSch
 from common.enum import PaymentMethodEnum, ActivityEnum
 from sqlmodel import Field, SQLModel
 from uuid import UUID
@@ -19,6 +20,7 @@ class TerminBayarExtSch(SQLModel):
     activity: ActivityEnum | None
     name: str | None
     pay_to: str | None
+    termin_bayar_dts: list[TerminBayarDtExtSch]
 
 
 class TerminBayarSch(TerminBayarFullBase):
