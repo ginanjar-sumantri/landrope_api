@@ -68,7 +68,7 @@ async def generate_code(entity:CodeCounterEnum,
     max_digit = 3
 
     if obj_current is None:
-        obj_in = CodeCounter(entity=entity, code_counter=code_counter, digit=max_digit)
+        obj_in = CodeCounter(entity=entity, last=code_counter, digit=max_digit)
         await crud.codecounter.create(obj_in=obj_in, db_session=db_session, with_commit=with_commit)
 
         code = str(code_counter).zfill(max_digit)
@@ -100,7 +100,7 @@ async def generate_code_month(entity:CodeCounterEnum,
     current_date = datetime.now().date()
 
     if obj_current is None:
-        obj_in = CodeCounter(entity=entity, code_counter=code_counter, digit=max_digit)
+        obj_in = CodeCounter(entity=entity, last=code_counter, digit=max_digit)
         await crud.codecounter.create(obj_in=obj_in, db_session=db_session, with_commit=with_commit)
 
         code = str(code_counter).zfill(max_digit)

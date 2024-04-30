@@ -666,14 +666,29 @@ class BundleHelper:
                 # meta_data = json.dumps(input_dict)
 
                 if bundledt_current.meta_data is None:
-                    meta_datas_current = {"data" : []}
-                    meta_datas_current["data"].append(input_dict)
-                    
+                    if dokumen.is_multiple:
+                        meta_datas_current = {"data" : []}
+                        meta_datas_current["data"].append(input_dict)
+                    else:
+                        meta_datas_current = input_dict
                 else:
                     meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
-                    exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
-                    if exists is None:
-                        meta_datas_current["data"].append(input_dict)
+                    if dokumen.is_multiple:
+                        dt = meta_datas_current.get("data", None)
+                        if dt is None:
+                            dt_current = meta_datas_current
+                            dt_current["file"] = bundledt_current.file_path
+
+                            meta_datas_current = {"data" : []}
+
+                            meta_datas_current["data"].append(dt_current)
+                            meta_datas_current["data"].append(input_dict)
+                        else:
+                            exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
+                            if exists is None:
+                                meta_datas_current["data"].append(input_dict)
+                    else:
+                        meta_datas_current = input_dict
                 
                 meta_data = json.dumps(meta_datas_current)
 
