@@ -111,7 +111,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         Coalesce(nt.name, '') as notaris_name,
                         tr.jenis_bayar,
                         tr.remark,
-                        sc.name as section_name
+                        sc.name as section_name,
+                        Coalesce(k_hd.code, '') as kjb_code
                         from termin tr
                         inner join invoice i on i.termin_id = tr.id
                         inner join bidang b on b.id = i.bidang_id
@@ -128,7 +129,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         left outer join manager k_mng on k_mng.id = k_hd.manager_id
                         left outer join sales k_sls on k_sls.id = k_hd.sales_id
                         where tr.id = '{str(id)}'
-                        group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id, k_mng.id, k_sls.id, sc.id
+                        group by tr.id, t.id, pr.id, ds.id, pt.id, mng.id, sls.id, nt.id, k_mng.id, k_sls.id, sc.id, k_hd.id
                     """)
 
         response = await db_session.execute(query)

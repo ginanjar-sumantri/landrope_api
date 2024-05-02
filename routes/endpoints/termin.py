@@ -1506,6 +1506,7 @@ async def generate_printout_utj(id:UUID | str):
     template = env.get_template(filename)
 
     render_template = template.render(code=termin_header.code,
+                                    kjb_code=termin_header.kjb_code,
                                     manager_name=termin_header.k_manager_name,
                                     sales_name=termin_header.k_sales_name,
                                     data=data,
