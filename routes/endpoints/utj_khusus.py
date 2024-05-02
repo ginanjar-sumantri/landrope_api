@@ -335,6 +335,7 @@ async def printout(id:UUID | str,
     template = env.get_template(filename)
 
     render_template = template.render(code=utj_khusus.code,
+                                    kjb_code=utj_khusus.kjb_hd_code,
                                     data=data,
                                     total_luas_surat=total_luas_surat,
                                     total_amount=total_amount)

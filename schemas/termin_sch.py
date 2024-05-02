@@ -78,6 +78,7 @@ class TerminByIdForPrintOut(SQLModel):
     mediator:str|None
     remark:str|None
     section_name:str|None
+    kjb_code:str|None
 
 class TerminInvoiceforPrintOut(SQLModel):
     id_bidang:Optional[UUID]
