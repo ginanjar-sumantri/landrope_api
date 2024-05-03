@@ -92,3 +92,5 @@ from .workflow_crud import workflow
 from .workflow_history_crud import workflow_history
 from .workflow_template_crud import workflow_template
 from .workflow_next_approver_crud import workflow_next_approver
+
+from .termin_rfp_payment_crud import termin_rfp_payment

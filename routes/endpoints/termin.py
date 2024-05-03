@@ -51,8 +51,10 @@ from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService, BundleHelper, BidangHelper, KomponenBiayaHelper
 from services.workflow_service import WorkflowService
 from services.adobe_service import PDFToExcelService
-from decimal import Decimal
 from services.pdf_service import PdfService
+from services.rfp_service import RfpService
+
+from decimal import Decimal
 from jinja2 import Environment, FileSystemLoader
 from datetime import date, datetime
 from io import BytesIO, StringIO
@@ -2050,3 +2052,16 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
             result.beban_biaya_id = master_beban_biaya.id
 
     return create_response(data=result)
+
+
+@router.post("/task/create_rfp")
+async def create_rfp(payload: Dict):
+
+    data, msg = await RfpService().create_rfp(termin_id=payload["id"])
+
+    if data is not None:
+        await crud.termin_rfp_payment.create_(sch=data)
+    else:
+        raise HTTPException(status_code=409, detail=msg)
+
+    return {"message":"successfully"}

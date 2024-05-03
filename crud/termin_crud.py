@@ -65,7 +65,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                 ).options(selectinload(Termin.notaris)
                 ).options(selectinload(Termin.termin_bayars
                         ).options(selectinload(TerminBayar.rekening)
-                                )
+                        ).options(selectinload(TerminBayar.invoice_bayars)
+                        )
                 ).options(selectinload(Termin.manager)
                 ).options(selectinload(Termin.sales)
                 )

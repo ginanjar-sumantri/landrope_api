@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     WF_SIGN_PRIVATE_KEY:str
     WF_SIGN_PUBLIC_KEY:str
     WF_CLIENT_ID:str
+    RFP_BASE_URL:str
+    RFP_CLIENT_ID:str
     ADOBE_TOKEN:str
     ADOBE_CLIENT_ID:str
     ADOBE_CLIENT_SECRET:str

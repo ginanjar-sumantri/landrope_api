@@ -39,3 +39,5 @@ from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKom
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover
 
+from .termin_rfp_payment_model import TerminRfpPayment
+

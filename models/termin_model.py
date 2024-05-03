@@ -33,7 +33,6 @@ class TerminBase(SQLModel):
     file_path:str | None = Field(nullable=True)
     file_upload_path:str | None = Field(nullable=True)
 
-
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass
 
@@ -232,7 +231,7 @@ class TerminBayar(TerminBayarFullBase, table=True):
         }
     )
 
-    invoice_bayars:"InvoiceBayar" =  Relationship(
+    invoice_bayars:list["InvoiceBayar"] =  Relationship(
         back_populates="termin_bayar",
         sa_relationship_kwargs=
         {
@@ -244,6 +243,13 @@ class TerminBayar(TerminBayarFullBase, table=True):
         sa_relationship_kwargs=
         {
             "lazy" : "select"
+        }
+    )
+
+    termin_bayar_dts:list["TerminBayarDt"] = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "selectin"
         }
     )
 
@@ -282,3 +288,5 @@ class TerminBayarDt(TerminBayarDtFullBase, table=True):
     @property
     def beban_biaya_name(self) -> str | None:
         return self.beban_biaya.name
+    
+

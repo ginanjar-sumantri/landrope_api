@@ -210,3 +210,8 @@ class ActivityEnum(str, Enum):
     UTJ = "UTJ"
     BIAYA_TANAH = "Biaya_Tanah"
     BEBAN_BIAYA = "Beban_Biaya"
+
+activity_landrope_to_activity_rfp_dict = {
+    ActivityEnum.UTJ : "A001",
+    ActivityEnum.BIAYA_TANAH : "A001"
+}
