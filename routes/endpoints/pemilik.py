@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, UploadFile, Request, HTTPException
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params
+from sqlmodel import select, or_
 from models.pemilik_model import Pemilik, Kontak, Rekening
 from models.worker_model import Worker
 from models.import_log_model import ImportLog, ImportLogError
@@ -18,6 +19,7 @@ from services.gcloud_task_service import GCloudTaskService
 from common.enum import TaskStatusEnum
 import crud
 import pandas
+import json
 
 #region Pemilik
 router_pemilik = APIRouter()
@@ -48,6 +50,34 @@ async def get_list(
     """Gets a paginated list objects"""
 
     objs = await crud.pemilik.get_multi_paginate_ordered_with_keyword_dict(params=params, order_by=order_by, keyword=keyword, filter_query=filter_query)
+    return create_response(data=objs)
+
+@router_pemilik.get("/no-page", response_model=GetResponseBaseSch[list[PemilikSch]])
+async def get_list(
+            keyword:str = None, 
+            filter_query:str = None,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Pemilik)
+
+    if keyword:
+        query = query.filter(
+            or_(
+                Pemilik.code.ilike(f'%{keyword}%'),
+                Pemilik.name.ilike(f'%{keyword}%')
+            ))
+    
+    if filter_query:
+        filter_query = json.loads(filter_query)
+        for key, value in filter_query.items():
+            query = query.where(getattr(Pemilik, key) == value)
+
+    query = query.order_by(Pemilik.name.asc())
+
+
+    objs = await crud.pemilik.get_multi_no_page(query=query)
     return create_response(data=objs)
 
 @router_pemilik.get("/{id}", response_model=GetResponseBaseSch[PemilikByIdSch])
