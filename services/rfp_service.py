@@ -32,7 +32,8 @@ class RfpService:
         ### SETUP PAY TO
         pay_to = [f'{termin_bayar.pay_to} ({termin_bayar.rekening.nomor_rekening} an {termin_bayar.rekening.nama_pemilik_rekening})' for termin_bayar in termin.termin_bayars if termin_bayar.pay_to != None and termin_bayar.rekening_id != None]
         obj_rfp_hd["pay_to"] = ", ".join(pay_to)
-        obj_rfp_hd["descs"] = ""
+        
+        rfp_hd_descs = []
 
         obj_rfp_hd["rfp_lines"] = []
         obj_rfp_hd["rfp_banks"] = []
@@ -79,14 +80,18 @@ class RfpService:
                     obj_rfp_line_dt["name"] = bidang.id_bidang
                     obj_rfp_line_dt["amount"] = str(inv_bayar.amount)
 
+                    description: str = ""
+
                     if spk:
                         amount = f"{str(spk.amount) + '%' if spk.satuan_bayar == SatuanBayarEnum.Percentage else ''}"
-                        
                         description = f"{id_bidang_complete} {spk.jenis_bayar} {amount}, GROUP {termin.tahap.group or ''}"
                         obj_rfp_line_dt["desc"] = description
                     else:
                         description = f"{id_bidang_complete} UTJ, GROUP {termin.tahap.group or ''}"
                         obj_rfp_line_dt["desc"] = description
+
+                    if description not in rfp_hd_descs:
+                        rfp_hd_descs.append(description)
                     
                     
                     obj_rfp_line["rfp_line_dts"].append(obj_rfp_line_dt)
@@ -161,6 +166,8 @@ class RfpService:
                     obj_rfp_allocation["rfp_bank_id"] = str(rfp_bank_id)
                     obj_rfp_allocation["rfp_line_id"] = str(rfp_line_id)
                     obj_rfp_hd["rfp_allocations"].append(obj_rfp_allocation)
+        
+        obj_rfp_hd["descs"] = ",".join(rfp_hd_descs)
 
         return obj_rfp_hd
     
