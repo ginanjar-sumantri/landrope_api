@@ -3,7 +3,7 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 from fastapi_async_sqlalchemy import db
 from crud.base_crud import CRUDBase
-from models import Giro, Payment
+from models import Giro, Payment, PaymentGiroDetail
 from schemas.giro_sch import GiroCreateSch, GiroUpdateSch
 from common.enum import PaymentMethodEnum
 from uuid import UUID
@@ -20,6 +20,8 @@ class CRUDGiro(CRUDBase[Giro, GiroCreateSch, GiroUpdateSch]):
         query = select(Giro).where(Giro.id == id
                                 ).options(selectinload(Giro.payment
                                                     ).options(selectinload(Payment.details))
+                                ).options(selectinload(Giro.payment_giros
+                                                    ).options(selectinload(PaymentGiroDetail.payment_details))
                                 )
                                     
         
