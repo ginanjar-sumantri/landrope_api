@@ -109,3 +109,11 @@ class HasilPetaLokasiReadySpkSch(SQLModel):
     satuan_harga:SatuanHargaEnum|None
     nilai:Decimal|None
     jenis_bayar:JenisBayarEnum
+    planing_id: UUID | None
+    kjb_hd_code: str | None
+    group: str | None
+    manager_id: UUID | None
+    project_name: str | None
+    desa_name: str | None
+    manager_name: str | None
+

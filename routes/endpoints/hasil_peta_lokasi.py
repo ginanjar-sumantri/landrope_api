@@ -965,23 +965,27 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             hd.satuan_bayar,
             hd.satuan_harga,
             tr.nilai,
-            'DP' as jenis_bayar
+            'DP' as jenis_bayar,
+            b.planing_id,
+            hd.code as kjb_hd_code,
+            b.group,
+            b.manager_id
             from hasil_peta_lokasi hpl
-			inner join bidang b ON b.id = hpl.bidang_id
+            inner join bidang b ON b.id = hpl.bidang_id
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
             inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP' and tr.nilai > 0
-            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
+            inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
             Where 
-				  NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
-							inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-							inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL
-							Where c_hd.bidang_id = b.id
-							and c_dt.jenis_bayar IN ('DP', 'UTJ'))
-				  AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is FALSE)
-				  AND NOT EXISTS (select 1 from spk ss
-							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
+                            inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
+                            inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL
+                            Where c_hd.bidang_id = b.id
+                            and c_dt.jenis_bayar IN ('DP', 'UTJ'))
+                AND NOT EXISTS (select 1 from spk s
+                            where s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is FALSE)
+                AND NOT EXISTS (select 1 from spk ss
+                            where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
             UNION
             select 
             b.id,
@@ -991,24 +995,28 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             hd.satuan_bayar,
             hd.satuan_harga,
             tr.nilai,
-            'PELUNASAN' as jenis_bayar
+            'PELUNASAN' as jenis_bayar,
+            b.planing_id,
+            hd.code as kjb_hd_code,
+            b.group,
+            b.manager_id
             from hasil_peta_lokasi hpl
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
             inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
             inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN' and tr.nilai > 0
-            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
+            inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
             inner join bidang b ON b.id = hpl.bidang_id
             Where 
-				NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
-							inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-							inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-							Where c_hd.bidang_id = b.id
-							and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
-							and b_dt.meta_data is null)
-				AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is FALSE)
-				AND NOT EXISTS (select 1 from spk ss
-							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
+                            inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
+                            inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                            Where c_hd.bidang_id = b.id
+                            and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
+                            and b_dt.meta_data is null)
+                AND NOT EXISTS (select 1 from spk s
+                            where s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is FALSE)
+                AND NOT EXISTS (select 1 from spk ss
+                            where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
             UNION
             select 
             b.id,
@@ -1018,42 +1026,61 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             null as satuan_bayar,
             null as satuan_harga,
             null as nilai,
-            'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
+            'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar,
+            b.planing_id,
+            hd.code as kjb_hd_code,
+            b.group,
+            b.manager_id
             from hasil_peta_lokasi hpl
             inner join bidang b ON b.id = hpl.bidang_id
-            Where 
-				EXISTS (select 1 
-						from bidang_komponen_biaya kb
-						left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
-						left outer join invoice inv ON inv.id = inv_dt.invoice_id
-						left outer join termin tr ON tr.id = inv.termin_id
-						where kb.is_void != true and kb.is_retur = true
-						and tr.id is null and tr.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL')
-				AND NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_hd c_hd
-								inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-								and c_dt.jenis_bayar = 'BIAYA_LAIN'
-								inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-								Where c_hd.bidang_id = hpl.bidang_id
-								and b_dt.meta_data is null)
-				AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is FALSE)
-            UNION
-            select 
-            b.id,
-            b.id_bidang,
-            b.alashak,
-            null as kjb_termin_id,
-            null as satuan_bayar,
-            null as satuan_harga,
-            null as nilai,
-            'PAJAK' as jenis_bayar
-            from hasil_peta_lokasi hpl
             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+            inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
+            Where 
+                EXISTS (select 1 
+                        from bidang_komponen_biaya kb
+                        left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
+                        left outer join invoice inv ON inv.id = inv_dt.invoice_id
+                        left outer join termin tr ON tr.id = inv.termin_id
+                        where kb.is_void != true and kb.is_retur = true
+                        and tr.id is null and tr.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL')
+                AND NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_hd c_hd
+                                inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
+                                and c_dt.jenis_bayar = 'BIAYA_LAIN'
+                                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                                Where c_hd.bidang_id = hpl.bidang_id
+                                and b_dt.meta_data is null)
+                AND NOT EXISTS (select 1 from spk s
+                            where s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is FALSE)
+            UNION
+            select 
+            b.id,
+            b.id_bidang,
+            b.alashak,
+            null as kjb_termin_id,
+            null as satuan_bayar,
+            null as satuan_harga,
+            null as nilai,
+            'PAJAK' as jenis_bayar,
+            b.planing_id,
+            hd.code as kjb_hd_code,
+            b.group,
+            b.manager_id
+            from hasil_peta_lokasi hpl
             inner join bidang b ON b.id = hpl.bidang_id
-			Where NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
+            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+            inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
+            Where NOT EXISTS (select 1 from spk s
+                            where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
             Order by id_bidang)
-            select * from subquery
+            select s.*, 
+            pr.name as project_name,
+            ds.name as desa_name,
+            mng.name as manager_name
+            from subquery s
+            inner join planing pl on pl.id = s.planing_id
+            inner join project pr on pr.id = pl.project_id
+            inner join desa ds on ds.id = pl.desa_id
+            inner join manager mng on mng.id = s.manager_id
             {searching}
             """
     
@@ -1067,7 +1094,14 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
                                        satuan_bayar=row[4],
                                        satuan_harga=row[5],
                                        nilai=row[6],
-                                       jenis_bayar=row[7]) for row in rows]
+                                       jenis_bayar=row[7],
+                                       planing_id=row[8],
+                                       kjb_hd_code=row[9],
+                                       group=row[10],
+                                       manager_id=row[11],
+                                       project_name=row[12],
+                                       desa_name=row[13],
+                                       manager_name=row[14]) for row in rows]
     
     start = (params.page - 1) * params.size
     end = params.page * params.size

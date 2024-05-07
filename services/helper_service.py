@@ -223,8 +223,6 @@ class KomponenBiayaHelper:
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
     
-
-
 class BundleHelper:
 
     def extract_metadata_for_riwayat(self, current_riwayat:str | None,
