@@ -20,7 +20,7 @@ class TerminBayarExtSch(SQLModel):
     activity: ActivityEnum | None
     name: str | None
     pay_to: str | None
-    termin_bayar_dts: list[TerminBayarDtExtSch]
+    termin_bayar_dts: list[TerminBayarDtExtSch] | None
 
 
 class TerminBayarSch(TerminBayarFullBase):
