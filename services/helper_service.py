@@ -567,7 +567,7 @@ class BundleHelper:
                 if dokumen.key_field not in input_dict:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Kesepakatan Jual Beli' tidak memiliki key field {dokumen.key_field}")
                 
-                input_dict[dokumen.key_field] = pemilik.name if pemilik else ""
+                input_dict[dokumen.key_field] = pemilik.name.replace("'", "") if pemilik else ""
                 meta_data = json.dumps(input_dict)
                 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
