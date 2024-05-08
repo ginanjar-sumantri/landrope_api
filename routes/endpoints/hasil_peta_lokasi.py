@@ -982,6 +982,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 							 where s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is FALSE)
 				  AND NOT EXISTS (select 1 from spk ss
 							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                  AND hpl.status_hasil_peta_lokasi = 'Lanjut'
             UNION
             select 
             b.id,
@@ -1009,6 +1010,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 							 where s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is FALSE)
 				AND NOT EXISTS (select 1 from spk ss
 							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                AND hpl.status_hasil_peta_lokasi = 'Lanjut'
             UNION
             select 
             b.id,
@@ -1037,6 +1039,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
 								and b_dt.meta_data is null)
 				AND NOT EXISTS (select 1 from spk s
 							 where s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is FALSE)
+                AND hpl.status_hasil_peta_lokasi = 'Lanjut'
             UNION
             select 
             b.id,
@@ -1052,6 +1055,7 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
             inner join bidang b ON b.id = hpl.bidang_id
 			Where NOT EXISTS (select 1 from spk s
 							 where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
+                  AND hpl.status_hasil_peta_lokasi = 'Lanjut'
             Order by id_bidang)
             select * from subquery
             {searching}
