@@ -16,7 +16,7 @@ from schemas.beban_biaya_sch import BebanBiayaGroupingSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
-from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum, ActivityEnum
+from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum, ActivityEnum, WorkflowEntityEnum
 from models.code_counter_model import CodeCounterEnum
 from shapely import wkt, wkb
 from datetime import date
@@ -510,7 +510,17 @@ async def get_list(
             and ((inv.termin.status_workflow == WorkflowLastStatusEnum.COMPLETED 
                   and inv.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]) or inv.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS])]
     
-    return create_response(data=objs)
+    items = []
+    reference_ids = [invoice.termin_id for invoice in objs]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.TERMIN)
+
+    for inv in objs:
+        workflow = next((wf for wf in workflows if wf.reference_id == inv.termin_id), None)
+
+        if inv.invoice_outstanding > 0 and ((workflow.last_status == WorkflowLastStatusEnum.COMPLETED and inv.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]) or inv.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]):
+            items.append(inv)
+
+    return create_response(data=items)
 
 @router.get("/search/invoiceExt", response_model=GetResponseBaseSch[list[InvoiceSearchSch]])
 async def get_list(
@@ -529,8 +539,14 @@ async def get_invoice_by_id(id:UUID):
     """Get an object by id"""
 
     obj = await crud.invoice.get_by_id(id=id)
+    if obj is None:
+        raise HTTPException(status_code=404, detail="invoice not found!!")
+    
+    workflow = await crud.workflow.get_by_reference_id(reference_id=obj.termin_id)
+    if workflow is None:
+        raise HTTPException(status_code=404, detail="workflow not found!!")
 
-    if obj.termin.status_workflow != WorkflowLastStatusEnum.COMPLETED and obj.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+    if workflow.last_status != WorkflowLastStatusEnum.COMPLETED and obj.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
     
     if obj:
@@ -604,7 +620,8 @@ async def get_list(
     invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
     list_id = [invoice.termin_id for invoice in invoice_outstandings]
 
-    query = select(Termin).where(and_(Termin.status_workflow == WorkflowLastStatusEnum.COMPLETED,
+    query = select(Termin).outerjoin(Workflow, Workflow.reference_id == Termin.id
+                        ).where(and_(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED,
                                     Termin.id.in_(list_id)))
     
     query = query.options(selectinload(Termin.tahap))
@@ -647,7 +664,15 @@ async def get_invoice_by_id(id:UUID):
     """Get an object by id"""
 
     termin_current = await crud.termin.get_by_id(id=id)
-    if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+
+    if termin_current is None:
+        raise HTTPException(status_code=404, detail="termin not found!!")
+    
+    workflow = await crud.workflow.get_by_reference_id(reference_id=termin_current.id)
+    if workflow is None:
+        raise HTTPException(status_code=404, detail="workflow not found!!")
+
+    if workflow.last_status != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
 
     invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)

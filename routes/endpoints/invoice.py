@@ -14,7 +14,7 @@ from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch,
                                   PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code_month
-from common.enum import JenisBayarEnum, WorkflowLastStatusEnum
+from common.enum import JenisBayarEnum, WorkflowLastStatusEnum, WorkflowEntityEnum
 from services.helper_service import HelperService
 from datetime import date
 import crud
@@ -102,6 +102,21 @@ async def get_list(
                 )
 
     objs = await crud.invoice.get_multi_paginated_ordered(params=params, query=query)
+
+    items = []
+    reference_ids = [invoice.termin_id for invoice in objs.data.items]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.TERMIN)
+
+    for obj in objs.data.items:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.termin_id), None)
+        if workflow:
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
+        items.append(obj)
+
+    objs.data.items = items
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])

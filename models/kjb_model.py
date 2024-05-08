@@ -101,30 +101,38 @@ class KjbHd(KjbHdFullBase, table=True):
             return RoundTwo(total_luas)
         else:
             return RoundTwo(0)    
-
-    @declared_attr
-    def step_name_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.step_name
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
     
-    @declared_attr
-    def status_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.last_status
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )    
+    @property
+    def step_name_workflow(self) -> str | None:
+        return None
+    
+    @property
+    def status_workflow(self) -> str | None:
+        return None
+
+    # @declared_attr
+    # def step_name_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.step_name
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
+    
+    # @declared_attr
+    # def status_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.last_status
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )    
 
 
 ##########################################################################

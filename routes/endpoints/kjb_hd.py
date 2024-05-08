@@ -2,8 +2,8 @@ from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Request, Response
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, or_, func
-from models import KjbHd, KjbDt, KjbPenjual
+from sqlmodel import select, or_, func, and_
+from models import KjbHd, KjbDt, KjbPenjual, Workflow
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
 from models.pemilik_model import Pemilik
@@ -139,12 +139,7 @@ async def get_list(
     """Gets a paginated list objects"""
     search_date = None
 
-    query = select(KjbHd).select_from(KjbHd
-                        ).outerjoin(Manager, KjbHd.manager_id == Manager.id
-                        ).outerjoin(Sales, KjbHd.sales_id == Sales.id
-                        ).outerjoin(KjbPenjual, KjbHd.id == KjbPenjual.kjb_hd_id
-                        ).outerjoin(Pemilik, KjbPenjual.pemilik_id == Pemilik.id
-                        ).outerjoin(KjbDt, KjbHd.id == KjbDt.kjb_hd_id)
+    query = select(KjbHd).select_from(KjbHd)
     
     try:
         # Mengonversi string tanggal menjadi objek datetime
@@ -153,6 +148,13 @@ async def get_list(
         pass
     
     if keyword and search_date is None:
+        query = query.outerjoin(Manager, KjbHd.manager_id == Manager.id
+                        ).outerjoin(Sales, KjbHd.sales_id == Sales.id
+                        ).outerjoin(KjbPenjual, KjbHd.id == KjbPenjual.kjb_hd_id
+                        ).outerjoin(Pemilik, KjbPenjual.pemilik_id == Pemilik.id
+                        ).outerjoin(KjbDt, KjbHd.id == KjbDt.kjb_hd_id
+                        ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.KJB))
+        
         query = query.filter(
             or_(
                 KjbHd.code.ilike(f'%{keyword}%'),
@@ -161,8 +163,8 @@ async def get_list(
                 Manager.name.ilike(f'%{keyword}%'),
                 Sales.name.ilike(f'%{keyword}%'),
                 KjbDt.alashak.ilike(f'%{keyword}%'),
-                func.lower(KjbHd.status_workflow).contains(func.lower(keyword)),
-                func.lower(KjbHd.step_name_workflow).contains(func.lower(keyword))
+                func.lower(Workflow.last_status).contains(func.lower(keyword)),
+                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
             )
         )
     
@@ -177,6 +179,21 @@ async def get_list(
     query = query.distinct()
 
     objs = await crud.kjb_hd.get_multi_paginated_ordered(params=params, query=query)
+
+    items = []
+    reference_ids = [kjb_hd.id for kjb_hd in objs.data.items]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.KJB)
+
+    for obj in objs.data.items:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
+        if workflow:
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
+        items.append(obj)
+
+    objs.data.items = items
+
     return create_response(data=objs)
 
 @router.get("/not-draft", response_model=GetResponsePaginatedSch[KjbHdSch])
@@ -194,6 +211,12 @@ async def get_by_id(id:UUID):
 
     obj = await crud.kjb_hd.get_by_id(id=id)
     if obj:
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+        if workflow:
+            obj = KjbHdByIdSch.from_orm(obj)
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
         return create_response(data=obj)
     else:
         raise IdNotFoundException(KjbHd, id)

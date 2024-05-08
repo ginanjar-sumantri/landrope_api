@@ -251,6 +251,7 @@ async def get_list(
                         ).outerjoin(Planing, Planing.id == Tahap.planing_id
                         ).outerjoin(Project, Project.id == Planing.project_id
                         ).outerjoin(Desa, Desa.id == Planing.desa_id
+                        ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.TERMIN)
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
     if filter_list == "list_approval":
@@ -276,8 +277,8 @@ async def get_list(
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
                 Tahap.group.ilike(f'%{keyword}%'),
-                func.lower(Termin.status_workflow).contains(func.lower(keyword)),
-                func.lower(Termin.step_name_workflow).contains(func.lower(keyword))
+                func.lower(Workflow.last_status).contains(func.lower(keyword)),
+                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
             )
         )
 
@@ -289,6 +290,21 @@ async def get_list(
     query = query.distinct()
 
     objs = await crud.termin.get_multi_paginated_ordered(params=params, order_by="created_at", order=OrderEnumSch.descendent, query=query)
+
+    items = []
+    reference_ids = [termin.id for termin in objs.data.items]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.TERMIN)
+
+    for obj in objs.data.items:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
+        if workflow:
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
+        items.append(obj)
+
+    objs.data.items = items
+
     return create_response(data=objs)
 
 @router.get("/{id}", response_model=GetResponseBaseSch[TerminByIdSch])
@@ -616,13 +632,14 @@ async def get_list_tahap(
     query = select(Tahap)
     query = query.join(TahapDetail, Tahap.id == TahapDetail.tahap_id)
     query = query.join(Spk, TahapDetail.bidang_id == Spk.bidang_id)
+    query = query.join(Workflow, and_(Workflow.reference_id == Spk.id, Workflow.entity == WorkflowEntityEnum.SPK))
     query = query.join(Planing, Planing.id == Tahap.planing_id)
     query = query.join(Project, Project.id == Planing.project_id)
     query = query.outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void != True))
     query = query.where(and_(Spk.jenis_bayar != JenisBayarEnum.PAJAK,
                             Spk.is_void != True,
                             Invoice.id == None,
-                            Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED))
+                            Workflow.last_status == WorkflowLastStatusEnum.COMPLETED))
     
     if jenis_bayar:
         query = query.filter(Spk.jenis_bayar == jenis_bayar)
@@ -648,11 +665,12 @@ async def get_list_tahap_by_id(
 
     query = select(Spk).join(TahapDetail, TahapDetail.bidang_id == Spk.bidang_id
                         ).outerjoin(Invoice, and_(Spk.id == Invoice.spk_id, Invoice.is_void != True)
+                        ).outerjoin(Workflow, and_(Workflow.reference_id == Spk.id, Workflow.entity == WorkflowEntityEnum.SPK)
                         ).where(and_(TahapDetail.tahap_id == id,
                                     Spk.jenis_bayar != JenisBayarEnum.PAJAK,
                                     Spk.is_void != True,
                                     Invoice.id == None,
-                                    Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED))
+                                    Workflow.last_status == WorkflowLastStatusEnum.COMPLETED))
 
     objs = await crud.spk.get_multi_no_page(query=query)
 
@@ -775,6 +793,7 @@ async def get_list_spk_by_tahap_id(
     
     """Gets a paginated list objects"""
     objs = []
+    objs_return = []
 
     if tahap_id == None and termin_id == None:
         objs = await crud.spk.get_multi_by_keyword_tahap_id_and_termin_id(keyword=keyword)
@@ -795,9 +814,17 @@ async def get_list_spk_by_tahap_id(
         objs = objs + objs_with_tahap_termin
 
     
-    objs = [obj for obj in objs if obj.status_workflow == WorkflowLastStatusEnum.COMPLETED]
+    # objs = [obj for obj in objs if obj.status_workflow == WorkflowLastStatusEnum.COMPLETED]
 
-    return create_response(data=objs)
+    reference_ids = [spk.id for spk in objs]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.SPK)
+
+    for obj in objs:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
+        if workflow.last_status == WorkflowLastStatusEnum.COMPLETED:
+            objs_return.append(obj)
+
+    return create_response(data=objs_return)
 
 @router.get("/search/spk/{id}", response_model=GetResponseBaseSch[SpkInTerminSch])
 async def get_by_id(id:UUID,
@@ -807,7 +834,14 @@ async def get_by_id(id:UUID,
 
     obj = await crud.spk.get_by_id_in_termin(id=id)
 
-    if obj.status_workflow != WorkflowLastStatusEnum.COMPLETED:
+    if obj is None:
+        raise IdNotFoundException(Spk, id=id)
+    
+    workflow = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+    if workflow is None:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow.last_status != WorkflowLastStatusEnum.COMPLETED:
         raise HTTPException(status_code=422, detail="SPK must completed approval")
 
     spk = SpkInTerminSch(spk_id=obj.id, 
@@ -862,7 +896,10 @@ async def get_by_ids(sch:SpkIdSch,
 
     objs = await crud.spk.get_by_ids_in_termin(list_id=sch.spk_ids)
 
-    if any(obj for obj in objs if obj.status_workflow != WorkflowLastStatusEnum.COMPLETED):
+    reference_ids = [spk.id for spk in objs]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.SPK)
+
+    if any(obj for obj in workflows if obj.last_status != WorkflowLastStatusEnum.COMPLETED):
         raise HTTPException(status_code=422, detail=f"All SPK must be completed approval")
 
     spks = []
@@ -1819,29 +1856,44 @@ async def get_report(
 
     objs = await crud.termin.get_multi_no_page(query=query)
 
-    data = [{
-                "Id Bidang" : invoice.id_bidang, 
-                "Id Bidang Lama" : invoice.id_bidang_lama,
-                "Project" : invoice.bidang.project_name, 
-                "Desa" : invoice.bidang.desa_name,
-                "Nomor Tahap" : invoice.termin.nomor_tahap,
-                "Nomor Memo" : invoice.termin.nomor_memo,
-                "Group" : invoice.bidang.group,
-                "Pemilik" : invoice.bidang.pemilik_name,
-                "Alashak" : invoice.alashak,
-                "Luas Surat" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_surat or 0))}',
-                "Luas Bayar" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_bayar or 0))}', 
-                "Jumlah" :  f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}',
-                "Jenis Bayar" : invoice.jenis_bayar,
-                "Status Workflow" : invoice.step_name_workflow if invoice.status_workflow != WorkflowLastStatusEnum.COMPLETED else invoice.status_workflow or "-",
-                "Tanggal Last Workflow" : invoice.last_status_at,
-                "Harga Transaksi" : f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}', 
-                "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]),
-                "Tanggal Pembayaran" : invoice.termin.tanggal_rencana_transaksi,
-                "Payment Status" : invoice.payment_status if invoice.payment_status else invoice.payment_status_ext,
-                "Tanggal Last Payment Status" : invoice.last_payment_status_at
-            }
-            for termin in objs for invoice in termin.invoices]
+    data = []
+
+    reference_ids = [s.id for s in objs]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.TERMIN)
+
+    for termin in objs:
+        for invoice in termin.invoices:
+            workflow = next((wf for wf in workflows if wf.reference_id == termin.id), None)
+            status_workflow = "-"
+            last_status_workflow_at = None
+            if workflow:
+                status_workflow = workflow.last_status if workflow.last_status == WorkflowLastStatusEnum.COMPLETED else workflow.step_name or "-"
+                last_status_workflow_at = workflow.last_status_at
+
+            d = {
+                    "Id Bidang" : invoice.id_bidang, 
+                    "Id Bidang Lama" : invoice.id_bidang_lama,
+                    "Project" : invoice.bidang.project_name, 
+                    "Desa" : invoice.bidang.desa_name,
+                    "Nomor Tahap" : invoice.termin.nomor_tahap,
+                    "Nomor Memo" : invoice.termin.nomor_memo,
+                    "Group" : invoice.bidang.group,
+                    "Pemilik" : invoice.bidang.pemilik_name,
+                    "Alashak" : invoice.alashak,
+                    "Luas Surat" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_surat or 0))}',
+                    "Luas Bayar" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_bayar or 0))}', 
+                    "Jumlah" :  f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}',
+                    "Jenis Bayar" : invoice.jenis_bayar,
+                    "Status Workflow" : status_workflow,
+                    "Tanggal Last Workflow" : last_status_workflow_at,
+                    "Harga Transaksi" : f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}', 
+                    "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]),
+                    "Tanggal Pembayaran" : invoice.termin.tanggal_rencana_transaksi,
+                    "Payment Status" : invoice.payment_status if invoice.payment_status else invoice.payment_status_ext,
+                    "Tanggal Last Payment Status" : invoice.last_payment_status_at
+                }
+            
+            data.append(d)
 
     
     df = pd.DataFrame(data=data)

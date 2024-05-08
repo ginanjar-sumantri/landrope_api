@@ -243,7 +243,8 @@ async def get_list(
                 ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.bidang_id == Bidang.id
                 ).outerjoin(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
                 ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
-                ).outerjoin(Manager, Manager.id == Bidang.manager_id)
+                ).outerjoin(Manager, Manager.id == Bidang.manager_id
+                ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.SPK))
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
@@ -264,8 +265,8 @@ async def get_list(
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
                 Spk.jenis_bayar.ilike(f'%{keyword}%'),
-                func.lower(Spk.status_workflow).contains(func.lower(keyword)),
-                func.lower(Spk.step_name_workflow).contains(func.lower(keyword))
+                func.lower(Workflow.last_status).contains(func.lower(keyword)),
+                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
             )
         )
 
@@ -292,6 +293,21 @@ async def get_list(
     query = query.distinct()
 
     objs = await crud.spk.get_multi_paginated_ordered(params=params, query=query)
+
+    items = []
+    reference_ids = [spk.id for spk in objs.data.items]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.SPK)
+
+    for obj in objs.data.items:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
+        if workflow:
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
+        items.append(obj)
+
+    objs.data.items = items
+
     return create_response(data=objs)
 
 @router.get("/export/excel")
@@ -344,19 +360,34 @@ async def get_report(
 
     objs = await crud.spk.get_multi_no_page(query=query)
 
-    data = [{"Id Bidang" : spk.id_bidang, 
-             "Id Bidang Lama" : spk.id_bidang_lama or '', 
-             "Group" : spk.group,
-             "Pemilik" : spk.bidang.pemilik_name,
-             "Alashak" : spk.alashak,
-             "Project" : spk.bidang.project_name, 
-             "Desa" : spk.bidang.desa_name,
-             "Luas Surat" : spk.bidang.luas_surat, 
-             "Jenis Bayar" : spk.jenis_bayar,
-             "Manager" : spk.manager_name,
-             "Tanggal Buat": spk.created_at,
-             "Status Workflow": spk.status_workflow if spk.status_workflow == WorkflowLastStatusEnum.COMPLETED else spk.step_name_workflow or "-",
-             "Created By" : spk.created_name} for spk in objs]
+    data = []
+    
+    reference_ids = [s.id for s in objs]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.SPK)
+
+    for spk in objs:
+        workflow = next((wf for wf in workflows if wf.reference_id == spk.id), None)
+        status_workflow = "-"
+        if workflow:
+            status_workflow = workflow.last_status if workflow.last_status == WorkflowLastStatusEnum.COMPLETED else workflow.step_name or "-"
+
+        d = {
+                "Id Bidang" : spk.id_bidang, 
+                "Id Bidang Lama" : spk.id_bidang_lama or '', 
+                "Group" : spk.group,
+                "Pemilik" : spk.bidang.pemilik_name,
+                "Alashak" : spk.alashak,
+                "Project" : spk.bidang.project_name, 
+                "Desa" : spk.bidang.desa_name,
+                "Luas Surat" : spk.bidang.luas_surat, 
+                "Jenis Bayar" : spk.jenis_bayar,
+                "Manager" : spk.manager_name,
+                "Tanggal Buat": spk.created_at,
+                "Status Workflow": status_workflow,
+                "Created By" : spk.created_name
+            }
+        
+        data.append(d)
 
     
     df = pd.DataFrame(data=data)
@@ -444,6 +475,11 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     obj_return = SpkByIdSch(**obj.dict())
     obj_return.bidang = bidang_sch
 
+    workflow = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+    if workflow:
+        obj_return.status_workflow = workflow.last_status
+        obj_return.step_name_workflow = workflow.step_name
+
     pengembalian = False
     if obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
         pengembalian = True
@@ -476,8 +512,6 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
     obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
     obj_return.created_name = obj.created_name
     obj_return.updated_name = obj.updated_name
-    obj_return.step_name_workflow = obj.step_name_workflow
-    obj_return.status_workflow = obj.status_workflow
 
     return obj_return
 

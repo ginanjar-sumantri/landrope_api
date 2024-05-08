@@ -216,29 +216,37 @@ class Spk(SpkFullBase, table=True):
 
         return harga_standard
     
-    @declared_attr
-    def step_name_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.step_name
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
+    @property
+    def step_name_workflow(self) -> str | None:
+        return None
     
-    @declared_attr
-    def status_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.last_status
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
+    @property
+    def status_workflow(self) -> str | None:
+        return None
+    
+    # @declared_attr
+    # def step_name_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.step_name
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
+    
+    # @declared_attr
+    # def status_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.last_status
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
 
 class SpkKelengkapanDokumenBase(SQLModel):
     spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
