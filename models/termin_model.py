@@ -6,7 +6,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING, Optional
 from common.enum import JenisBayarEnum, PaymentMethodEnum, ActivityEnum
 from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 import numpy
 
 if TYPE_CHECKING:
@@ -173,41 +173,53 @@ class Termin(TerminFullBase, table=True):
         total = sum(array_total)
         return total
     
-    @declared_attr
-    def step_name_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.step_name
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
+    # @property
+    # def step_name_workflow(self) -> str | None:
+    #     return None
     
-    @declared_attr
-    def status_workflow(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.last_status
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
+    # @property
+    # def status_workflow(self) -> str | None:
+    #     return None
     
-    @declared_attr
-    def last_status_at(self) -> column_property:
-        return column_property(
-            select(
-                Workflow.last_status_at
-            )
-            .select_from(
-                Workflow)
-            .where(Workflow.reference_id == self.id)
-            .scalar_subquery()
-        )
+    # @property
+    # def last_status_at(self) -> datetime | None:
+    #     return None
+    
+    # @declared_attr
+    # def step_name_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.step_name
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
+    
+    # @declared_attr
+    # def status_workflow(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.last_status
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
+    
+    # @declared_attr
+    # def last_status_at(self) -> column_property:
+    #     return column_property(
+    #         select(
+    #             Workflow.last_status_at
+    #         )
+    #         .select_from(
+    #             Workflow)
+    #         .where(Workflow.reference_id == self.id)
+    #         .scalar_subquery()
+    #     )
     
 class TerminBayarBase(SQLModel):
     name: str | None = Field(nullable=True)

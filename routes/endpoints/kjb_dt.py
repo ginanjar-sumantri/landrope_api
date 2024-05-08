@@ -11,7 +11,7 @@ from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtL
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.enum import StatusPetaLokasiEnum
+from common.enum import StatusPetaLokasiEnum, WorkflowEntityEnum
 from services.helper_service import BundleHelper, BidangHelper
 from shapely import wkt, wkb
 import crud
@@ -76,6 +76,21 @@ async def get_list(
     """Gets a paginated list objects"""
 
     objs = await crud.kjb_dt.get_multi_paginated_ordered(params=params, keyword=keyword, filter=filter)
+
+    items = []
+    reference_ids = [kjb_dt.kjb_hd_id for kjb_dt in objs.data.items]
+    workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.KJB)
+
+    for obj in objs.data.items:
+        workflow = next((wf for wf in workflows if wf.reference_id == obj.kjb_hd_id), None)
+        if workflow:
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
+        items.append(obj)
+
+    objs.data.items = items
+
     return create_response(data=objs)
 
 @router.get("/tanda-terima/notaris", response_model=GetResponsePaginatedSch[KjbDtSch])
@@ -190,6 +205,13 @@ async def get_by_id(id:UUID):
 
     obj = await crud.kjb_dt.get_by_id(id=id)
     if obj:
+        obj = KjbDtSch.from_orm(obj)
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj.kjb_hd_id)
+        if workflow:
+            obj = KjbDtSch.from_orm(obj)
+            obj.status_workflow = workflow.last_status
+            obj.step_name_workflow = workflow.step_name
+
         return create_response(data=obj)
     else:
         raise IdNotFoundException(KjbDt, id)

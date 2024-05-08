@@ -9,6 +9,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
+from common.enum import WorkflowEntityEnum
 from crud.base_crud import CRUDBase
 from models.workflow_model import Workflow, WorkflowHistory
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowUpdateSch, WorkflowSystemCreateSch
@@ -110,5 +111,22 @@ class CRUDWorkflow(CRUDBase[Workflow, WorkflowCreateSch, WorkflowUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
+    
+    async def get_by_reference_ids(self, 
+                  *, 
+                  reference_ids: list[UUID],
+                  entity: WorkflowEntityEnum,
+                  query : Workflow | Select[Workflow] | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Workflow]:
+        
+        db_session = db_session or db.session
+
+        if query == None:
+            query = select(self.model).where(and_(self.model.reference_id.in_(reference_ids), self.model.entity == entity))
+
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 workflow = CRUDWorkflow(Workflow)
