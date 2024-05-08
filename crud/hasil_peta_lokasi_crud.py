@@ -154,6 +154,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                 where s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is FALSE)
                     AND NOT EXISTS (select 1 from spk ss
                                 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                    AND hpl.status_hasil_peta_lokasi = 'Lanjut'
                 UNION
                 select 
                 b.id,
@@ -185,6 +186,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                 where s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is FALSE)
                     AND NOT EXISTS (select 1 from spk ss
                                 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
+                    AND hpl.status_hasil_peta_lokasi = 'Lanjut'
                 UNION
                 select 
                 b.id,
@@ -219,6 +221,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                     and b_dt.meta_data is null)
                     AND NOT EXISTS (select 1 from spk s
                                 where s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is FALSE)
+
+                    AND hpl.status_hasil_peta_lokasi = 'Lanjut'
                 UNION
                 select 
                 b.id,
@@ -239,6 +243,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                 inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
                 Where NOT EXISTS (select 1 from spk s
                                 where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
+                        AND hpl.status_hasil_peta_lokasi = 'Lanjut'
                 Order by id_bidang)
                 select s.*, 
                 pr.name as project_name,
