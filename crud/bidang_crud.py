@@ -636,6 +636,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                         ).options(selectinload(Bidang.kategori_sub)
                         ).options(selectinload(Bidang.kategori_proyek)
                         ).options(selectinload(Bidang.skpt).options(selectinload(Skpt.ptsk))
+                        ).options(selectinload(Bidang.penampung)
                         ).options(selectinload(Bidang.manager)
                         ).options(selectinload(Bidang.sales)
                         ).options(selectinload(Bidang.notaris)
