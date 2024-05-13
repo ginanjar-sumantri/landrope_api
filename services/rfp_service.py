@@ -16,6 +16,7 @@ class RfpService:
     async def init_rfp(self, termin_id:UUID):
 
         termin = await crud.termin.get_by_id(id=termin_id)
+        workflow = await crud.workflow.get_by_reference_id(reference_id=termin.id)
     
         # INIT RFP HEADER
         rfp_hd_id = uuid4()
@@ -24,8 +25,8 @@ class RfpService:
         obj_rfp_hd["client_id"] = self.RFP_CLIENT_ID
         obj_rfp_hd["client_ref_no"] = str(termin.id)
         obj_rfp_hd["created_by_outh_id"] = "42b8cb0e-7e78-4728-a89b-493dfc5e4fd1"
-        obj_rfp_hd["grace_period"] = str(termin.last_status_at.date())
-        obj_rfp_hd["date_doc"] = str(termin.last_status_at.date())
+        obj_rfp_hd["grace_period"] = str(workflow.last_status_at.date())
+        obj_rfp_hd["date_doc"] = str(workflow.last_status_at.date())
         obj_rfp_hd["document_type_code"] = "OPR-INT"
         obj_rfp_hd["ref_no"] = termin.nomor_memo
 
@@ -107,7 +108,7 @@ class RfpService:
                 rfp_bank_id = uuid4()
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
-                obj_rfp_bank["date_doc"] = str(termin.last_status_at.date())
+                obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 # RFP ALLOCATION
@@ -124,7 +125,7 @@ class RfpService:
                 rfp_bank_id = uuid4()
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
-                obj_rfp_bank["date_doc"] = str(termin.last_status_at.date())
+                obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 #RFP LINE
