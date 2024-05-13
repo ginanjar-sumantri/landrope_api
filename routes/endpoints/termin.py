@@ -324,7 +324,9 @@ async def update_(
     if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         msg_error_wf = "Memo Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval Need Approval!"
         
-        if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
+
+        if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
             raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
         for termin_bayar in sch.termin_bayars:

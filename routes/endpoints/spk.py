@@ -287,7 +287,7 @@ async def get_list(
         )
         query = query.filter(~Spk.jenis_bayar.in_(['BEGINNING_BALANCE', 'PAJAK']))
         query = query.filter(~Spk.id.in_(subquery))
-        query = query.filter(Spk.status_workflow == WorkflowLastStatusEnum.COMPLETED)
+        query = query.filter(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED)
 
 
     query = query.distinct()
@@ -529,13 +529,15 @@ async def update(id:UUID,
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
+    
+    workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
         
     #workflow
     if sch.jenis_bayar != JenisBayarEnum.PAJAK:
         msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
         
         if sch.file is None:
-            if obj_current.status_workflow not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+            if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
                 raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
     #filter

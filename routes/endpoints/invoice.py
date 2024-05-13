@@ -171,7 +171,8 @@ async def void(id:UUID, sch:InvoiceVoidSch,
         raise IdNotFoundException(Invoice, id)
     
     if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        if obj_current.termin.status_workflow == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.termin.id)
+        if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
             raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
 
     
