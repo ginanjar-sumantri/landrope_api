@@ -946,133 +946,10 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
 
 @router.get("/ready/spk", response_model=GetResponsePaginatedSch[HasilPetaLokasiReadySpkSch])
-async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
+async def ready_spk(keyword:str | None = None, params: Params=Depends()):
 
-    db_session = db.session
+    objs = await crud.hasil_peta_lokasi.get_ready_spk(keyword=keyword)
 
-    searching = f"""
-                Where id_bidang like '%{keyword}%'
-                or alashak like '%{keyword}%'
-                or jenis_bayar like '%{keyword}%'
-                """ if keyword else ""
-    
-    query = f"""
-            with subquery as (select
-            b.id,
-            b.id_bidang,
-            b.alashak,
-            tr.id as kjb_termin_id,
-            hd.satuan_bayar,
-            hd.satuan_harga,
-            tr.nilai,
-            'DP' as jenis_bayar
-            from hasil_peta_lokasi hpl
-			inner join bidang b ON b.id = hpl.bidang_id
-            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
-            inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
-            inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'DP' and tr.nilai > 0
-            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
-            Where 
-				  NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
-							inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-							inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL
-							Where c_hd.bidang_id = b.id
-							and c_dt.jenis_bayar IN ('DP', 'UTJ'))
-				  AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'DP' and s.is_void is FALSE)
-				  AND NOT EXISTS (select 1 from spk ss
-							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
-                  AND hpl.status_hasil_peta_lokasi = 'Lanjut'
-            UNION
-            select 
-            b.id,
-            b.id_bidang,
-            b.alashak,
-            tr.id as kjb_termin_id,
-            hd.satuan_bayar,
-            hd.satuan_harga,
-            tr.nilai,
-            'PELUNASAN' as jenis_bayar
-            from hasil_peta_lokasi hpl
-            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
-            inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
-            inner join kjb_termin tr ON hg.id = tr.kjb_harga_id and tr.jenis_bayar = 'PELUNASAN' and tr.nilai > 0
-            inner join kjb_hd hd ON hd.id = hg.kjb_hd_id
-            inner join bidang b ON b.id = hpl.bidang_id
-            Where 
-				NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
-							inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-							inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-							Where c_hd.bidang_id = b.id
-							and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
-							and b_dt.meta_data is null)
-				AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PELUNASAN' and s.is_void is FALSE)
-				AND NOT EXISTS (select 1 from spk ss
-							 where ss.bidang_id = b.id and ss.jenis_bayar = 'LUNAS' and ss.is_void is FALSE)
-                AND hpl.status_hasil_peta_lokasi = 'Lanjut'
-            UNION
-            select 
-            b.id,
-            b.id_bidang,
-            b.alashak,
-            null as kjb_termin_id,
-            null as satuan_bayar,
-            null as satuan_harga,
-            null as nilai,
-            'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar 
-            from hasil_peta_lokasi hpl
-            inner join bidang b ON b.id = hpl.bidang_id
-            Where 
-				EXISTS (select 1 
-						from bidang_komponen_biaya kb
-						left outer join invoice_detail inv_dt ON inv_dt.bidang_komponen_biaya_id = kb.id
-						left outer join invoice inv ON inv.id = inv_dt.invoice_id
-						left outer join termin tr ON tr.id = inv.termin_id
-						where kb.is_void != true and kb.is_retur = true
-						and tr.id is null and tr.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL')
-				AND NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_hd c_hd
-								inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
-								and c_dt.jenis_bayar = 'BIAYA_LAIN'
-								inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
-								Where c_hd.bidang_id = hpl.bidang_id
-								and b_dt.meta_data is null)
-				AND NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' and s.is_void is FALSE)
-                AND hpl.status_hasil_peta_lokasi = 'Lanjut'
-            UNION
-            select 
-            b.id,
-            b.id_bidang,
-            b.alashak,
-            null as kjb_termin_id,
-            null as satuan_bayar,
-            null as satuan_harga,
-            null as nilai,
-            'PAJAK' as jenis_bayar
-            from hasil_peta_lokasi hpl
-            inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
-            inner join bidang b ON b.id = hpl.bidang_id
-			Where NOT EXISTS (select 1 from spk s
-							 where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
-                  AND hpl.status_hasil_peta_lokasi = 'Lanjut'
-            Order by id_bidang)
-            select * from subquery
-            {searching}
-            """
-    
-    result = await db_session.execute(query)
-    rows = result.all()
-
-    objs = [HasilPetaLokasiReadySpkSch(id=row[0],
-                                       id_bidang=row[1],
-                                       alashak=row[2],
-                                       kjb_termin_id=row[3],
-                                       satuan_bayar=row[4],
-                                       satuan_harga=row[5],
-                                       nilai=row[6],
-                                       jenis_bayar=row[7]) for row in rows]
-    
     start = (params.page - 1) * params.size
     end = params.page * params.size
     total_items = len(objs)
@@ -1081,6 +958,43 @@ async def ready_spk(keyword:str | None = None, params: Params=Depends(), ):
     data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
 
     return create_response(data=data)
+
+@router.get("/report/ready/spk/")
+async def report_ready_spk(
+                    current_worker:Worker = Depends(crud.worker.get_active_worker)
+            ):
+    
+    """Gets a paginated list objects"""
+
+    filename:str = ''
+
+    objs = await crud.hasil_peta_lokasi.get_ready_spk()
+
+    data = [{
+                "Id Bidang" : obj.id_bidang, 
+                "Alashak" : obj.alashak,
+                "Project" : obj.project_name, 
+                "Desa" : obj.desa_name,
+                "No KJB" : obj.kjb_hd_code,
+                "Group" : obj.group,
+                "Manager" : obj.manager_name,
+                "Jenis Bayar" : obj.jenis_bayar.value,
+                "Nilai" : obj.nilai
+            }
+            for obj in objs]
+
+    
+    df = pd.DataFrame(data=data)
+
+    output = BytesIO()
+    df.to_excel(output, index=False, sheet_name=f'Ready SPK')
+
+    output.seek(0)
+
+    return StreamingResponse(BytesIO(output.getvalue()), 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            headers={"Content-Disposition": "attachment;filename=ready_spk.xlsx"})
+
 
 @router.get("/generate-kelengkapan/bidang")
 async def generate_kelengkapan_bidang():
