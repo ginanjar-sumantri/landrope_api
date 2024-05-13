@@ -506,9 +506,6 @@ async def get_list(
     query = query.order_by(text("created_at desc"))
 
     objs = await crud.invoice.get_multi_no_page(query=query)
-    objs = [inv for inv in objs if inv.invoice_outstanding > 0 
-            and ((inv.termin.status_workflow == WorkflowLastStatusEnum.COMPLETED 
-                  and inv.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]) or inv.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS])]
     
     items = []
     reference_ids = [invoice.termin_id for invoice in objs]
@@ -715,7 +712,8 @@ async def get_invoice_by_id(id:UUID):
     """Get an object by id"""
 
     termin_current = await crud.termin.get_by_id(id=id)
-    if termin_current.status_workflow != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+    workflow = await crud.workflow.get_by_reference_id(reference_id=termin_current.id)
+    if workflow.last_status != WorkflowLastStatusEnum.COMPLETED and termin_current.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
         raise HTTPException(status_code=422, detail="Memo bayar must completed approval")
 
     komponens = await crud.bebanbiaya.get_multi_grouping_beban_biaya_by_termin_id(termin_id=id)
