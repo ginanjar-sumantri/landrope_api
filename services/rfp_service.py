@@ -39,6 +39,13 @@ class RfpService:
         obj_rfp_hd["rfp_banks"] = []
         obj_rfp_hd["rfp_allocations"] = []
 
+        # SETUP FIRST DESC for RFP HEADER
+        invoice_in_termin_histories = await crud.invoice.get_multi_invoice_id_luas_bayar_by_termin_id(termin_id=termin.id)
+        count_bidang = len(invoice_in_termin_histories)
+        sum_luas_bayar = "{:,.0f}".format(sum([invoice_.luas_bayar or 0 for invoice_ in invoice_in_termin_histories if invoice_.luas_bayar is not None]))
+        termin_desc = f"{termin.jenis_bayar} {count_bidang}BID luas {sum_luas_bayar}m2"
+        rfp_hd_descs.append(termin_desc)
+
         # INIT RFP LINE, RFP BANK, RFP ALLOCATION
         for termin_bayar in termin.termin_bayars:
             obj_rfp_line = {}
