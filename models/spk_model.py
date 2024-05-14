@@ -253,8 +253,7 @@ class SpkKelengkapanDokumenBase(SQLModel):
     bundle_dt_id:UUID = Field(foreign_key="bundle_dt.id", nullable=False)
     tanggapan:str | None = Field(nullable=True)
     order_number: int | None = Field(nullable=True)
-    parent_id: UUID | None = Field(nullable=True) #untuk dokumen yang memiliki riwayat
-    key_field: str | None = Field(nullable=True) #untuk dokumen yang memiliki riwayat
+    field_value: str | None = Field(nullable=True) #untuk dokumen yang memiliki riwayat
 
 class SpkKelengkapanDokumenFullBase(BaseUUIDModel, SpkKelengkapanDokumenBase):
     pass

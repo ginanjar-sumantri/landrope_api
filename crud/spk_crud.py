@@ -526,6 +526,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                             when bkb.beban_pembeli = false and bkb.is_paid = true Then 'SUDAH DIBAYAR'
                             else 'DITANGGUNG PENJUAL'
                         end as tanggapan,
+                        '' as field_value,
                         bb.name
                     from 
                         spk s
@@ -737,6 +738,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                     select
                     bdt.id as bundle_dt_id,
                     d.name,
+                    COALESCE(kd.field_value, '') as field_value,
                     COALESCE(kd.tanggapan, '') as tanggapan
                     from spk s
                     inner join spk_kelengkapan_dokumen kd on kd.spk_id = s.id

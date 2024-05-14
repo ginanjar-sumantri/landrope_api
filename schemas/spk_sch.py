@@ -93,6 +93,7 @@ class SpkDetailPrintOut(SQLModel):
     no:Optional[int]
     tanggapan:Optional[str]
     name:Optional[str]
+    field_value: str | None
 
 class SpkOverlapPrintOut(SQLModel):
     pemilik_name:Optional[str]

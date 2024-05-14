@@ -25,6 +25,8 @@ class ChecklistKelengkapanDokumenDtSch(ChecklistKelengkapanDokumenDtFullBase):
     has_meta_data:bool|None = Field(alias="has_meta_data")
     file_path:str|None = Field(alias="file_path")
     is_exclude_printout:bool|None
+    field_value: str | None #untuk dokumen waris
+    is_default: bool | None
 
 class ChecklistKelengkapanDokumenDtForHdSch(SQLModel):
     id:UUID | None
