@@ -1,7 +1,7 @@
 import crud
 import requests
 from uuid import UUID, uuid4
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from schemas.rfp_sch import RfpCreateResponseSch
 from common.enum import PaymentMethodEnum, ActivityEnum, SatuanBayarEnum, activity_landrope_to_activity_rfp_dict
 from configs.config import settings
@@ -25,7 +25,7 @@ class RfpService:
         obj_rfp_hd["client_id"] = self.RFP_CLIENT_ID
         obj_rfp_hd["client_ref_no"] = str(termin.id)
         obj_rfp_hd["created_by_outh_id"] = "42b8cb0e-7e78-4728-a89b-493dfc5e4fd1"
-        obj_rfp_hd["grace_period"] = str(workflow.last_status_at.date())
+        obj_rfp_hd["grace_period"] = str(self.add_days(n=7,d=workflow.last_status_at))
         obj_rfp_hd["date_doc"] = str(workflow.last_status_at.date())
         obj_rfp_hd["document_type_code"] = "OPR-INT"
         obj_rfp_hd["ref_no"] = termin.nomor_memo
@@ -52,8 +52,8 @@ class RfpService:
             obj_rfp_line = {}
             obj_rfp_bank = {}
             obj_rfp_allocation = {}
-            if termin_bayar.payment_method == PaymentMethodEnum.Tunai:
-                continue
+            # if termin_bayar.payment_method == PaymentMethodEnum.Tunai:
+            #     continue
 
             rfp_activity_code: str | None = None
 
@@ -201,6 +201,8 @@ class RfpService:
         except Exception as e:
             return None, self.CONNECTION_FAILED
 
+    def add_days(self, n, d:date | None = datetime.today()):
+        return d + timedelta(n)
 
                 
 
