@@ -844,7 +844,7 @@ async def get_by_id(id:UUID,
                         harga_standard_sertifikat=obj.harga_standard_sertifikat
                         )
 
-    if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+    if obj.jenis_bayar in [JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]:
         bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
         spk.amount = bidang.sisa_pelunasan
 
