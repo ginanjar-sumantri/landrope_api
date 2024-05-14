@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Reque
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_
-from models import KjbHd, KjbDt, KjbPenjual, Workflow
+from models import KjbHd, KjbDt, KjbPenjual, Workflow, WorkflowNextApprover
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
 from models.pemilik_model import Pemilik
@@ -133,13 +133,23 @@ async def get_list(
         params: Params=Depends(), 
         order_by: str = None, 
         keyword: str = None, 
-        filter_query: str= None,
+        filter_query: str | None = None,
+        filter_list: str | None = None,
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
     search_date = None
 
     query = select(KjbHd).select_from(KjbHd)
+
+    if filter_list == "list_approval":
+        subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, 
+                                            Workflow.entity == WorkflowEntityEnum.KJB,
+                                            Workflow.last_status != WorkflowLastStatusEnum.COMPLETED))
+                    ).distinct()
+        
+        query = query.filter(KjbHd.id.in_(subquery_workflow))
     
     try:
         # Mengonversi string tanggal menjadi objek datetime

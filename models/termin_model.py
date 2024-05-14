@@ -172,13 +172,13 @@ class Termin(TerminFullBase, table=True):
         total = sum(array_total)
         return total
     
-    # @property
-    # def step_name_workflow(self) -> str | None:
-    #     return None
+    @property
+    def step_name_workflow(self) -> str | None:
+        return None
     
-    # @property
-    # def status_workflow(self) -> str | None:
-    #     return None
+    @property
+    def status_workflow(self) -> str | None:
+        return None
     
     # @property
     # def last_status_at(self) -> datetime | None:
