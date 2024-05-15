@@ -490,7 +490,7 @@ async def update_(
                 for dt_bayar in invoice.bayars:
                     termin_bayar_id = next((termin_bayar["termin_bayar_id"] for termin_bayar in termin_bayar_temp if termin_bayar["id_index"] == dt_bayar.id_index), None)
                     if dt_bayar.id is None:
-                        invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=new_obj_invoice.id, amount=dt_bayar.amount)
+                        invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=invoice.id, amount=dt_bayar.amount)
                         await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
                     else:
                         invoice_bayar_current = await crud.invoice_bayar.get(id=dt_bayar.id)
