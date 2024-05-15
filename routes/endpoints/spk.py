@@ -827,10 +827,10 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
     datas = []
     bundle_dt = await crud.bundledt.get_by_id(id=bundle_dt_id)
     if bundle_dt is None:
-        raise HTTPException(status_code=404, detail="Bundle tidak ditemukan!")
+        return create_response(data=datas)
     
     if bundle_dt.dokumen.is_riwayat == False:
-        raise HTTPException(status_code=404, detail="Dokumen tidak memiliki riwayat!")
+        return create_response(data=datas)
     
     if bundle_dt.riwayat_data is None:
         return create_response(data=datas)
