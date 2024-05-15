@@ -823,6 +823,8 @@ async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[Checklist
 
 @router.get("/riwayat/bundle_dt", response_model=GetResponseBaseSch[list[BundleDtRiwayatSch]])
 async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
+
+    datas = []
     bundle_dt = await crud.bundledt.get_by_id(id=bundle_dt_id)
     if bundle_dt is None:
         raise HTTPException(status_code=404, detail="Bundle tidak ditemukan!")
@@ -830,8 +832,11 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
     if bundle_dt.dokumen.is_riwayat == False:
         raise HTTPException(status_code=404, detail="Dokumen tidak memiliki riwayat!")
     
+    if bundle_dt.riwayat_data is None:
+        return create_response(data=datas)
+    
     riwayat_data = json.loads(bundle_dt.riwayat_data.replace("'", '\"'))
-    datas = []
+    
     for riwayat in riwayat_data["riwayat"]:
         meta_data = riwayat["meta_data"]
         data = BundleDtRiwayatSch(field_value=meta_data[bundle_dt.dokumen.key_field])
