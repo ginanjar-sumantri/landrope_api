@@ -813,6 +813,7 @@ async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[Checklist
                     meta_data = riwayat["meta_data"]
                     data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
                     data.field_value = meta_data[dokumen.key_field]
+                    data.file_path = meta_data["file_path"]
                     data.is_default = riwayat["is_default"]
                     result.append(data)
         else:
@@ -839,7 +840,10 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
     
     for riwayat in riwayat_data["riwayat"]:
         meta_data = riwayat["meta_data"]
-        data = BundleDtRiwayatSch(field_value=meta_data[bundle_dt.dokumen.key_field])
+        data = BundleDtRiwayatSch.from_orm(bundle_dt)
+        file_exists = getattr(riwayat, "file_path", None)
+        data.file_exists = True if file_exists or file_exists != "" else False
+        data.field_value = meta_data[bundle_dt.dokumen.key_field]
         datas.append(data)
 
     return create_response(data=datas)
