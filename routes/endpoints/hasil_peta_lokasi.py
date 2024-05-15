@@ -530,6 +530,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         bundle_hd_id=bidang_current.bundle_hd_id if bidang_current.bundle_hd_id else kjb_dt_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
         harga_transaksi=kjb_dt_current.harga_transaksi,
+        harga_ptsl=kjb_dt_current.harga_ptsl,
         status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
     
     await crud.bidang.update(obj_current=bidang_current, 

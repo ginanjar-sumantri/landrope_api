@@ -813,7 +813,7 @@ async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[Checklist
                     meta_data = riwayat["meta_data"]
                     data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
                     data.field_value = meta_data[dokumen.key_field]
-                    data.file_path = meta_data["file_path"]
+                    data.file_path = riwayat["file_path"]
                     data.is_default = riwayat["is_default"]
                     result.append(data)
         else:

@@ -143,6 +143,7 @@ class KjbDtBase(SQLModel):
     posisi_bidang:PosisiBidangEnum
     harga_akta:Decimal
     harga_transaksi:Decimal
+    harga_ptsl: Decimal | None = Field(nullable=True)
     luas_surat:Decimal
     luas_surat_by_ttn:Decimal | None = Field(nullable=True)
     status_peta_lokasi:StatusPetaLokasiEnum | None = Field(nullable=True)
@@ -385,7 +386,7 @@ class KjbHargaBase(SQLModel):
     jenis_alashak:JenisAlashakEnum
     harga_akta:Decimal | None = Field(nullable=True)
     harga_transaksi:Decimal | None = Field(nullable=True)
-    
+    harga_ptsl: Decimal | None = Field(nullable=True)
 
     kjb_hd_id:UUID = Field(foreign_key="kjb_hd.id")
 

@@ -55,6 +55,7 @@ class BidangBase(SQLModel):
     luas_produk:Optional[Decimal] = Field(nullable=True)
     harga_akta:Optional[Decimal] = Field(nullable=True)
     harga_transaksi:Optional[Decimal] = Field(nullable=True)
+    harga_ptsl: Decimal | None = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     njop:Decimal|None = Field(nullable=True)
@@ -314,6 +315,10 @@ class Bidang(BidangFullBase, table=True):
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_transaksi", None)
     
     @property
+    def kjb_harga_ptsl(self) -> str:
+        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_ptsl", None)
+    
+    @property
     def kjb_no(self) -> str:
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "kjb_code", None)
 
@@ -341,14 +346,21 @@ class Bidang(BidangFullBase, table=True):
     def total_harga_transaksi(self) -> Decimal | None:
         total_harga_overlap:Decimal = 0
         total_luas_bayar_overlap:Decimal = 0
+        harga:Decimal = 0
+
         if len(self.overlaps) > 0:
             array_total_harga_overlap = [((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_harga_overlap = sum(array_total_harga_overlap)
 
             array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
+        
+        if self.harga_ptsl is not None and self.harga_ptsl != 0:
+            harga = self.harga_ptsl
+        else:
+            harga = self.harga_transaksi
 
-        return Decimal(((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
+        return Decimal(((harga or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
     
     @property
     def total_harga_akta(self) -> Decimal | None:
