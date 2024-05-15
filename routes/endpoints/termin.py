@@ -90,8 +90,8 @@ async def create(
                     raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
             invoice_bayar_amount = sum(invoice_bayars)
-            if (termin_bayar.amount - invoice_bayar_amount) < 0:
-                raise HTTPException(status_code=422, detail=f"Nominal Allocation lebih besar dari Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            if termin_bayar.amount != invoice_bayar_amount:
+                raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
         
 
     today = date.today()
@@ -342,8 +342,8 @@ async def update_(
                     raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
             invoice_bayar_amount = sum(invoice_bayars)
-            if (termin_bayar.amount - invoice_bayar_amount) < 0:
-                raise HTTPException(status_code=422, detail=f"Nominal Allocation lebih besar dari Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            if termin_bayar.amount != invoice_bayar_amount:
+                raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
         
 
     
