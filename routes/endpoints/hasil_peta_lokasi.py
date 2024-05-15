@@ -532,7 +532,6 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         harga_akta=kjb_dt_current.harga_akta,
         harga_transaksi=kjb_dt_current.harga_transaksi,
         harga_ptsl=kjb_dt_current.harga_ptsl)
-        harga_transaksi=kjb_dt_current.harga_transaksi)
     
     await crud.bidang.update(obj_current=bidang_current, 
                             obj_new=bidang_updated, 
