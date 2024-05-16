@@ -30,3 +30,4 @@ class SpkKelengkapanDokumenUpdateSch(SpkKelengkapanDokumenBase):
 @optional
 class SpkKelengkapanDokumenUpdateExtSch(SpkKelengkapanDokumenBase):
     id:UUID | None
+    field_value:str | None
