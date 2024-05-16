@@ -98,9 +98,9 @@ async def create(
                     elif sum(invoice_bayars) != termin_bayar.amount:
                         raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
-            invoice_bayar_amount = sum(invoice_bayars)
-            if termin_bayar.amount != invoice_bayar_amount:
-                raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+                invoice_bayar_amount = sum(invoice_bayars)
+                if termin_bayar.amount != invoice_bayar_amount:
+                    raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
         
         for invoice in sch.invoices:
             invoice_bayar_ = []
