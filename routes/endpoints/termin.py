@@ -879,9 +879,15 @@ async def get_by_id(id:UUID,
                         harga_standard_sertifikat=obj.harga_standard_sertifikat
                         )
 
-    if obj.jenis_bayar in [JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.PELUNASAN]:
+    if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
         bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
         spk.amount = bidang.sisa_pelunasan
+    elif obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+        bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+        if bidang.utj_has_use:
+            spk.amount = bidang.sisa_pelunasan
+        else:
+            spk.amount = bidang.sisa_pelunasan + bidang.utj_amount
 
     if obj:
         return create_response(data=spk)
@@ -939,9 +945,15 @@ async def get_by_ids(sch:SpkIdSch,
                         harga_standard_sertifikat=obj.harga_standard_sertifikat
                         )
 
-        if obj.jenis_bayar in [JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.PELUNASAN]:
+        if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
             bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
             spk.amount = bidang.sisa_pelunasan
+        elif obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+            bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+            if bidang.utj_has_use:
+                spk.amount = bidang.sisa_pelunasan
+            else:
+                spk.amount = bidang.sisa_pelunasan + bidang.utj_amount
 
         spks.append(spk)
 
