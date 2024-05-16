@@ -841,7 +841,7 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
     for riwayat in riwayat_data["riwayat"]:
         meta_data = riwayat["meta_data"]
         data = BundleDtRiwayatSch.from_orm(bundle_dt)
-        file_path = getattr(riwayat, "file_path", None)
+        file_path = riwayat.get('file_path', None)
         data.file_exists = True if file_path and file_path != "" else False
         data.field_value = meta_data[bundle_dt.dokumen.key_field]
         data.file_path = file_path
