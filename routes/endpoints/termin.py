@@ -86,9 +86,9 @@ async def create(
                 for termin_bayar_dt in termin_bayar.termin_bayar_dts:
                     invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
 
-                    if sum(invoice_dts) != termin_bayar.amount:
-                        raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai {termin_bayar.name} untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
-                                            Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
+                if sum(invoice_dts) != termin_bayar.amount:
+                    raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai {termin_bayar.name} untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
+                                        Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
 
 
             invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
