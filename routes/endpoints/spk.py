@@ -848,7 +848,6 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
 
     return create_response(data=datas)
     
-
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
