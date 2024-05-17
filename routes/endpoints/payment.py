@@ -614,12 +614,17 @@ async def get_list(
     
     """Gets all list objects"""
 
-    invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
-    list_id = [invoice.termin_id for invoice in invoice_outstandings]
+    # invoice_outstandings = await crud.invoice.get_multi_outstanding_invoice(keyword=keyword)
+    # list_id = [invoice.termin_id for invoice in invoice_outstandings]
 
-    query = select(Termin).outerjoin(Workflow, Workflow.reference_id == Termin.id
-                        ).where(and_(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED,
-                                    Termin.id.in_(list_id)))
+    query = select(Termin).join(Workflow, Workflow.reference_id == Termin.id
+                        ).where(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED)
+    
+    if keyword:
+        query = query.filter(or_(
+            Termin.nomor_memo.ilike(f"%{keyword}%"),
+            Termin.code.ilike(f"%{keyword}%")
+        ))
     
     query = query.options(selectinload(Termin.tahap))
 
