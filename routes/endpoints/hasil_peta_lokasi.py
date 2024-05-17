@@ -201,7 +201,8 @@ async def create(
         new_bidang_origin = BidangOriginSch.from_orm(bidang_current)
         await crud.bidang_origin.create_(obj_in=new_bidang_origin, db_session=db_session, with_commit=False)
 
-        bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True))) 
+        bidang_geom_updated = BidangSch(**sch.dict(), geom=wkt.dumps(wkb.loads(draft.geom.data, hex=True)))
+        bidang_geom_updated.status_pembebasan = StatusPembebasanEnum.INPUT_PETA_LOKASI
         await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_geom_updated, db_session=db_session, with_commit=False)
 
         details = [HasilPetaLokasiDetailTaskUpdate(tipe_overlap=x.tipe_overlap,
@@ -528,8 +529,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         notaris_id=tanda_terima_notaris_current.notaris_id,
         bundle_hd_id=bidang_current.bundle_hd_id if bidang_current.bundle_hd_id else kjb_dt_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
-        harga_transaksi=kjb_dt_current.harga_transaksi,
-        status_pembebasan=StatusPembebasanEnum.INPUT_PETA_LOKASI)
+        harga_transaksi=kjb_dt_current.harga_transaksi)
     
     await crud.bidang.update(obj_current=bidang_current, 
                             obj_new=bidang_updated, 

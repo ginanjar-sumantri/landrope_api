@@ -808,8 +808,6 @@ async def export_excel(param:BidangParameterDownload|None = None,
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=bidang_data.xlsx"})
 
-    
-
 @router.get("/report/map", response_model=GetResponseBaseSch[list[BidangForTreeReportSch]])
 async def get_list_for_report_map(project_id:UUID,
                                   desa_id:UUID,
