@@ -729,7 +729,6 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
                                     luas_produk=None,
                                     luas_proses=None,
                                     luas_ukur=None,
-                                    bundle_hd_id=None
                                     #planing_id=None,
                                     #skpt_id=None
                                     )
