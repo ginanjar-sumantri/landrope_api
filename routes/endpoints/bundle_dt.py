@@ -203,7 +203,7 @@ async def delete_riwayat(id:UUID,
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
 
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
+    riwayat_data = json.loads(obj_current.riwayat_data)
 
     riwayat_data["riwayat"] = [item for item in riwayat_data["riwayat"] if item["key_value"] != sch.key_value]
 
@@ -217,7 +217,7 @@ async def delete_riwayat(id:UUID,
             obj_updated.meta_data = str(obj_riwayat["meta_data"])
 
         riwayat_data = json.dumps(riwayat_data)
-        obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
+        obj_updated.riwayat_data = riwayat_data
     else:
         obj_updated.file_path = None
         obj_updated.meta_data = None
@@ -264,7 +264,7 @@ async def download_file_waris(id:UUID, meta_data:str):
         raise HTTPException(status_code=422, detail="meta data is null")
     
     meta_data_current = json.loads(obj_current.meta_data)
-    meta_data = json.loads(meta_data.replace("'", '\"'))
+    meta_data = json.loads(meta_data)
     
     data_current = next((index for index, data in enumerate(meta_data_current["data"]) if data[obj_current.dokumen.key_field] == meta_data[obj_current.dokumen.key_field]), None)
 
@@ -298,7 +298,7 @@ async def download_file_riwayat(id:UUID,
     if not obj_current:
         raise IdNotFoundException(BundleDt, id)
     
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", '"'))
+    riwayat_data = json.loads(obj_current.riwayat_data)
 
     riwayat_obj = next((x for x in riwayat_data["riwayat"] if x["key_value"] == key_value), None)
     if riwayat_obj is None:
@@ -340,7 +340,7 @@ async def search_document_repeat(keyword:str|None = None,
 
     datas:list[BundleDtMetaDokumenRepeatSch] = []
     for bundle_dt in objs:
-        meta_data = json.loads(bundle_dt.meta_data.replace("'", "\""))
+        meta_data = json.loads(bundle_dt.meta_data)
         key_value = f"{meta_data.get(bundle_dt.dokumen.key_field, '')}"
         infoes = bundle_dt.dokumen.additional_info.split(',')
         infoe_values = [meta_data.get(key, '') for key in infoes]
