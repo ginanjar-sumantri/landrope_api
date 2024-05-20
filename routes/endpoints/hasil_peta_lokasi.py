@@ -695,6 +695,7 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
             bidang_old.geom_ori = wkt.dumps(wkb.loads(bidang_old.geom_ori.data, hex=True))
 
         bidang_old_updated = BidangUpdateSch(**bidang_origin.dict())
+        bidang_old_updated.bundle_hd_id = None
         await crud.bidang.update(obj_current=bidang_old, obj_new=bidang_old_updated, db_session=db_session, with_commit=False, origin=True)
        
     else:
@@ -728,6 +729,7 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
                                     luas_produk=None,
                                     luas_proses=None,
                                     luas_ukur=None,
+                                    bundle_hd_id=None
                                     #planing_id=None,
                                     #skpt_id=None
                                     )
