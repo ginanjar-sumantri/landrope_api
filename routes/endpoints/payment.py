@@ -618,7 +618,10 @@ async def get_list(
     # list_id = [invoice.termin_id for invoice in invoice_outstandings]
 
     query = select(Termin).join(Workflow, Workflow.reference_id == Termin.id
-                        ).where(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED)
+                        ).outerjoin(Invoice, Invoice.termin_id == Termin.id
+                        ).outerjoin(PaymentDetail, PaymentDetail.invoice_id == Invoice.id
+                        ).where(and_(Workflow.last_status == WorkflowLastStatusEnum.COMPLETED,
+                                    PaymentDetail.id == None))
     
     if keyword:
         query = query.filter(or_(
@@ -626,6 +629,8 @@ async def get_list(
             Termin.code.ilike(f"%{keyword}%")
         ))
     
+    query = query.order_by(Termin.created_at.desc()).distinct()
+
     query = query.options(selectinload(Termin.tahap))
 
     objs = await crud.termin.get_multi_no_page(query=query)
