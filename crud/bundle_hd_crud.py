@@ -87,7 +87,8 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
         db_session = db_session or db.session
         query = select(self.model).where(and_(
                                 self.model.keyword.ilike(f'%{keyword}%'),
-                                BundleHd.kjb_dt == None
+                                BundleHd.kjb_dt == None, 
+                                BundleHd.bidang == None
                                 )).options(selectinload(self.model.kjb_dt)
                                 ).options(selectinload(self.model.bidang)
                                 )
