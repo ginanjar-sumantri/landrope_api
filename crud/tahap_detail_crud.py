@@ -119,8 +119,16 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                         COALESCE(b.luas_pbt_perorangan,0) as luas_pbt_perorangan,
                         COALESCE(b.luas_bayar,0) as luas_bayar,
                         COALESCE(b.no_peta, '') as no_peta,
-                        COALESCE(b.harga_transaksi,0) as harga_transaksi,
-                        COALESCE((b.harga_transaksi * b.luas_bayar), 0) as total_harga
+                        COALESCE(CASE
+                            WHEN b.harga_ptsl is NULL THEN b.harga_transaksi
+                            ELSE b.harga_ptsl
+                        END, 0) as harga_transaksi,
+                        --COALESCE(b.harga_transaksi,0) as harga_transaksi,
+                        COALESCE(CASE
+                            WHEN b.harga_ptsl is NULL THEN (b.harga_transaksi * b.luas_bayar)
+                            ELSE (b.harga_ptsl * b.luas_bayar)
+                        END, 0) as total_harga
+                        --COALESCE((b.harga_transaksi * b.luas_bayar), 0) as total_harga
                         from tahap_detail td
                         inner join tahap th on th.id = td.tahap_id
                         inner join bidang b on b.id = td.bidang_id
