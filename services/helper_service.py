@@ -233,7 +233,7 @@ class BundleHelper:
                                             from_notaris:bool = False) -> str:
             
         riwayat_data:str = ""
-        metadata_dict = json.loads(meta_data.replace("'", "\""))
+        metadata_dict = json.loads(meta_data)
         key_value = metadata_dict[f'{key_riwayat}']
 
         if key_value is None or key_value == "":
@@ -255,7 +255,7 @@ class BundleHelper:
             # riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
         else:
             # current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
-            current_riwayat = current_riwayat.replace("'", "\"")
+            current_riwayat = current_riwayat
             current_riwayat_obj = json.loads(current_riwayat)
 
             for i, item in enumerate(current_riwayat_obj["riwayat"]):
@@ -294,13 +294,13 @@ class BundleHelper:
                             ) -> Tuple[str | None, str | None]:
         
     
-        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+        metadata_dict = json.loads(sch.meta_data)
         key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
         if key_value is None or key_value == "":
             raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
 
-        riwayat_data = json.loads(current_riwayat_data.replace("'", "\""))
+        riwayat_data = json.loads(current_riwayat_data)
 
         current_dict_riwayat = next((x for x in riwayat_data["riwayat"] if x["key_value"] == sch.key_value), None)
         if current_dict_riwayat is None and from_notaris == False:
@@ -343,7 +343,7 @@ class BundleHelper:
                         worker_id:UUID|None,
                         db_session : AsyncSession | None = None):
     
-        obj_json = json.loads(meta_data.replace("'", '"'))
+        obj_json = json.loads(meta_data)
         current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
 
         metadata_keyword = obj_json.get(f'{key_field}', None)
@@ -437,7 +437,7 @@ class BundleHelper:
         bundle_dt_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name=dokumen_name, bidang_id=bidang_id)
         if bundle_dt_meta_data:
             if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":
-                metadata_dict = json.loads(bundle_dt_meta_data.meta_data.replace("'", "\""))
+                metadata_dict = json.loads(bundle_dt_meta_data.meta_data)
                 value = metadata_dict.get(bundle_dt_meta_data.key_field, '')
                 # value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
 
@@ -446,7 +446,7 @@ class BundleHelper:
     async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None) -> str | None:
         
         if meta_data_current:
-            meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
+            meta_datas_current = json.loads(meta_data_current)
 
             data = meta_datas_current.get("data", None)
             if data is None:
@@ -454,7 +454,7 @@ class BundleHelper:
         else:
             meta_datas_current = {"data" : []}
 
-        meta_datas_new = json.loads(meta_data_new.replace("'", "\""))
+        meta_datas_new = json.loads(meta_data_new)
 
         #delete
         for data_current in meta_datas_current["data"]:
@@ -540,7 +540,7 @@ class BundleHelper:
                 meta_data = json.dumps(input_dict)
                 
             else:
-                input_data = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                input_data = json.loads(bundledt_current.meta_data)
                 if dokumen.key_field not in input_data:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
                 

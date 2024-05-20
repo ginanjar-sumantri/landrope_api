@@ -118,7 +118,7 @@ async def update(id:UUID,
     elif file is None and sch.file_path is None:
         sch.file_path = obj_current.file_path
 
-    sch.meta_data = sch.meta_data.replace("'", "\"")
+    sch.meta_data = sch.meta_data
 
     if dokumen.is_multiple != True or dokumen.is_multiple is None:
         #validasi untuk riwayat
