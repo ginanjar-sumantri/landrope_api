@@ -98,10 +98,29 @@ async def create(
                     elif sum(invoice_bayars) != termin_bayar.amount:
                         raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
-                invoice_bayar_amount = sum(invoice_bayars)
-                if termin_bayar.amount != invoice_bayar_amount:
-                    raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            invoice_bayar_amount = sum(invoice_bayars)
+            if termin_bayar.amount != invoice_bayar_amount:
+                raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
         
+        for invoice in sch.invoices:
+            invoice_bayar_ = []
+            for inv_bayar in invoice.bayars:
+                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == tr.id_index and tr.activity == ActivityEnum.BIAYA_TANAH), None)
+                if tr_byr:
+                    invoice_bayar_.append(inv_bayar)
+
+            invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
+
+            utj_amount = 0
+            if invoice.use_utj:
+                bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
+                utj_amount = bidang.utj_amount
+
+            invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
+
+            if invoice.amount != (invoice_bayar_amount + utj_amount + invoice_detail_amount):
+                raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
+
 
     today = date.today()
     month = roman.toRoman(today.month)
@@ -361,9 +380,29 @@ async def update_(
                         elif sum(invoice_bayars) != termin_bayar.amount:
                             raise HTTPException(status_code=422, detail=f"Giro/Cek/Tunai untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
 
-                    invoice_bayar_amount = sum(invoice_bayars)
-                    if termin_bayar.amount != invoice_bayar_amount:
-                        raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'") 
+                invoice_bayar_amount = sum(invoice_bayars)
+                if termin_bayar.amount != invoice_bayar_amount:
+                    raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            
+            for invoice in sch.invoices:
+                invoice_bayar_ = []
+                for inv_bayar in invoice.bayars:
+                    tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == tr.id_index and tr.activity == ActivityEnum.BIAYA_TANAH), None)
+                    if tr_byr:
+                        invoice_bayar_.append(inv_bayar)
+
+                invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
+
+                utj_amount = 0
+                if invoice.use_utj:
+                    bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
+                    utj_amount = bidang.utj_amount
+
+                invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
+
+                if invoice.amount != (invoice_bayar_amount + utj_amount + invoice_detail_amount):
+                    raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
+
     
     if sch.jenis_bayar in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         kjb_hd_current = await crud.kjb_hd.get(id=sch.kjb_hd_id)
