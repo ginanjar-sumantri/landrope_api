@@ -1963,11 +1963,11 @@ async def get_report(
             ws.cell(row=x, column=9, value=invoice.alashak)
             ws.cell(row=x, column=10, value=invoice.bidang.luas_surat or 0).number_format = '0.00'
             ws.cell(row=x, column=11, value=invoice.bidang.luas_bayar or 0).number_format = '0.00'
-            ws.cell(row=x, column=12, value=f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}')
+            ws.cell(row=x, column=12, value=invoice.amount_nett or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
             ws.cell(row=x, column=13, value=invoice.jenis_bayar)
             ws.cell(row=x, column=14, value=status_workflow)
             ws.cell(row=x, column=15, value=last_status_workflow_at)
-            ws.cell(row=x, column=16, value=f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}')
+            ws.cell(row=x, column=16, value=invoice.bidang.harga_transaksi or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
             ws.cell(row=x, column=17, value=','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]))
             ws.cell(row=x, column=18, value=invoice.termin.tanggal_rencana_transaksi)
             ws.cell(row=x, column=19, value=invoice.payment_status if invoice.payment_status else invoice.payment_status_ext)
