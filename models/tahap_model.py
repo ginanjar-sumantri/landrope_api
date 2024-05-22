@@ -197,6 +197,10 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "harga_transaksi", None)
     
     @property
+    def harga_ptsl(self) -> Decimal | None:
+        return getattr(getattr(self, "bidang", None), "harga_ptsl", None)
+    
+    @property
     def pemilik_name(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "pemilik_name", None)
     

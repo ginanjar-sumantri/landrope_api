@@ -35,6 +35,7 @@ class TahapDetailSch(TahapDetailFullBase):
     luas_bayar:Optional[Decimal] = Field(alias="luas_bayar")
     harga_akta:Optional[Decimal] = Field(alias="harga_akta")
     harga_transaksi:Optional[Decimal] = Field(alias="harga_transaksi")
+    harga_ptsl:Optional[Decimal] = Field(alias="harga_ptsl")
     project_name:Optional[str] = Field(alias="project_name")
     desa_name:Optional[str] = Field(alias="desa_name")
     planing_name:Optional[str] = Field(alias="planing_name")
