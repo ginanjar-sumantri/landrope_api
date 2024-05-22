@@ -66,7 +66,7 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
         sch.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=file_name)
         from_new_file = True
 
-    sch.meta_data = sch.meta_data.replace("'", "\"")
+    sch.meta_data = sch.meta_data
 
     if dokumen.is_multiple != True or dokumen.is_multiple is None:
         #validasi untuk riwayat
@@ -165,7 +165,7 @@ async def update(id:UUID,
     
     if dokumen.is_multiple != True or dokumen.is_multiple is None:
         if dokumen.is_riwayat:
-            metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+            metadata_dict = json.loads(sch.meta_data.replace)
             key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
             if key_value is None or key_value == "":
@@ -294,7 +294,7 @@ async def delete_riwayat(id:UUID,
         raise ContentNoChangeException(detail="Dokumen yang dimaksud tidak ada dalam bundle")
     
     # Bundle
-    bundle_riwayat_data = json.loads(bundledt_obj_current.riwayat_data.replace("'", "\""))
+    bundle_riwayat_data = json.loads(bundledt_obj_current.riwayat_data)
 
     bundle_riwayat_data["riwayat"] = [item for item in bundle_riwayat_data["riwayat"] if item["key_value"] != sch.key_value]
 
@@ -308,7 +308,7 @@ async def delete_riwayat(id:UUID,
             bundledt_obj_updated.meta_data = str(bundle_obj_riwayat["meta_data"])
 
         bundle_riwayat_data = json.dumps(bundle_riwayat_data)
-        bundledt_obj_updated.riwayat_data = str(bundle_riwayat_data).replace('None', 'null').replace('"', "'")
+        bundledt_obj_updated.riwayat_data = bundle_riwayat_data
     else:
         bundledt_obj_updated.file_path = None
         bundledt_obj_updated.meta_data = None
@@ -318,7 +318,7 @@ async def delete_riwayat(id:UUID,
     #------------------------
 
     # Tanda Terima Notaris
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", "\""))
+    riwayat_data = json.loads(obj_current.riwayat_data)
 
     riwayat_data["riwayat"] = [item for item in riwayat_data["riwayat"] if item["key_value"] != sch.key_value]
 
@@ -332,7 +332,7 @@ async def delete_riwayat(id:UUID,
             obj_updated.meta_data = str(obj_riwayat["meta_data"])
 
         riwayat_data = json.dumps(riwayat_data)
-        obj_updated.riwayat_data = str(riwayat_data).replace('None', 'null').replace('"', "'")
+        obj_updated.riwayat_data = riwayat_data
     else:
         obj_updated.file_path = None
         obj_updated.meta_data = None
@@ -377,7 +377,7 @@ async def download_file(
     file_name = f'{bundlehd_obj_current.code}-{bundledt_obj_current.code}-{dokumen.name}'
 
     if dokumen.is_riwayat:
-        metadata_dict = json.loads(obj_current.meta_data.replace("'", "\""))
+        metadata_dict = json.loads(obj_current.meta_data)
         key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
         if key_value is None or key_value == "":
@@ -407,7 +407,7 @@ async def download_file_riwayat(id:UUID,
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisDt, id)
     
-    riwayat_data = json.loads(obj_current.riwayat_data.replace("'", '"'))
+    riwayat_data = json.loads(obj_current.riwayat_data)
 
     riwayat_obj = next((x for x in riwayat_data["riwayat"] if x["key_value"] == key_value), None)
     if riwayat_obj is None:
