@@ -378,12 +378,19 @@ class Bidang(BidangFullBase, table=True):
     @property
     def total_beban_penjual(self) -> Decimal | None:
         total_beban_penjual:Decimal = 0
+        harga:Decimal = 0
+
+        if self.harga_ptsl is not None and self.harga_ptsl != 0:
+            harga = self.harga_ptsl
+        else:
+            harga = self.harga_transaksi
+
         if len(self.komponen_biayas) > 0:
             calculate = []
             komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_paid == True]
             for beban in komponen_biaya_beban_penjual:
                 if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
+                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (harga or 0)/100)
                 elif beban.satuan_bayar == SatuanBayarEnum.Amount and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
                     amount = (beban.amount or 0) * (self.luas_bayar or self.luas_surat)
                 else:

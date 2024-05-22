@@ -567,7 +567,7 @@ class BundleHelper:
                 if dokumen.key_field not in input_dict:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'Kesepakatan Jual Beli' tidak memiliki key field {dokumen.key_field}")
                 
-                input_dict[dokumen.key_field] = pemilik.name.replace("'", "") if pemilik else ""
+                input_dict[dokumen.key_field] = pemilik.name if pemilik else ""
                 meta_data = json.dumps(input_dict)
                 
                 await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data, file_path=kjb_dt_current.kjb_hd.file_path,
@@ -632,7 +632,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
@@ -670,7 +670,7 @@ class BundleHelper:
                     else:
                         meta_datas_current = input_dict
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     if dokumen.is_multiple:
                         dt = meta_datas_current.get("data", None)
                         if dt is None:
@@ -719,7 +719,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
@@ -755,7 +755,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
