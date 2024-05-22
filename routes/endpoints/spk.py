@@ -945,7 +945,8 @@ async def generate_printout(id:UUID|str):
     if spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
     #alashak mesti nomor 1
         list_alashak = [alashak for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"]
-        current_alashak = next((SpkDetailPrintOut(**alashak.dict()) for alashak in list_alashak if alashak.name == "ALAS HAK" and alashak.field_value.lower().replace(' ', '') == spk_header.alashak.lower().replace(' ', '')), None)
+        current_alashak = next((SpkDetailPrintOut(bundle_dt_id=alashak.bundle_dt_id, field_value=alashak.field_value,
+                                                tanggapan=alashak.tanggapan, name=alashak.name) for alashak in list_alashak if alashak.name == "ALAS HAK" and alashak.field_value.lower().replace(' ', '') == spk_header.alashak.lower().replace(' ', '')), None)
         if current_alashak:
             current_alashak.no = no
             spk_details.append(current_alashak)
