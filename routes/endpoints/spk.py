@@ -965,7 +965,7 @@ async def generate_printout(id:UUID|str):
     obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
 
     for bb in obj_beban_biayas:
-        beban_biaya = SpkDetailPrintOut(**dict(bb))
+        beban_biaya = SpkDetailPrintOut(bundle_dt_id=None, field_value='', tanggapan=bb.tanggapan, name=bb.name)
         if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini' and spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
             continue
 
@@ -986,7 +986,7 @@ async def generate_printout(id:UUID|str):
     if pm_1["jumlah"] > 0:
         pm_1_lengkap = await crud.spk.get_pm1(id=id, check_meta_data_exists=True)
         if pm_1_lengkap["jumlah"] == 0:
-            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap")
+            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap", field_value="")
             spk_details.append(pm1)
 
     overlap_details = []
