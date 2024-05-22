@@ -59,6 +59,8 @@ from jinja2 import Environment, FileSystemLoader
 from datetime import date, datetime
 from io import BytesIO, StringIO
 from typing import Dict
+from openpyxl import Workbook
+from openpyxl.styles import Font
 import json
 import numpy
 import roman
@@ -1912,8 +1914,36 @@ async def get_report(
     reference_ids = [s.id for s in objs]
     workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.TERMIN)
 
+    wb = Workbook()
+    ws = wb.active
+
+    header_string = ["Id Bidang", 
+                    "Id Bidang Lama",
+                    "Project", 
+                    "Desa",
+                    "Nomor Tahap",
+                    "Nomor Memo",
+                    "Group",
+                    "Pemilik",
+                    "Alashak",
+                    "Luas Surat",
+                    "Luas Bayar", 
+                    "Jumlah",
+                    "Jenis Bayar",
+                    "Status Workflow",
+                    "Tanggal Last Workflow",
+                    "Harga Transaksi", 
+                    "Nomor Giro",
+                    "Tanggal Pembayaran",
+                    "Payment Status",
+                    "Tanggal Last Payment Status"]
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=1, column=idx + 1, value=val).font = Font(bold=True)
+
+    x = 1
     for termin in objs:
-        for invoice in termin.invoices:
+       for invoice in termin.invoices:
             workflow = next((wf for wf in workflows if wf.reference_id == termin.id), None)
             status_workflow = "-"
             last_status_workflow_at = None
@@ -1921,42 +1951,40 @@ async def get_report(
                 status_workflow = workflow.last_status if workflow.last_status == WorkflowLastStatusEnum.COMPLETED else workflow.step_name or "-"
                 last_status_workflow_at = workflow.last_status_at
 
-            d = {
-                    "Id Bidang" : invoice.id_bidang, 
-                    "Id Bidang Lama" : invoice.id_bidang_lama,
-                    "Project" : invoice.bidang.project_name, 
-                    "Desa" : invoice.bidang.desa_name,
-                    "Nomor Tahap" : invoice.termin.nomor_tahap,
-                    "Nomor Memo" : invoice.termin.nomor_memo,
-                    "Group" : invoice.bidang.group,
-                    "Pemilik" : invoice.bidang.pemilik_name,
-                    "Alashak" : invoice.alashak,
-                    "Luas Surat" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_surat or 0))}',
-                    "Luas Bayar" : f'{"{:,.0f}".format(RoundTwo(invoice.bidang.luas_bayar or 0))}', 
-                    "Jumlah" :  f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}',
-                    "Jenis Bayar" : invoice.jenis_bayar,
-                    "Status Workflow" : status_workflow,
-                    "Tanggal Last Workflow" : last_status_workflow_at,
-                    "Harga Transaksi" : f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}', 
-                    "Nomor Giro" : ','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]),
-                    "Tanggal Pembayaran" : invoice.termin.tanggal_rencana_transaksi,
-                    "Payment Status" : invoice.payment_status if invoice.payment_status else invoice.payment_status_ext,
-                    "Tanggal Last Payment Status" : invoice.last_payment_status_at
-                }
-            
-            data.append(d)
+            x += 1
+            ws.cell(row=x, column=1, value=invoice.id_bidang)
+            ws.cell(row=x, column=2, value=invoice.id_bidang_lama or "")
+            ws.cell(row=x, column=3, value=invoice.bidang.project_name)
+            ws.cell(row=x, column=4, value=invoice.bidang.desa_name)
+            ws.cell(row=x, column=5, value=invoice.termin.nomor_tahap)
+            ws.cell(row=x, column=6, value=invoice.termin.nomor_memo)
+            ws.cell(row=x, column=7, value=invoice.bidang.group)
+            ws.cell(row=x, column=8, value=invoice.bidang.pemilik_name)
+            ws.cell(row=x, column=9, value=invoice.alashak)
+            ws.cell(row=x, column=10, value=invoice.bidang.luas_surat or 0).number_format = '0.00'
+            ws.cell(row=x, column=11, value=invoice.bidang.luas_bayar or 0).number_format = '0.00'
+            ws.cell(row=x, column=12, value=f'Rp. {"{:,.0f}".format(RoundTwo(invoice.amount_nett))}')
+            ws.cell(row=x, column=13, value=invoice.jenis_bayar)
+            ws.cell(row=x, column=14, value=status_workflow)
+            ws.cell(row=x, column=15, value=last_status_workflow_at)
+            ws.cell(row=x, column=16, value=f'Rp. {"{:,.0f}".format(RoundTwo(Decimal(invoice.bidang.harga_transaksi or 0)))}')
+            ws.cell(row=x, column=17, value=','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]))
+            ws.cell(row=x, column=18, value=invoice.termin.tanggal_rencana_transaksi)
+            ws.cell(row=x, column=19, value=invoice.payment_status if invoice.payment_status else invoice.payment_status_ext)
+            ws.cell(row=x, column=20, value=invoice.last_payment_status_at)
 
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
     
-    df = pd.DataFrame(data=data)
 
-    output = BytesIO()
-    df.to_excel(output, index=False, sheet_name=f'Memo Pembayaran')
-
-    output.seek(0)
-
-    return StreamingResponse(BytesIO(output.getvalue()), 
-                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            headers={"Content-Disposition": "attachment;filename=memo_data.xlsx"})
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=memo_data.xlsx"})
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[TerminByIdSch])
 async def void(id:UUID, 

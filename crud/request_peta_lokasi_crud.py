@@ -1,9 +1,9 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, delete, and_, text
+from sqlmodel import select, or_, delete, and_, text, case
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
 from crud.base_crud import CRUDBase
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.kjb_model import KjbDt, KjbHd
@@ -173,6 +173,9 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
 
         # subquery = select(Address.user_id).subquery()
         # query = select(User).add_columns(User.id, User.name, subquery.exists().label("has_address"))
+
+        desa_on_petlok = aliased(Desa)
+        desa_on_kjb_dt = aliased(Desa)
         
         query = select(
             RequestPetaLokasi.id,
@@ -189,7 +192,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             HasilPetaLokasi.hasil_analisa_peta_lokasi,
             HasilPetaLokasi.status_hasil_peta_lokasi,
             HasilPetaLokasi.remark,
-            Desa.name.label("desa_name")
+            case((desa_on_petlok.name == None, desa_on_kjb_dt.name),
+                 else_ = desa_on_petlok.name).label("desa_name")
         ).select_from(RequestPetaLokasi
                     ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
@@ -197,7 +201,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
                     ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
                     ).outerjoin(Planing, Planing.id == HasilPetaLokasi.planing_id
-                    ).outerjoin(Desa, Desa.id == Planing.desa_id)
+                    ).outerjoin(desa_on_petlok, desa_on_petlok.id == Planing.desa_id
+                    ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id)
 
         filter_clause = None
 
