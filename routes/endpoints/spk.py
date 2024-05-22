@@ -954,7 +954,7 @@ async def generate_printout(id:UUID|str):
             if a.name == "ALAS HAK" and a.field_value.lower().replace(' ', '') == spk_header.alashak.lower().replace(' ', ''):
                 continue
 
-            alashak = SpkDetailPrintOut(**dict(k))
+            alashak = SpkDetailPrintOut(**dict(a))
             alashak.no = no
             spk_details.append(kelengkapan)
             no += 1
