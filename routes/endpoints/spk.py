@@ -956,7 +956,7 @@ async def generate_printout(id:UUID|str):
 
             alashak = SpkDetailPrintOut(**dict(a))
             alashak.no = no
-            spk_details.append(kelengkapan)
+            spk_details.append(alashak)
             no += 1
 
     obj_beban_biayas = []
