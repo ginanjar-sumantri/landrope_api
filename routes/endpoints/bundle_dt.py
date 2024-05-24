@@ -362,10 +362,11 @@ async def search_document_repeat(keyword:str|None = None,
 
 
 @router.get("/sync/file_path/multiple")
-async def sync_file_path_multipe_document():
+async def sync_file_path_multipe_document(b_t:BackgroundTasks):
     
-    await sync_file_multiple_doc()
-
+    b_t.add_task(sync_file_multiple_doc)
+    return {"message" : "success"}
+    
 async def sync_file_multiple_doc():
 
     db_session = db.session
@@ -380,8 +381,27 @@ async def sync_file_multiple_doc():
     response = await db_session.execute(query)
     result = response.all()
 
-    for id in result:
-        id = id.id
+    for bundle_dt_id in result:
+        bundle_dt = await crud.bundledt.get(id=bundle_dt_id.id)
+
+        if bundle_dt is None:
+            continue
+
+        if bundle_dt.meta_data is None or bundle_dt.meta_data == "":
+            continue
+
+        meta_data = json.loads(bundle_dt.meta_data)
+
+        data = meta_data.get("data", None)
+        if data is None:
+            continue
+
+        file_path = next((d["file"] for d in data if d["file"] is not None), None)
+        bundle_dt_updated = BundleDtUpdateSch.from_orm(bundle_dt)
+        bundle_dt_updated.file_path = file_path
+
+        await crud.bundledt.update(obj_current=bundle_dt, obj_new=bundle_dt_updated)
+
 
 
     
