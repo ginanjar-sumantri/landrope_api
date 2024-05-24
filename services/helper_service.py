@@ -443,7 +443,7 @@ class BundleHelper:
 
         return value
 
-    async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None) -> str | None:
+    async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None):
         
         if meta_data_current:
             meta_datas_current = json.loads(meta_data_current)
@@ -463,7 +463,7 @@ class BundleHelper:
             if index_current is None:
                 meta_datas_current["data"] = [dt for dt in meta_datas_current["data"] if dt[dokumen.key_field] != data_current[dokumen.key_field]]
 
-
+        file_path: str | None = None
         for data_new in meta_datas_new["data"]:
             index_current = next((index for index, data in enumerate(meta_datas_current["data"]) if data[dokumen.key_field] == data_new[dokumen.key_field]), None)
             file_data_new = data_new.get("file", None)
@@ -483,10 +483,12 @@ class BundleHelper:
             
             else:
                 pass
+
+            file_path = data_new["file"]
                 
         meta_data = json.dumps(meta_datas_current)
 
-        return meta_data
+        return meta_data, file_path
     
     def multiple_data_count(self, meta_data:str|None = None) -> int | None:
         

@@ -138,7 +138,9 @@ async def update(id:UUID,
             await BundleHelper().update_bundle_keyword(meta_data=sch.meta_data, bundle_hd_id=sch.bundle_hd_id, key_field=dokumen.key_field, worker_id=current_worker.id, db_session=db_session)
         
     else:
-        sch.meta_data = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
+        meta_data, file_path = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
+        sch.meta_data = meta_data
+        sch.file_path = file_path if file_path else obj_current.file_path
         sch.multiple_count = BundleHelper().multiple_data_count(meta_data=sch.meta_data)
 
     obj_updated = await crud.bundledt.update(obj_current=obj_current, obj_new=sch, db_session=db_session, updated_by_id=current_worker.id, with_commit=True)
@@ -358,6 +360,28 @@ async def search_document_repeat(keyword:str|None = None,
 
     return create_response(data=datas)
 
+
+@router.get("/sync/file_path/multiple")
+async def sync_file_path_multipe_document():
+    
+    await sync_file_multiple_doc()
+
+async def sync_file_multiple_doc():
+
+    db_session = db.session
+
+    query = """select dt.id from bundle_dt dt
+                inner join dokumen d on d.id = dt.dokumen_id
+                where d.is_multiple = True 
+                and dt.file_path is null 
+                and dt.meta_data is not null 
+                order by dt.updated_at desc"""
+    
+    response = await db_session.execute(query)
+    result = response.all()
+
+    for id in result:
+        id = id.id
 
 
     

@@ -80,7 +80,9 @@ async def create(sch: TandaTerimaNotarisDtCreateSch = Depends(TandaTerimaNotaris
                 raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
             
     else:
-        sch.meta_data = await BundleHelper().multiple_data(meta_data_current=None, meta_data_new=sch.meta_data, dokumen=dokumen)
+        meta_data, file_path = await BundleHelper().multiple_data(meta_data_current=None, meta_data_new=sch.meta_data, dokumen=dokumen)
+        sch.meta_data = meta_data
+        sch.file_path = file_path
         multiple_count = BundleHelper().multiple_data_count(meta_data=sch.meta_data)
 
 
@@ -173,7 +175,9 @@ async def update(id:UUID,
                         await GCStorageService().delete_file(file_name=file_name)
                 raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
     else:
-        sch.meta_data = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
+        meta_data, file_path = await BundleHelper().multiple_data(meta_data_current=obj_current.meta_data, meta_data_new=sch.meta_data, dokumen=dokumen)
+        sch.meta_data = meta_data
+        sch.file_path = file_path
         multiple_count = BundleHelper().multiple_data_count(meta_data=sch.meta_data)
 
     # Merging Data Dokumen dari Tanda Terima Notaris ke Bundle
