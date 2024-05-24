@@ -44,3 +44,4 @@ class BundleDtForCloud(SQLModel):
 
 class BundleDtRiwayatSch(BundleDtSch):
     field_value: str | None
+    key_value: str | None

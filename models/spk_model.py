@@ -254,6 +254,7 @@ class SpkKelengkapanDokumenBase(SQLModel):
     tanggapan:str | None = Field(nullable=True)
     order_number: int | None = Field(nullable=True)
     field_value: str | None = Field(nullable=True) #untuk dokumen yang memiliki riwayat
+    key_value: str | None = Field(nullable=True) #untuk preview file dokumen yg memiliki riwayat
 
 class SpkKelengkapanDokumenFullBase(BaseUUIDModel, SpkKelengkapanDokumenBase):
     pass

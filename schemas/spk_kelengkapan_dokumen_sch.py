@@ -12,6 +12,7 @@ class SpkKelengkapanDokumenCreateExtSch(SQLModel):
     tanggapan:str | None 
     order_number:int | None
     field_value:str | None
+    key_value:str | None
 
 class SpkKelengkapanDokumenSch(SpkKelengkapanDokumenFullBase):
     dokumen_name:str | None = Field(alias="dokumen_name")

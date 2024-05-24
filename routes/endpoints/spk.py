@@ -155,7 +155,8 @@ async def create(
                                                                  bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, 
                                                                  tanggapan=kelengkapan_dokumen.tanggapan, 
                                                                  order_number=kelengkapan_dokumen.order_number,
-                                                                 field_value=kelengkapan_dokumen.field_value)
+                                                                 field_value=kelengkapan_dokumen.field_value,
+                                                                 key_value=kelengkapan_dokumen.key_value)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
@@ -661,11 +662,11 @@ async def update(id:UUID,
     
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         if kelengkapan_dokumen.id is None:
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value)
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
             await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
         else:
             kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value)
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     #workflow
@@ -836,6 +837,9 @@ async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[Checklist
                         idx += 1
                     else:
                         data.field_value = meta_data[dokumen.key_field]
+                        data.key_value = meta_data[dokumen.key_field]
+
+                    data.key_value = meta_data[dokumen.key_field]
                     data.file_path = riwayat["file_path"]
                     data.is_default = riwayat["is_default"]
                     result.append(data)
@@ -879,13 +883,29 @@ async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
         return create_response(data=datas)
     
     riwayat_data = json.loads(bundle_dt.riwayat_data.replace("'", '\"'))
+
+    riwayat_alashak = await init_riwayat_alashak(bundle_hd_id=bundle_dt.bundle_hd_id)
+    idx = 0
     
     for riwayat in riwayat_data["riwayat"]:
         meta_data = riwayat["meta_data"]
         data = BundleDtRiwayatSch.from_orm(bundle_dt)
+        if bundle_dt.dokumen.name in ["VALIDASI RIWAYAT", "PPH RIWAYAT", "BPHTB RIWAYAT"]:
+            if len(riwayat_alashak) == 0:
+                data.field_value = ''
+            else:
+                if idx > len(riwayat_alashak):
+                    data.field_value = ''
+                else:
+                    data.field_value = riwayat_alashak[idx]
+            idx += 1
+        else:
+            data.field_value = meta_data[bundle_dt.dokumen.key_field]
+            
+
         file_path = riwayat.get('file_path', None)
         data.file_exists = True if file_path and file_path != "" else False
-        data.field_value = meta_data[bundle_dt.dokumen.key_field]
+        data.key_value = meta_data[bundle_dt.dokumen.key_field]
         data.file_path = file_path
         datas.append(data)
 
