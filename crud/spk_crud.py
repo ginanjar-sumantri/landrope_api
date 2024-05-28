@@ -471,6 +471,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 b.luas_ukur,
                 b.luas_gu_perorangan,
                 b.luas_pbt_perorangan,
+                b.luas_gu_pt,
+                b.luas_pbt_pt,
                 p.name As pemilik_name,
                 ds.name As desa_name,
                 nt.name As notaris_name,

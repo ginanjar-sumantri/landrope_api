@@ -73,6 +73,8 @@ class SpkPrintOut(SQLModel):
     luas_ukur:Optional[Decimal]
     luas_gu_perorangan:Optional[Decimal] = Field(default=0)
     luas_pbt_perorangan:Optional[Decimal] = Field(default=0)
+    luas_gu_pt:Optional[Decimal] = Field(default=0)
+    luas_pbt_pt:Optional[Decimal] = Field(default=0)
     pemilik_name:Optional[str]
     desa_name:Optional[str]
     project_name:Optional[str]

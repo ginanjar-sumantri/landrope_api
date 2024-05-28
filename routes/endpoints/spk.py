@@ -942,7 +942,7 @@ async def generate_printout(id:UUID|str):
     if obj is None:
         raise IdNotFoundException(Spk, id)
     
-    bidang = await crud.bidang.get(id=obj.bidang_id)
+    bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
     
     filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_clear.html"
     
@@ -1049,7 +1049,10 @@ async def generate_printout(id:UUID|str):
                                       luas_surat="{:,.0f}".format(spk_header.luas_surat or 0),
                                       luas_ukur="{:,.0f}".format(spk_header.luas_ukur or 0),
                                       luas_gu_perorangan="{:,.0f}".format(spk_header.luas_gu_perorangan or 0),
-                                      luas_pbt_perorangan="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0), 
+                                      luas_pbt_perorangan="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0),
+                                      luas_gu_pt="{:,.0f}".format(spk_header.luas_gu_perorangan or 0),
+                                      luas_pbt_pt="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0),
+                                      proses_bpn=bidang.proses_bpn_order_gu,
                                       id_bidang=spk_header.id_bidang,
                                       no_peta=spk_header.no_peta,
                                       notaris_name=spk_header.notaris_name,
