@@ -947,7 +947,7 @@ async def generate_printout(id:UUID|str):
     filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_clear.html"
     
     spk_header = SpkPrintOut(**dict(obj))
-    remarks = spk_header.remark.splitlines()
+    remarks = spk_header.remark.splitlines() if spk_header.remark else ''
     percentage_value:str = ""
     if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and spk_header.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.TAMBAHAN_DP]:
         percentage_value = f" {spk_header.amount}%"
