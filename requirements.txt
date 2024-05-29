@@ -61,7 +61,6 @@ pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycryptodome==3.19.0
 pydantic==1.10.7
-pygeos==0.14
 pyparsing==3.0.9
 PyPDF2==3.0.1
 pyproj==3.5.0

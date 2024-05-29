@@ -15,7 +15,6 @@ import fiona as fio
 import math
 import shapely
 from shapely import wkb
-import pygeos
 
 T = TypeVar('T')
 
@@ -161,8 +160,6 @@ class GeomService(Generic[T]):
 
         # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
         gdf = geopandas.GeoDataFrame(df, geometry=gs)
-
-        print(gdf.head())
 
         tempdir = tempfile.mkdtemp()
 
