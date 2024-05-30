@@ -699,45 +699,14 @@ async def export_shp(
             param:BidangParameterDownload|None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    results = await crud.bidang.get_multi_export(param=param)
-    schemas = []
-    for data in results:
-        sch = BidangShpSch(n_idbidang=data.id_bidang,
-                           o_idbidang=data.id_bidang_lama,
-                           pemilik=data.pemilik_name,
-                           code_desa=data.desa_code,
-                           dokumen=data.jenis_alashak,
-                           sub_surat=data.jenis_surat_name,
-                           alashak=data.alashak,
-                           luassurat=data.luas_surat,
-                           kat=data.kategori_name,
-                           kat_bidang=data.kategori_sub_name,
-                           kat_proyek=data.kategori_proyek_name,
-                           ptsk=data.ptsk_name,
-                           penampung=data.penampung_name,
-                           no_sk=data.no_sk,
-                           status_sk=data.status_sk,
-                           manager=data.manager_name,
-                           sales=data.sales_name,
-                           mediator=data.mediator,
-                           proses=data.jenis_bidang,
-                           status=data.status,
-                           group=data.group,
-                           no_peta=data.no_peta,
-                           desa=data.desa_name,
-                           project=data.project_name,
-                           kecamatan=data.kecamatan,
-                           kota=data.kota,
-                           geom=wkt.dumps(wkb.loads(data.geom.data, hex=True)))
-
-        schemas.append(sch)
+    results = await crud.bidang.get_multi_export_shape_file(param=param)
 
     if results:
         obj_name = results[0].__class__.__name__
         if len(results) == 1:
-            obj_name = f"{obj_name}-{results[0].id_bidang}"
+            obj_name = f"{obj_name}-{results[0].n_idbidang}"
 
-        return GeomService.export_shp_zip(data=schemas, obj_name=obj_name)
+        return GeomService.export_shp_zip(data=results, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
 
