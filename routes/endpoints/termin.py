@@ -451,7 +451,8 @@ async def update_(
             termin_bayar_current = await crud.termin_bayar.get(id=termin_bayar.id)
             termin_bayar_updated = TerminBayarUpdateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             obj_termin_bayar = await crud.termin_bayar.update(obj_current=termin_bayar_current, obj_new=termin_bayar_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-        
+            current_ids_termin_byr.remove(obj_termin_bayar.id)
+            
             if termin_bayar.termin_bayar_dts:
                 #delete termin_bayar_detail not exists
                 await db_session.execute(delete(TerminBayarDt).where(and_(TerminBayarDt.id.notin_(dt.id for dt in termin_bayar.termin_bayar_dts if dt.id != None), 
