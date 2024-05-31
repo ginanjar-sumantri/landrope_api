@@ -23,6 +23,18 @@ class CRUDTerminBayar(CRUDBase[TerminBayar, TerminBayarCreateSch, TerminBayarUpd
 
         response =  await db_session.execute(query)
         return response.scalars().all()
+    
+    #for update in termin function
+    async def get_ids_by_termin_id(self, *, termin_id:UUID | str | None = None) -> list[UUID]:
+        db_session = db.session
+
+        query = select(TerminBayar).where(TerminBayar.termin_id == termin_id)
+        
+        response = await db_session.execute(query)
+        result = response.scalars().all()
+
+        datas = [data.id for data in result]
+        return datas
 
 
 termin_bayar = CRUDTerminBayar(TerminBayar)

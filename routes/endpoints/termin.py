@@ -353,14 +353,14 @@ async def update_(
     db_session = db.session
     db_session.autoflush = False
 
-    obj_current = await crud.termin.get_by_id(id=id)
+    obj_current = await crud.termin.get(id=id)
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
-    current_ids_invoice = [i.id for i in obj_current.invoices]
-    current_ids_invoice_dt = [idt.id for ivd in obj_current.invoices for idt in ivd.details]
-    current_ids_invoice_byr = [iby.id for ivb in obj_current.invoices for iby in ivb.bayars]
-    current_ids_termin_byr = [trb.id for trb in obj_current.termin_bayars]
+    current_ids_invoice = await crud.invoice.get_ids_by_termin_id(termin_id=obj_current.id)
+    current_ids_invoice_dt = await crud.invoice_detail.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
+    current_ids_invoice_byr = await crud.invoice_bayar.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
+    current_ids_termin_byr = await crud.termin_bayar.get_ids_by_termin_id(termin_id=obj_current.id)
 
     if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         msg_error_wf = "Memo Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval Need Approval!"
@@ -452,7 +452,7 @@ async def update_(
             termin_bayar_updated = TerminBayarUpdateSch(**termin_bayar.dict(), termin_id=obj_updated.id)
             obj_termin_bayar = await crud.termin_bayar.update(obj_current=termin_bayar_current, obj_new=termin_bayar_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
             current_ids_termin_byr.remove(obj_termin_bayar.id)
-            
+
             if termin_bayar.termin_bayar_dts:
                 #delete termin_bayar_detail not exists
                 await db_session.execute(delete(TerminBayarDt).where(and_(TerminBayarDt.id.notin_(dt.id for dt in termin_bayar.termin_bayar_dts if dt.id != None), 
@@ -476,9 +476,9 @@ async def update_(
     
         termin_bayar_temp.append({"termin_bayar_id" : obj_termin_bayar.id, "id_index" : termin_bayar.id_index})
 
-    #delete invoice
-    await db_session.execute(delete(Invoice).where(and_(Invoice.id.notin_(r.id for r in sch.invoices if r.id is not None), 
-                                                        Invoice.termin_id == obj_updated.id)))
+    # #delete invoice
+    # await db_session.execute(delete(Invoice).where(and_(Invoice.id.notin_(r.id for r in sch.invoices if r.id is not None), 
+    #                                                     Invoice.termin_id == obj_updated.id)))
 
     for invoice in sch.invoices:
 
@@ -591,6 +591,11 @@ async def update_(
 
                 invoice_dtl_sch = InvoiceDetailCreateSch(**dt.dict(), invoice_id=new_obj_invoice.id)
                 await crud.invoice_detail.create(obj_in=invoice_dtl_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
+
+            for dt_bayar in invoice.bayars:
+                termin_bayar_id = next((termin_bayar["termin_bayar_id"] for termin_bayar in termin_bayar_temp if termin_bayar["id_index"] == dt_bayar.id_index), None)
+                invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=new_obj_invoice.id, amount=dt_bayar.amount)
+                await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
 
     #delete termin bayar

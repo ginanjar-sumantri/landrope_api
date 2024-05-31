@@ -278,6 +278,19 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
 
         return response.scalars().all()
 
+    #for update in termin function
+    async def get_ids_by_termin_id(self, *, termin_id:UUID | str | None = None) -> list[UUID]:
+        db_session = db.session
+
+        query = select(Invoice).where(Invoice.termin_id == termin_id)
+        
+        response = await db_session.execute(query)
+        result = response.scalars().all()
+
+        datas = [data.id for data in result]
+        return datas
+         
+
     async def get_multi_by_termin_id(self, 
                   *, 
                   termin_id: UUID | str | None = None,
