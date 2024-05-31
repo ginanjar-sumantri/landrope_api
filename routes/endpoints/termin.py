@@ -52,7 +52,7 @@ from services.helper_service import HelperService, BundleHelper, BidangHelper, K
 from services.workflow_service import WorkflowService
 from services.adobe_service import PDFToExcelService
 from services.pdf_service import PdfService
-from services.rfp_service import RfpService
+# from services.rfp_service import RfpService
 
 from decimal import Decimal
 from jinja2 import Environment, FileSystemLoader
@@ -123,7 +123,6 @@ async def create(
 
             if invoice.amount != (invoice_bayar_amount + utj_amount + invoice_detail_amount):
                 raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
-
 
     today = date.today()
     month = roman.toRoman(today.month)
@@ -2215,14 +2214,14 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
     return create_response(data=result)
 
 
-@router.post("/task/create_rfp")
-async def create_rfp(payload: Dict):
+# @router.post("/task/create_rfp")
+# async def create_rfp(payload: Dict):
 
-    data, msg = await RfpService().create_rfp(termin_id=payload["id"])
+#     data, msg = await RfpService().create_rfp(termin_id=payload["id"])
 
-    if data is not None:
-        await crud.termin_rfp_payment.create_(sch=data)
-    else:
-        raise HTTPException(status_code=409, detail=msg)
+#     if data is not None:
+#         await crud.termin_rfp_payment.create_(sch=data)
+#     else:
+#         raise HTTPException(status_code=409, detail=msg)
 
-    return {"message":"successfully"}
+#     return {"message":"successfully"}
