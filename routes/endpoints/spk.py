@@ -20,7 +20,7 @@ from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch, WorkflowUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
-                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
+                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, StatusHasilPetaLokasiEnum,
                         StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text, JenisAlashakEnum)
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
@@ -714,7 +714,8 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Bidang.id, Bidang.id_bidang, Bidang.alashak).select_from(Bidang
-                    ).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
+                    ).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id
+                    ).where(HasilPetaLokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Lanjut)
     
     if keyword:
         query = query.filter(or_(Bidang.id_bidang.ilike(f'%{keyword}%'), 
