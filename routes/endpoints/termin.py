@@ -108,20 +108,20 @@ async def create(
         for invoice in sch.invoices:
             invoice_bayar_ = []
             for inv_bayar in invoice.bayars:
-                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == tr.id_index and tr.activity == ActivityEnum.BIAYA_TANAH), None)
+                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index), None)
                 if tr_byr:
                     invoice_bayar_.append(inv_bayar)
 
             invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
 
-            utj_amount = 0
-            if invoice.use_utj:
-                bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
-                utj_amount = bidang.utj_amount
+            # utj_amount = 0
+            # if invoice.use_utj:
+            #     bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
+            #     utj_amount = bidang.utj_amount
 
             invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
 
-            if invoice.amount != (invoice_bayar_amount + utj_amount + invoice_detail_amount):
+            if invoice.amount != (invoice_bayar_amount + invoice_detail_amount):
                 raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
 
     today = date.today()
@@ -149,7 +149,7 @@ async def create(
         termin_bayar_temp.append({"termin_bayar_id" : obj_termin_bayar.id, "id_index" : termin_bayar.id_index})
         if termin_bayar.termin_bayar_dts:
             for termin_bayar_dt in termin_bayar.termin_bayar_dts:
-                termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                termin_bayar_dt_sch = TerminBayarDtCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
                 await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
     #add invoice
@@ -396,20 +396,20 @@ async def update_(
             for invoice in sch.invoices:
                 invoice_bayar_ = []
                 for inv_bayar in invoice.bayars:
-                    tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == tr.id_index and tr.activity == ActivityEnum.BIAYA_TANAH), None)
+                    tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index), None)
                     if tr_byr:
                         invoice_bayar_.append(inv_bayar)
 
                 invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
 
-                utj_amount = 0
-                if invoice.use_utj:
-                    bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
-                    utj_amount = bidang.utj_amount
+                # utj_amount = 0
+                # if invoice.use_utj:
+                #     bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
+                #     utj_amount = bidang.utj_amount
 
                 invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
 
-                if invoice.amount != (invoice_bayar_amount + utj_amount + invoice_detail_amount):
+                if invoice.amount != (invoice_bayar_amount + invoice_detail_amount):
                     raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
 
     
