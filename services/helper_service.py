@@ -2,10 +2,11 @@ from fastapi import UploadFile, HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
-from models.bundle_model import BundleDt, BundleHd
+from models import BundleDt, BundleHd, HasilPetaLokasi
 from schemas.dokumen_sch import RiwayatSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
 from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum, StatusPembebasanEnum
@@ -252,9 +253,7 @@ class BundleHelper:
                                 ]}
             
             riwayat_data = json.dumps(new_riwayat_data)
-            # riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
         else:
-            # current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
             current_riwayat = current_riwayat
             current_riwayat_obj = json.loads(current_riwayat)
 
@@ -786,20 +785,40 @@ class BidangHelper:
             bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"status_pembebasan"}), status_pembebasan=status_pembebasan)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)
     
-    async def update_alashak(self, bidang_id:UUID, worker_id:UUID | str | None = None, alashak:str | None = None, db_session:AsyncSession | None = None):
+    # UPDATE BIDANG YANG SUDAH DIPETALOKASI DENGAN KJB DETAILNYA
+    async def update_from_kjb_to_bidang(self, kjb_dt_id:UUID | None = None, worker_id:UUID | str | None = None, db_session:AsyncSession | None = None):
 
         db_session = db_session or db.session
 
-        bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+        kjb_dt_current = await crud.kjb_dt.get(id=kjb_dt_id)
         
+        hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt_id)
+        
+        bidang_current = await crud.bidang.get_by_id(id=hasil_peta_lokasi_current.bidang_id if hasil_peta_lokasi_current else None)
+
         if bidang_current:
-            if bidang_current.alashak != alashak:
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
 
-                if bidang_current.geom :
-                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori :
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-                if bidang_current.geom_ori :
-                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+            if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.harga_ptsl != kjb_dt_current.harga_ptsl or bidang_current.alashak != kjb_dt_current.alashak or bidang_current.is_ptsl != kjb_dt_current.is_ptsl:
+                bidang_updated = BidangUpdateSch.from_orm(bidang_current)
+                bidang_updated.harga_transaksi = kjb_dt_current.harga_transaksi
+                bidang_updated.harga_akta = kjb_dt_current.harga_akta
+                bidang_updated.harga_ptsl = kjb_dt_current.harga_ptsl
+                bidang_updated.alashak = kjb_dt_current.alashak
+                bidang_updated.jenis_alashak = kjb_dt_current.jenis_alashak
+                bidang_updated.is_ptsl = kjb_dt_current.is_ptsl
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=worker_id, db_session=db_session)
 
-                bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"alashak"}), alashak=alashak)
-                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False, updated_by_id=worker_id)
+        if hasil_peta_lokasi_current:
+            hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch.from_orm(hasil_peta_lokasi_current)
+            hasil_peta_lokasi_updated.jenis_alashak = bidang_current.jenis_alashak
+            hasil_peta_lokasi_updated.alashak = bidang_current.alashak
+            await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current, obj_new=hasil_peta_lokasi_updated, db_session=db_session, with_commit=False)
+
+
+
+            

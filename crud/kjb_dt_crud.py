@@ -197,6 +197,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     harga_akta,
                     harga_transaksi,
                     harga_ptsl,
+                    is_ptsl,
                     bundle_hd_id
                     from kjb_dt
                     where id = '{str(id)}'

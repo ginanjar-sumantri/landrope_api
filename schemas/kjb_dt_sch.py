@@ -24,6 +24,7 @@ class KjbDtCreateExtSch(SQLModel):
     pemilik_id:UUID | None 
     jenis_surat_id:UUID | None
     jumlah_waris:int | None
+    is_ptsl: bool | None
 
 class KjbDtSch(KjbDtFullBase):
     kjb_code:str | None = Field(alias="kjb_code")
@@ -103,6 +104,7 @@ class KjbDtForCloud(SQLModel):
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
     harga_ptsl:Decimal | None
+    is_ptsl:bool | None
     bundle_hd_id:Optional[UUID]
 
 class KjbDtForUtjKhususSch(SQLModel):

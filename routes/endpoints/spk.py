@@ -437,7 +437,11 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     termins = []
     if bidang_obj.hasil_peta_lokasi:
-        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
+        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, 
+                                                jenis_alashak=bidang_obj.jenis_alashak if (bidang_obj.is_ptsl or False) == False else JenisAlashakEnum.Girik)
+        
+        if harga is None:
+            raise HTTPException(status_code=404, detail="KJB Harga not Found")
         
         for tr in harga.termins:
             if tr.id == obj.kjb_termin_id:
@@ -747,19 +751,21 @@ async def get_by_id(id:UUID):
 
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
-    
     spk_exists_on_bidangs = await crud.spk.get_multi_by_bidang_id(bidang_id=id)
+    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak if kjb_dt_current.is_ptsl is False else JenisAlashakEnum.Girik)
+    if harga is None:
+        raise HTTPException(status_code=404, detail="KJB Harga not found")
     
-    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
     termins = []
-    for tr in harga.termins:
-        spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
-        if spk_exists_on_bidang:
-            termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
-            termins.append(termin)
-        else:
-            termin = KjbTerminInSpkSch(**tr.dict())
-            termins.append(termin)
+    if harga:
+        for tr in harga.termins:
+            spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
+            if spk_exists_on_bidang:
+                termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
+                termins.append(termin)
+            else:
+                termin = KjbTerminInSpkSch(**tr.dict())
+                termins.append(termin)
 
     beban = []
 
@@ -962,24 +968,11 @@ async def generate_printout(id:UUID|str):
 
     obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
 
-    if spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
-    #alashak mesti nomor 1
-        list_alashak = [alashak for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"]
-        current_alashak = next((SpkDetailPrintOut(bundle_dt_id=alashak.bundle_dt_id, field_value=alashak.field_value,
-                                                tanggapan=alashak.tanggapan, name=alashak.name) for alashak in list_alashak if alashak.name == "ALAS HAK" and alashak.field_value.lower().replace(' ', '') == spk_header.alashak.lower().replace(' ', '')), None)
-        if current_alashak:
-            current_alashak.no = no
-            spk_details.append(current_alashak)
-            no += 1
-
-        for a in list_alashak:
-            if a.name == "ALAS HAK" and a.field_value.lower().replace(' ', '') == spk_header.alashak.lower().replace(' ', ''):
-                continue
-
-            alashak = SpkDetailPrintOut(**dict(a))
-            alashak.no = no
-            spk_details.append(alashak)
-            no += 1
+    for k in obj_kelengkapans:
+        kelengkapan = SpkDetailPrintOut(**dict(k))
+        kelengkapan.no = no
+        spk_details.append(kelengkapan)
+        no += 1
 
     obj_beban_biayas = []
     obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
@@ -993,14 +986,6 @@ async def generate_printout(id:UUID|str):
         spk_details.append(beban_biaya)
         no += 1
     
-    for k in obj_kelengkapans:
-        kelengkapan = SpkDetailPrintOut(**dict(k))
-        if kelengkapan.name == 'ALAS HAK':
-            continue
-
-        kelengkapan.no = no
-        spk_details.append(kelengkapan)
-        no += 1
 
     pm_1 = await crud.spk.get_pm1(id=id, check_meta_data_exists=False)
     if pm_1["jumlah"] > 0:

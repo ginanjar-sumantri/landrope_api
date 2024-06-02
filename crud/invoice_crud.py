@@ -509,5 +509,19 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    async def get_multi_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[Invoice] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Invoice).where(Invoice.bidang_id == bidang_id)
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 invoice = CRUDInvoice(Invoice)

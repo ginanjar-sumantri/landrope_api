@@ -201,6 +201,10 @@ class TahapDetail(TahapDetailFullBase, table=True):
         return getattr(getattr(self, "bidang", None), "harga_ptsl", None)
     
     @property
+    def is_ptsl(self) -> bool | None:
+        return getattr(getattr(self, "bidang", None), "is_ptsl", None)
+    
+    @property
     def pemilik_name(self) -> str | None:
         return getattr(getattr(self, "bidang", None), "pemilik_name", None)
     

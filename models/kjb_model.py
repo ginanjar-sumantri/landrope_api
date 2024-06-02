@@ -159,6 +159,8 @@ class KjbDtBase(SQLModel):
     bundle_hd_id:UUID | None = Field(foreign_key="bundle_hd.id", nullable=True)
     jumlah_waris:int|None = Field(nullable=True)
 
+    is_ptsl: bool | None = Field(nullable=True)
+
 
 class KjbDtFullBase(BaseUUIDModel, KjbDtBase):
     pass

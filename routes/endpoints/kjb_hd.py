@@ -250,8 +250,8 @@ async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
     obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
     return create_response(data=obj_updated)
 
-@router.post("/task/update-alashak")
-async def update_alashak_bidang_bundle(payload:Dict):
+@router.post("/task/update-to-bidang")
+async def update_to_bidang_bundle(payload:Dict):
 
     db_session = db.session
 
@@ -263,7 +263,7 @@ async def update_alashak_bidang_bundle(payload:Dict):
     
     for kjb_dt in obj.kjb_dts:
         if kjb_dt.hasil_peta_lokasi:
-            await BidangHelper().update_alashak(bidang_id=kjb_dt.hasil_peta_lokasi.bidang_id, alashak=kjb_dt.alashak, db_session=db_session, worker_id=obj.updated_by_id)
+            await BidangHelper().update_from_kjb_to_bidang(kjb_dt_id=kjb_dt.id, alashak=kjb_dt.alashak, db_session=db_session, worker_id=obj.updated_by_id)
 
         if kjb_dt.bundlehd:
             await BundleHelper().merge_alashak(bundle=kjb_dt.bundlehd, worker_id=obj.updated_by_id, alashak=kjb_dt.alashak, db_session=db_session)
@@ -271,6 +271,7 @@ async def update_alashak_bidang_bundle(payload:Dict):
     await db_session.commit()
 
     return {"message" : "successfully"}
+
 
 
 

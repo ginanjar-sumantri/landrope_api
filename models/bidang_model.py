@@ -61,6 +61,7 @@ class BidangBase(SQLModel):
     njop:Decimal|None = Field(nullable=True)
     status_pembebasan:StatusPembebasanEnum|None = Field(nullable=True)
     parent_id:UUID|None = Field(nullable=True, foreign_key="bidang.id")
+    is_ptsl: bool | None = Field(nullable=True, default=False)
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
