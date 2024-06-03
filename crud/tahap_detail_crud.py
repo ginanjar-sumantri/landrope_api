@@ -120,7 +120,7 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                         COALESCE(b.luas_bayar,0) as luas_bayar,
                         COALESCE(b.no_peta, '') as no_peta,
                         COALESCE(CASE
-                            WHEN b.harga_ptsl is NULL THEN b.harga_transaksi
+                            WHEN COALESCE(b.is_ptsl, False) is False THEN b.harga_transaksi
                             ELSE b.harga_ptsl
                         END, 0) as harga_transaksi,
                         --COALESCE(b.harga_transaksi,0) as harga_transaksi,
