@@ -356,7 +356,7 @@ class Bidang(BidangFullBase, table=True):
             array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
         
-        if self.harga_ptsl is not None and self.harga_ptsl != 0:
+        if self.is_ptsl:
             harga = self.harga_ptsl
         else:
             harga = self.harga_transaksi
@@ -381,7 +381,7 @@ class Bidang(BidangFullBase, table=True):
         total_beban_penjual:Decimal = 0
         harga:Decimal = 0
 
-        if self.harga_ptsl is not None and self.harga_ptsl != 0:
+        if self.is_ptsl:
             harga = self.harga_ptsl
         else:
             harga = self.harga_transaksi
