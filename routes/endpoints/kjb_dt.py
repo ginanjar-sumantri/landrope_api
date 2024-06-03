@@ -241,7 +241,7 @@ async def update(id:UUID,
 
     return create_response(data=obj_updated)
 
-@router.post("/task/update-to_bidang")
+@router.post("/task/update-to-bidang")
 async def update_alashak_bidang_bundle(payload:Dict):
 
     db_session = db.session
