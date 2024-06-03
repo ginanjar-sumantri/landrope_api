@@ -810,7 +810,8 @@ class BidangHelper:
                 bidang_updated.harga_ptsl = kjb_dt_current.harga_ptsl
                 bidang_updated.alashak = kjb_dt_current.alashak
                 bidang_updated.jenis_alashak = kjb_dt_current.jenis_alashak
-                bidang_updated.is_ptsl = kjb_dt_current.is_ptsl
+                if bidang_current.jenis_alashak == JenisAlashakEnum.Girik and kjb_dt_current.jenis_alashak == JenisAlashakEnum.Sertifikat:
+                    bidang_updated.is_ptsl = True
                 await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=worker_id, db_session=db_session)
 
         if hasil_peta_lokasi_current:
