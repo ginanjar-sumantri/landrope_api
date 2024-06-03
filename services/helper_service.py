@@ -803,16 +803,17 @@ class BidangHelper:
             if bidang_current.geom_ori :
                 bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-            if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.harga_ptsl != kjb_dt_current.harga_ptsl or bidang_current.alashak != kjb_dt_current.alashak or bidang_current.is_ptsl != kjb_dt_current.is_ptsl:
+            # if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.harga_ptsl != kjb_dt_current.harga_ptsl or bidang_current.alashak != kjb_dt_current.alashak or bidang_current.is_ptsl != kjb_dt_current.is_ptsl:
+            if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.alashak != kjb_dt_current.alashak:    
                 bidang_updated = BidangUpdateSch.from_orm(bidang_current)
                 bidang_updated.harga_transaksi = kjb_dt_current.harga_transaksi
                 bidang_updated.harga_akta = kjb_dt_current.harga_akta
-                bidang_updated.harga_ptsl = kjb_dt_current.harga_ptsl
+                # bidang_updated.harga_ptsl = kjb_dt_current.harga_ptsl
                 bidang_updated.alashak = kjb_dt_current.alashak
                 bidang_updated.jenis_alashak = kjb_dt_current.jenis_alashak
                 bidang_updated.jenis_surat_id = kjb_dt_current.jenis_surat_id
-                if bidang_current.jenis_alashak == JenisAlashakEnum.Girik and kjb_dt_current.jenis_alashak == JenisAlashakEnum.Sertifikat:
-                    bidang_updated.is_ptsl = True
+                # if bidang_current.jenis_alashak == JenisAlashakEnum.Girik and kjb_dt_current.jenis_alashak == JenisAlashakEnum.Sertifikat:
+                #     bidang_updated.is_ptsl = True
                 await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=worker_id, db_session=db_session)
 
         if hasil_peta_lokasi_current:

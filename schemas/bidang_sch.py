@@ -82,6 +82,8 @@ class BidangByIdSch(BidangRawBase):
     manager_name:str | None = Field(alias='manager_name')
     sales_name:str|None = Field(alias='sales_name')
     notaris_name:str | None = Field(alias='notaris_name')
+    parent_id_bidang:str | None = Field(alias='parent_id_bidang')
+    parent_alashak:str | None = Field(alias='parent_alashak')
 
 @as_form
 @optional

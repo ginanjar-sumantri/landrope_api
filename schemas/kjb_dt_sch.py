@@ -17,7 +17,7 @@ class KjbDtCreateExtSch(SQLModel):
     posisi_bidang:PosisiBidangEnum | None
     harga_akta:Decimal | None
     harga_transaksi:Decimal | None
-    harga_ptsl:Decimal | None
+    # harga_ptsl:Decimal | None
     luas_surat:Decimal | None
     desa_id:Optional[UUID] 
     project_id:Optional[UUID] 
@@ -102,8 +102,8 @@ class KjbDtForCloud(SQLModel):
     alashak:Optional[str]
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
-    harga_ptsl:Decimal | None
-    is_ptsl:bool | None
+    # harga_ptsl:Decimal | None
+    # is_ptsl:bool | None
     bundle_hd_id:Optional[UUID]
 
 class KjbDtForUtjKhususSch(SQLModel):

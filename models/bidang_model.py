@@ -55,13 +55,13 @@ class BidangBase(SQLModel):
     luas_produk:Optional[Decimal] = Field(nullable=True)
     harga_akta:Optional[Decimal] = Field(nullable=True)
     harga_transaksi:Optional[Decimal] = Field(nullable=True)
-    harga_ptsl: Decimal | None = Field(nullable=True)
+    # harga_ptsl: Decimal | None = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     njop:Decimal|None = Field(nullable=True)
     status_pembebasan:StatusPembebasanEnum|None = Field(nullable=True)
     parent_id:UUID|None = Field(nullable=True, foreign_key="bidang.id")
-    is_ptsl: bool | None = Field(nullable=True, default=False)
+    # is_ptsl: bool | None = Field(nullable=True, default=False)
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
@@ -315,9 +315,9 @@ class Bidang(BidangFullBase, table=True):
     def kjb_harga_transaksi(self) -> str:
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_transaksi", None)
     
-    @property
-    def kjb_harga_ptsl(self) -> str:
-        return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_ptsl", None)
+    # @property
+    # def kjb_harga_ptsl(self) -> str:
+    #     return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_ptsl", None)
     
     @property
     def kjb_no(self) -> str:
@@ -356,10 +356,10 @@ class Bidang(BidangFullBase, table=True):
             array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
         
-        if self.is_ptsl:
-            harga = self.harga_ptsl
-        else:
-            harga = self.harga_transaksi
+        # if self.is_ptsl:
+        #     harga = self.harga_ptsl
+        # else:
+        harga = self.harga_transaksi
 
         return Decimal(((harga or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
     
@@ -381,10 +381,10 @@ class Bidang(BidangFullBase, table=True):
         total_beban_penjual:Decimal = 0
         harga:Decimal = 0
 
-        if self.is_ptsl:
-            harga = self.harga_ptsl
-        else:
-            harga = self.harga_transaksi
+        # if self.is_ptsl:
+        #     harga = self.harga_ptsl
+        # else:
+        harga = self.harga_transaksi
 
         if len(self.komponen_biayas) > 0:
             calculate = []
@@ -518,6 +518,16 @@ class Bidang(BidangFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def parent_id_bidang(self) -> str | None:
+        if self.parent_bintang:
+            return self.parent_bintang.id_bidang
+        
+    @property
+    def parent_alashak(self) -> str | None:
+        if self.parent_bintang:
+            return self.parent_bintang.alashak
     
     # @property
     # def njop(self) -> Decimal | None:

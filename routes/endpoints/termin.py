@@ -984,7 +984,8 @@ async def get_by_id(id:UUID,
                         alashak=obj.alashak, 
                         group=obj.bidang.group,
                         luas_bayar=obj.bidang.luas_bayar, 
-                        harga_transaksi=obj.bidang.harga_transaksi if (obj.bidang.is_ptsl or False) == False else obj.bidang.harga_ptsl, 
+                        # harga_transaksi=obj.bidang.harga_transaksi if (obj.bidang.is_ptsl or False) == False else obj.bidang.harga_ptsl, 
+                        harga_transaksi=obj.bidang.harga_transaksi, 
                         harga_akta=obj.bidang.harga_akta, 
                         amount=round(obj.spk_amount,0), 
                         utj_amount=obj.utj_amount, 
@@ -1051,6 +1052,7 @@ async def get_by_ids(sch:SpkIdSch,
                         group=obj.bidang.group,
                         luas_bayar=obj.bidang.luas_bayar, 
                         harga_transaksi=obj.bidang.harga_transaksi, 
+                        # harga_transaksi=obj.bidang.harga_transaksi if (obj.bidang.is_ptsl or False) == False else obj.bidang.harga_ptsl, 
                         harga_akta=obj.bidang.harga_akta, 
                         amount=round(obj.spk_amount,0), 
                         utj_amount=obj.utj_amount, 
@@ -2057,10 +2059,12 @@ async def get_report(
             ws.cell(row=x, column=13, value=invoice.jenis_bayar)
             ws.cell(row=x, column=14, value=status_workflow)
             ws.cell(row=x, column=15, value=last_status_workflow_at)
-            if (invoice.bidang.is_ptsl or False) == False:
-                ws.cell(row=x, column=16, value=invoice.bidang.harga_transaksi or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
-            else:
-                ws.cell(row=x, column=16, value=invoice.bidang.harga_ptsl or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
+            # if (invoice.bidang.is_ptsl or False) == False:
+            #     ws.cell(row=x, column=16, value=invoice.bidang.harga_transaksi or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
+            # else:
+            #     ws.cell(row=x, column=16, value=invoice.bidang.harga_ptsl or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
+            
+            ws.cell(row=x, column=16, value=invoice.bidang.harga_transaksi or 0).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
                 
             ws.cell(row=x, column=17, value=','.join([f'{payment_detail.nomor_giro if payment_detail else {""}} : Rp. {"{:,.0f}".format(payment_detail.amount)}' for payment_detail in invoice.payment_details]))
             ws.cell(row=x, column=18, value=invoice.termin.tanggal_rencana_transaksi)

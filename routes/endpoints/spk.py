@@ -437,8 +437,10 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     termins = []
     if bidang_obj.hasil_peta_lokasi:
-        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, 
-                                                jenis_alashak=bidang_obj.jenis_alashak if (bidang_obj.is_ptsl or False) == False else JenisAlashakEnum.Girik)
+        # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, 
+        #                                         jenis_alashak=bidang_obj.jenis_alashak if (bidang_obj.is_ptsl or False) == False else JenisAlashakEnum.Girik)
+
+        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
         
         if harga is None:
             raise HTTPException(status_code=404, detail="KJB Harga not Found")
@@ -752,7 +754,9 @@ async def get_by_id(id:UUID):
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
     spk_exists_on_bidangs = await crud.spk.get_multi_by_bidang_id(bidang_id=id)
-    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak if (obj.is_ptsl or False) is False else JenisAlashakEnum.Girik)
+    # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak if (obj.is_ptsl or False) is False else JenisAlashakEnum.Girik)
+    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+    
     if harga is None:
         raise HTTPException(status_code=404, detail="KJB Harga not found")
     
