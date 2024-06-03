@@ -502,6 +502,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         jenis_bidang = JenisBidangEnum.Overlap
     
     bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
+    bundle_hd_id_bidang = bidang_current.bundle_hd_id
     if bidang_current.geom :
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
     
@@ -537,8 +538,8 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
                             with_commit=False)
     
     #jika kjb_dt memiliki bundle yang berbeda dengan bidang (case bidang dan bundle naik duluan diimport) sekalian merging apa yg ada di bundle kjb ke bundle bidang
-    if kjb_dt_current.bundle_hd_id != bidang_current.bundle_hd_id:
-        bundle_dts_bidang = await crud.bundledt.get_by_bundle_hd_id_for_merging(bundle_hd_id=bidang_current.bundle_hd_id)
+    if kjb_dt_current.bundle_hd_id != bundle_hd_id_bidang:
+        bundle_dts_bidang = await crud.bundledt.get_by_bundle_hd_id_for_merging(bundle_hd_id=bundle_hd_id_bidang)
         for bundle_dt_bidang in bundle_dts_bidang:
             bundle_dt_on_kjb_dt = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=kjb_dt_current.bundle_hd_id, dokumen_id=bundle_dt_bidang.dokumen_id)
             bundle_dt_on_kjb_dt_updated = BundleDtUpdateSch.from_orm(bundle_dt_on_kjb_dt)
