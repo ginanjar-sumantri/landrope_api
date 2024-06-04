@@ -55,11 +55,13 @@ class BidangBase(SQLModel):
     luas_produk:Optional[Decimal] = Field(nullable=True)
     harga_akta:Optional[Decimal] = Field(nullable=True)
     harga_transaksi:Optional[Decimal] = Field(nullable=True)
+    # harga_ptsl: Decimal | None = Field(nullable=True)
 
     bundle_hd_id:UUID | None = Field(nullable=True, foreign_key="bundle_hd.id")
     njop:Decimal|None = Field(nullable=True)
     status_pembebasan:StatusPembebasanEnum|None = Field(nullable=True)
     parent_id:UUID|None = Field(nullable=True, foreign_key="bidang.id")
+    # is_ptsl: bool | None = Field(nullable=True, default=False)
     
 class BidangRawBase(BaseUUIDModel, BidangBase):
     pass
@@ -313,6 +315,10 @@ class Bidang(BidangFullBase, table=True):
     def kjb_harga_transaksi(self) -> str:
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_transaksi", None)
     
+    # @property
+    # def kjb_harga_ptsl(self) -> str:
+    #     return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "harga_ptsl", None)
+    
     @property
     def kjb_no(self) -> str:
         return getattr(getattr(getattr(self, "hasil_peta_lokasi", None), "kjb_dt", None), "kjb_code", None)
@@ -341,14 +347,21 @@ class Bidang(BidangFullBase, table=True):
     def total_harga_transaksi(self) -> Decimal | None:
         total_harga_overlap:Decimal = 0
         total_luas_bayar_overlap:Decimal = 0
+        harga:Decimal = 0
+
         if len(self.overlaps) > 0:
             array_total_harga_overlap = [((ov.harga_transaksi or 0) * (ov.luas_bayar or 0)) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_harga_overlap = sum(array_total_harga_overlap)
 
             array_total_luas_bayar_overlap = [(ov.luas_bayar or 0) for ov in self.overlaps if ov.parent_bidang_intersect_id is not None]
             total_luas_bayar_overlap = sum(array_total_luas_bayar_overlap)
+        
+        # if self.is_ptsl:
+        #     harga = self.harga_ptsl
+        # else:
+        harga = self.harga_transaksi
 
-        return Decimal(((self.harga_transaksi or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
+        return Decimal(((harga or 0) * ((self.luas_bayar or 0) - Decimal(total_luas_bayar_overlap))) + Decimal(total_harga_overlap))
     
     @property
     def total_harga_akta(self) -> Decimal | None:
@@ -366,12 +379,19 @@ class Bidang(BidangFullBase, table=True):
     @property
     def total_beban_penjual(self) -> Decimal | None:
         total_beban_penjual:Decimal = 0
+        harga:Decimal = 0
+
+        # if self.is_ptsl:
+        #     harga = self.harga_ptsl
+        # else:
+        harga = self.harga_transaksi
+
         if len(self.komponen_biayas) > 0:
             calculate = []
             komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_paid == True]
             for beban in komponen_biaya_beban_penjual:
                 if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (self.harga_transaksi or 0)/100)
+                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (harga or 0)/100)
                 elif beban.satuan_bayar == SatuanBayarEnum.Amount and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
                     amount = (beban.amount or 0) * (self.luas_bayar or self.luas_surat)
                 else:
@@ -498,6 +518,16 @@ class Bidang(BidangFullBase, table=True):
             return True
         
         return False
+    
+    @property
+    def parent_id_bidang(self) -> str | None:
+        if self.parent_bintang:
+            return self.parent_bintang.id_bidang
+        
+    @property
+    def parent_alashak(self) -> str | None:
+        if self.parent_bintang:
+            return self.parent_bintang.alashak
     
     # @property
     # def njop(self) -> Decimal | None:

@@ -20,7 +20,7 @@ from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
 from schemas.bidang_sch import BidangSch, BidangUpdateSch, BidangSrcSch
 from schemas.bundle_hd_sch import BundleHdUpdateSch
-from schemas.bundle_dt_sch import BundleDtCreateSch
+from schemas.bundle_dt_sch import BundleDtCreateSch, BundleDtUpdateSch
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
 from schemas.utj_khusus_detail_sch import UtjKhususDetailUpdateSch
@@ -47,6 +47,7 @@ import geopandas as gpd
 import pandas as pd
 import roman
 import math
+
 
 
 router = APIRouter()
@@ -228,9 +229,6 @@ async def create(
 
         url2 = f'{request.base_url}landrope/hasilpetalokasi/task/update-bidang'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
-
-        url3 = f'{request.base_url}landrope/hasilpetalokasi/task/generate-kelengkapan'
-        GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     
     else:
 
@@ -343,8 +341,6 @@ async def update(
         url2 = f'{request.base_url}landrope/hasilpetalokasi/task/update-bidang'
         GCloudTaskService().create_task(payload=payload.dict(), base_url=url2)
 
-        url3 = f'{request.base_url}landrope/hasilpetalokasi/task/generate-kelengkapan'
-        GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
     else:
         await db_session.commit()
         await db_session.refresh(obj_updated)
@@ -485,7 +481,7 @@ async def insert_detail(payload:HasilPetaLokasiTaskUpdate):
     return {"message":"successfully"} 
 
 @router.post("/task/update-bidang")
-async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_task:BackgroundTasks):
+async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_task:BackgroundTasks, request:Request):
 
     """Task update data bidang from hasil peta lokasi"""
     # try:
@@ -506,6 +502,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         jenis_bidang = JenisBidangEnum.Overlap
     
     bidang_current = await crud.bidang.get_by_id(id=payload.bidang_id)
+    bundle_hd_id_bidang = bidang_current.bundle_hd_id
     if bidang_current.geom :
         bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
     
@@ -527,9 +524,12 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         mediator=kjb_hd_current.mediator,
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
-        bundle_hd_id=bidang_current.bundle_hd_id if bidang_current.bundle_hd_id else kjb_dt_current.bundle_hd_id,
+        bundle_hd_id=kjb_dt_current.bundle_hd_id,
         harga_akta=kjb_dt_current.harga_akta,
-        harga_transaksi=kjb_dt_current.harga_transaksi)
+        harga_transaksi=kjb_dt_current.harga_transaksi,
+        # harga_ptsl=kjb_dt_current.harga_ptsl,
+        # is_ptsl=kjb_dt_current.is_ptsl
+        )
     
     await crud.bidang.update(obj_current=bidang_current, 
                             obj_new=bidang_updated, 
@@ -537,20 +537,22 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
                             db_session=db_session,
                             with_commit=False)
     
-    #jika kjb_dt belum memiliki bundle akan tetapi bidang sudah punya (case bidang dan bundle naik duluan diimport)
-    if kjb_dt_current.bundle_hd_id is None:
-        kjb_dt_curr = await crud.kjb_dt.get(id=kjb_dt_current.id)
-        kjb_dt_updated = KjbDtUpdateSch.from_orm(kjb_dt_curr)
-        kjb_dt_updated.bundle_hd_id = bidang_current.bundle_hd_id
+    #jika kjb_dt memiliki bundle yang berbeda dengan bidang (case bidang dan bundle naik duluan diimport) sekalian merging apa yg ada di bundle kjb ke bundle bidang
+    if kjb_dt_current.bundle_hd_id != bundle_hd_id_bidang:
+        bundle_dts_bidang = await crud.bundledt.get_by_bundle_hd_id_for_merging(bundle_hd_id=bundle_hd_id_bidang)
+        for bundle_dt_bidang in bundle_dts_bidang:
+            bundle_dt_on_kjb_dt = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=kjb_dt_current.bundle_hd_id, dokumen_id=bundle_dt_bidang.dokumen_id)
+            bundle_dt_on_kjb_dt_updated = BundleDtUpdateSch.from_orm(bundle_dt_on_kjb_dt)
+            bundle_dt_on_kjb_dt_updated.meta_data = bundle_dt_bidang.meta_data
+            bundle_dt_on_kjb_dt_updated.file_path = bundle_dt_bidang.file_path
+            bundle_dt_on_kjb_dt_updated.riwayat_data = bundle_dt_bidang.riwayat_data
+            bundle_dt_on_kjb_dt_updated.multiple_count = bundle_dt_bidang.multiple_count
 
-        await crud.kjb_dt.update(obj_current=kjb_dt_curr, 
-                                obj_new=kjb_dt_updated, 
-                                updated_by_id=hasil_peta_lokasi.updated_by_id, 
-                                db_session=db_session, 
-                                with_commit=False)
+            await crud.bundledt.update(obj_current=bundle_dt_on_kjb_dt, obj_new=bundle_dt_on_kjb_dt_updated, updated_by_id=hasil_peta_lokasi.updated_by_id, db_session=db_session)
+    
         
     #bundle update planing
-    bundle_current = await crud.bundlehd.get(id=kjb_dt_current.bundle_hd_id if kjb_dt_current.bundle_hd_id else bidang_current.bundle_hd_id)
+    bundle_current = await crud.bundlehd.get(id=kjb_dt_current.bundle_hd_id)
     bundle_updated = BundleHdUpdateSch.from_orm(bundle_current)
     bundle_updated.planing_id = hasil_peta_lokasi.planing_id
     await crud.bundlehd.update(obj_current=bundle_current, obj_new=bundle_updated, db_session=db_session, with_commit=False)
@@ -589,12 +591,11 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
                 invoice_updated = InvoiceUpdateSch(bidang_id=payload.bidang_id)
                 await crud.invoice.update(obj_current=utj_khusus_detail.invoice, obj_new=invoice_updated, db_session=db_session, with_commit=False)
     
-    
-    # if kjb_dt_current.bundle_hd_id:
-    #     #update bundle Peta Lokasi
-    #     await BundleHelper().merge_hasil_lokasi(bundle_hd_id=kjb_dt_current.bundle_hd_id, worker_id=hasil_peta_lokasi.updated_by_id, hasil_peta_lokasi_id=hasil_peta_lokasi.id, db_session=db_session)
-
     await db_session.commit()
+
+    url3 = f'{request.base_url}landrope/hasilpetalokasi/task/generate-kelengkapan'
+    GCloudTaskService().create_task(payload=payload.dict(), base_url=url3)
+
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, [bidang_current.id])
 
@@ -994,7 +995,6 @@ async def report_ready_spk(
     return StreamingResponse(BytesIO(output.getvalue()), 
                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             headers={"Content-Disposition": "attachment;filename=ready_spk.xlsx"})
-
 
 @router.get("/generate-kelengkapan/bidang")
 async def generate_kelengkapan_bidang():

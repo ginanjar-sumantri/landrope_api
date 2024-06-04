@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, Reque
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_
-from models import KjbHd, KjbDt, KjbPenjual, Workflow
+from models import KjbHd, KjbDt, KjbPenjual, Workflow, WorkflowNextApprover
 from models.worker_model import Worker
 from models.marketing_model import Manager, Sales
 from models.pemilik_model import Pemilik
@@ -133,13 +133,23 @@ async def get_list(
         params: Params=Depends(), 
         order_by: str = None, 
         keyword: str = None, 
-        filter_query: str= None,
+        filter_query: str | None = None,
+        filter_list: str | None = None,
         current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
     search_date = None
 
     query = select(KjbHd).select_from(KjbHd)
+
+    if filter_list == "list_approval":
+        subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
+                                ).where(and_(WorkflowNextApprover.email == current_worker.email, 
+                                            Workflow.entity == WorkflowEntityEnum.KJB,
+                                            Workflow.last_status != WorkflowLastStatusEnum.COMPLETED))
+                    ).distinct()
+        
+        query = query.filter(KjbHd.id.in_(subquery_workflow))
     
     try:
         # Mengonversi string tanggal menjadi objek datetime
@@ -240,8 +250,8 @@ async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
     obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
     return create_response(data=obj_updated)
 
-@router.post("/task/update-alashak")
-async def update_alashak_bidang_bundle(payload:Dict):
+@router.post("/task/update-to-bidang")
+async def update_to_bidang_bundle(payload:Dict):
 
     db_session = db.session
 
@@ -253,7 +263,7 @@ async def update_alashak_bidang_bundle(payload:Dict):
     
     for kjb_dt in obj.kjb_dts:
         if kjb_dt.hasil_peta_lokasi:
-            await BidangHelper().update_alashak(bidang_id=kjb_dt.hasil_peta_lokasi.bidang_id, alashak=kjb_dt.alashak, db_session=db_session, worker_id=obj.updated_by_id)
+            await BidangHelper().update_from_kjb_to_bidang(kjb_dt_id=kjb_dt.id, db_session=db_session, worker_id=obj.updated_by_id)
 
         if kjb_dt.bundlehd:
             await BundleHelper().merge_alashak(bundle=kjb_dt.bundlehd, worker_id=obj.updated_by_id, alashak=kjb_dt.alashak, db_session=db_session)
@@ -261,6 +271,7 @@ async def update_alashak_bidang_bundle(payload:Dict):
     await db_session.commit()
 
     return {"message" : "successfully"}
+
 
 
 

@@ -48,6 +48,23 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    #for termin update function
+    async def get_ids_by_invoice_ids(self, 
+                            *,
+                            list_ids:List[UUID] | None = None,
+                            db_session : AsyncSession | None = None
+                            ) -> List[UUID] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).where(InvoiceDetail.invoice_id.in_(list_ids))
+
+        response =  await db_session.execute(query)
+        result = response.scalars().all()
+        
+        datas = [data.id for data in result]
+        return datas
+    
     async def get_by_invoice_id_and_beban_biaya_id_and_termin_id(self, 
                             *,
                             invoice_id:UUID | None = None,

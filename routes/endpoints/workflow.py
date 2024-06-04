@@ -69,8 +69,12 @@ async def notification(sch: WorkflowSystemCallbackSch, request:Request):
         await crud.workflow_history.create(obj_in=obj_in, db_session=db_session)
 
         if obj_updated.entity == WorkflowEntityEnum.KJB and obj_updated.last_status == WorkflowLastStatusEnum.COMPLETED:
-            url = f'{request.base_url}landrope/kjbhd/task/update-alashak'
+            url = f'{request.base_url}landrope/kjbhd/task/update-to-bidang'
             GCloudTaskService().create_task(payload={"id":str(obj_updated.reference_id)}, base_url=url)
+
+        # if obj_updated.entity == WorkflowEntityEnum.TERMIN and obj_updated.last_status == WorkflowLastStatusEnum.COMPLETED:
+        #     url = f'{request.base_url}landrope/termin/task/create_rfp'
+        #     GCloudTaskService().create_task(payload={"id": str(obj_updated.reference_id)}, base_url=url)
         
         return {"success" : True}
     

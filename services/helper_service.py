@@ -2,10 +2,11 @@ from fastapi import UploadFile, HTTPException
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
 from models.dokumen_model import Dokumen
-from models.bundle_model import BundleDt, BundleHd
+from models import BundleDt, BundleHd, HasilPetaLokasi
 from schemas.dokumen_sch import RiwayatSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiUpdateSch
 from datetime import date,datetime
 from common.exceptions import ContentNoChangeException
 from common.enum import StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, SatuanBayarEnum, SatuanHargaEnum, StatusPembebasanEnum
@@ -223,8 +224,6 @@ class KomponenBiayaHelper:
 
             await crud.bidang_komponen_biaya.update(obj_current=komponen_biaya, obj_new=sch_updated, updated_by_id=komponen_biaya.updated_by_id)
     
-
-
 class BundleHelper:
 
     def extract_metadata_for_riwayat(self, current_riwayat:str | None,
@@ -235,7 +234,7 @@ class BundleHelper:
                                             from_notaris:bool = False) -> str:
             
         riwayat_data:str = ""
-        metadata_dict = json.loads(meta_data.replace("'", "\""))
+        metadata_dict = json.loads(meta_data)
         key_value = metadata_dict[f'{key_riwayat}']
 
         if key_value is None or key_value == "":
@@ -254,10 +253,8 @@ class BundleHelper:
                                 ]}
             
             riwayat_data = json.dumps(new_riwayat_data)
-            # riwayat_data = str(new_riwayat_data).replace('None', 'null').replace('"', "'")
         else:
-            # current_riwayat_obj = eval(current_riwayat.replace('null', 'None'))
-            current_riwayat = current_riwayat.replace("'", "\"")
+            current_riwayat = current_riwayat
             current_riwayat_obj = json.loads(current_riwayat)
 
             for i, item in enumerate(current_riwayat_obj["riwayat"]):
@@ -296,13 +293,13 @@ class BundleHelper:
                             ) -> Tuple[str | None, str | None]:
         
     
-        metadata_dict = json.loads(sch.meta_data.replace("'", "\""))
+        metadata_dict = json.loads(sch.meta_data)
         key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
         if key_value is None or key_value == "":
             raise ContentNoChangeException(detail=f"{dokumen.key_riwayat} wajib terisi!")
 
-        riwayat_data = json.loads(current_riwayat_data.replace("'", "\""))
+        riwayat_data = json.loads(current_riwayat_data)
 
         current_dict_riwayat = next((x for x in riwayat_data["riwayat"] if x["key_value"] == sch.key_value), None)
         if current_dict_riwayat is None and from_notaris == False:
@@ -345,7 +342,7 @@ class BundleHelper:
                         worker_id:UUID|None,
                         db_session : AsyncSession | None = None):
     
-        obj_json = json.loads(meta_data.replace("'", '"'))
+        obj_json = json.loads(meta_data)
         current_bundle_hd = await crud.bundlehd.get(id=bundle_hd_id)
 
         metadata_keyword = obj_json.get(f'{key_field}', None)
@@ -439,7 +436,7 @@ class BundleHelper:
         bundle_dt_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name=dokumen_name, bidang_id=bidang_id)
         if bundle_dt_meta_data:
             if bundle_dt_meta_data.meta_data is not None and bundle_dt_meta_data.meta_data != "":
-                metadata_dict = json.loads(bundle_dt_meta_data.meta_data.replace("'", "\""))
+                metadata_dict = json.loads(bundle_dt_meta_data.meta_data)
                 value = metadata_dict.get(bundle_dt_meta_data.key_field, '')
                 # value = metadata_dict[f'{bundle_dt_meta_data.key_field}']
 
@@ -448,7 +445,7 @@ class BundleHelper:
     async def multiple_data(self, meta_data_current:str|None = None, meta_data_new:str|None = "[]", dokumen:Dokumen|None = None):
         
         if meta_data_current:
-            meta_datas_current = json.loads(meta_data_current.replace("'", "\""))
+            meta_datas_current = json.loads(meta_data_current)
 
             data = meta_datas_current.get("data", None)
             if data is None:
@@ -456,7 +453,7 @@ class BundleHelper:
         else:
             meta_datas_current = {"data" : []}
 
-        meta_datas_new = json.loads(meta_data_new.replace("'", "\""))
+        meta_datas_new = json.loads(meta_data_new)
 
         #delete
         for data_current in meta_datas_current["data"]:
@@ -544,7 +541,7 @@ class BundleHelper:
                 meta_data = json.dumps(input_dict)
                 
             else:
-                input_data = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                input_data = json.loads(bundledt_current.meta_data)
                 if dokumen.key_field not in input_data:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
                 
@@ -636,7 +633,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
@@ -674,7 +671,7 @@ class BundleHelper:
                     else:
                         meta_datas_current = input_dict
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     if dokumen.is_multiple:
                         dt = meta_datas_current.get("data", None)
                         if dt is None:
@@ -723,7 +720,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
@@ -759,7 +756,7 @@ class BundleHelper:
                     meta_datas_current["data"].append(input_dict)
                     
                 else:
-                    meta_datas_current = json.loads(bundledt_current.meta_data.replace("'", "\""))
+                    meta_datas_current = json.loads(bundledt_current.meta_data)
                     exists = next((data for data in meta_datas_current["data"] if data[dokumen.key_field] == input_dict[dokumen.key_field]), None)
                     if exists is None:
                         meta_datas_current["data"].append(input_dict)
@@ -788,20 +785,43 @@ class BidangHelper:
             bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"status_pembebasan"}), status_pembebasan=status_pembebasan)
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False)
     
-    async def update_alashak(self, bidang_id:UUID, worker_id:UUID | str | None = None, alashak:str | None = None, db_session:AsyncSession | None = None):
+    # UPDATE BIDANG YANG SUDAH DIPETALOKASI DENGAN KJB DETAILNYA
+    async def update_from_kjb_to_bidang(self, kjb_dt_id:UUID | None = None, worker_id:UUID | str | None = None, db_session:AsyncSession | None = None):
 
         db_session = db_session or db.session
 
-        bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+        kjb_dt_current = await crud.kjb_dt.get(id=kjb_dt_id)
         
+        hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt_id)
+        
+        bidang_current = await crud.bidang.get_by_id(id=hasil_peta_lokasi_current.bidang_id if hasil_peta_lokasi_current else None)
+
         if bidang_current:
-            if bidang_current.alashak != alashak:
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
 
-                if bidang_current.geom :
-                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori :
+                bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
 
-                if bidang_current.geom_ori :
-                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+            # if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.harga_ptsl != kjb_dt_current.harga_ptsl or bidang_current.alashak != kjb_dt_current.alashak or bidang_current.is_ptsl != kjb_dt_current.is_ptsl:
+            if bidang_current.harga_akta != kjb_dt_current.harga_akta or bidang_current.harga_transaksi != kjb_dt_current.harga_akta or bidang_current.alashak != kjb_dt_current.alashak:    
+                bidang_updated = BidangUpdateSch.from_orm(bidang_current)
+                bidang_updated.harga_transaksi = kjb_dt_current.harga_transaksi
+                bidang_updated.harga_akta = kjb_dt_current.harga_akta
+                # bidang_updated.harga_ptsl = kjb_dt_current.harga_ptsl
+                bidang_updated.alashak = kjb_dt_current.alashak
+                bidang_updated.jenis_alashak = kjb_dt_current.jenis_alashak
+                bidang_updated.jenis_surat_id = kjb_dt_current.jenis_surat_id
+                # if bidang_current.jenis_alashak == JenisAlashakEnum.Girik and kjb_dt_current.jenis_alashak == JenisAlashakEnum.Sertifikat:
+                #     bidang_updated.is_ptsl = True
+                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=worker_id, db_session=db_session)
 
-                bidang_updated = BidangUpdateSch(**bidang_current.dict(exclude={"alashak"}), alashak=alashak)
-                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, db_session=db_session, with_commit=False, updated_by_id=worker_id)
+        if hasil_peta_lokasi_current:
+            hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch.from_orm(hasil_peta_lokasi_current)
+            hasil_peta_lokasi_updated.jenis_alashak = bidang_current.jenis_alashak
+            hasil_peta_lokasi_updated.alashak = bidang_current.alashak
+            await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current, obj_new=hasil_peta_lokasi_updated, db_session=db_session, with_commit=False)
+
+
+
+            

@@ -14,13 +14,15 @@ from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, Spk
                              SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
 from schemas.spk_kelengkapan_dokumen_sch import (SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch)
 from schemas.spk_history_sch import SpkHistoryCreateSch
+from schemas.bundle_dt_sch import BundleDtRiwayatSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
 from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
+from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch, WorkflowUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
-                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, StatusHasilPetaLokasiEnum,
+                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
                         StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text, JenisAlashakEnum)
 from common.ordered import OrderEnumSch
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
@@ -40,6 +42,8 @@ import json
 import pandas as pd
 import time
 from io import BytesIO
+from openpyxl import Workbook
+from openpyxl.styles import Font
 
 router = APIRouter()
 
@@ -150,7 +154,9 @@ async def create(
         kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, 
                                                                  bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, 
                                                                  tanggapan=kelengkapan_dokumen.tanggapan, 
-                                                                 order_number=kelengkapan_dokumen.order_number)
+                                                                 order_number=kelengkapan_dokumen.order_number,
+                                                                 field_value=kelengkapan_dokumen.field_value,
+                                                                 key_value=kelengkapan_dokumen.key_value)
         await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
@@ -365,41 +371,49 @@ async def get_report(
     reference_ids = [s.id for s in objs]
     workflows = await crud.workflow.get_by_reference_ids(reference_ids=reference_ids, entity=WorkflowEntityEnum.SPK)
 
+    wb = Workbook()
+    ws = wb.active
+
+    header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", 
+                    "Jenis Bayar", "Manager", "Tanggal Buat", "Status Workflow", "Created By"]
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=1, column=idx + 1, value=val).font = Font(bold=True)
+
+    x = 1
     for spk in objs:
         workflow = next((wf for wf in workflows if wf.reference_id == spk.id), None)
         status_workflow = "-"
         if workflow:
             status_workflow = workflow.last_status if workflow.last_status == WorkflowLastStatusEnum.COMPLETED else workflow.step_name or "-"
 
-        d = {
-                "Id Bidang" : spk.id_bidang, 
-                "Id Bidang Lama" : spk.id_bidang_lama or '', 
-                "Group" : spk.group,
-                "Pemilik" : spk.bidang.pemilik_name,
-                "Alashak" : spk.alashak,
-                "Project" : spk.bidang.project_name, 
-                "Desa" : spk.bidang.desa_name,
-                "Luas Surat" : spk.bidang.luas_surat, 
-                "Jenis Bayar" : spk.jenis_bayar,
-                "Manager" : spk.manager_name,
-                "Tanggal Buat": spk.created_at,
-                "Status Workflow": status_workflow,
-                "Created By" : spk.created_name
-            }
-        
-        data.append(d)
+        x += 1
+        ws.cell(row=x, column=1, value=spk.id_bidang)
+        ws.cell(row=x, column=2, value=spk.id_bidang_lama or "")
+        ws.cell(row=x, column=3, value=spk.group)
+        ws.cell(row=x, column=4, value=spk.bidang.pemilik_name)
+        ws.cell(row=x, column=5, value=spk.alashak)
+        ws.cell(row=x, column=6, value=spk.bidang.project_name)
+        ws.cell(row=x, column=7, value=spk.bidang.desa_name)
+        ws.cell(row=x, column=8, value=spk.bidang.luas_surat).number_format = '0.00'
+        ws.cell(row=x, column=9, value=spk.jenis_bayar)
+        ws.cell(row=x, column=10, value=spk.manager_name)
+        ws.cell(row=x, column=11, value=spk.created_at)
+        ws.cell(row=x, column=12, value=status_workflow)
+        ws.cell(row=x, column=13, value=spk.created_name)
 
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
     
-    df = pd.DataFrame(data=data)
 
-    output = BytesIO()
-    df.to_excel(output, index=False, sheet_name=f'SPK')
-
-    output.seek(0)
-
-    return StreamingResponse(BytesIO(output.getvalue()), 
-                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            headers={"Content-Disposition": "attachment;filename=spk_data.xlsx"})
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=spk_data.xlsx"})
    
 @router.get("/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def get_by_id(id:UUID):
@@ -423,7 +437,13 @@ async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
 
     termins = []
     if bidang_obj.hasil_peta_lokasi:
+        # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, 
+        #                                         jenis_alashak=bidang_obj.jenis_alashak if (bidang_obj.is_ptsl or False) == False else JenisAlashakEnum.Girik)
+
         harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
+        
+        if harga is None:
+            raise HTTPException(status_code=404, detail="KJB Harga not Found")
         
         for tr in harga.termins:
             if tr.id == obj.kjb_termin_id:
@@ -648,11 +668,11 @@ async def update(id:UUID,
     
     for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
         if kelengkapan_dokumen.id is None:
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
             await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
         else:
             kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan)
+            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
             await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     #workflow
@@ -714,8 +734,7 @@ async def get_list(
     """Gets a paginated list objects"""
 
     query = select(Bidang.id, Bidang.id_bidang, Bidang.alashak).select_from(Bidang
-                    ).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id
-                    ).where(HasilPetaLokasi.status_hasil_peta_lokasi == StatusHasilPetaLokasiEnum.Lanjut)
+                    ).join(HasilPetaLokasi, Bidang.id == HasilPetaLokasi.bidang_id)
     
     if keyword:
         query = query.filter(or_(Bidang.id_bidang.ilike(f'%{keyword}%'), 
@@ -734,19 +753,23 @@ async def get_by_id(id:UUID):
 
     hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
     kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
-    
     spk_exists_on_bidangs = await crud.spk.get_multi_by_bidang_id(bidang_id=id)
-    
+    # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak if (obj.is_ptsl or False) is False else JenisAlashakEnum.Girik)
     harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+    
+    if harga is None:
+        raise HTTPException(status_code=404, detail="KJB Harga not found")
+    
     termins = []
-    for tr in harga.termins:
-        spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
-        if spk_exists_on_bidang:
-            termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
-            termins.append(termin)
-        else:
-            termin = KjbTerminInSpkSch(**tr.dict())
-            termins.append(termin)
+    if harga:
+        for tr in harga.termins:
+            spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
+            if spk_exists_on_bidang:
+                termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
+                termins.append(termin)
+            else:
+                termin = KjbTerminInSpkSch(**tr.dict())
+                termins.append(termin)
 
     beban = []
 
@@ -757,7 +780,9 @@ async def get_by_id(id:UUID):
     ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
     npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
     
-    kelengkapan_dokumen = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
+    riwayat_alashak = await init_riwayat_alashak(bundle_hd_id=obj.bundle_hd_id)
+    checklist_kelengkapan_dokumen_dts = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
+    kelengkapan_dokumen = await init_checklist_kelengkapan_dt(checklist_kelengkapan_dts=checklist_kelengkapan_dokumen_dts, riwayat_alashak=riwayat_alashak)
 
     percentage_lunas = next((termin.nilai for termin in harga.termins if termin.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
 
@@ -796,7 +821,106 @@ async def get_by_id(id:UUID):
         return create_response(data=obj_return)
     else:
         raise IdNotFoundException(Spk, id)
+    
+async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[ChecklistKelengkapanDokumenDt], riwayat_alashak) -> list[ChecklistKelengkapanDokumenDtSch]:
+    result:list[ChecklistKelengkapanDokumenDtSch] = []
+    for ch in checklist_kelengkapan_dts:
+        idx = 0
+        dokumen = await crud.dokumen.get(id=ch.bundle_dt.dokumen_id)
+        if dokumen.is_riwayat and ch.bundle_dt.riwayat_data:
+            riwayat_data = json.loads(ch.bundle_dt.riwayat_data)
+            if len(riwayat_data["riwayat"]) == 0:
+                data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
+                result.append(data)
+            else:
+                for riwayat in riwayat_data["riwayat"]:
+                    meta_data = riwayat["meta_data"]
+                    data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
+                    if dokumen.name in ["VALIDASI RIWAYAT", "PPH RIWAYAT", "BPHTB RIWAYAT"]:
+                        if len(riwayat_alashak) == 0:
+                            data.field_value = ''
+                        else:
+                            if idx > len(riwayat_alashak):
+                                data.field_value = ''
+                            else:
+                                data.field_value = riwayat_alashak[idx]
+                        idx += 1
+                    else:
+                        data.field_value = meta_data[dokumen.key_field]
+                        data.key_value = meta_data[dokumen.key_field]
 
+                    data.key_value = meta_data[dokumen.key_field]
+                    data.file_path = riwayat["file_path"]
+                    data.is_default = riwayat["is_default"]
+                    result.append(data)
+        else:
+            data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
+            result.append(data)
+
+    return result
+
+async def init_riwayat_alashak(bundle_hd_id:UUID):
+    result = []
+    try:
+        dokumen = await crud.dokumen.get_by_name(name='ALAS HAK')
+        bundle_dt_alashak = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle_hd_id, dokumen_id=dokumen.id)
+
+        if bundle_dt_alashak.riwayat_data:
+            riwayat_data = json.loads(bundle_dt_alashak.riwayat_data)
+            if len(riwayat_data["riwayat"]) == 0:
+                return []
+            else:
+                for riwayat in riwayat_data["riwayat"]:
+                    meta_data = riwayat["meta_data"]
+                    data =  meta_data[dokumen.key_field]
+                    result.append(data)
+        return result
+    except :
+        raise HTTPException(status_code=422, detail="Failed initialize alashak riwayat!")
+
+@router.get("/riwayat/bundle_dt", response_model=GetResponseBaseSch[list[BundleDtRiwayatSch]])
+async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
+
+    datas = []
+    bundle_dt = await crud.bundledt.get_by_id(id=bundle_dt_id)
+    if bundle_dt is None:
+        return create_response(data=datas)
+    
+    if bundle_dt.dokumen.is_riwayat == False:
+        return create_response(data=datas)
+    
+    if bundle_dt.riwayat_data is None:
+        return create_response(data=datas)
+    
+    riwayat_data = json.loads(bundle_dt.riwayat_data.replace("'", '\"'))
+
+    riwayat_alashak = await init_riwayat_alashak(bundle_hd_id=bundle_dt.bundle_hd_id)
+    idx = 0
+    
+    for riwayat in riwayat_data["riwayat"]:
+        meta_data = riwayat["meta_data"]
+        data = BundleDtRiwayatSch.from_orm(bundle_dt)
+        if bundle_dt.dokumen.name in ["VALIDASI RIWAYAT", "PPH RIWAYAT", "BPHTB RIWAYAT"]:
+            if len(riwayat_alashak) == 0:
+                data.field_value = ''
+            else:
+                if idx > len(riwayat_alashak):
+                    data.field_value = ''
+                else:
+                    data.field_value = riwayat_alashak[idx]
+            idx += 1
+        else:
+            data.field_value = meta_data[bundle_dt.dokumen.key_field]
+            
+
+        file_path = riwayat.get('file_path', None)
+        data.file_exists = True if file_path and file_path != "" else False
+        data.key_value = meta_data[bundle_dt.dokumen.key_field]
+        data.file_path = file_path
+        datas.append(data)
+
+    return create_response(data=datas)
+    
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
@@ -848,20 +972,17 @@ async def generate_printout(id:UUID|str):
 
     obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
 
-    if spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
-    #alashak mesti nomor 1
-        alashak_kel = next((SpkDetailPrintOut(name=alashak["name"], tanggapan=alashak["tanggapan"]) for alashak in obj_kelengkapans if alashak.name == "ALAS HAK"), None)
-        if alashak_kel:
-            alashak_kel.no = 1
-            alashak_kel.name = f"{alashak_kel.name} ({spk_header.alashak})"
-            no = 2
-            spk_details.append(alashak_kel)
-    
+    for k in obj_kelengkapans:
+        kelengkapan = SpkDetailPrintOut(**dict(k))
+        kelengkapan.no = no
+        spk_details.append(kelengkapan)
+        no += 1
+
     obj_beban_biayas = []
     obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
 
     for bb in obj_beban_biayas:
-        beban_biaya = SpkDetailPrintOut(**dict(bb))
+        beban_biaya = SpkDetailPrintOut(bundle_dt_id=None, field_value='', tanggapan=bb.tanggapan, name=bb.name)
         if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini' and spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
             continue
 
@@ -869,31 +990,12 @@ async def generate_printout(id:UUID|str):
         spk_details.append(beban_biaya)
         no += 1
     
-    for k in obj_kelengkapans:
-        kelengkapan = SpkDetailPrintOut(**dict(k))
-        if kelengkapan.name == 'ALAS HAK':
-            continue
-
-        if kelengkapan.name == 'AJB':
-            bundle_dt_ajb = await crud.bundledt.get(id=kelengkapan.bundle_dt_id)
-            riwayat_ajb = json.loads(bundle_dt_ajb.riwayat_data.replace("'", '\"'))
-            for data in riwayat_ajb["riwayat"]:
-                kelengkapan_ajb = SpkDetailPrintOut(no=no, name=f"AJB {data['key_value']}", tanggapan=kelengkapan.tanggapan)
-                spk_details.append(kelengkapan_ajb)
-                no += 1
-            
-            continue
-
-        kelengkapan.no = no
-        kelengkapan.tanggapan = kelengkapan.tanggapan or ''
-        spk_details.append(kelengkapan)
-        no += 1
 
     pm_1 = await crud.spk.get_pm1(id=id, check_meta_data_exists=False)
     if pm_1["jumlah"] > 0:
         pm_1_lengkap = await crud.spk.get_pm1(id=id, check_meta_data_exists=True)
         if pm_1_lengkap["jumlah"] == 0:
-            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap")
+            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap", field_value="")
             spk_details.append(pm1)
 
     overlap_details = []

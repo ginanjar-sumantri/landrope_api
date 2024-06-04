@@ -116,3 +116,4 @@ class HasilPetaLokasiReadySpkSch(SQLModel):
     project_name: str | None
     desa_name: str | None
     manager_name: str | None
+

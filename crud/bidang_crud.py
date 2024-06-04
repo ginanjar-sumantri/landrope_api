@@ -97,7 +97,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
                         ).options(selectinload(Bidang.tahap_details
                                             ).options(selectinload(TahapDetail.tahap))
                         ).options(selectinload(Bidang.bidang_histories)
-                        )
+                        ).options(selectinload(Bidang.parent_bintang))
 
            response = await db_session.execute(query)
            return response.scalar_one_or_none()

@@ -93,8 +93,10 @@ class SpkPrintOut(SQLModel):
 class SpkDetailPrintOut(SQLModel):
     bundle_dt_id:UUID|None
     no:Optional[int]
+    field_value:Optional[str]
     tanggapan:Optional[str]
     name:Optional[str]
+    
 
 class SpkOverlapPrintOut(SQLModel):
     pemilik_name:Optional[str]

@@ -10,7 +10,7 @@ from datetime import date, datetime
 import numpy
 
 if TYPE_CHECKING:
-    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar
+    from models import Tahap, KjbHd, Worker, Invoice, Notaris, Manager, Sales, Rekening, InvoiceBayar, BebanBiaya
 
 class TerminBase(SQLModel):
     code:Optional[str] = Field(nullable=True)
@@ -32,7 +32,6 @@ class TerminBase(SQLModel):
     void_at:Optional[date] = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
     file_upload_path:str | None = Field(nullable=True)
-
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass
@@ -173,13 +172,13 @@ class Termin(TerminFullBase, table=True):
         total = sum(array_total)
         return total
     
-    # @property
-    # def step_name_workflow(self) -> str | None:
-    #     return None
+    @property
+    def step_name_workflow(self) -> str | None:
+        return None
     
-    # @property
-    # def status_workflow(self) -> str | None:
-    #     return None
+    @property
+    def status_workflow(self) -> str | None:
+        return None
     
     # @property
     # def last_status_at(self) -> datetime | None:
@@ -243,7 +242,7 @@ class TerminBayar(TerminBayarFullBase, table=True):
         }
     )
 
-    invoice_bayars:"InvoiceBayar" =  Relationship(
+    invoice_bayars:list["InvoiceBayar"] =  Relationship(
         back_populates="termin_bayar",
         sa_relationship_kwargs=
         {
@@ -255,6 +254,13 @@ class TerminBayar(TerminBayarFullBase, table=True):
         sa_relationship_kwargs=
         {
             "lazy" : "select"
+        }
+    )
+
+    termin_bayar_dts:list["TerminBayarDt"] = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "selectin"
         }
     )
 
@@ -273,3 +279,25 @@ class TerminBayar(TerminBayarFullBase, table=True):
     @property
     def amountExt(self) -> str|None:
         return "{:,.0f}".format(self.amount or 0)
+
+
+class TerminBayarDtBase(SQLModel):
+    termin_bayar_id: UUID = Field(nullable=False, foreign_key="termin_bayar.id")
+    beban_biaya_id: UUID = Field(nullable=False, foreign_key="beban_biaya.id")
+
+class TerminBayarDtFullBase(TerminBayarDtBase, BaseUUIDModel):
+    pass
+
+class TerminBayarDt(TerminBayarDtFullBase, table=True):
+    beban_biaya: "BebanBiaya" = Relationship(
+        sa_relationship_kwargs=
+        {
+            "lazy" : "selectin"
+        }
+    )
+
+    @property
+    def beban_biaya_name(self) -> str | None:
+        return self.beban_biaya.name
+    
+

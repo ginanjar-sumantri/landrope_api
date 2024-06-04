@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException, Request
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
@@ -9,11 +9,14 @@ from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
 from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch)
 from schemas.bidang_sch import BidangUpdateSch
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
-from common.enum import StatusPetaLokasiEnum, WorkflowEntityEnum
+from common.enum import StatusPetaLokasiEnum, WorkflowEntityEnum, JenisBayarEnum
 from services.helper_service import BundleHelper, BidangHelper
+from services.gcloud_task_service import GCloudTaskService
 from shapely import wkt, wkb
+from typing import Dict
 import crud
 import json
 
@@ -217,7 +220,9 @@ async def get_by_id(id:UUID):
         raise IdNotFoundException(KjbDt, id)
 
 @router.put("/{id}", response_model=PutResponseBaseSch[KjbDtSch])
-async def update(id:UUID, sch:KjbDtUpdateSch,
+async def update(id:UUID,
+                 sch:KjbDtUpdateSch,
+                 request:Request,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
     
     """Update a obj by its id"""
@@ -225,45 +230,37 @@ async def update(id:UUID, sch:KjbDtUpdateSch,
     db_session = db.session
     obj_current = await crud.kjb_dt.get_by_id(id=id)
 
-    # alashak = await crud.kjb_dt.get_by_alashak_and_kjb_hd_id(alashak=sch.alashak, kjb_hd_id=sch.kjb_hd_id)
-    # if alashak :
-    #     raise HTTPException(status_code=409, detail=f"alashak {sch.alashak} ada di KJB lain ({alashak.kjb_code})")
-
     if not obj_current:
         raise IdNotFoundException(KjbDt, id)
-
-    if obj_current.hasil_peta_lokasi:
-        # tahap_detail_current = await crud.tahap_detail.get_by_bidang_id(bidang_id=obj_current.hasil_peta_lokasi.bidang_id)
-        if obj_current.hasil_peta_lokasi.bidang:
-            bidang_current = await crud.bidang.get_by_id(id=obj_current.hasil_peta_lokasi.bidang_id)
-
-            if bidang_current.geom :
-                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-
-            if bidang_current.geom :
-                if isinstance(bidang_current.geom, str):
-                    pass
-                else:
-                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-            if bidang_current.geom_ori :
-                if isinstance(bidang_current.geom_ori, str):
-                    pass
-                else:
-                    bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-            
-            if bidang_current.harga_akta != sch.harga_akta or bidang_current.harga_transaksi != sch.harga_transaksi or bidang_current.alashak != sch.alashak:
-                if len([inv for inv in bidang_current.invoices if inv.is_void == False]) == 0:
-                    bidang_updated = BidangUpdateSch(harga_akta=sch.harga_akta, harga_transaksi=sch.harga_transaksi, alashak=sch.alashak)
-                    await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-                else:
-                    if bidang_current.alashak != sch.alashak:
-                        bidang_updated = BidangUpdateSch(alashak=sch.alashak)
-                        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-                        bundle = await crud.bundlehd.get_by_id(id=obj_current.bundle_hd_id)
-                        await BundleHelper().merge_alashak(bundle=bundle, alashak=sch.alashak, worker_id=current_worker.id, db_session=db_session)
     
-    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+    obj_updated = await crud.kjb_dt.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
+    obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
+
+    url = f'{request.base_url}landrope/kjbdt/task/update-to-bidang'
+    GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=url)
+
+    return create_response(data=obj_updated)
+
+@router.post("/task/update-to-bidang")
+async def update_alashak_bidang_bundle(payload:Dict):
+
+    db_session = db.session
+
+    id = payload.get("id", None)
+    obj = await crud.kjb_dt.get(id=id)
+
+    if not obj:
+        raise IdNotFoundException(KjbHd, id)
+    
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=obj.id)
+    
+    if hasil_peta_lokasi:
+        await BidangHelper().update_from_kjb_to_bidang(kjb_dt_id=obj.id, db_session=db_session, worker_id=obj.updated_by_id)
+
+    if obj.bundle_hd_id:
+        bundle_hd = await crud.bundlehd.get_by_id(id=obj.bundle_hd_id)
+        await BundleHelper().merge_alashak(bundle=bundle_hd, worker_id=obj.updated_by_id, alashak=obj.alashak, db_session=db_session)
+    
     await db_session.commit()
 
-    obj_updated = await crud.kjb_dt.get_by_id(id=obj_updated.id)
-    return create_response(data=obj_updated)
+    return {"message" : "successfully"}

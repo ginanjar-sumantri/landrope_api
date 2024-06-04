@@ -41,3 +41,7 @@ class BundleDtMetaData(SQLModel):
 
 class BundleDtForCloud(SQLModel):
     id:UUID
+
+class BundleDtRiwayatSch(BundleDtSch):
+    field_value: str | None
+    key_value: str | None

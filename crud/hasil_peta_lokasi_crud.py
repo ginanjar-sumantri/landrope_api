@@ -9,10 +9,10 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
 from models import HasilPetaLokasi, HasilPetaLokasiDetail, Planing, Skpt, Bidang, Project, KjbDt, BundleHd, BundleDt
-from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, HasilPetaLokasiReadySpkSch, HasilPetaLokasiUpdateCloud
-from typing import List
+from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch, 
+                                        HasilPetaLokasiReadySpkSch, HasilPetaLokasiUpdateCloud)
 from uuid import UUID
-from datetime import datetime
+
 
 class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, HasilPetaLokasiUpdateSch]):
     async def get_by_id(self, 
@@ -277,5 +277,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                                         manager_name=row[14]) for row in rows]
         
         return objs
+        
+        
 
 hasil_peta_lokasi = CRUDHasilPetaLokasi(HasilPetaLokasi)

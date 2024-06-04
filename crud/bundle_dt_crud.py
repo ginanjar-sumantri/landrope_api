@@ -40,6 +40,20 @@ class CRUDBundleDt(CRUDBase[BundleDt, BundleDtCreateSch, BundleDtUpdateSch]):
 
         return response.scalars().all()
     
+    async def get_by_bundle_hd_id_for_merging(self, 
+                *,
+                bundle_hd_id: UUID | str,
+                db_session: AsyncSession | None = None
+                ) -> list[BundleDt] | None:
+        
+        db_session = db_session or db.session
+        query = select(self.model).where(and_(self.model.bundle_hd_id == bundle_hd_id, self.model.file_path != None))
+
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+
+    
     async def get_by_bundle_hd_id_and_dokumen_id(self, 
                 *,
                 bundle_hd_id: UUID | str,

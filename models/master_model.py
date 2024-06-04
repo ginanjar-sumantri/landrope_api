@@ -23,6 +23,7 @@ class BebanBiayaBase(SQLModel):
     is_exclude_printout:bool|None = Field(nullable=True)
     default_spk_girik:Optional[bool] = Field(nullable=True)
     default_spk_sertifikat:Optional[bool] = Field(nullable=True)
+    activity_code: str | None = Field(nullable=True) #activity code yang ada di RFPGL dibutuhkan saat generate RFP dari memo ke rfpgl
 
 class BebanBiayaFullBase(BebanBiayaBase, BaseUUIDModel):
     pass
