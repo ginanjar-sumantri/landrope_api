@@ -1,3 +1,5 @@
+from fastapi import HTTPException, Request
+from fastapi_async_sqlalchemy import db
 from sqlmodel import and_, delete
 from models.code_counter_model import CodeCounterEnum
 from models import Termin, TerminBayar, TerminBayarDt, BidangKomponenBiaya
@@ -7,8 +9,12 @@ from schemas.termin_bayar_dt_sch import TerminBayarDtCreateSch, TerminBayarDtUpd
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
 from schemas.invoice_bayar_sch import InvoiceBayarCreateSch, InvoiceBayarlUpdateSch
+from schemas.spk_sch import SpkInTerminSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch
-from common.enum import JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text
+from schemas.workflow_sch import WorkflowUpdateSch, WorkflowCreateSch
+from services.helper_service import BundleHelper
+from services.gcloud_task_service import GCloudTaskService
+from common.enum import JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text, WorkflowEntityEnum, WorkflowLastStatusEnum
 from common.generator import generate_code_month
 
 import crud
@@ -46,7 +52,6 @@ class TerminService:
         new_obj = await self.init_termin(sch=sch, db_session=db_session, worker_id=worker_id)
 
         termin_bayar_temp, current_ids_termin_byr = await self.manipulation_termin_bayar(termin=new_obj, sch=sch, db_session=db_session, worker_id=worker_id)
-
     
     # MANIPULATION TERMIN BAYAR AND TERMIN BAYAR DETAIL (CREATE OR UPDATE)
     async def manipulation_termin_bayar(self, termin:Termin, sch:TerminCreateSch | TerminUpdateSch, db_session, worker_id:UUID):
@@ -202,3 +207,114 @@ class TerminService:
                     termin_bayar_id = next((termin_bayar["termin_bayar_id"] for termin_bayar in termin_bayar_temp if termin_bayar["id_index"] == dt_bayar.id_index), None)
                     invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=new_obj_invoice.id, amount=dt_bayar.amount)
                     await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=worker_id)
+
+
+    # UPDATE NOMOR MEMO DAN UPLOAD FILE MEMO ASSIGN
+    async def update_nomor_memo_dan_file(self, sch:TerminUpdateSch, obj_current:Termin, worker_id:UUID, request:Request) -> Termin:
+
+        db_session = db.session
+        if sch.file:
+            file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+            try:
+                file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
+            except ZeroDivisionError as e:
+                raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
+            
+            sch.file_upload_path = file_upload_path
+
+        obj_updated = TerminUpdateSch.from_orm(obj_current)
+        obj_updated.nomor_memo = sch.nomor_memo
+        obj_updated.file_upload_path = sch.file_upload_path
+            
+        obj_updated = await crud.termin.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=worker_id, db_session=db_session, with_commit=False)
+
+        await self.send_workflow(reference_id=obj_updated.id, worker_id=worker_id, request=request, db_session=db_session)
+
+        await db_session.commit()
+        await db_session.refresh(obj_updated)
+
+        return obj_updated
+
+    # SEND WORKFLOW
+    async def send_workflow(self, reference_id:UUID, worker_id:UUID, request:Request, db_session):
+        #workflow
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=reference_id)
+        if wf_current:
+            if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
+
+            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
+            if wf_updated.version is None:
+                wf_updated.version = 1
+                
+            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=worker_id, db_session=db_session, with_commit=False)
+        else:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+            wf_sch = WorkflowCreateSch(reference_id=reference_id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            
+            await crud.workflow.create(obj_in=wf_sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
+        
+        GCloudTaskService().create_task(payload={"id":str(reference_id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+
+    # GET BY ID SPK YANG INGIN DIBUAT MEMONYA
+    async def get_spk_by_id(self, spk_id:UUID) -> SpkInTerminSch:
+
+        obj = await crud.spk.get_by_id_in_termin(id=spk_id)
+
+        if obj is None:
+            raise HTTPException(status_code=404, detail="SPK not Found!")
+
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        if workflow.last_status != WorkflowLastStatusEnum.COMPLETED:
+            raise HTTPException(status_code=422, detail=f"SPK {obj.code} must completed approval")
+
+        spk = SpkInTerminSch(spk_id=obj.id, 
+                            spk_code=obj.code, 
+                            spk_amount=obj.amount, 
+                            spk_satuan_bayar=obj.satuan_bayar,
+                            bidang_id=obj.bidang_id, 
+                            id_bidang=obj.id_bidang, 
+                            alashak=obj.alashak, 
+                            group=obj.bidang.group,
+                            luas_bayar=obj.bidang.luas_bayar, 
+                            # harga_transaksi=obj.bidang.harga_transaksi if (obj.bidang.is_ptsl or False) == False else obj.bidang.harga_ptsl, 
+                            harga_transaksi=obj.bidang.harga_transaksi, 
+                            harga_akta=obj.bidang.harga_akta, 
+                            amount=round(obj.spk_amount,0), 
+                            utj_amount=obj.utj_amount, 
+                            project_id=obj.bidang.planing.project_id, 
+                            project_name=obj.bidang.project_name, 
+                            sub_project_id=obj.bidang.sub_project_id,
+                            sub_project_name=obj.bidang.sub_project_name, 
+                            nomor_tahap=obj.bidang.nomor_tahap, 
+                            tahap_id=obj.bidang.tahap_id,
+                            jenis_bayar=obj.jenis_bayar, 
+                            jenis_alashak=obj.bidang.jenis_alashak,
+                            manager_id=obj.bidang.manager_id, 
+                            manager_name=obj.bidang.manager_name,
+                            sales_id=obj.bidang.sales_id, 
+                            sales_name=obj.bidang.sales_name, 
+                            notaris_id=obj.bidang.notaris_id, 
+                            notaris_name=obj.bidang.notaris_name, 
+                            mediator=obj.bidang.mediator, 
+                            desa_name=obj.bidang.desa_name, 
+                            ptsk_name=obj.bidang.ptsk_name, 
+                            harga_standard=obj.harga_standard,
+                            harga_standard_girik=obj.harga_standard_girik,
+                            harga_standard_sertifikat=obj.harga_standard_sertifikat
+                            )
+
+        if obj.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
+            bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+            spk.amount = bidang.sisa_pelunasan
+        elif obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+            bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
+            if bidang.utj_has_use:
+                spk.amount = bidang.sisa_pelunasan
+            else:
+                spk.amount = bidang.sisa_pelunasan + bidang.utj_amount
+
+        return spk
