@@ -109,7 +109,7 @@ async def create(
         for invoice in sch.invoices:
             invoice_bayar_ = []
             for inv_bayar in invoice.bayars:
-                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index), None)
+                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.BIAYA_TANAH, ActivityEnum.UTJ]), None)
                 if tr_byr:
                     invoice_bayar_.append(inv_bayar)
 
