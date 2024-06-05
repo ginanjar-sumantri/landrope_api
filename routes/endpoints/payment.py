@@ -755,13 +755,15 @@ async def get_invoice_by_id(id:UUID):
 
     memo_bayar_invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
 
-    bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
-    utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
+    # bidang_ids = [inv.bidang_id for inv in memo_bayar_invoices if inv.use_utj == True and inv.is_void != True]
+    # utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
 
-    merge_invoices = memo_bayar_invoices + utj_invoices
+    # merge_invoices = memo_bayar_invoices + utj_invoices
 
     invoices:list[InvoiceOnUTJSch] = []
-    for inv in merge_invoices:
+    for inv in memo_bayar_invoices:
+        if inv.invoice_outstanding == 0:
+            continue
         inv_in = InvoiceOnUTJSch.from_orm(inv)
         inv_in.realisasi = False
         
