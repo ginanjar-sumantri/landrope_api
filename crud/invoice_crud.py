@@ -418,19 +418,17 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     """
 
         query = text(f"""
-                    SELECT i.*
-                    FROM invoice i
+                    with payment as (select sum(amount) as amount, invoice_id from payment_detail
+                    where is_void != True
+                    group by invoice_id)
+                    select i.* from invoice i
+                    left join payment p on p.invoice_id = i.id
                     inner join bidang b on b.id = i.bidang_id
                     inner join termin t on t.id = i.termin_id
-                    WHERE 
-                    i.amount - (
-                        select coalesce(sum(amount), 0) 
-                        from payment_detail py
-                        where i.id = py.invoice_id
-                        and py.is_void != true
-                        ) > 0
-                    and i.is_void != true
+                    where i.is_void is false
                     and t.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
+                    and (i.amount - Coalesce(p.amount, 0)) > 0
+                    and COALESCE(i.realisasi, False) is False
                     {filter}
         """)
 
