@@ -194,8 +194,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             HasilPetaLokasi.remark,
             case((desa_on_petlok.name == None, desa_on_kjb_dt.name),
                  else_ = desa_on_petlok.name).label("desa_name")
-        ).select_from(RequestPetaLokasi
-                    ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+        ).select_from(KjbDt
+                    ).outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
                     ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
@@ -215,7 +215,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     KjbHd.mediator.ilike(f'%{keyword}%'),
                     Pemilik.name.ilike(f'%{keyword}%'),
                     Bidang.id_bidang.ilike(f'%{keyword}%'),
-                    Desa.name.ilike(f'%{keyword}%')
+                    desa_on_petlok.name.ilike(f'%{keyword}%'),
+                    desa_on_kjb_dt.name.ilike(f'%{keyword}%')
                 )
             )
 
