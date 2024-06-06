@@ -127,33 +127,49 @@
                   <td>{{luas_ukur}}</td>
                 </tr>
                 {% if jenis_bayar == 'LUNAS' or jenis_bayar == 'PELUNASAN' %}
-                {% if proses_bpn == 'PBT_PT' %}
-                <tr>
-                  <td>Luas GU PT</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_gu_pt}}</td>
-                </tr>
-                <tr>
-                  <td>Luas PBT PT</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_pbt_pt}}</td>
-                </tr>
-                {% else %}
-                <tr>
-                  <td>Luas GU Perorangan</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_gu_perorangan}}</td>
-                </tr>
-                <tr>
-                  <td>Luas PBT Perorangan</td>
-                  <td>&emsp;&emsp;&emsp;&emsp;</td>
-                  <td>:</td>
-                  <td>{{luas_pbt_perorangan}}</td>
-                </tr>
-                {% endif %}
+                  {% if proses_bpn == 'PBT_PT' %}
+                  <tr>
+                    <td>Luas GU PT</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_pt}}</td>
+                  </tr>
+                  <tr>
+                    <td>Luas PBT PT</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_pbt_pt}}</td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td>Luas GU Perorangan</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_perorangan}}</td>
+                  </tr>
+                  <tr>
+                    <td>Luas PBT Perorangan</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_pbt_perorangan}}</td>
+                  </tr>
+                  {% endif %}
+                {% elif jenis_bayar == 'DP' %}
+                  {% if proses_bpn == 'PBT_PT' %}
+                  <tr>
+                    <td>Luas GU PT</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_pt}}</td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td>Luas GU Perorangan</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_perorangan}}</td>
+                  </tr>
+                  {% endif %}
                 {% endif %}
               </table>
             </td>

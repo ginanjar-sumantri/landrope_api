@@ -27,6 +27,7 @@ class SpkBase(SQLModel):
     void_at:Optional[date] = Field(nullable=True)
     file_path:str|None = Field(nullable=True)
     file_upload_path: str | None = Field(nullable = True)
+    is_draft: bool | None = Field(nullable=True, default=False)
       
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
