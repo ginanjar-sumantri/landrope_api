@@ -267,7 +267,7 @@ async def update_alashak_bidang_bundle(payload:Dict):
     return {"message" : "successfully"}
 
 @router.get("/double/data/alashak", response_model=GetResponsePaginatedSch[KjbDtDoubleDataSch])
-async def get_double_data_alashak(params:Params=Depends(), keyword:str | None = None):
+async def get_double_data_alashak(params:Params=Depends(), keyword:str | None = None, current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     objs = await crud.kjb_dt.get_double_data_alashak(keyword=keyword)
 
@@ -281,7 +281,7 @@ async def get_double_data_alashak(params:Params=Depends(), keyword:str | None = 
     return create_response(data=data)
 
 @router.get("/double/data/alashak/count")
-async def get_count_double_data_alashak():
+async def get_count_double_data_alashak(current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     objs = await crud.kjb_dt.get_double_data_alashak(keyword=None)
 
