@@ -11,7 +11,7 @@ from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
 from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing, BundleHd, BundleDt, Workflow
 from models.master_model import HargaStandard
-from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch
+from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch, KjbDtDoubleDataSch
 from typing import List
 from uuid import UUID
 from datetime import datetime
@@ -111,7 +111,6 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
         response = await db_session.execute(query)
         return response.scalars().all()
 
-
     async def get_multi_for_petlok(self, *,
                                     params: Params | None = Params(),
                                     kjb_hd_id:UUID | None,
@@ -196,6 +195,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     alashak,
                     harga_akta,
                     harga_transaksi,
+                    pemilik_id,
                     --harga_ptsl,
                     --is_ptsl,
                     bundle_hd_id
@@ -207,4 +207,103 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
 
         return response.fetchone()
     
+    async def get_double_data_alashak(self, *, keyword:str | None = None) -> list[KjbDtDoubleDataSch]:
+
+        db_session = db.session
+
+        searching = f"""
+                    Where dt.alashak like '%{keyword}%'
+                    or pm.name like '%{keyword}%'
+                    or dt.group like '%{keyword}%'
+                    """ if keyword else ""
+         
+        query = f"""
+                with kjb_dobel as (select
+                    dt.alashak,
+                    pm.id as pemilik_id,
+                    pm.name as pemilik_name,
+                    ds.id as desa_id,
+                    ds.name as desa_name,
+                    count(dt.alashak) as jml
+                from kjb_dt dt
+                    inner join kjb_hd hd on hd.id = dt.kjb_hd_id
+                    left join pemilik pm on pm.id = dt.pemilik_id
+                    left join desa ds on ds.id = (case 
+                                                    when dt.desa_by_ttn_id is NULL then hd.desa_id
+                                                    else dt.desa_by_ttn_id
+                                                end
+                                                )
+                    --left join hasil_peta_lokasi hpl on hpl.kjb_dt_id = dt.id
+                    --where hpl.id is null
+                    group by dt.alashak, pm.id, ds.id
+                    having count(dt.alashak) > 1
+                    order by dt.alashak asc)
+                select distinct
+                    dt.id,
+                    hd.code as kjb_hd_code, 
+                    CASE
+                        WHEN hpl.id is not NULL THEN 'HASIL PETA LOKASI'
+                        WHEN rpl.id is not NULL THEN 'REQUEST PETA LOKASI'
+                        WHEN ttn.id is not NULL THEN 'TANDA TERIMA NOTARIS'
+                        ELSE 'KJB'
+                    END as last_position,
+                    COALESCE(hpl.status_hasil_peta_lokasi, '-') as status_hasil_peta_lokasi,
+                    dt.jenis_alashak,
+                    dt.alashak,
+                    dt.posisi_bidang,
+                    dt.harga_akta,
+                    dt.harga_transaksi,
+                    dt.luas_surat,
+                    dt.luas_surat_by_ttn,
+                    pm.name as pemilik_name,
+                    dt.status_peta_lokasi,
+                    pr_ttn.name as project_on_ttn,
+                    pr.name as project_on_petlok,
+                    ds_ttn.name as desa_on_ttn,
+                    ds.name as desa_on_petlok,
+                    dt.group
+                from kjb_dt dt
+                    inner join kjb_hd hd on hd.id = dt.kjb_hd_id
+                    inner join kjb_dobel dbl on dbl.alashak = dt.alashak and dbl.pemilik_id = dt.pemilik_id and dbl.desa_id = dt.desa_by_ttn_id
+                    left join pemilik pm on pm.id = dt.pemilik_id
+                    left join request_peta_lokasi rpl on rpl.kjb_dt_id = dt.id
+                    left join tanda_terima_notaris_hd ttn on ttn.kjb_dt_id = dt.id 
+                    left join hasil_peta_lokasi hpl on hpl.kjb_dt_id = dt.id
+                    left join planing pl on pl.id = hpl.planing_id
+                    left join project pr on pr.id = pl.project_id
+                    left join desa ds on ds.id = pl.desa_id
+                    left join desa ds_ttn on ds_ttn.id = dt.desa_by_ttn_id
+                    left join project pr_ttn on pr_ttn.id = dt.project_by_ttn_id
+                order by dt.alashak
+                {searching};
+                """
+        
+        result = await db_session.execute(query)
+        rows = result.fetchall()
+        datas = []
+
+        for row in rows:
+            data = KjbDtDoubleDataSch(id=row.id,
+                                      kjb_hd_code=row.kjb_hd_code,
+                                      last_position=row.last_position,
+                                      status_hasil_peta_lokasi=row.status_hasil_peta_lokasi,
+                                      jenis_alashak=row.jenis_alashak,
+                                      alashak=row.alashak,
+                                      posisi_bidang=row.posisi_bidang,
+                                      harga_akta=row.harga_akta,
+                                      harga_transaksi=row.harga_transaksi,
+                                      luas_surat=row.luas_surat,
+                                      luas_surat_by_ttn=row.luas_surat_by_ttn,
+                                      pemilik_name=row.pemilik_name,
+                                      status_peta_lokasi=row.status_peta_lokasi,
+                                      project_on_ttn=row.project_on_ttn,
+                                      project_on_petlok=row.project_on_petlok,
+                                      desa_on_ttn=row.desa_on_ttn,
+                                      desa_on_petlok=row.desa_on_petlok,
+                                      group=row.group
+                                      )
+            datas.append(data)
+
+        return datas
+
 kjb_dt = CRUDKjbDt(KjbDt)

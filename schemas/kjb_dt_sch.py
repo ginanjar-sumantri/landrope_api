@@ -102,6 +102,7 @@ class KjbDtForCloud(SQLModel):
     alashak:Optional[str]
     harga_akta:Optional[Decimal]
     harga_transaksi:Optional[Decimal]
+    pemilik_id: UUID | None
     # harga_ptsl:Decimal | None
     # is_ptsl:bool | None
     bundle_hd_id:Optional[UUID]
@@ -113,3 +114,23 @@ class KjbDtForUtjKhususSch(SQLModel):
     luas_bayar:Optional[Decimal]
     luas_surat:Optional[Decimal]
     luas_surat_by_ttn:Optional[Decimal]
+
+class KjbDtDoubleDataSch(SQLModel):
+    id: UUID | None
+    kjb_hd_code: str | None
+    last_position: str | None
+    status_hasil_peta_lokasi: str | None
+    jenis_alashak: JenisAlashakEnum | None
+    alashak: str | None
+    posisi_bidang: str | None
+    harga_akta : Decimal | None
+    harga_transaksi: Decimal | None
+    luas_surat: Decimal | None
+    luas_surat_by_ttn: Decimal | None
+    pemilik_name: str | None
+    status_peta_lokasi: str | None
+    project_on_ttn: str | None
+    project_on_petlok: str | None
+    desa_on_ttn: str | None
+    desa_on_petlok: str | None
+    group: str | None
