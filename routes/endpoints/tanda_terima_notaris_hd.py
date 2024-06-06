@@ -95,6 +95,31 @@ async def create(
         await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
         await BundleHelper().merge_tanda_terima_notaris(bundle=bundle, nomor_ttn=sch.nomor_tanda_terima, tanggal=sch.tanggal_tanda_terima, file_path=sch.file_path, worker_id=current_worker.id, db_session=db_session)
 
+    # JIKA KJB DT SUDAH DI PETALOKASI MAKA UPDATE PEMILIK DI HASIL PETLOK, SAMPAI BIDANG (UNTUK BIDANG SEKALIGUS NOTARISNYA)
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt.id)
+    if hasil_peta_lokasi:
+        if hasil_peta_lokasi.pemilik_id != (sch.pemilik_id or kjb_dt_update.pemilik_id):
+            hasil_peta_lokasi_history = await crud.hasil_peta_lokasi.get_by_id(id=hasil_peta_lokasi.id)
+            await HistoryService().create_history_hasil_peta_lokasi(obj_current=hasil_peta_lokasi_history, worker_id=current_worker.id, db_session=db_session)
+
+            hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch(**hasil_peta_lokasi.dict())
+            hasil_peta_lokasi_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi, obj_new=hasil_peta_lokasi_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+        if hasil_peta_lokasi.bidang_id:
+
+            bidang = await crud.bidang.get_by_id(id=hasil_peta_lokasi.bidang_id)
+            if bidang.geom :
+                bidang.geom = wkt.dumps(wkb.loads(bidang.geom.data, hex=True))
+
+            if bidang.geom_ori :
+                bidang.geom_ori = wkt.dumps(wkb.loads(bidang.geom_ori.data, hex=True))
+            
+            bidang_updated = BidangUpdateSch(**bidang.dict())
+            bidang_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            bidang_updated.notaris_id = sch.notaris_id or bidang.notaris_id
+            await crud.bidang.update(obj_current=bidang, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+            
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
 
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
@@ -222,7 +247,8 @@ async def update(id:UUID,
     hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt.id)
     if hasil_peta_lokasi:
         if hasil_peta_lokasi.pemilik_id != (sch.pemilik_id or kjb_dt_update.pemilik_id):
-            await HistoryService().create_history_hasil_peta_lokasi(obj_current=hasil_peta_lokasi, worker_id=current_worker.id, db_session=db_session)
+            hasil_peta_lokasi_history = await crud.hasil_peta_lokasi.get_by_id(id=hasil_peta_lokasi.id)
+            await HistoryService().create_history_hasil_peta_lokasi(obj_current=hasil_peta_lokasi_history, worker_id=current_worker.id, db_session=db_session)
 
             hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch(**hasil_peta_lokasi.dict())
             hasil_peta_lokasi_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
@@ -230,12 +256,12 @@ async def update(id:UUID,
 
         if hasil_peta_lokasi.bidang_id:
 
-            bidang = await crud.bidang.get(id=hasil_peta_lokasi.bidang_id)
+            bidang = await crud.bidang.get_by_id(id=hasil_peta_lokasi.bidang_id)
             if bidang.geom :
-                bidang.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+                bidang.geom = wkt.dumps(wkb.loads(bidang.geom.data, hex=True))
 
             if bidang.geom_ori :
-                bidang.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
+                bidang.geom_ori = wkt.dumps(wkb.loads(bidang.geom_ori.data, hex=True))
             
             bidang_updated = BidangUpdateSch(**bidang.dict())
             bidang_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
