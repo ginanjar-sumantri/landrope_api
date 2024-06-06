@@ -12,7 +12,8 @@ from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice, InvoiceDetail,
                     Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload, BidangAllPembayaran,
-                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, BidangRptExcel)
+                                BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, 
+                                BidangRptExcel, BidangShpSch)
 from common.exceptions import (IdNotFoundException, NameNotFoundException, ImportFailedException, FileNotFoundException)
 from common.enum import StatusBidangEnum, StatusPembebasanEnum, JenisBidangEnum
 from services.history_service import HistoryService
@@ -656,6 +657,89 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         response = await db_session.execute(query)
         return response.scalars().all()
+
+    async def get_multi_export_shape_file(self, param:BidangParameterDownload|None = None) -> list[BidangShpSch] : 
+
+        db_session = db.session
+
+        filter:str|None = None
+
+        if len(param.projects) > 0:
+            pj = [f"'{pr}'" for pr in param.projects]
+            projects = ",".join(pj)
+
+            if filter is None:
+                filter = f" where pl.project_id in ({projects})"
+
+        if len(param.desas) > 0:
+            ds = [f"'{da}'" for da in param.desas]
+            desas = ",".join(ds)
+
+            if filter is None:
+                filter = f" where pl.desa_id in ({desas})"
+            else:
+                filter += f" and pl.desa_id in ({desas})"
+        
+        if len(param.jenis_bidangs) > 0:
+            jns = [f"'{jn}'" for jn in param.jenis_bidangs]
+            jenis_bidangs = ",".join(jns)
+
+            if filter is None:
+                filter = f" where b.jenis_bidang in ({jenis_bidangs})"
+            else:
+                filter += f" and b.jenis_bidang in ({jenis_bidangs})"
+                
+
+        query = text(f"""
+                    select
+                        b.id_bidang as n_idbidang,
+                        b.id_bidang_lama as o_idbidang,
+                        COALESCE(pm.name, '') as pemilik,
+                        COALESCE(ds.code, '') as code_desa,
+                        b.jenis_alashak as dokumen,
+                        COALESCE(js.name, '') as sub_surat,
+                        b.alashak,
+                        b.luas_surat as luassurat,
+                        COALESCE(kt.name, '') as kat,
+                        COALESCE(kts.name, '') as kat_bidang,
+                        COALESCE(ktp.name, '') as kat_proyek,
+                        COALESCE(pt.name, '') as ptsk,
+                        COALESCE(pn.name, '') as penampung,
+                        COALESCE(sk.nomor_sk, '') as no_sk,
+                        COALESCE(sk.status, '') as status_sk,
+                        COALESCE(mng.name, '') as manager,
+                        COALESCE(sls.name, '') as sales,
+                        b.mediator,
+                        b.jenis_bidang as proses,
+                        b.status,
+                        b.group,
+                        b.no_peta,
+                        COALESCE(ds.name, '') as desa,
+                        COALESCE(pr.name, '') as project,
+                        COALESCE(ds.kecamatan, '') as kecamatan,
+                        COALESCE(ds.kota, '') as kota,
+                        ST_ASTEXT(b.geom) as geom
+                    from bidang b
+                        left join pemilik pm on pm.id = b.pemilik_id
+                        left join planing pl on pl.id = b.planing_id
+                        left join project pr on pr.id = pl.project_id
+                        left join desa ds on ds.id = pl.desa_id
+                        left join jenis_surat js on js.id = b.jenis_surat_id
+                        left join kategori kt on kt.id = b.kategori_id
+                        left join kategori_sub kts on kts.id = b.kategori_sub_id
+                        left join kategori_proyek ktp on ktp.id = b.kategori_proyek_id
+                        left join skpt sk on sk.id = b.skpt_id
+                        left join ptsk pt on pt.id = sk.ptsk_id
+                        left join ptsk pn on pn.id = b.penampung_id
+                        left join manager mng on mng.id = b.manager_id
+                        left join sales sls on sls.id = b.sales_id
+                     {filter}
+                    """)
+        
+        response = await db_session.execute(query)
+
+        result = [BidangShpSch(**dict(bd)) for bd in response.fetchall()]
+        return result
 
     async def get_multi_by_tahap_id_excel(self, tahap_id:UUID|str|None = None) -> list[BidangRptExcel] : 
 

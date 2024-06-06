@@ -222,7 +222,7 @@ class TerminService:
             
             sch.file_upload_path = file_upload_path
 
-        obj_updated = TerminUpdateSch.from_orm(obj_current)
+        obj_updated = TerminUpdateSch(**obj_current.dict())
         obj_updated.nomor_memo = sch.nomor_memo
         obj_updated.file_upload_path = sch.file_upload_path
             
