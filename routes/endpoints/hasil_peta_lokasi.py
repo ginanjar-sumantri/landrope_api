@@ -521,6 +521,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         alashak=kjb_dt_current.alashak,
         manager_id=kjb_hd_current.manager_id,
         sales_id=kjb_hd_current.sales_id,
+        pemilik_id=kjb_dt_current.pemilik_id,
         mediator=kjb_hd_current.mediator,
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,

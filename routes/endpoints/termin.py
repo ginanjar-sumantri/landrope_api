@@ -219,24 +219,28 @@ async def create(
             invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=new_obj_invoice.id, amount=dt_bayar.amount)
             await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
-        await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
     
-    #workflow
-    if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-        wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-        
-        await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
+    if (sch.is_draft or False) == False:
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+            await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+    
+        #workflow
+        if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+            wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            
+            await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
 
-        GCloudTaskService().create_task(payload={
-                                                    "id":str(new_obj.id)
-                                                }, 
-                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
-
-    await db_session.commit()
-    await db_session.refresh(new_obj)
+            GCloudTaskService().create_task(payload={
+                                                        "id":str(new_obj.id)
+                                                    }, 
+                                            base_url=f'{request.base_url}landrope/termin/task-workflow')
+    try:
+        await db_session.commit()
+        await db_session.refresh(new_obj)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e.message))
 
     new_obj = await crud.termin.get_by_id(id=new_obj.id)
 
@@ -661,28 +665,35 @@ async def update_(
     for trb in current_ids_termin_byr:
         await crud.termin_bayar.remove(id=trb, db_session=db_session, with_commit=False)
 
-    #workflow
-    if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
-        if wf_current:
-            if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
-                raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
+    if (sch.is_draft or False) == False:
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+            await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+    
+        #workflow
+        if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+            wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
+            if wf_current:
+                if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                    raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
 
-            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
-            if wf_updated.version is None:
-                wf_updated.version = 1
+                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
+                if wf_updated.version is None:
+                    wf_updated.version = 1
+                    
+                await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+            else:
+                flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+                wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
                 
-            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-        else:
-            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-            wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+                await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
             
-            await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-        
-        GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
-
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
+            GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+    try:
+        await db_session.commit()
+        await db_session.refresh(obj_updated)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e.message))
 
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         background_task.add_task(generate_printout, obj_updated.id)
