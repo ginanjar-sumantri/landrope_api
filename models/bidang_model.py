@@ -513,7 +513,7 @@ class Bidang(BidangFullBase, table=True):
     
     @property
     def has_invoice_lunas(self) -> bool | None:
-        invoice_lunas = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar == JenisBayarEnum.LUNAS or x.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
+        invoice_lunas = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]), None)
         if invoice_lunas:
             return True
         

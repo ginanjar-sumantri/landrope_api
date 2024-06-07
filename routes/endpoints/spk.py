@@ -41,38 +41,39 @@ async def create(
     """Create a new object"""
 
     #Filter
-    if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
-        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
-        await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
-        
-    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
-        if spk_exists:
-            raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
+    if (sch.is_draft or False) is False:
+        if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+            beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+            await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
+            
+        if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+            if spk_exists:
+                raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
 
-        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
-        spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
-        meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
+            #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
+            spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
+            meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
 
-        if spk_beginning_balance is None:
-            bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
-            await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
-        elif spk_beginning_balance and meta_data is None:
-            raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
-        else:
-            pass
+            if spk_beginning_balance is None:
+                bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+                await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+            elif spk_beginning_balance and meta_data is None:
+                raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+            else:
+                pass
 
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
-       await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #EndFilter
 
     new_obj = await SpkService().create_spk(sch=sch, current_worker=current_worker, request=request)
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
 
-    if (new_obj.is_draft or False) is False:
+    if (sch.is_draft or False) is False:
         bidang_ids = []
         bidang_ids.append(new_obj.bidang_id)
 
@@ -300,35 +301,44 @@ async def update(id:UUID,
                     raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
         
     #filter
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+    if (sch.is_draft or False) is False:
+        bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
-        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
-        spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
-        meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
-
-        if spk_beginning_balance is None:
-            bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
-            await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
-        elif spk_beginning_balance and meta_data is None:
-            raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+        if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
+            if bidang_current.has_invoice_lunas:
+                raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
         else:
-            pass
-    
-    bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
+            beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+            await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
 
-    if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
-        if bidang_current.has_invoice_lunas:
-            raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
-    else:
-        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
-        await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
+        if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+            if spk_exists:
+                raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
+
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+
+            #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
+            spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
+            meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
+
+            if spk_beginning_balance is None:
+                bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+                await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+            elif spk_beginning_balance and meta_data is None:
+                raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+            else:
+                pass
+        
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #end filter
 
     obj_updated = await SpkService().update_spk(sch=sch, obj_current=obj_current, bidang_id=bidang_current.id, current_worker=current_worker, request=request)
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
-    if (obj_updated.is_draft or False) is False:
+    if (sch.is_draft or False) is False:
         bidang_ids = []
         bidang_ids.append(bidang_current.id)
 

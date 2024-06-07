@@ -192,7 +192,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         
         query = select(Spk).where(and_(
                         Spk.bidang_id == bidang_id, 
-                        Spk.kjb_termin_id == kjb_termin_id, 
+                        Spk.kjb_termin_id == kjb_termin_id,
+                        func.coalesce(Spk.is_draft, False) == False,
                         or_(Spk.is_void != True, Spk.is_void == None))
                         )
         
