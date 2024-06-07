@@ -116,6 +116,7 @@ class SpkService:
         new_obj = await self.init_spk(sch=sch, current_worker=current_worker, id_bidang=bidang.id_bidang, db_session=db_session)
 
         await self.init_komponen_biaya(sch=sch, current_worker=current_worker, db_session=db_session)
+
         await self.init_spk_kelengkapan_dokumen(sch=sch, spk_id=new_obj.id, current_worker=current_worker, db_session=db_session)
 
         if (sch.is_draft or False) is False:
@@ -158,7 +159,7 @@ class SpkService:
 
         sch.is_void = obj_current.is_void
 
-        if sch.file:
+        if sch.file and (sch.is_draft or False) == False:
             gn_id = uuid4().hex
             file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}-{gn_id}"
             try:

@@ -32,3 +32,4 @@ class SpkKelengkapanDokumenUpdateSch(SpkKelengkapanDokumenBase):
 class SpkKelengkapanDokumenUpdateExtSch(SpkKelengkapanDokumenBase):
     id:UUID | None
     field_value:str | None
+    key_value:str | None
