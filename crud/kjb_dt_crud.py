@@ -261,7 +261,9 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     pr.name as project_on_petlok,
                     ds_ttn.name as desa_on_ttn,
                     ds.name as desa_on_petlok,
-                    dt.group
+                    dt.group,
+                    wr.name as created_by_name,
+                    dt.created_at
                 from kjb_dt dt
                     inner join kjb_hd hd on hd.id = dt.kjb_hd_id
                     inner join kjb_dobel dbl on dbl.alashak = dt.alashak and dbl.pemilik_id = dt.pemilik_id and dbl.desa_id = dt.desa_by_ttn_id
@@ -274,6 +276,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     left join desa ds on ds.id = pl.desa_id
                     left join desa ds_ttn on ds_ttn.id = dt.desa_by_ttn_id
                     left join project pr_ttn on pr_ttn.id = dt.project_by_ttn_id
+                    left join worker wr on wr.id = dt.created_by_id
                 order by dt.alashak
                 {searching};
                 """
@@ -300,7 +303,9 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                                       project_on_petlok=row.project_on_petlok,
                                       desa_on_ttn=row.desa_on_ttn,
                                       desa_on_petlok=row.desa_on_petlok,
-                                      group=row.group
+                                      group=row.group,
+                                      created_by_name=row.created_by_name,
+                                      created_at=row.created_at
                                       )
             datas.append(data)
 

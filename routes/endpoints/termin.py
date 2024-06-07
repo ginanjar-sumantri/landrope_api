@@ -950,7 +950,8 @@ async def get_list_spk_by_tahap_id(
 
     for obj in objs:
         workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
-        if workflow.last_status == WorkflowLastStatusEnum.COMPLETED:
+        last_status = workflow.last_status if workflow else ''
+        if last_status == WorkflowLastStatusEnum.COMPLETED:
             objs_return.append(obj)
 
     return create_response(data=objs_return)

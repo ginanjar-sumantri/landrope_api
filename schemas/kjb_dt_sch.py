@@ -134,3 +134,5 @@ class KjbDtDoubleDataSch(SQLModel):
     desa_on_ttn: str | None
     desa_on_petlok: str | None
     group: str | None
+    created_by_name: str | None
+    created_at: datetime | None
