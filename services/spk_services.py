@@ -25,7 +25,7 @@ from services.gcloud_storage_service import GCStorageService
 from services.history_service import HistoryService
 from services.pdf_service import PdfService
 
-from uuid import UUID
+from uuid import UUID, uuid4
 from io import BytesIO
 from jinja2 import Environment, FileSystemLoader
 import crud
@@ -159,7 +159,8 @@ class SpkService:
         sch.is_void = obj_current.is_void
 
         if sch.file:
-            file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
+            gn_id = uuid4().hex
+            file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}-{gn_id}"
             try:
                 file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
             except ZeroDivisionError as e:
@@ -352,7 +353,7 @@ class SpkService:
                             if len(riwayat_alashak) == 0:
                                 data.field_value = ''
                             else:
-                                if idx > len(riwayat_alashak):
+                                if idx > (len(riwayat_alashak) - 1):
                                     data.field_value = ''
                                 else:
                                     data.field_value = riwayat_alashak[idx]

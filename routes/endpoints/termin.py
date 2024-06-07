@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from fastapi import APIRouter, status, Depends, Request, HTTPException, Response, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
@@ -461,7 +461,8 @@ async def update_(
         jns_byr = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
 
     if sch.file:
-        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+        gn_id = uuid4().hex
+        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}-{gn_id}"
         try:
             file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
         except ZeroDivisionError as e:
