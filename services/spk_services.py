@@ -493,7 +493,7 @@ class SpkService:
                 if len(riwayat_alashak) == 0:
                     data.field_value = ''
                 else:
-                    if idx > len(riwayat_alashak):
+                    if idx > (len(riwayat_alashak) - 1):
                         data.field_value = ''
                     else:
                         data.field_value = riwayat_alashak[idx]
