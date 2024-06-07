@@ -299,7 +299,7 @@ async def update(id:UUID,
             if sch.file is None:
                 if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
                     raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
-        
+   
     #filter
     if (sch.is_draft or False) is False:
         bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
@@ -335,7 +335,7 @@ async def update(id:UUID,
             await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #end filter
 
-    obj_updated = await SpkService().update_spk(sch=sch, obj_current=obj_current, bidang_id=bidang_current.id, current_worker=current_worker, request=request)
+    obj_updated = await SpkService().update_spk(sch=sch, obj_current=obj_current, bidang_id=sch.bidang_id, current_worker=current_worker, request=request)
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
     if (sch.is_draft or False) is False:
