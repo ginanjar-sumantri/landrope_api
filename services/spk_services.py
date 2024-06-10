@@ -17,6 +17,7 @@ from schemas.bidang_komponen_biaya_sch import (BidangKomponenBiayaUpdateSch, Bid
 from schemas.bundle_dt_sch import BundleDtRiwayatSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
+from schemas.rekening_sch import RekeningSch
 from schemas.workflow_sch import WorkflowCreateSch, WorkflowUpdateSch
 
 from services.helper_service import BidangHelper, BundleHelper
@@ -259,6 +260,7 @@ class SpkService:
 
         ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
         npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=bidang_obj.id)
+        sppt_nop_pbb_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
 
         percentage_lunas = None
         if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
@@ -277,6 +279,7 @@ class SpkService:
                                         project_name=bidang_obj.project_name,
                                         luas_surat=bidang_obj.luas_surat,
                                         luas_ukur=bidang_obj.luas_ukur,
+                                        luas_nett=bidang_obj.luas_nett,
                                         luas_gu_perorangan=bidang_obj.luas_gu_perorangan,
                                         luas_gu_pt=bidang_obj.luas_gu_pt,
                                         luas_pbt_perorangan=bidang_obj.luas_pbt_perorangan,
@@ -289,8 +292,18 @@ class SpkService:
                                         bundle_hd_id=bidang_obj.bundle_hd_id,
                                         ktp=ktp_value,
                                         npwp=npwp_value,
+                                        sppt_pbb_nop=sppt_nop_pbb_value,
                                         termins=termins,
                                         percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
+        
+        # GET REKENING FROM PEMILIK BIDANG
+        if bidang_obj.pemilik:
+            rekenings:list[RekeningSch] = []
+            for rk in bidang_obj.pemilik.rekenings:
+                rekening = RekeningSch(**rk.dict())
+                rekenings.append(rekening)
+            
+            bidang_sch.rekenings = rekenings
         
         obj_return = SpkByIdSch(**obj.dict())
         obj_return.bidang = bidang_sch
@@ -427,8 +440,10 @@ class SpkService:
         if len(beban) == 0:
             beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
         
+        # GET VALUE in BUNDLE
         ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
         npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
+        sppt_nop_pbb_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
         
         riwayat_alashak = await self.init_riwayat_alashak(bundle_hd_id=obj.bundle_hd_id)
         checklist_kelengkapan_dokumen_dts = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
@@ -449,6 +464,7 @@ class SpkService:
                                         project_name=obj.project_name,
                                         luas_surat=obj.luas_surat,
                                         luas_ukur=obj.luas_ukur,
+                                        luas_nett=obj.luas_nett,
                                         luas_gu_perorangan=obj.luas_gu_perorangan,
                                         luas_gu_pt=obj.luas_gu_pt,
                                         luas_pbt_perorangan=obj.luas_pbt_perorangan,
@@ -463,9 +479,20 @@ class SpkService:
                                         kelengkapan_dokumens=kelengkapan_dokumen,
                                         ktp=ktp_value,
                                         npwp=npwp_value,
+                                        sppt_nop_pbb=sppt_nop_pbb_value,
                                         sisa_pelunasan=obj.sisa_pelunasan,
                                         termins=termins,
                                         percentage_lunas=percentage_lunas if percentage_lunas else 100)
+        
+         # GET REKENING FROM PEMILIK BIDANG
+        if obj.pemilik:
+            rekenings:list[RekeningSch] = []
+            for rk in obj.pemilik.rekenings:
+                rekening = RekeningSch(**rk.dict())
+                rekenings.append(rekening)
+            
+            obj_return.rekenings = rekenings
+
         
         return obj_return
     
@@ -645,6 +672,7 @@ class SpkService:
                                         desa_name=spk_header.desa_name,
                                         luas_surat="{:,.0f}".format(spk_header.luas_surat or 0),
                                         luas_ukur="{:,.0f}".format(spk_header.luas_ukur or 0),
+                                        luas_nett="{:,.0f}".format(spk_header.luas_nett or 0),
                                         luas_gu_perorangan="{:,.0f}".format(spk_header.luas_gu_perorangan or 0),
                                         luas_pbt_perorangan="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0),
                                         luas_gu_pt="{:,.0f}".format(spk_header.luas_gu_pt or 0),
