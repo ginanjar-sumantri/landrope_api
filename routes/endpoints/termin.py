@@ -106,6 +106,7 @@ async def create(
                         raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
             
             # CHECKING DARI SISI INVOICE APAKAH TOTAL BAYAR PER INVOICENYA SUDAH BALACE DENGAN ALLOCATE DARI TERMIN BAYAR
+            # CHECKING ALLOCATE UTJ PERBIDANG APAKAH SUDAH SAMA DENGAN YG TELAH DIPAYMENT
             for invoice in sch.invoices:
                 invoice_bayar_ = []
                 bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
