@@ -72,6 +72,8 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
         
     
     obj_updated = await crud.bidang_komponen_biaya.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+    await KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_ids=[obj_updated.bidang_id])
+    obj_updated = await crud.bidang_komponen_biaya.get(id=obj_updated.id)
     return create_response(data=obj_updated)
 
 

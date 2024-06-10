@@ -171,7 +171,7 @@ class KomponenBiayaHelper:
 
         db_session = db.session
 
-        if formula is None:
+        if formula is None or formula == '':
             return 0
 
         query = f"""select  
