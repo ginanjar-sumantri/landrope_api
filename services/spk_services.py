@@ -100,11 +100,11 @@ class SpkService:
     async def init_spk_kelengkapan_dokumen(self, spk_id:UUID, sch:SpkCreateSch | SpkUpdateSch, current_worker:Worker, db_session):
         for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
             if kelengkapan_dokumen.id is None:
-                kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=spk_id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
+                kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=spk_id, order_number=kelengkapan_dokumen.order_number, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
                 await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
             else:
                 kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
-                kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=spk_id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
+                kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=spk_id, order_number=kelengkapan_dokumen.order_number, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
                 await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
 
     # CREATE SPK, SPK KELENGKAPAN DOKUMEN, KOMPONEN BIAYA BIDANG
@@ -260,7 +260,7 @@ class SpkService:
 
         ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
         npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=bidang_obj.id)
-        sppt_nop_pbb_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
+        sppt_pbb_nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
 
         percentage_lunas = None
         if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
@@ -292,7 +292,7 @@ class SpkService:
                                         bundle_hd_id=bidang_obj.bundle_hd_id,
                                         ktp=ktp_value,
                                         npwp=npwp_value,
-                                        sppt_pbb_nop=sppt_nop_pbb_value,
+                                        sppt_pbb_nop=sppt_pbb_nop_value,
                                         termins=termins,
                                         percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
         
@@ -443,7 +443,7 @@ class SpkService:
         # GET VALUE in BUNDLE
         ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
         npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
-        sppt_nop_pbb_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
+        sppt_pbb_nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
         
         riwayat_alashak = await self.init_riwayat_alashak(bundle_hd_id=obj.bundle_hd_id)
         checklist_kelengkapan_dokumen_dts = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
@@ -479,7 +479,7 @@ class SpkService:
                                         kelengkapan_dokumens=kelengkapan_dokumen,
                                         ktp=ktp_value,
                                         npwp=npwp_value,
-                                        sppt_nop_pbb=sppt_nop_pbb_value,
+                                        sppt_pbb_nop=sppt_pbb_nop_value,
                                         sisa_pelunasan=obj.sisa_pelunasan,
                                         termins=termins,
                                         percentage_lunas=percentage_lunas if percentage_lunas else 100)
