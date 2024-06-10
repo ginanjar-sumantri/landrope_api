@@ -204,7 +204,7 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     ).outerjoin(Planing, Planing.id == HasilPetaLokasi.planing_id
                     ).outerjoin(desa_on_petlok, desa_on_petlok.id == Planing.desa_id
                     ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id
-                    ).where(KjbDt.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi)
+                    ).where(and_(KjbDt.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi, RequestPetaLokasi.id != None))
 
         filter_clause = None
 
