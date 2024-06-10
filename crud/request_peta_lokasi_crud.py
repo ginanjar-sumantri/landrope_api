@@ -17,6 +17,7 @@ from schemas.request_peta_lokasi_sch import (RequestPetaLokasiCreateSch, Request
                                             RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch, RequestPetaLokasiUpdateExtSch)
 from typing import List, Dict, Any
 from common.ordered import OrderEnumSch
+from common.enum import StatusPetaLokasiEnum
 from uuid import UUID
 from datetime import datetime
 
@@ -202,7 +203,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
                     ).outerjoin(Planing, Planing.id == HasilPetaLokasi.planing_id
                     ).outerjoin(desa_on_petlok, desa_on_petlok.id == Planing.desa_id
-                    ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id)
+                    ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id
+                    ).Where(KjbDt.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi)
 
         filter_clause = None
 
