@@ -177,6 +177,12 @@ async def create(
         for dt in invoice.details:
             if dt.is_deleted:
                 continue
+
+            if dt.amount == 0:
+                bidang = await crud.bidang.get(id=invoice.bidang_id)
+                master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
+                
             
             # add komponen biaya baru jika user input komponen biaya namun belum ada di master bidang komponen biaya berdasarkan beban biaya
             if dt.bidang_komponen_biaya_id is None:
@@ -542,6 +548,11 @@ async def update_(
             for dt in invoice.details:
                 if dt.is_deleted:
                     continue
+
+                if dt.amount == 0:
+                    bidang = await crud.bidang.get(id=invoice.bidang_id)
+                    master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                    raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
                 
                 if dt.id is None:
                     bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=invoice.bidang_id, beban_biaya_id=dt.beban_biaya_id)
@@ -622,6 +633,11 @@ async def update_(
                 if dt.is_deleted:
                     continue
 
+                if dt.amount == 0:
+                    bidang = await crud.bidang.get(id=invoice.bidang_id)
+                    master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                    raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
+                
                 bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=invoice.bidang_id, beban_biaya_id=dt.beban_biaya_id)    
 
                 if bidang_komponen_biaya_current is None and dt.beban_biaya_id:
