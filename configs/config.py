@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     ADOBE_TOKEN:str
     ADOBE_CLIENT_ID:str
     ADOBE_CLIENT_SECRET:str
+    KEY_ENCRYPT_DOC:str
 
     class Config:
         env_file = ".env"

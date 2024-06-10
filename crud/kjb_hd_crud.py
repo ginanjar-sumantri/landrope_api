@@ -523,6 +523,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchone()
-
+      
 kjb_hd = CRUDKjbHd(KjbHd)
 
