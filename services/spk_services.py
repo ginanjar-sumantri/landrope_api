@@ -554,7 +554,7 @@ class SpkService:
             raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
         
     # GENERATE PRINTOUT AND SAVE TO GCLOUD STORAGE
-    async def generate_printout(id:UUID|str) -> str:
+    async def generate_printout(self, id:UUID|str) -> str:
 
         obj = await crud.spk.get_by_id_for_printout(id=id)
         if obj is None:
