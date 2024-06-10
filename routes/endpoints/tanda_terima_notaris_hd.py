@@ -13,12 +13,14 @@ from schemas.tanda_terima_notaris_hd_sch import (TandaTerimaNotarisHdSch, TandaT
 from schemas.bundle_hd_sch import BundleHdCreateSch
 from schemas.kjb_dt_sch import KjbDtUpdateSch, KjbDtListSch
 from schemas.bidang_sch import BidangUpdateSch
+from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, 
                                ImportFailedException, DocumentFileNotFoundException)
 from common.enum import StatusPetaLokasiEnum
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService, BundleHelper
+from services.history_service import HistoryService
 from typing import Dict, Any
 from shapely import wkt, wkb
 import uuid
@@ -36,24 +38,24 @@ async def create(
     
     """Create a new object"""
 
-    kjb_dt = await crud.kjb_dt.get_by_id(id=sch.kjb_dt_id)
+    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
 
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
+    
+    if not sch.pemilik_id:
+        raise HTTPException(status_code=422, detail="Data pemilik harus diisi")
+        
+    if sch.pemilik_id:
+        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
+        if not rekenings:
+            raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
     
     if kjb_dt.status_peta_lokasi is not None:
         if kjb_dt.status_peta_lokasi != sch.status_peta_lokasi:
             raise ContentNoChangeException(detail=f"""status peta lokasi tidak dapat berubah dari 
                                            {str(kjb_dt.status_peta_lokasi)} ke {str(sch.status_peta_lokasi)}""")
 
-    if not sch.pemilik_id:
-            raise HTTPException(status_code=422, detail="Data pemilik harus diisi")
-
-    if sch.pemilik_id:
-        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
-        if not rekenings:
-            raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
-    
     db_session = db.session
 
     if file:
@@ -69,17 +71,17 @@ async def create(
         ## When bundle not exists create new bundle and match id bundle to kjb detail
         ## When bundle exists match match id bundle to kjb detail
         
-        bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
-        if bundle is None:
-            planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
-            if planing:
-                planing_id = planing.id
-            else:
-                planing_id = None
+        # bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
+        # if bundle is None:
+        planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
+        if planing:
+            planing_id = planing.id
+        else:
+            planing_id = None
 
-            bundle_sch = BundleHdCreateSch(planing_id=planing_id, keyword=kjb_dt.alashak)
-            bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
-            # bundle = await crud.bundlehd.get_by_id(id=bundle.id)
+        bundle_sch = BundleHdCreateSch(planing_id=planing_id, keyword=kjb_dt.alashak)
+        bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
+        # bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         
         kjb_dt_update.bundle_hd_id = bundle.id
         bundle = await crud.bundlehd.get_by_id(id=bundle.id)
@@ -99,11 +101,38 @@ async def create(
         await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
         await BundleHelper().merge_tanda_terima_notaris(bundle=bundle, nomor_ttn=sch.nomor_tanda_terima, tanggal=sch.tanggal_tanda_terima, file_path=sch.file_path, worker_id=current_worker.id, db_session=db_session)
 
+    # JIKA KJB DT SUDAH DI PETALOKASI MAKA UPDATE PEMILIK DI HASIL PETLOK, SAMPAI BIDANG (UNTUK BIDANG SEKALIGUS NOTARISNYA)
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt.id)
+    if hasil_peta_lokasi:
+        if hasil_peta_lokasi.pemilik_id != (sch.pemilik_id or kjb_dt_update.pemilik_id):
+            hasil_peta_lokasi_history = await crud.hasil_peta_lokasi.get_by_id(id=hasil_peta_lokasi.id)
+            await HistoryService().create_history_hasil_peta_lokasi(obj_current=hasil_peta_lokasi_history, worker_id=current_worker.id, db_session=db_session)
+
+            hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch(**hasil_peta_lokasi.dict())
+            hasil_peta_lokasi_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi, obj_new=hasil_peta_lokasi_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+
+        if hasil_peta_lokasi.bidang_id:
+
+            bidang = await crud.bidang.get_by_id(id=hasil_peta_lokasi.bidang_id)
+            if bidang.geom :
+                bidang.geom = wkt.dumps(wkb.loads(bidang.geom.data, hex=True))
+
+            if bidang.geom_ori :
+                bidang.geom_ori = wkt.dumps(wkb.loads(bidang.geom_ori.data, hex=True))
+            
+            bidang_updated = BidangUpdateSch(**bidang.dict())
+            bidang_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            bidang_updated.notaris_id = sch.notaris_id or bidang.notaris_id
+            await crud.bidang.update(obj_current=bidang, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+            
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session, with_commit=False)
+
     new_obj = await crud.tandaterimanotaris_hd.create(obj_in=sch, db_session=db_session, with_commit=True, created_by_id=current_worker.id)
     new_obj = await crud.tandaterimanotaris_hd.get_by_id(id=new_obj.id)
 
     return create_response(data=new_obj)
+
 
 @router.get("", response_model=GetResponsePaginatedSch[TandaTerimaNotarisHdSch])
 async def get_list(
@@ -170,11 +199,10 @@ async def update(id:UUID,
     if not obj_current:
         raise IdNotFoundException(TandaTerimaNotarisHd, id)
     
-    kjb_dt = await crud.kjb_dt.get_by_id(id=sch.kjb_dt_id)
+    kjb_dt = await crud.kjb_dt.get(id=sch.kjb_dt_id)
 
     if not kjb_dt:
         raise IdNotFoundException(KjbDt, sch.kjb_dt_id)
-    
 
     if not sch.pemilik_id:
         raise HTTPException(status_code=422, detail="Data pemilik harus diisi")
@@ -202,16 +230,16 @@ async def update(id:UUID,
         ## When bundle not exists create new bundle and match id bundle to kjb detail
         ## When bundle exists match match id bundle to kjb detail
         
-        bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
-        if bundle is None:
-            planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
-            if planing:
-                planing_id = planing.id
-            else:
-                planing_id = None
+        # bundle = await crud.bundlehd.get_by_keyword(keyword=kjb_dt.alashak)
+        # if bundle is None:
+        planing = await crud.planing.get_by_project_id_desa_id(project_id=sch.project_id, desa_id=sch.desa_id)
+        if planing:
+            planing_id = planing.id
+        else:
+            planing_id = None
 
-            bundle_sch = BundleHdCreateSch(planing_id=planing_id, keyword=kjb_dt.alashak)
-            bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
+        bundle_sch = BundleHdCreateSch(planing_id=planing_id, keyword=kjb_dt.alashak)
+        bundle = await crud.bundlehd.create_and_generate(obj_in=bundle_sch)
 
         kjb_dt_update.bundle_hd_id = bundle.id
         bundle = await crud.bundlehd.get_by_id(id=bundle.id)
@@ -231,20 +259,30 @@ async def update(id:UUID,
         await BundleHelper().merge_kesepakatan_jual_beli(bundle=bundle, worker_id=current_worker.id, kjb_dt_id=kjb_dt.id, db_session=db_session, pemilik_id=kjb_dt_update.pemilik_id)
         await BundleHelper().merge_tanda_terima_notaris(bundle=bundle, nomor_ttn=sch.nomor_tanda_terima, tanggal=sch.tanggal_tanda_terima, file_path=sch.file_path, worker_id=current_worker.id, db_session=db_session)
 
-    bidang_id: UUID | None = getattr(getattr(getattr(kjb_dt, 'hasil_peta_lokasi', None), 'bidang', None), 'id', None)
-    if bidang_id:
-        bidang_current = await crud.bidang.get_by_id(id=bidang_id)
+    # JIKA KJB DT SUDAH DI PETALOKASI MAKA UPDATE PEMILIK DI HASIL PETLOK, SAMPAI BIDANG (UNTUK BIDANG SEKALIGUS NOTARISNYA)
+    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt.id)
+    if hasil_peta_lokasi:
+        if hasil_peta_lokasi.pemilik_id != (sch.pemilik_id or kjb_dt_update.pemilik_id):
+            hasil_peta_lokasi_history = await crud.hasil_peta_lokasi.get_by_id(id=hasil_peta_lokasi.id)
+            await HistoryService().create_history_hasil_peta_lokasi(obj_current=hasil_peta_lokasi_history, worker_id=current_worker.id, db_session=db_session)
 
-        if bidang_current.geom :
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch(**hasil_peta_lokasi.dict())
+            hasil_peta_lokasi_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi, obj_new=hasil_peta_lokasi_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
-        if bidang_current.geom_ori :
-            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
+        if hasil_peta_lokasi.bidang_id:
 
-        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
-        bidang_updated.notaris_id = sch.notaris_id
+            bidang = await crud.bidang.get_by_id(id=hasil_peta_lokasi.bidang_id)
+            if bidang.geom :
+                bidang.geom = wkt.dumps(wkb.loads(bidang.geom.data, hex=True))
 
-        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
+            if bidang.geom_ori :
+                bidang.geom_ori = wkt.dumps(wkb.loads(bidang.geom_ori.data, hex=True))
+            
+            bidang_updated = BidangUpdateSch(**bidang.dict())
+            bidang_updated.pemilik_id = sch.pemilik_id if sch.pemilik_id != None else kjb_dt_update.pemilik_id
+            bidang_updated.notaris_id = sch.notaris_id or bidang.notaris_id
+            await crud.bidang.update(obj_current=bidang, obj_new=bidang_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
         
 
     await crud.kjb_dt.update(obj_current=kjb_dt, obj_new=kjb_dt_update, db_session=db_session)
@@ -252,6 +290,7 @@ async def update(id:UUID,
     obj_updated = await crud.tandaterimanotaris_hd.get_by_id(id=obj_updated.id)
 
     return create_response(data=obj_updated)
+
 
 @router.get("/download-file/{id}")
 async def download_file(

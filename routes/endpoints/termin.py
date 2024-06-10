@@ -1624,7 +1624,8 @@ async def generate_printout(id:UUID | str):
         raise IdNotFoundException(Termin, id)
     
     termin_header = TerminByIdForPrintOut(**dict(obj))
-    obj_tanggal_transaksi = datetime.strptime(str(termin_header.tanggal_transaksi), "%Y-%m-%d")
+
+    obj_tanggal_transaksi = datetime.strptime(str(termin_header.tanggal_transaksi or date.today()), "%Y-%m-%d")
     tanggal_transaksi = obj_tanggal_transaksi.strftime("%d-%m-%Y")
 
     obj_created_at = datetime.strptime(str(termin_header.created_at.date()), "%Y-%m-%d")
@@ -1632,14 +1633,14 @@ async def generate_printout(id:UUID | str):
     bulan_created_id = bulan_dict.get(bulan_created_en, bulan_created_en)
     created_at = obj_created_at.strftime(f'%d {bulan_created_id} %Y')
 
-    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
+    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi or date.today()), "%Y-%m-%d")
     nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
     nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
     tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
     day_of_week = date_obj.strftime("%A")
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
 
-    remarks = termin_header.remark.splitlines()
+    remarks = (termin_header.remark or '').splitlines()
     #perhitungan utj (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
     amount_utj_used = []
     termin_invoices:list[InvoiceForPrintOutExt] = []
