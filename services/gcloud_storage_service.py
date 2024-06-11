@@ -8,6 +8,7 @@ from typing import TypeVar, Tuple
 from fastapi import UploadFile
 from google.cloud import storage
 from sqlmodel import SQLModel
+from datetime import timedelta
 
 from configs.config import settings
 # from models.sub_project_image import SubProjectImage
@@ -121,6 +122,17 @@ class GCStorageService:
         blob = bucket.blob(file_path)
         blob.make_public()
         url_public = blob.public_url
+
+        return str(url_public)
+    
+    async def generate_signed_url_v4(self, file_path:str | None) -> str | None:
+        bucket = self.storage_client.get_bucket(self.bucket_name)
+        blob = bucket.blob(file_path)
+        
+        url_public = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(hours=120),  # URL valid for 5 days
+            method="GET")
 
         return str(url_public)
     
