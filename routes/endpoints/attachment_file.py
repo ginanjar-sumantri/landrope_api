@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Query, Depends, HTTPException, UploadFile, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 
 from common.exceptions import (IdNotFoundException, ImportFailedException, DocumentFileNotFoundException)
@@ -60,9 +60,9 @@ async def get_document_or_file(id: str, en: WorkflowEntityEnum | str):
             raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
 
         ext = obj.file_path.split('.')[-1]
-        return FileResponse(file_bytes, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={obj.id}.{ext}"})
-        # response = Response(content=file_bytes, media_type="application/octet-stream")
-        # response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
+        return StreamingResponse(file_bytes,
+                             media_type="application/octet-stream", 
+                             headers={"Content-Disposition": f"attachment; filename={obj.code}.{ext}"})
         
     else:
         raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
