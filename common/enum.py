@@ -213,6 +213,6 @@ class ActivityEnum(str, Enum):
     BEBAN_BIAYA = "Beban_Biaya"
 
 activity_landrope_to_activity_rfp_dict = {
-    ActivityEnum.UTJ : "A001",
-    ActivityEnum.BIAYA_TANAH : "A001"
+    ActivityEnum.UTJ : "LAND0001",
+    ActivityEnum.BIAYA_TANAH : "LAND0002"
 }

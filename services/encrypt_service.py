@@ -1,6 +1,8 @@
+from fastapi import Request, HTTPException
 from cryptography.fernet import Fernet
-import base64
 from configs.config import settings
+from uuid import UUID
+import base64
 
 
 key = settings.KEY_ENCRYPT_DOC.encode()
@@ -18,3 +20,13 @@ def encrypt(text: str) -> str:
 def decrypt(text: str) -> str:
     decrypted_text = cipher_suite.decrypt(text.encode())
     return decrypted_text.decode()
+
+async def encrypt_id(id: str, request: Request):
+    """Encrypt a UUID"""
+    try:
+        kjbhd_id = UUID(id)
+        encrypted_id = encrypt(str(kjbhd_id))
+        url = f'{request.base_url}landrope/attachment_file/document/{encrypted_id}'
+        return url
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")

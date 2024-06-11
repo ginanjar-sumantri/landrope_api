@@ -19,6 +19,7 @@ from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.history_service import HistoryService
 from services.workflow_service import WorkflowService
+from services.encrypt_service import encrypt_id
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID, uuid4
 from datetime import datetime
@@ -158,9 +159,10 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         db_session.add(db_obj)
 
         if db_obj.is_draft == False:
-            public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
+            # public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
+            public_url = await encrypt_id(id=db_obj.id, request=request)
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=public_url)
+            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.KJB}")
             wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(db_obj.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, attachments=[vars(wf_system_attachment)], version=1,
                                                     descs=f"""Dokumen KJB {db_obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                             Tanggal: {db_obj.created_at.date()}<br>
