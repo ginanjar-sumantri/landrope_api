@@ -266,7 +266,6 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     dt.created_at
                 from kjb_dt dt
                     inner join kjb_hd hd on hd.id = dt.kjb_hd_id
-                    inner join kjb_dobel dbl on dbl.alashak = dt.alashak and dbl.pemilik_id = dt.pemilik_id and dbl.desa_id = dt.desa_by_ttn_id
                     left join pemilik pm on pm.id = dt.pemilik_id
                     left join request_peta_lokasi rpl on rpl.kjb_dt_id = dt.id
                     left join tanda_terima_notaris_hd ttn on ttn.kjb_dt_id = dt.id 
@@ -277,8 +276,16 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     left join desa ds_ttn on ds_ttn.id = dt.desa_by_ttn_id
                     left join project pr_ttn on pr_ttn.id = dt.project_by_ttn_id
                     left join worker wr on wr.id = dt.created_by_id
-                order by dt.alashak
-                {searching};
+					inner join kjb_dobel dbl on dbl.alashak = dt.alashak 
+												and COALESCE(dbl.pemilik_name, dbl.alashak) = COALESCE(pm.name, dt.alashak) 
+												and dbl.desa_id = case 
+																	when dt.desa_by_ttn_id is null then hd.desa_id
+																	else dt.desa_by_ttn_id
+								
+                                								  end
+                {searching}
+                order by dt.alashak;
+                
                 """
         
         result = await db_session.execute(query)
