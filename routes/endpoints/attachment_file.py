@@ -60,7 +60,7 @@ async def get_document_or_file(id: str, en: WorkflowEntityEnum | str):
 
         ext = obj.file_path.split('.')[-1]
         response = Response(content=file_bytes, media_type="application/octet-stream")
-        response.headers["Content-Disposition"] = f"attachment; filename={obj.code}-{entity_id}.{ext}"
+        response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
         
     else:
         raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
