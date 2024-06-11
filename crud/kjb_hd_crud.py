@@ -160,7 +160,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
 
         if db_obj.is_draft == False:
             # public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
-            public_url = await encrypt_id(id=db_obj.id, request=request)
+            public_url = await encrypt_id(id=str(db_obj.id), request=request)
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
             wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.KJB.value}")
             wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(db_obj.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, attachments=[vars(wf_system_attachment)], version=1,
