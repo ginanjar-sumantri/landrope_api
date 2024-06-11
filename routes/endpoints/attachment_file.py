@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Query, Depends, HTTPException, UploadFile, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 
 from common.exceptions import (IdNotFoundException, ImportFailedException, DocumentFileNotFoundException)
@@ -55,17 +55,15 @@ async def get_document_or_file(id: str, en: WorkflowEntityEnum | str):
 
     if obj.file_path:  
         try:
-            public_url = await GCStorageService().public_url(file_path=obj.file_path)
-            # file_bytes = await GCStorageService().download_dokumen(file_path=obj.file_path)
+            file_bytes = await GCStorageService().download_dokumen(file_path=obj.file_path)
         except Exception:
             raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
 
         ext = obj.file_path.split('.')[-1]
-        return FileResponse(path=public_url, media_type="application/octet-stream", headers={"Content-Disposition": f"attachment; filename={obj.id}.{ext}"})
-        # response = Response(content=file_bytes, media_type="application/octet-stream")
-        # response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
+        response = StreamingResponse(content=file_bytes, media_type="application/octet-stream")
+        response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
         
     else:
         raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
 
-    # return response
+    return response
