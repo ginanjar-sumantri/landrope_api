@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi_async_sqlalchemy import db
 
-from models import KjbHd, KjbHarga, KjbTermin, KjbBebanBiaya
+from models import KjbHd, KjbHarga, KjbTermin, KjbBebanBiaya, KjbPenjual
 from uuid import UUID, uuid4
 import crud
 
@@ -40,6 +40,15 @@ class ImportPraTransactionService:
             kjb_beban_biaya_imports = await self.get_import_temp_kjb_beban_biaya(kjb_hd_code=kjb_hd.code, kjb_hd_id=kjb_hd.id)
             for kjb_beban_biaya_import in kjb_beban_biaya_imports:
                 await crud.kjb_bebanbiaya.create(obj_in=kjb_beban_biaya_import, created_by_id=import_worker.id, db_session=db_session, with_commit=False)
+
+            # INSERT KJB PENJUAL
+            kjb_penjual_imports = await self.get_import_temp_kjb_penjual(kjb_hd_code=kjb_hd.code, kjb_hd_id=kjb_hd.id)
+            for kjb_penjual_import in kjb_penjual_imports:
+                await crud.kjb_penjual.create(obj_in=kjb_penjual_import, created_by_id=import_worker.id, db_session=db_session, with_commit=False)
+
+            # INSERT KJB REKENING
+            # kjb_rekening_imports = await
+
 
 
     async def get_import_temp_kjb(self) -> list[KjbHd]:
@@ -169,6 +178,31 @@ class ImportPraTransactionService:
         datas:list[KjbBebanBiaya] = []
         for row in rows:
             data = KjbBebanBiaya(id=row.id, beban_biaya_id=row.beban_biaya_id, beban_pembeli=row.beban_pembeli, kjb_hd_id=kjb_hd_id)
+            datas.append(data)
+
+        return datas
+    
+    async def get_import_temp_kjb_penjual(self, kjb_hd_code:str, kjb_hd_id:UUID) -> list[KjbPenjual]:
+        
+        db_session = db.session
+
+        query = f"""
+                SELECT 
+                    p.id as pemilik_id,
+                    uuid_generate_v4() as id,
+                    NOW() as created_at, 
+                    NOW() as updated_at
+                FROM import_temp_kjb kb
+                    LEFT JOIN pemilik p ON kb.penjual = p.name
+                WHERE kb.kjb_no = '{kjb_hd_code}';
+                """
+        
+        response = await db_session.execute(query)
+        rows = response.fetchall()
+
+        datas:list[KjbPenjual] = []
+        for row in rows:
+            data = KjbPenjual(id=row.id, pemilik_id=row.pemilik_id, kjb_hd_id=kjb_hd_id)
             datas.append(data)
 
         return datas
