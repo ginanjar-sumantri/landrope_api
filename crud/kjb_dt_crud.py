@@ -255,7 +255,7 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     dt.harga_transaksi,
                     dt.luas_surat,
                     dt.luas_surat_by_ttn,
-                    pm.name as pemilik_name,
+                    case when pm.name is null then kp_pm.name else pm.name end as pemilik_name,
                     dt.status_peta_lokasi,
                     pr_ttn.name as project_on_ttn,
                     pr.name as project_on_petlok,
@@ -266,6 +266,8 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                     dt.created_at
                 from kjb_dt dt
                     inner join kjb_hd hd on hd.id = dt.kjb_hd_id
+					left join kjb_penjual kp on hd.id = kp.kjb_hd_id
+					left join pemilik kp_pm on kp_pm.id = kp.pemilik_id
                     left join pemilik pm on pm.id = dt.pemilik_id
                     left join request_peta_lokasi rpl on rpl.kjb_dt_id = dt.id
                     left join tanda_terima_notaris_hd ttn on ttn.kjb_dt_id = dt.id 
