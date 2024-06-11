@@ -54,6 +54,7 @@ from services.adobe_service import PDFToExcelService
 from services.pdf_service import PdfService
 # from services.rfp_service import RfpService
 from services.termin_service import TerminService
+from services.encrypt_service import encrypt_id
 
 from decimal import Decimal
 from jinja2 import Environment, FileSystemLoader
@@ -1947,7 +1948,7 @@ async def void(id:UUID,
     return create_response(data=obj_updated) 
 
 @router.post("/task-workflow")
-async def create_workflow(payload:Dict):
+async def create_workflow(payload:Dict, request:Request):
     
     id = payload.get("id", None)
     obj = await crud.termin.get(id=id)
@@ -1968,9 +1969,10 @@ async def create_workflow(payload:Dict):
         time.sleep(2)
         trying += 1
     
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    public_url = await encrypt_id(id=str(obj.id), request=request)
 
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>

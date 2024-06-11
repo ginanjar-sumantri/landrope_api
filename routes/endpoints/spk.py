@@ -20,6 +20,7 @@ from services.helper_service import KomponenBiayaHelper, BundleHelper
 from services.workflow_service import WorkflowService
 from services.gcloud_storage_service import GCStorageService
 from services.spk_services import SpkService
+from services.encrypt_service import encrypt_id
 from datetime import date
 from typing import Dict
 import crud
@@ -460,7 +461,7 @@ async def delete_all_bidang_komponen_biaya(bidang_id:UUID):
         await db_session.commit()
 
 @router.post("/task-workflow")
-async def create_workflow(payload:Dict):
+async def create_workflow(payload:Dict, request:Request):
     db_session = db.session
     id = payload.get("id", None)
     additional_info = payload.get("additional_info", None)
@@ -491,9 +492,10 @@ async def create_workflow(payload:Dict):
             await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
             with_commit = True
 
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    public_url = await encrypt_id(id=str(obj.id), request=request)
    
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>

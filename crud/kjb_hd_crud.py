@@ -357,8 +357,9 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
             wf_system_attachment:WorkflowSystemAttachmentSch = None
             if obj_current.file_path:
-                public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
-                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
+                # public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
+                public_url = await encrypt_id(id=str(obj_current.id), request=request)
+                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=f"{public_url}?en={WorkflowEntityEnum.KJB.value}")
 
             wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"} if difference_two_approve == False else {"approval_number" : "TWO_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
                                                     descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
