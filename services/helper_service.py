@@ -826,8 +826,8 @@ class BidangHelper:
 
         if hasil_peta_lokasi_current:
             hasil_peta_lokasi_updated = HasilPetaLokasiUpdateSch.from_orm(hasil_peta_lokasi_current)
-            hasil_peta_lokasi_updated.jenis_alashak = bidang_current.jenis_alashak
-            hasil_peta_lokasi_updated.alashak = bidang_current.alashak
+            hasil_peta_lokasi_updated.jenis_alashak = kjb_dt_current.jenis_alashak
+            hasil_peta_lokasi_updated.alashak = kjb_dt_current.alashak
             await crud.hasil_peta_lokasi.update(obj_current=hasil_peta_lokasi_current, obj_new=hasil_peta_lokasi_updated, db_session=db_session, with_commit=False)
 
 
