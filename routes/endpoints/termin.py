@@ -132,7 +132,7 @@ async def create(
             if dt.is_deleted:
                 continue
 
-            if dt.amount == 0:
+            if dt.amount == 0 and (sch.is_draft or False) == False:
                 bidang = await crud.bidang.get(id=invoice.bidang_id)
                 master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
                 raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
@@ -460,7 +460,7 @@ async def update_(
                 if dt.is_deleted:
                     continue
 
-                if dt.amount == 0:
+                if dt.amount == 0 and (sch.is_draft or False) == False:
                     bidang = await crud.bidang.get(id=invoice.bidang_id)
                     master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
                     raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
@@ -544,7 +544,7 @@ async def update_(
                 if dt.is_deleted:
                     continue
 
-                if dt.amount == 0:
+                if dt.amount == 0 and (sch.is_draft or False) == False:
                     bidang = await crud.bidang.get(id=invoice.bidang_id)
                     master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
                     raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
@@ -1969,10 +1969,10 @@ async def create_workflow(payload:Dict, request:Request):
         time.sleep(2)
         trying += 1
     
-    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    public_url = await encrypt_id(id=str(obj.id), request=request)
-
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
+    public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    # public_url = await encrypt_id(id=str(obj.id), request=request)
+    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>
