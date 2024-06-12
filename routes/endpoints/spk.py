@@ -492,10 +492,10 @@ async def create_workflow(payload:Dict, request:Request):
             await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
             with_commit = True
 
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
-    # public_url = await encrypt_id(id=str(obj.id), request=request)
-    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
+    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    public_url = await encrypt_id(id=str(obj.id), request=request)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
