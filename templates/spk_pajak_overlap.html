@@ -132,6 +132,33 @@
                   <td>:</td>
                   <td>{{luas_nett}}</td>
                 </tr>
+                {% if proses_bpn == 'PBT_PT' %}
+                  <tr>
+                    <td>Luas GU PT</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_pt}}</td>
+                  </tr>
+                  <tr>
+                    <td>Luas PBT PT</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_pbt_pt}}</td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td>Luas GU Perorangan</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_gu_perorangan}}</td>
+                  </tr>
+                  <tr>
+                    <td>Luas PBT Perorangan</td>
+                    <td>&emsp;&emsp;&emsp;&emsp;</td>
+                    <td>:</td>
+                    <td>{{luas_pbt_perorangan}}</td>
+                  </tr>
+                {% endif %}
                 <tr>
                   <td>NOP</td>
                   <td>&emsp;&emsp;&emsp;&emsp;</td>
