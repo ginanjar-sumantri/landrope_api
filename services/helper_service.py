@@ -525,7 +525,7 @@ class BundleHelper:
     async def merge_alashak(self, bundle:BundleHd, alashak:str, worker_id:UUID, db_session:AsyncSession):
 
     #update bundle alashak for default if metadata not exists
-
+        file_path:str | None = None
         dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
         bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
@@ -538,6 +538,7 @@ class BundleHelper:
                     raise HTTPException(status_code=422, detail=f"Dynform Dokumen 'ALAS HAK' tidak memiliki key field {dokumen.key_field}")
                 
                 input_dict[dokumen.key_field] = alashak
+
                 meta_data = json.dumps(input_dict)
                 
             else:
@@ -548,8 +549,15 @@ class BundleHelper:
                 input_data[dokumen.key_field] = alashak
                 meta_data = json.dumps(input_data)
 
-            
-            await self.merging_to_bundle(bundle_hd_obj=bundle, dokumen=dokumen, meta_data=meta_data,
+            if dokumen.is_riwayat:
+                if bundledt_current.riwayat_data:
+                    riwayat_data = json.loads(bundledt_current.riwayat_data)
+                    # when alashak is exists in riwayat, get file path
+                    current_riwayat = next((data for data in riwayat_data["riwayat"] if data["key_value"] == alashak), None)
+                    if current_riwayat:
+                        file_path = current_riwayat["file_path"]
+
+            await self.merging_to_bundle(bundle_hd_obj=bundle, file_path=file_path, dokumen=dokumen, meta_data=meta_data,
                             db_session=db_session, worker_id=worker_id)
           
     async def merge_kesepakatan_jual_beli(self, bundle:BundleHd, worker_id:UUID, kjb_dt_id:UUID, db_session:AsyncSession, pemilik_id:UUID|None = None):
