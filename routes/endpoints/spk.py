@@ -67,8 +67,8 @@ async def create(
             else:
                 pass
 
-        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
-            await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+        await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #EndFilter
 
     new_obj = await SpkService().create_spk(sch=sch, current_worker=current_worker, request=request)
