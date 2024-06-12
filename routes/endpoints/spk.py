@@ -333,7 +333,7 @@ async def update(id:UUID,
                 pass
         
         if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
-            await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+            await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id, spk_id=obj_current.id)
     #end filter
 
     obj_updated = await SpkService().update_spk(sch=sch, obj_current=obj_current, bidang_id=sch.bidang_id, current_worker=current_worker, request=request)
