@@ -260,7 +260,7 @@ class SpkService:
 
         ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP PENJUAL', bidang_id=bidang_obj.id)
         npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=bidang_obj.id)
-        sppt_pbb_nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=obj.id)
+        sppt_pbb_nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=bidang_obj.id)
 
         percentage_lunas = None
         if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
