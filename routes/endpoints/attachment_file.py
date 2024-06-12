@@ -61,9 +61,9 @@ async def get_document_or_file(id: str, en: WorkflowEntityEnum | str):
             raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
 
         ext = obj.file_path.split('.')[-1]
-        response = StreamingResponse(content=file_bytes, media_type="application/pdf")
+        response = Response(content=file_bytes, media_type="application/pdf")
         response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
-        # return RedirectResponse(url=file_url)
+        return response
         
     else:
         raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
