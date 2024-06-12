@@ -736,8 +736,8 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
 
     # kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
-
-    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
+    if checklist_kelengkapan_hd_old:
+        await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
     if bidang_origin:
         await crud.bidang_origin.remove(id=bidang_origin.id, db_session=db_session, with_commit=False)
 
