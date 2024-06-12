@@ -176,8 +176,8 @@ async def get_list(
                 Manager.name.ilike(f'%{keyword}%'),
                 Sales.name.ilike(f'%{keyword}%'),
                 KjbDt.alashak.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
     

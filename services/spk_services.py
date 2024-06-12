@@ -575,10 +575,11 @@ class SpkService:
         if not hasil_peta_lokasi:
             raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Bidang belum memiliki input hasil peta lokasi")
 
-    async def filter_with_same_kjb_termin(self, bidang_id:UUID, kjb_termin_id:UUID):
+    async def filter_with_same_kjb_termin(self, bidang_id:UUID, kjb_termin_id:UUID, spk_id:UUID | None = None):
         exists = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_id, kjb_termin_id=kjb_termin_id)
         if exists:
-            raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
+            if exists.id != spk_id:
+                raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
         
     # GENERATE PRINTOUT AND SAVE TO GCLOUD STORAGE
     async def generate_printout(self, id:UUID|str) -> str:

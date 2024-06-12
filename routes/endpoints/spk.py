@@ -102,7 +102,7 @@ async def get_list(
                 ).outerjoin(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
                 ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                 ).outerjoin(Manager, Manager.id == Bidang.manager_id
-                ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.SPK))
+                ).outerjoin(Workflow, and_(Workflow.reference_id == Spk.id, Workflow.entity == WorkflowEntityEnum.SPK))
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
@@ -123,8 +123,8 @@ async def get_list(
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
                 Spk.jenis_bayar.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
 

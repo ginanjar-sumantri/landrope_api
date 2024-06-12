@@ -265,7 +265,7 @@ async def get_list(
                         ).outerjoin(Planing, Planing.id == Tahap.planing_id
                         ).outerjoin(Project, Project.id == Planing.project_id
                         ).outerjoin(Desa, Desa.id == Planing.desa_id
-                        ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.TERMIN)
+                        ).outerjoin(Workflow, and_(Workflow.reference_id == Termin.id, Workflow.entity == WorkflowEntityEnum.TERMIN)
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
     if filter_list == "list_approval":
@@ -291,8 +291,8 @@ async def get_list(
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
                 Tahap.group.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
 
@@ -544,7 +544,7 @@ async def update_(
                 if dt.is_deleted:
                     continue
 
-                if dt.amount == 0 and (sch.is_draft or False) == False:
+                if dt.amount == 0 and (sch.is_draft or False) == False :
                     bidang = await crud.bidang.get(id=invoice.bidang_id)
                     master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
                     raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
