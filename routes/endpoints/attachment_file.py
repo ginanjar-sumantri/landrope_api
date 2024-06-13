@@ -61,9 +61,23 @@ async def get_document_or_file(id: str, en: WorkflowEntityEnum | str):
             raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
 
         ext = obj.file_path.split('.')[-1]
-        response = Response(content=file_bytes, media_type="application/pdf")
+        media_type = get_media_type(ext=ext)
+        if media_type is None:
+            raise HTTPException(status_code=422, detail="file extentions of file not support")
+        
+        response = Response(content=file_bytes, media_type=media_type)
         response.headers["Content-Disposition"] = f"inline; filename={obj.code}-{entity_id}.{ext}"
         return response
         
     else:
         raise HTTPException(status_code=404, detail=f"File for document {obj.code} not found")
+
+def get_media_type(ext:str) -> str | None:
+    if ext.lower() in ['jpg', 'jpeg']:
+        return "image/jpeg"
+    elif ext.lower() in ['png']:
+        return "image/png"
+    elif ext.lower() in ['pdf']:
+        return "application/pdf"
+    else:
+        return None
