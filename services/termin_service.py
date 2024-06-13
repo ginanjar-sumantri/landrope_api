@@ -59,6 +59,8 @@ class TerminService:
                         if (tr_byr_utj.amount or 0) != 0:
                             if inv_bayar.amount != bidang.utj_amount:
                                 raise HTTPException(status_code=422, detail=f"Nominal Allocation UTJ untuk bidang '{bidang.id_bidang}' tidak sama dengan nominal UTJ yang sudah dipayment")
+                            if bidang.utj_realisasi_amount != 0:
+                                raise HTTPException(status_code=422, detail=f"Bidang {bidang.id_bidang} sudah memiliki UTJ realisasi, di memo sebelumnya")
 
                     tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.BIAYA_TANAH]), None)
                     if tr_byr:

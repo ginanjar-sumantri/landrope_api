@@ -49,6 +49,9 @@ class TerminByIdSch(TerminFullBase):
 class TerminByIdUtjKhususSch(TerminFullBase):
     invoices:list[InvoiceInTerminUtjKhususSch]
 
+class TerminUpdateBaseSch(TerminBase):
+    pass
+
 @optional
 class TerminUpdateSch(TerminBase):
     termin_bayars:list[TerminBayarExtSch]|None
