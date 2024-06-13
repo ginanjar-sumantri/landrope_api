@@ -17,6 +17,7 @@ from schemas.request_peta_lokasi_sch import (RequestPetaLokasiCreateSch, Request
                                             RequestPetaLokasiForInputHasilSch, RequestPetaLokasiUpdateSch, RequestPetaLokasiSch, RequestPetaLokasiUpdateExtSch)
 from typing import List, Dict, Any
 from common.ordered import OrderEnumSch
+from common.enum import StatusPetaLokasiEnum
 from uuid import UUID
 from datetime import datetime
 
@@ -194,15 +195,16 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
             HasilPetaLokasi.remark,
             case((desa_on_petlok.name == None, desa_on_kjb_dt.name),
                  else_ = desa_on_petlok.name).label("desa_name")
-        ).select_from(RequestPetaLokasi
-                    ).outerjoin(KjbDt, KjbDt.id == RequestPetaLokasi.kjb_dt_id
+        ).select_from(KjbDt
+                    ).outerjoin(RequestPetaLokasi, KjbDt.id == RequestPetaLokasi.kjb_dt_id
                     ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Pemilik, Pemilik.id == KjbDt.pemilik_id
                     ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
                     ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id
                     ).outerjoin(Planing, Planing.id == HasilPetaLokasi.planing_id
                     ).outerjoin(desa_on_petlok, desa_on_petlok.id == Planing.desa_id
-                    ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id)
+                    ).outerjoin(desa_on_kjb_dt, desa_on_kjb_dt.id == KjbDt.desa_by_ttn_id
+                    ).where(and_(KjbDt.status_peta_lokasi == StatusPetaLokasiEnum.Lanjut_Peta_Lokasi, RequestPetaLokasi.id != None))
 
         filter_clause = None
 
@@ -215,7 +217,8 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
                     KjbHd.mediator.ilike(f'%{keyword}%'),
                     Pemilik.name.ilike(f'%{keyword}%'),
                     Bidang.id_bidang.ilike(f'%{keyword}%'),
-                    Desa.name.ilike(f'%{keyword}%')
+                    desa_on_petlok.name.ilike(f'%{keyword}%'),
+                    desa_on_kjb_dt.name.ilike(f'%{keyword}%')
                 )
             )
 
