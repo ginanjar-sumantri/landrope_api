@@ -446,7 +446,7 @@ async def void(id:UUID,
     obj_updated.void_at = date.today()
 
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session)
-    obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
+    obj_updated = await SpkService().get_by_id_spk(id=id)
     
     background_task.add_task(delete_all_bidang_komponen_biaya, obj_current.bidang_id)
 

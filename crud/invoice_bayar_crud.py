@@ -34,6 +34,23 @@ class CRUDInvoiceBayar(CRUDBase[InvoiceBayar, InvoiceBayarCreateSch, InvoiceBaya
 
         return response.scalars().all()
     
+    async def get_multi_by_termin_bayar_id(self, 
+                  *, 
+                  termin_bayar_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> list[InvoiceBayar] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(InvoiceBayar).join(InvoiceBayar.invoice)
+
+        query = query.filter(InvoiceBayar.termin_bayar_id == termin_bayar_id)
+        query = query.filter(Invoice.is_void != True)
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
+    
     #for termin update function
     async def get_ids_by_invoice_ids(self, 
                             *,

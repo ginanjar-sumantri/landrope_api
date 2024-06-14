@@ -173,8 +173,9 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     
     if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.termin.id)
-        if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
-            raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
+        if workflow:
+            if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
+                raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
 
     
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
