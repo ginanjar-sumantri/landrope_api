@@ -770,7 +770,14 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
     
     objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id, pengembalian=pengembalian, biaya_lain=biaya_lain)
     if bidang_id:
-        objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
+        objs_2:list[BidangKomponenBiaya] = []
+        datas = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
+        for data in datas:
+            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0:
+                continue
+            else:
+                objs_2.append(data)
+            
         for obj2 in objs_2:
             obj1 = next((obj for obj in objs if obj.beban_biaya_id == obj2.beban_biaya_id), None)
             if obj1:
@@ -795,7 +802,13 @@ async def get_list_komponen_biaya_by_spk_id(
     elif spk.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
         objs = await crud.bidang_komponen_biaya.get_multi_beban_biaya_lain_by_bidang_id(bidang_id=spk.bidang_id)
     else:
-        objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
+        datas = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
+        for data in datas:
+            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0:
+                continue
+            else:
+                objs.append(data)
+
 
     return create_response(data=objs)
 
