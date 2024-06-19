@@ -351,6 +351,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def satuan_bayar(self) -> SatuanBayarEnum | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'satuan_bayar', None)
+    
+    @property
+    def komponen_biaya_amount(self) -> Decimal | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'amount', None)
 
 
 class InvoiceBayarBase(SQLModel):
