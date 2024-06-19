@@ -30,6 +30,7 @@ class InvoiceDetailSch(InvoiceDetailFullBase):
     beban_biaya_id: UUID | None
     satuan_bayar: SatuanBayarEnum | None
     satuan_harga: SatuanHargaEnum | None
+    komponen_biaya_amount: Decimal | None
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):
