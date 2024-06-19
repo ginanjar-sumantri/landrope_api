@@ -290,6 +290,9 @@ async def update(id:UUID,
     if not obj_current:
         raise IdNotFoundException(Spk, id)
     
+    if obj_current.is_void:
+        raise HTTPException(status_code=422, detail="SPK sudah void")
+    
     workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
     
     #workflow

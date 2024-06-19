@@ -350,6 +350,9 @@ async def update_(
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
+    if obj_current.is_void:
+        raise HTTPException(status_code=422, detail="Memo Sudah divoid")
+    
     last_status_current:WorkflowLastStatusEnum = WorkflowLastStatusEnum.DRAFT
     
     workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
