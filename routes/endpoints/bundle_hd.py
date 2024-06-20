@@ -1,5 +1,5 @@
-from uuid import UUID
-from fastapi import APIRouter, status, Depends
+from uuid import UUID, uuid4
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
@@ -9,12 +9,14 @@ from models.worker_model import Worker
 from models.bidang_model import Bidang
 from models.kjb_model import KjbHd, KjbDt
 from models.planing_model import Planing
+from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt
 from schemas.bundle_hd_sch import (BundleHdSch, BundleHdCreateSch, BundleHdUpdateSch, BundleHdByIdSch)
 from schemas.bundle_dt_sch import BundleDtCreateSch
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
+from common.enum import JenisBayarEnum
 from models.code_counter_model import CodeCounterEnum
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -216,3 +218,45 @@ async def generate_bundle(start:int, size:int):
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=Status Bidang Generate Bundle.xlsx"})
+
+@router.put("regenerate/bundle/kelengkapan")
+async def regenerate(dokumen_name:str):
+
+    """Get an object by id"""
+    size = 1000
+    db_session = db.session
+
+    dokumen = await crud.dokumen.get_by_name(name=dokumen_name)
+    if dokumen is None:
+        raise HTTPException(status_code=422, detail=f"Dokumen {dokumen_name} not found in master!")
+
+
+    bundle_hd_ids = await crud.bundlehd.get_by_dokumen_not_exists(dokumen_id=dokumen.id)
+    data = 1
+    for bundle_hd_id in bundle_hd_ids:
+        bundle_hd = await crud.bundlehd.get(id=bundle_hd_id.id)
+        if bundle_hd is None:
+            continue
+        bundle_dt = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle_hd.id, dokumen_id=dokumen.id)
+        if bundle_dt is None:
+            code = bundle_hd.code + dokumen.code
+            bundle_dt_new = BundleDtCreateSch(code=code, dokumen_id=dokumen.id, bundle_hd_id=bundle_hd.id)
+            bundle_dt = await crud.bundledt.create(obj_in=bundle_dt_new, db_session=db_session, with_commit=False)
+
+        bidang = await crud.bidang.get_by_bundle_hd_id(bundle_hd_id=bundle_hd.id)
+        if bidang:
+            kelengkapan_dokumen_header = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=bidang.id)
+            kelengkapan_dokumen_detail = await crud.checklist_kelengkapan_dokumen_dt.get_by_checklist_kelengkapan_dokumen_hd_id_and_dokumen_id(checklist_kelengkapan_dokumen_hd_id=kelengkapan_dokumen_header.id, dokumen_id=dokumen.id)
+            if kelengkapan_dokumen_detail is None:
+                kelengkapan_dokumen_detail_new = ChecklistKelengkapanDokumenDt(checklist_kelengkapan_dokumen_hd_id=kelengkapan_dokumen_header.id,
+                                                                               bundle_dt_id=bundle_dt.id,
+                                                                               jenis_bayar=JenisBayarEnum.DP,
+                                                                               dokumen_id=dokumen.id
+                                                                               )
+                kelengkapan_dokumen_detail_new.id = uuid4()
+                await crud.checklist_kelengkapan_dokumen_dt.create(obj_in=kelengkapan_dokumen_detail_new, db_session=db_session, with_commit=False)
+        data += 1
+        if data == size:
+            break
+        
+    return create_response({"detail": "SUCCESS"})

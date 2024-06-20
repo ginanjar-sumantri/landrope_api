@@ -240,6 +240,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
     
+    async def get_by_bundle_hd_id(
+        self, *, bundle_hd_id: UUID | str | None = None, db_session: AsyncSession | None = None
+    ) -> Bidang:
+        db_session = db_session or db.session
+        obj = await db_session.execute(select(Bidang).where(Bidang.bundle_hd_id == bundle_hd_id).limit(1))
+        return obj.scalar_one_or_none()
+
     async def get_kulit_bintang(
         self, *, idbidang: str, db_session: AsyncSession | None = None
     ) -> Bidang:
