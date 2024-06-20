@@ -27,6 +27,7 @@ class SpkBase(SQLModel):
     void_at:Optional[date] = Field(nullable=True)
     file_path:str|None = Field(nullable=True)
     file_upload_path: str | None = Field(nullable = True)
+    is_draft: bool | None = Field(nullable=True, default=False)
       
 class SpkFullBase(BaseUUIDModel, SpkBase):
     pass
@@ -249,7 +250,7 @@ class Spk(SpkFullBase, table=True):
 
 
 class SpkKelengkapanDokumenBase(SQLModel):
-    spk_id:UUID = Field(foreign_key="spk.id", nullable=False)
+    spk_id:UUID | None = Field(foreign_key="spk.id", nullable=False)
     bundle_dt_id:UUID = Field(foreign_key="bundle_dt.id", nullable=False)
     tanggapan:str | None = Field(nullable=True)
     order_number: int | None = Field(nullable=True)

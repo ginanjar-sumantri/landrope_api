@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from crud.base_crud import CRUDBase
-from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokumenDt, ChecklistKelengkapanDokumenHd
+from models import ChecklistKelengkapanDokumenDt, ChecklistKelengkapanDokumenHd, BundleDt
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtCreateSch, ChecklistKelengkapanDokumenDtExtSch, ChecklistKelengkapanDokumenDtUpdateSch, ChecklistKelengkapanDokumenDtSch
 from typing import List
 from uuid import UUID
@@ -65,5 +65,23 @@ class CRUDChecklistKelengkapanDokumenDt(CRUDBase[ChecklistKelengkapanDokumenDt, 
             
         response =  await db_session.execute(query)
         return response.scalars().all()
+
+    async def get_by_checklist_kelengkapan_dokumen_hd_id_and_dokumen_id(self, 
+                  *, 
+                  checklist_kelengkapan_dokumen_hd_id: UUID | str | None = None,
+                  dokumen_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> ChecklistKelengkapanDokumenDt | None:
+        
+        db_session = db_session or db.session
+
+        query = select(ChecklistKelengkapanDokumenDt).where(and_(
+                                                        ChecklistKelengkapanDokumenDt.checklist_kelengkapan_dokumen_hd_id == checklist_kelengkapan_dokumen_hd_id,
+                                                        ChecklistKelengkapanDokumenDt.dokumen_id == dokumen_id
+                                                    )).limit(1)                                     
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
 
 checklist_kelengkapan_dokumen_dt = CRUDChecklistKelengkapanDokumenDt(ChecklistKelengkapanDokumenDt)

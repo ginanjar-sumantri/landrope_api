@@ -3,43 +3,28 @@ from fastapi import APIRouter, status, Depends, HTTPException, Response, Backgro
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_, text, or_, func, delete
-from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy import cast, Date, exists
+from sqlmodel import select, and_, or_, func, delete
+from sqlalchemy import cast, Date
 from sqlalchemy.orm import selectinload
-from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, KjbHd, Manager, ChecklistKelengkapanDokumenHd, ChecklistKelengkapanDokumenDt, Worker, 
-                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, SpkKelengkapanDokumen)
-from models.code_counter_model import CodeCounterEnum
-from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkPrintOut, SpkListSch, SpkVoidSch,
-                             SpkDetailPrintOut, SpkRekeningPrintOut, SpkOverlapPrintOut, SpkOverlapPrintOutExt)
-from schemas.spk_kelengkapan_dokumen_sch import (SpkKelengkapanDokumenCreateSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateSch)
-from schemas.spk_history_sch import SpkHistoryCreateSch
+from models import (Spk, Bidang, HasilPetaLokasi, KjbDt, KjbHd, Manager, Worker, 
+                    Invoice, Termin, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya)
+from schemas.spk_sch import (SpkSch, SpkCreateSch, SpkUpdateSch, SpkByIdSch, SpkListSch, SpkVoidSch)
 from schemas.bundle_dt_sch import BundleDtRiwayatSch
-from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch, BidangKomponenBiayaSch
-from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdSch, BidangForSPKByIdExtSch
-from schemas.kjb_termin_sch import KjbTerminInSpkSch
-from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
-from schemas.workflow_sch import WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch, WorkflowUpdateSch
+from schemas.bidang_sch import BidangSrcSch, BidangForSPKByIdExtSch
+from schemas.workflow_sch import WorkflowSystemCreateSch, WorkflowSystemAttachmentSch, WorkflowUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.enum import (JenisBayarEnum, StatusSKEnum, JenisBidangEnum, 
-                        SatuanBayarEnum, WorkflowEntityEnum, WorkflowLastStatusEnum, 
-                        StatusPembebasanEnum, jenis_bayar_to_spk_status_pembebasan, jenis_bayar_to_text, JenisAlashakEnum)
-from common.ordered import OrderEnumSch
+from common.enum import (JenisBayarEnum,  WorkflowEntityEnum, WorkflowLastStatusEnum)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
-from common.generator import generate_code
-from services.pdf_service import PdfService
 from services.history_service import HistoryService
-from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper, BidangHelper
+from services.helper_service import KomponenBiayaHelper, BundleHelper
 from services.workflow_service import WorkflowService
 from services.gcloud_storage_service import GCStorageService
-from services.gcloud_task_service import GCloudTaskService
-from configs.config import settings
-from jinja2 import Environment, FileSystemLoader
+from services.spk_services import SpkService
+from services.encrypt_service import encrypt_id
 from datetime import date
 from typing import Dict
 import crud
 import json
-import pandas as pd
 import time
 from io import BytesIO
 from openpyxl import Workbook
@@ -56,179 +41,46 @@ async def create(
     
     """Create a new object"""
 
-    db_session = db.session
+    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+            if spk_exists:
+                raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
     #Filter
-    if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
-        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
-        await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
-    
-    # if sch.jenis_bayar == JenisBayarEnum.SISA_PELUNASAN:
-    #     await filter_sisa_pelunasan(bidang_id=sch.bidang_id)
-        
-    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
-        if spk_exists:
-            raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
+    if (sch.is_draft or False) is False:
+        if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
+            beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+            await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
 
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
 
-        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
-        spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
-        meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
+            #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
+            spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
+            meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
 
-        if spk_beginning_balance is None:
-            bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
-            await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
-        elif spk_beginning_balance and meta_data is None:
-            raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
-        else:
-            pass
+            if spk_beginning_balance is None:
+                bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+                await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+            elif spk_beginning_balance and meta_data is None:
+                raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+            else:
+                pass
 
     if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
-       await filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
+        await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id)
     #EndFilter
 
-    bidang = await crud.bidang.get_by_id(id=sch.bidang_id)
-
-    code = await generate_code(entity=CodeCounterEnum.Spk, db_session=db_session, with_commit=False)
-    jenis_bayar = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
-    sch.code = f"SPK-{jenis_bayar}/{code}/{bidang.id_bidang}"
-    
-    new_obj = await crud.spk.create(obj_in=sch, created_by_id=current_worker.id, with_commit=False)
-
-    bidang_komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=sch.bidang_id)
-    kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=bidang.id)
-    
-    if len(bidang_komponen_biayas) > 0:
-        bidang_komponen_biaya_ids = [beban.beban_biaya_id for beban in bidang_komponen_biayas]
-        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in bidang_komponen_biaya_ids]
-        beban_biaya_ids = bidang_komponen_biaya_ids + sch_beban_biaya_ids
-    else:
-        kjb_beban_biaya_ids = [beban.beban_biaya_id for beban in kjb_beban_biayas]
-        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in kjb_beban_biaya_ids]
-        beban_biaya_ids = kjb_beban_biaya_ids + sch_beban_biaya_ids
-
-    for beban_biaya_id in beban_biaya_ids:
-        obj_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=sch.bidang_id, beban_biaya_id=beban_biaya_id)
-        sch_komponen_biaya = next((schema for schema in sch.spk_beban_biayas if schema.beban_biaya_id == beban_biaya_id), None)
-        kjb_beban_biaya = next((kjb_beban for kjb_beban in kjb_beban_biayas if kjb_beban.beban_biaya_id == beban_biaya_id), None)
-
-        if obj_komponen_biaya_current:
-            if sch_komponen_biaya:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
-                                                                            beban_pembeli=sch_komponen_biaya.beban_pembeli,
-                                                                            is_exclude_spk=False,
-                                                                            remark=sch_komponen_biaya.remark)
-            else:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark", "is_exclude_spk"}), 
-                                                                            beban_pembeli=obj_komponen_biaya_current.beban_pembeli,
-                                                                            is_exclude_spk=True,
-                                                                            remark=obj_komponen_biaya_current.remark)
-            
-            await crud.bidang_komponen_biaya.update(obj_current=obj_komponen_biaya_current, 
-                                                    obj_new=obj_komponen_biaya_updated,
-                                                    db_session=db_session, with_commit=False,
-                                                    updated_by_id=current_worker.id)
-        else:
-            master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
-            obj_komponen_biaya_new = BidangKomponenBiayaCreateSch(bidang_id=new_obj.bidang_id, 
-                                                        beban_biaya_id=beban_biaya_id, 
-                                                        beban_pembeli=sch_komponen_biaya.beban_pembeli if sch_komponen_biaya else kjb_beban_biaya.beban_pembeli,
-                                                        is_void=False,
-                                                        is_paid=False,
-                                                        is_retur=False,
-                                                        is_add_pay=master_beban_biaya.is_add_pay,
-                                                        remark=sch_komponen_biaya.remark if sch_komponen_biaya else "",
-                                                        satuan_bayar=master_beban_biaya.satuan_bayar,
-                                                        satuan_harga=master_beban_biaya.satuan_harga,
-                                                        formula=master_beban_biaya.formula,
-                                                        amount=master_beban_biaya.amount,
-                                                        order_number=sch_komponen_biaya.order_number if sch_komponen_biaya else None,
-                                                        is_exclude_spk=False if sch_komponen_biaya else True) 
-            await crud.bidang_komponen_biaya.create(obj_in=obj_komponen_biaya_new, created_by_id=current_worker.id, with_commit=False)
-
-
-    for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
-        kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=new_obj.id, 
-                                                                 bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, 
-                                                                 tanggapan=kelengkapan_dokumen.tanggapan, 
-                                                                 order_number=kelengkapan_dokumen.order_number,
-                                                                 field_value=kelengkapan_dokumen.field_value,
-                                                                 key_value=kelengkapan_dokumen.key_value)
-        await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
-
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
-        await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
-
-    #workflow
-    if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
-        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-        wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-        
-        await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
-
-        GCloudTaskService().create_task(payload={
-                                                    "id":str(new_obj.id), 
-                                                    "additional_info":new_obj.jenis_bayar
-                                                }, 
-                                        base_url=f'{request.base_url}landrope/spk/task-workflow')
-
-    await db_session.commit()
-    await db_session.refresh(new_obj)
-
+    new_obj = await SpkService().create_spk(sch=sch, current_worker=current_worker, request=request)
     new_obj = await crud.spk.get_by_id(id=new_obj.id)
 
-    bidang_ids = []
-    bidang_ids.append(new_obj.bidang_id)
+    if (sch.is_draft or False) is False:
+        bidang_ids = []
+        bidang_ids.append(new_obj.bidang_id)
 
-    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
+        background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
     
     return create_response(data=new_obj)
-
-async def filter_biaya_lain(beban_biaya_ids:list[UUID], bidang_id:UUID):
-
-    beban_biaya_add_pays = await crud.bebanbiaya.get_beban_biaya_add_pay(list_id=beban_biaya_ids)
-    add_pay_from_master = False
-    if len(beban_biaya_add_pays) > 0:
-        add_pay_from_master = True 
-    
-    komponen_biaya_add_pays = await crud.bidang_komponen_biaya.get_komponen_biaya_add_pay(list_id=beban_biaya_ids, bidang_id=bidang_id)
-    add_pay_from_komponen = False
-    if len(komponen_biaya_add_pays) > 0:
-        add_pay_from_komponen = True
-    
-    if add_pay_from_master == False and add_pay_from_komponen == False:
-        raise HTTPException(status_code=422, detail="Bidang tidak memiliki beban biaya lain diluar dari biaya tanah")
-
-async def filter_sisa_pelunasan(bidang_id:UUID):
-    bidang = await crud.bidang.get_by_id_for_spk(id=bidang_id)
-
-    if bidang.has_invoice_lunas != True:
-        raise HTTPException(status_code=422, detail="Bidang tidak memiliki pembayaran pelunasan")
-    
-    if bidang.sisa_pelunasan == 0:
-        raise HTTPException(status_code=422, detail="Bidang tidak memiliki sisa pelunasan")
-
-async def filter_kelengkapan_dokumen(bundle_dt_ids:list[UUID]):
-    bundle_dts = await crud.bundledt.get_by_ids(list_ids=bundle_dt_ids)
-
-    bundle_dt_no_have_metadata = any(bundledt.file_exists == False for bundledt in bundle_dts)
-    if bundle_dt_no_have_metadata:
-        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Data bundle untuk kelengkapan spk belum diinput")
-    
-async def filter_have_input_peta_lokasi(bidang_id:UUID):
-    hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=bidang_id)
-
-    if not hasil_peta_lokasi:
-        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Bidang belum memiliki input hasil peta lokasi")
-
-async def filter_with_same_kjb_termin(bidang_id:UUID, kjb_termin_id:UUID):
-    exists = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_id, kjb_termin_id=kjb_termin_id)
-    if exists:
-        raise HTTPException(status_code=422, detail="Failed create SPK. Detail : Termin yang pembayaran yang dimaksud sudah pernah dibuat")
 
 @router.get("", response_model=GetResponsePaginatedSch[SpkListSch])
 async def get_list(
@@ -250,7 +102,7 @@ async def get_list(
                 ).outerjoin(KjbDt, KjbDt.id == HasilPetaLokasi.kjb_dt_id
                 ).outerjoin(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                 ).outerjoin(Manager, Manager.id == Bidang.manager_id
-                ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.SPK))
+                ).outerjoin(Workflow, and_(Workflow.reference_id == Spk.id, Workflow.entity == WorkflowEntityEnum.SPK))
 
     if filter_list == "list_approval":
         subquery_workflow = (select(Workflow.reference_id).join(Workflow.workflow_next_approvers
@@ -271,8 +123,8 @@ async def get_list(
                 KjbHd.code.ilike(f'%{keyword}%'),
                 Manager.name.ilike(f'%{keyword}%'),
                 Spk.jenis_bayar.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
 
@@ -420,120 +272,9 @@ async def get_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj_return = await get_by_id_spk(id=id)
+    obj_return = await SpkService().get_by_id_spk(id=id)
 
     return create_response(data=obj_return)
-
-async def get_by_id_spk(id:UUID) -> SpkByIdSch | None:
-
-    obj = await crud.spk.get_by_id(id=id)
-
-    if not obj:
-        raise IdNotFoundException(Spk, id)
-    
-    bidang_obj = await crud.bidang.get_by_id(id=obj.bidang_id)
-    if not bidang_obj:
-        raise IdNotFoundException(Bidang, obj.bidang_id)
-
-    termins = []
-    if bidang_obj.hasil_peta_lokasi:
-        # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, 
-        #                                         jenis_alashak=bidang_obj.jenis_alashak if (bidang_obj.is_ptsl or False) == False else JenisAlashakEnum.Girik)
-
-        harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_hd_id, jenis_alashak=bidang_obj.jenis_alashak)
-        
-        if harga is None:
-            raise HTTPException(status_code=404, detail="KJB Harga not Found")
-        
-        for tr in harga.termins:
-            if tr.id == obj.kjb_termin_id:
-                termin = KjbTerminInSpkSch(**tr.dict(), spk_id=obj.id, spk_code=obj.code)
-                termins.append(termin)
-            else:
-                spk = await crud.spk.get_by_bidang_id_kjb_termin_id(bidang_id=bidang_obj.id, kjb_termin_id=tr.id)
-                if spk:
-                    termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk.id, spk_code=spk.code)
-                else:
-                    termin = KjbTerminInSpkSch(**tr.dict())
-                termins.append(termin)
-
-    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=bidang_obj.id)
-    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=bidang_obj.id)
-
-    percentage_lunas = None
-    if obj.jenis_bayar != JenisBayarEnum.BEGINNING_BALANCE:
-        percentage_lunas = await crud.bidang.get_percentage_lunas(bidang_id=bidang_obj.id)
-    
-    bidang_sch = BidangForSPKByIdSch(id=bidang_obj.id,
-                                    jenis_alashak=bidang_obj.jenis_alashak,
-                                    id_bidang=bidang_obj.id_bidang,
-                                    hasil_analisa_peta_lokasi=bidang_obj.hasil_analisa_peta_lokasi,
-                                    kjb_no=bidang_obj.hasil_peta_lokasi.kjb_dt.kjb_code if bidang_obj.hasil_peta_lokasi else None,
-                                    satuan_bayar=obj.satuan_bayar,
-                                    group=bidang_obj.group,
-                                    pemilik_name=bidang_obj.pemilik_name,
-                                    alashak=bidang_obj.alashak,
-                                    desa_name=bidang_obj.desa_name,
-                                    project_name=bidang_obj.project_name,
-                                    luas_surat=bidang_obj.luas_surat,
-                                    luas_ukur=bidang_obj.luas_ukur,
-                                    luas_gu_perorangan=bidang_obj.luas_gu_perorangan,
-                                    luas_gu_pt=bidang_obj.luas_gu_pt,
-                                    luas_pbt_perorangan=bidang_obj.luas_pbt_perorangan,
-                                    luas_pbt_pt=bidang_obj.luas_pbt_pt,
-                                    manager_name=bidang_obj.manager_name,
-                                    no_peta=bidang_obj.no_peta,
-                                    notaris_name=bidang_obj.notaris_name,
-                                    ptsk_name=bidang_obj.ptsk_name,
-                                    status_sk=bidang_obj.status_sk,
-                                    bundle_hd_id=bidang_obj.bundle_hd_id,
-                                    ktp=ktp_value,
-                                    npwp=npwp_value,
-                                    termins=termins,
-                                    percentage_lunas=percentage_lunas.percentage_lunas if percentage_lunas else 0)
-    
-    obj_return = SpkByIdSch(**obj.dict())
-    obj_return.bidang = bidang_sch
-
-    workflow = await crud.workflow.get_by_reference_id(reference_id=obj.id)
-    if workflow:
-        obj_return.status_workflow = workflow.last_status
-        obj_return.step_name_workflow = workflow.step_name
-
-    pengembalian = False
-    if obj.jenis_bayar == JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-        pengembalian = True
-    
-    pajak = False
-    if obj.jenis_bayar == JenisBayarEnum.PAJAK:
-        pajak = True
-
-    komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=obj.bidang_id, pengembalian=pengembalian, pajak=pajak)
-
-    list_komponen_biaya = []
-    for kb in komponen_biayas:
-        komponen_biaya_sch = BidangKomponenBiayaSch(**kb.dict())
-        komponen_biaya_sch.beban_biaya_name = kb.beban_biaya_name
-        komponen_biaya_sch.is_tax = kb.is_tax
-        komponen_biaya_sch.order_number = kb.order_number
-        list_komponen_biaya.append(komponen_biaya_sch)
-    
-    list_kelengkapan_dokumen = []
-    for kd in obj.spk_kelengkapan_dokumens:
-        kelengkapan_dokumen_sch = SpkKelengkapanDokumenSch(**kd.dict())
-        kelengkapan_dokumen_sch.dokumen_name = kd.dokumen_name
-        kelengkapan_dokumen_sch.has_meta_data = kd.has_meta_data
-        kelengkapan_dokumen_sch.file_path = kd.file_path
-        kelengkapan_dokumen_sch.order_number = kd.order_number
-        kelengkapan_dokumen_sch.is_exclude_printout = kd.is_exclude_printout
-        list_kelengkapan_dokumen.append(kelengkapan_dokumen_sch)
-
-    obj_return.spk_beban_biayas = list_komponen_biaya
-    obj_return.spk_kelengkapan_dokumens = list_kelengkapan_dokumen
-    obj_return.created_name = obj.created_name
-    obj_return.updated_name = obj.updated_name
-
-    return obj_return
 
 @router.put("/{id}", response_model=PutResponseBaseSch[SpkSch])
 async def update(id:UUID, 
@@ -544,171 +285,70 @@ async def update(id:UUID,
     
     """Update a obj by its id"""
 
-    db_session = db.session
     obj_current = await crud.spk.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Spk, id)
     
+    if obj_current.is_void:
+        raise HTTPException(status_code=422, detail="SPK sudah void")
+    
     workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
-        
+    
     #workflow
     if sch.jenis_bayar != JenisBayarEnum.PAJAK:
-        msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
-        
-        if sch.file is None:
-            if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-                raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
-        
+        if workflow:
+            msg_error_wf = "SPK Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "SPK Approval Need Approval!"
+            
+            if sch.file is None:
+                if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
+                    raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
+   
     #filter
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        await filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
+    if (sch.is_draft or False) is False:
+        bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
-        #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
-        spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
-        meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
-
-        if spk_beginning_balance is None:
-            bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
-            await filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
-        elif spk_beginning_balance and meta_data is None:
-            raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
+        if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
+            if bidang_current.has_invoice_lunas:
+                raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
         else:
-            pass
-    #end filter
-    
-    #schema for history
-    spk_history = await get_by_id_spk(id=id)
-    await HistoryService().create_history_spk(spk=spk_history, worker_id=current_worker.id, db_session=db_session)
+            beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
+            await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
 
-    bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
+        if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+            if spk_exists:
+                if spk_exists.id != obj_current.id:
+                    raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
-    if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
-        if bidang_current.has_invoice_lunas:
-            raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
-    else:
-        beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
-        await filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
-    
-    sch.is_void = obj_current.is_void
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
 
-    if sch.file:
-        file_name=f"SURAT PERINTAH KERJA-{obj_current.code.replace('/', '_')}"
-        try:
-            file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
-        except ZeroDivisionError as e:
-            raise HTTPException(status_code=422, detail="Failed upload dokumen Memo Pembayaran")
-        
-        sch.file_upload_path = file_upload_path
+            #if bidang beginning balance lolosin aja untuk filter ini asal ada bundle spk sebelumnya
+            spk_beginning_balance = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=JenisBayarEnum.BEGINNING_BALANCE)
+            meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name="SURAT PERINTAH KERJA", bidang_id=sch.bidang_id)
 
-        bundle = await crud.bundlehd.get_by_id(id=bidang_current.bundle_hd_id)
-        if bundle:
-            await BundleHelper().merge_spk_signed(bundle=bundle, 
-                                                  code=f"{obj_current.code}-{str(obj_current.updated_at.date())}", 
-                                                  tanggal=obj_current.created_at.date(), 
-                                                  file_path=sch.file_upload_path, 
-                                                  worker_id=obj_current.updated_by_id, db_session=db_session)
-    
-    obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
-
-    bidang_komponen_biayas = await crud.bidang_komponen_biaya.get_multi_by_bidang_id(bidang_id=sch.bidang_id)
-    kjb_beban_biayas = await crud.kjb_bebanbiaya.get_kjb_beban_by_bidang_id(bidang_id=sch.bidang_id)
-    
-    if len(bidang_komponen_biayas) > 0:
-        bidang_komponen_biaya_ids = [beban.beban_biaya_id for beban in bidang_komponen_biayas]
-        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in bidang_komponen_biaya_ids]
-        beban_biaya_ids = bidang_komponen_biaya_ids + sch_beban_biaya_ids
-    else:
-        kjb_beban_biaya_ids = [beban.beban_biaya_id for beban in kjb_beban_biayas]
-        sch_beban_biaya_ids = [beban.beban_biaya_id for beban in sch.spk_beban_biayas if beban.beban_biaya_id not in kjb_beban_biaya_ids]
-        beban_biaya_ids = kjb_beban_biaya_ids + sch_beban_biaya_ids
-
-    for beban_biaya_id in beban_biaya_ids:
-        obj_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=sch.bidang_id, beban_biaya_id=beban_biaya_id)
-        sch_komponen_biaya = next((schema for schema in sch.spk_beban_biayas if schema.beban_biaya_id == beban_biaya_id), None)
-        kjb_beban_biaya = next((kjb_beban for kjb_beban in kjb_beban_biayas if kjb_beban.beban_biaya_id == beban_biaya_id), None)
-
-        if obj_komponen_biaya_current:
-            if sch_komponen_biaya:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**sch_komponen_biaya.dict(exclude={"beban_pembeli", "remark"}), 
-                                                                            beban_pembeli=sch_komponen_biaya.beban_pembeli,
-                                                                            is_exclude_spk=False,
-                                                                            remark=sch_komponen_biaya.remark)
+            if spk_beginning_balance is None:
+                bundle_dt_ids = [dokumen.bundle_dt_id for dokumen in sch.spk_kelengkapan_dokumens]
+                await SpkService().filter_kelengkapan_dokumen(bundle_dt_ids=bundle_dt_ids)
+            elif spk_beginning_balance and meta_data is None:
+                raise HTTPException(status_code=422, detail="Bidang memiliki beginning balance, hanya dokumen spk sebelumnya belum diupload dibundle")
             else:
-                obj_komponen_biaya_updated = BidangKomponenBiayaUpdateSch(**obj_komponen_biaya_current.dict(exclude={"beban_pembeli", "remark"}), 
-                                                                            beban_pembeli=obj_komponen_biaya_current.beban_pembeli,
-                                                                            is_exclude_spk=True,
-                                                                            remark=obj_komponen_biaya_current.remark)
-            
-            await crud.bidang_komponen_biaya.update(obj_current=obj_komponen_biaya_current, 
-                                                    obj_new=obj_komponen_biaya_updated,
-                                                    db_session=db_session, with_commit=False,
-                                                    updated_by_id=current_worker.id)
-        else:
-            master_beban_biaya = await crud.bebanbiaya.get(id=beban_biaya_id)
-            obj_komponen_biaya_new = BidangKomponenBiayaCreateSch(bidang_id=obj_updated.bidang_id, 
-                                                        beban_biaya_id=beban_biaya_id, 
-                                                        beban_pembeli=sch_komponen_biaya.beban_pembeli if sch_komponen_biaya else kjb_beban_biaya.beban_pembeli,
-                                                        is_void=False,
-                                                        is_paid=False,
-                                                        is_retur=False,
-                                                        is_add_pay=master_beban_biaya.is_add_pay,
-                                                        remark=sch_komponen_biaya.remark if sch_komponen_biaya else "",
-                                                        satuan_bayar=master_beban_biaya.satuan_bayar,
-                                                        satuan_harga=master_beban_biaya.satuan_harga,
-                                                        formula=master_beban_biaya.formula,
-                                                        amount=master_beban_biaya.amount,
-                                                        order_number=sch_komponen_biaya.order_number if sch_komponen_biaya else None,
-                                                        is_exclude_spk=False if sch_komponen_biaya else True) 
-            await crud.bidang_komponen_biaya.create(obj_in=obj_komponen_biaya_new, created_by_id=current_worker.id, with_commit=False)
-
-    #remove kelengkapan dokumen 
-    await db_session.execute(delete(SpkKelengkapanDokumen).where(and_(SpkKelengkapanDokumen.id.notin_(r.id for r in sch.spk_kelengkapan_dokumens if r.id is not None), 
-                                                        SpkKelengkapanDokumen.spk_id == obj_updated.id)))
-    
-    for kelengkapan_dokumen in sch.spk_kelengkapan_dokumens:
-        if kelengkapan_dokumen.id is None:
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenCreateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
-            await crud.spk_kelengkapan_dokumen.create(obj_in=kelengkapan_dokumen_sch, created_by_id=current_worker.id, with_commit=False)
-        else:
-            kelengkapan_dokumen_current = await crud.spk_kelengkapan_dokumen.get(id=kelengkapan_dokumen.id)
-            kelengkapan_dokumen_sch = SpkKelengkapanDokumenUpdateSch(spk_id=id, bundle_dt_id=kelengkapan_dokumen.bundle_dt_id, tanggapan=kelengkapan_dokumen.tanggapan, field_value=kelengkapan_dokumen.field_value, key_value=kelengkapan_dokumen.key_value)
-            await crud.spk_kelengkapan_dokumen.update(obj_current=kelengkapan_dokumen_current, obj_new=kelengkapan_dokumen_sch, updated_by_id=current_worker.id, with_commit=False)
-
-    #workflow
-    if obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
-        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
-        if wf_current:
-            if wf_current.last_status in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
-                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
-                await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-                GCloudTaskService().create_task(payload={
-                                                        "id":str(obj_updated.id), 
-                                                        "additional_info":obj_updated.jenis_bayar
-                                                    }, 
-                                            base_url=f'{request.base_url}landrope/spk/task-workflow')
-        else:
-            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-            wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-            
-            await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+                pass
         
-            GCloudTaskService().create_task(payload={
-                                                        "id":str(obj_updated.id), 
-                                                        "additional_info":obj_updated.jenis_bayar
-                                                    }, 
-                                            base_url=f'{request.base_url}landrope/spk/task-workflow')
+    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN]:
+        await SpkService().filter_with_same_kjb_termin(bidang_id=sch.bidang_id, kjb_termin_id=sch.kjb_termin_id, spk_id=obj_current.id)
+    #end filter
 
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
-
+    obj_updated = await SpkService().update_spk(sch=sch, obj_current=obj_current, bidang_id=sch.bidang_id, current_worker=current_worker, request=request)
     obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
 
-    bidang_ids = []
-    bidang_ids.append(bidang_current.id)
+    if (sch.is_draft or False) is False:
+        bidang_ids = []
+        bidang_ids.append(bidang_current.id)
 
-    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
-    background_task.add_task(generate_printout, obj_updated.id)
+        background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
+        background_task.add_task(SpkService().generate_printout, obj_updated.id)
 
     return create_response(data=obj_updated)
 
@@ -726,7 +366,7 @@ async def delete_(id:UUID, current_worker:Worker = Depends(crud.worker.get_activ
     return obj_deleted
 
 @router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSrcSch])
-async def get_list(
+async def search_bidang(
                 params: Params=Depends(),
                 keyword:str = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -745,179 +385,17 @@ async def get_list(
     return create_response(data=objs)
 
 @router.get("/search/bidang/{id}", response_model=GetResponseBaseSch[BidangForSPKByIdExtSch])
-async def get_by_id(id:UUID):
+async def search_bidang_by_id(id:UUID):
 
     """Get an object by id"""
 
-    obj = await crud.bidang.get_by_id(id=id)
-
-    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=obj.id)
-    kjb_dt_current = await crud.kjb_dt.get_by_id(id=hasil_peta_lokasi_current.kjb_dt_id)
-    spk_exists_on_bidangs = await crud.spk.get_multi_by_bidang_id(bidang_id=id)
-    # harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak if (obj.is_ptsl or False) is False else JenisAlashakEnum.Girik)
-    harga = await crud.kjb_harga.get_by_kjb_hd_id_and_jenis_alashak(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
+    obj_return = await SpkService().search_bidang_by_id(id=id)
+    return create_response(data=obj_return)
     
-    if harga is None:
-        raise HTTPException(status_code=404, detail="KJB Harga not found")
-    
-    termins = []
-    if harga:
-        for tr in harga.termins:
-            spk_exists_on_bidang = next((spk_exists for spk_exists in spk_exists_on_bidangs if spk_exists.kjb_termin_id == tr.id), None)
-            if spk_exists_on_bidang:
-                termin = KjbTerminInSpkSch(**tr.dict(), spk_id=spk_exists_on_bidang.id, spk_code=spk_exists_on_bidang.code)
-                termins.append(termin)
-            else:
-                termin = KjbTerminInSpkSch(**tr.dict())
-                termins.append(termin)
-
-    beban = []
-
-    beban = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id_for_spk(bidang_id=id)
-    if len(beban) == 0:
-        beban = await crud.kjb_bebanbiaya.get_kjb_beban_by_kjb_hd_id(kjb_hd_id=kjb_dt_current.kjb_hd_id, jenis_alashak=obj.jenis_alashak)
-    
-    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP SUAMI', bidang_id=obj.id)
-    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=obj.id)
-    
-    riwayat_alashak = await init_riwayat_alashak(bundle_hd_id=obj.bundle_hd_id)
-    checklist_kelengkapan_dokumen_dts = await crud.checklist_kelengkapan_dokumen_dt.get_all_for_spk(bidang_id=obj.id)
-    kelengkapan_dokumen = await init_checklist_kelengkapan_dt(checklist_kelengkapan_dts=checklist_kelengkapan_dokumen_dts, riwayat_alashak=riwayat_alashak)
-
-    percentage_lunas = next((termin.nilai for termin in harga.termins if termin.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
-
-    obj_return = BidangForSPKByIdExtSch(id=obj.id,
-                                    jenis_alashak=obj.jenis_alashak,
-                                    id_bidang=obj.id_bidang,
-                                    hasil_analisa_peta_lokasi=hasil_peta_lokasi_current.hasil_analisa_peta_lokasi,
-                                    kjb_no=kjb_dt_current.kjb_code,
-                                    satuan_bayar=kjb_dt_current.kjb_hd.satuan_bayar,
-                                    group=obj.group,
-                                    pemilik_name=obj.pemilik_name,
-                                    alashak=obj.alashak,
-                                    desa_name=obj.desa_name,
-                                    project_name=obj.project_name,
-                                    luas_surat=obj.luas_surat,
-                                    luas_ukur=obj.luas_ukur,
-                                    luas_gu_perorangan=obj.luas_gu_perorangan,
-                                    luas_gu_pt=obj.luas_gu_pt,
-                                    luas_pbt_perorangan=obj.luas_pbt_perorangan,
-                                    luas_pbt_pt=obj.luas_pbt_pt,
-                                    manager_name=obj.manager_name,
-                                    no_peta=obj.no_peta,
-                                    notaris_name=obj.notaris_name,
-                                    ptsk_name=obj.ptsk_name,
-                                    status_sk=obj.status_sk,
-                                    bundle_hd_id=obj.bundle_hd_id,
-                                    beban_biayas=beban,
-                                    kelengkapan_dokumens=kelengkapan_dokumen,
-                                    ktp=ktp_value,
-                                    npwp=npwp_value,
-                                    sisa_pelunasan=obj.sisa_pelunasan,
-                                    termins=termins,
-                                    percentage_lunas=percentage_lunas if percentage_lunas else 100)
-    
-    if obj:
-        return create_response(data=obj_return)
-    else:
-        raise IdNotFoundException(Spk, id)
-    
-async def init_checklist_kelengkapan_dt(checklist_kelengkapan_dts:list[ChecklistKelengkapanDokumenDt], riwayat_alashak) -> list[ChecklistKelengkapanDokumenDtSch]:
-    result:list[ChecklistKelengkapanDokumenDtSch] = []
-    for ch in checklist_kelengkapan_dts:
-        idx = 0
-        dokumen = await crud.dokumen.get(id=ch.bundle_dt.dokumen_id)
-        if dokumen.is_riwayat and ch.bundle_dt.riwayat_data:
-            riwayat_data = json.loads(ch.bundle_dt.riwayat_data)
-            if len(riwayat_data["riwayat"]) == 0:
-                data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
-                result.append(data)
-            else:
-                for riwayat in riwayat_data["riwayat"]:
-                    meta_data = riwayat["meta_data"]
-                    data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
-                    if dokumen.name in ["VALIDASI RIWAYAT", "PPH RIWAYAT", "BPHTB RIWAYAT"]:
-                        if len(riwayat_alashak) == 0:
-                            data.field_value = ''
-                        else:
-                            if idx > len(riwayat_alashak):
-                                data.field_value = ''
-                            else:
-                                data.field_value = riwayat_alashak[idx]
-                        idx += 1
-                    else:
-                        data.field_value = meta_data[dokumen.key_field]
-                        data.key_value = meta_data[dokumen.key_field]
-
-                    data.key_value = meta_data[dokumen.key_field]
-                    data.file_path = riwayat["file_path"]
-                    data.is_default = riwayat["is_default"]
-                    result.append(data)
-        else:
-            data = ChecklistKelengkapanDokumenDtSch.from_orm(ch)
-            result.append(data)
-
-    return result
-
-async def init_riwayat_alashak(bundle_hd_id:UUID):
-    result = []
-    try:
-        dokumen = await crud.dokumen.get_by_name(name='ALAS HAK')
-        bundle_dt_alashak = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle_hd_id, dokumen_id=dokumen.id)
-
-        if bundle_dt_alashak.riwayat_data:
-            riwayat_data = json.loads(bundle_dt_alashak.riwayat_data)
-            if len(riwayat_data["riwayat"]) == 0:
-                return []
-            else:
-                for riwayat in riwayat_data["riwayat"]:
-                    meta_data = riwayat["meta_data"]
-                    data =  meta_data[dokumen.key_field]
-                    result.append(data)
-        return result
-    except :
-        raise HTTPException(status_code=422, detail="Failed initialize alashak riwayat!")
-
 @router.get("/riwayat/bundle_dt", response_model=GetResponseBaseSch[list[BundleDtRiwayatSch]])
 async def get_riwayat_bundle_dt(bundle_dt_id:UUID):
 
-    datas = []
-    bundle_dt = await crud.bundledt.get_by_id(id=bundle_dt_id)
-    if bundle_dt is None:
-        return create_response(data=datas)
-    
-    if bundle_dt.dokumen.is_riwayat == False:
-        return create_response(data=datas)
-    
-    if bundle_dt.riwayat_data is None:
-        return create_response(data=datas)
-    
-    riwayat_data = json.loads(bundle_dt.riwayat_data.replace("'", '\"'))
-
-    riwayat_alashak = await init_riwayat_alashak(bundle_hd_id=bundle_dt.bundle_hd_id)
-    idx = 0
-    
-    for riwayat in riwayat_data["riwayat"]:
-        meta_data = riwayat["meta_data"]
-        data = BundleDtRiwayatSch.from_orm(bundle_dt)
-        if bundle_dt.dokumen.name in ["VALIDASI RIWAYAT", "PPH RIWAYAT", "BPHTB RIWAYAT"]:
-            if len(riwayat_alashak) == 0:
-                data.field_value = ''
-            else:
-                if idx > len(riwayat_alashak):
-                    data.field_value = ''
-                else:
-                    data.field_value = riwayat_alashak[idx]
-            idx += 1
-        else:
-            data.field_value = meta_data[bundle_dt.dokumen.key_field]
-            
-
-        file_path = riwayat.get('file_path', None)
-        data.file_exists = True if file_path and file_path != "" else False
-        data.key_value = meta_data[bundle_dt.dokumen.key_field]
-        data.file_path = file_path
-        datas.append(data)
+    datas = await SpkService().get_riwayat_bundle_dt(bundle_dt_id=bundle_dt_id)
 
     return create_response(data=datas)
     
@@ -930,10 +408,7 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     if not obj_current:
         raise IdNotFoundException(Spk, id)
     
-    # file_path = obj_current.file_path
-
-    # if file_path is None:
-    file_path = await generate_printout(id=id)
+    file_path = await SpkService().generate_printout(id=id)
     
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
@@ -945,144 +420,6 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.code.replace('/', '_')}.{ext}"
     return response
-
-async def generate_printout(id:UUID|str):
-
-    obj = await crud.spk.get_by_id_for_printout(id=id)
-    if obj is None:
-        raise IdNotFoundException(Spk, id)
-    
-    bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
-    
-    filename:str = "spk_clear.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_clear.html"
-    
-    spk_header = SpkPrintOut(**dict(obj))
-    remarks = spk_header.remark.splitlines() if spk_header.remark else ''
-    percentage_value:str = ""
-    if spk_header.satuan_bayar == SatuanBayarEnum.Percentage and spk_header.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.TAMBAHAN_DP]:
-        percentage_value = f" {spk_header.amount}%"
-    
-    ktp_value:str | None = await BundleHelper().get_key_value(dokumen_name='KTP PENJUAL', bidang_id=spk_header.bidang_id)
-    npwp_value:str | None = await BundleHelper().get_key_value(dokumen_name='NPWP', bidang_id=spk_header.bidang_id)
-    kk_value:str | None = await BundleHelper().get_key_value(dokumen_name='KARTU KELUARGA', bidang_id=spk_header.bidang_id)
-    nop_value:str | None = await BundleHelper().get_key_value(dokumen_name='SPPT PBB NOP', bidang_id=spk_header.bidang_id)
-    
-    spk_details = []
-    no = 1
-
-    obj_kelengkapans = await crud.spk.get_kelengkapan_by_id_for_printout(id=id)
-
-    for k in obj_kelengkapans:
-        kelengkapan = SpkDetailPrintOut(**dict(k))
-        kelengkapan.no = no
-        spk_details.append(kelengkapan)
-        no += 1
-
-    obj_beban_biayas = []
-    obj_beban_biayas = await crud.spk.get_beban_biaya_for_printout(id=id, jenis_bayar=spk_header.jenis_bayar)
-
-    for bb in obj_beban_biayas:
-        beban_biaya = SpkDetailPrintOut(bundle_dt_id=None, field_value='', tanggapan=bb.tanggapan, name=bb.name)
-        if beban_biaya.name == 'PBB 10 Tahun Terakhir s/d Tahun ini' and spk_header.jenis_bayar != JenisBayarEnum.PAJAK:
-            continue
-
-        beban_biaya.no = no
-        spk_details.append(beban_biaya)
-        no += 1
-    
-
-    pm_1 = await crud.spk.get_pm1(id=id, check_meta_data_exists=False)
-    if pm_1["jumlah"] > 0:
-        pm_1_lengkap = await crud.spk.get_pm1(id=id, check_meta_data_exists=True)
-        if pm_1_lengkap["jumlah"] == 0:
-            pm1 = SpkDetailPrintOut(no=no, name="PM1", tanggapan="PM1 Lengkap", field_value="")
-            spk_details.append(pm1)
-
-    overlap_details = []
-    if obj.jenis_bidang == JenisBidangEnum.Overlap:
-        filename:str = "spk_overlap.html" if obj.jenis_bayar != JenisBayarEnum.PAJAK else "spk_pajak_overlap.html"
-        obj_overlaps = await crud.spk.get_overlap_by_id_for_printout(id=id)
-        for ov in obj_overlaps:
-            overlap = SpkOverlapPrintOutExt(**dict(ov))
-            overlap.luas_overlapExt = "{:,.0f}".format(overlap.luas_overlap)
-            overlap.luas_suratExt = "{:,.0f}".format(overlap.luas_surat)
-            overlap.tipe_overlapExt = overlap.tipe_overlap.value.replace('_', ' ')
-            overlap.tahap = overlap.tahap if overlap.tahap != "0" else "-"
-            overlap_details.append(overlap)
-
-    rekening:str = ""
-    rekenings = await crud.spk.get_rekening_by_id_for_printout(id=id)
-    for r in rekenings:
-        rek = SpkRekeningPrintOut(**dict(r))
-        rekening += f"{rek.rekening}, "
-    
-    rekening = rekening[0:-2]
-
-    
-    env = Environment(loader=FileSystemLoader("templates"))
-    template = env.get_template(filename)
-
-    akta_peralihan:str = ""
-    if bidang.jenis_alashak == JenisAlashakEnum.Girik:
-        akta_peralihan = "PPJB" if spk_header.status_il == StatusSKEnum.Belum_IL else "SPH"
-    else:
-        akta_peralihan = "PPJB"
-
-    render_template = template.render(kjb_hd_code=spk_header.kjb_hd_code,
-                                      jenisbayar=f'{spk_header.jenis_bayar.value if spk_header.jenis_bayar != JenisBayarEnum.SISA_PELUNASAN else "KURANG BAYAR"}{percentage_value}'.replace("_", " "),
-                                      jenis_bayar=spk_header.jenis_bayar,
-                                      group=spk_header.group, 
-                                      pemilik_name=spk_header.pemilik_name,
-                                      alashak=spk_header.alashak,
-                                      desa_name=spk_header.desa_name,
-                                      luas_surat="{:,.0f}".format(spk_header.luas_surat or 0),
-                                      luas_ukur="{:,.0f}".format(spk_header.luas_ukur or 0),
-                                      luas_gu_perorangan="{:,.0f}".format(spk_header.luas_gu_perorangan or 0),
-                                      luas_pbt_perorangan="{:,.0f}".format(spk_header.luas_pbt_perorangan or 0),
-                                      luas_gu_pt="{:,.0f}".format(spk_header.luas_gu_pt or 0),
-                                      luas_pbt_pt="{:,.0f}".format(spk_header.luas_pbt_pt or 0),
-                                      proses_bpn=bidang.proses_bpn_order_gu,
-                                      id_bidang=spk_header.id_bidang,
-                                      no_peta=spk_header.no_peta,
-                                      notaris_name=spk_header.notaris_name,
-                                      project_name=spk_header.project_name, 
-                                      ptsk=spk_header.ptsk_name,
-                                      status_il=spk_header.status_il.replace("_"," ") if spk_header.status_il is not None else "",
-                                      hasil_analisa_peta_lokasi=spk_header.analisa.value if spk_header.analisa else '',
-                                      data=spk_details,
-                                      data_overlap=overlap_details,
-                                      worker_name=spk_header.worker_name, 
-                                      manager_name=spk_header.manager_name,
-                                      sales_name=spk_header.sales_name,
-                                      akta_peralihan=akta_peralihan,
-                                      no_rekening=rekening,
-                                      nop=nop_value,
-                                      npwp=npwp_value,
-                                      ktp=ktp_value,
-                                      kk=kk_value,
-                                      remarks=remarks)
-    
-    try:
-        doc = await PdfService().get_pdf(render_template)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed generate document")
-    
-    obj_current = await crud.spk.get(id=id)
-
-    binary_io_data = BytesIO(doc)
-    file = UploadFile(file=binary_io_data, filename=f"{obj_current.code.replace('/', '_')}.pdf")
-
-    try:
-        file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.code.replace('/', '_')}-{str(obj_current.id)}", is_public=True)
-
-        obj_updated = SpkUpdateSch(**obj_current.dict())
-        obj_updated.file_path = file_path
-        await crud.spk.update(obj_current=obj_current, obj_new=obj_updated)
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed generate document")
-    
-    return file_path
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[SpkByIdSch])
 async def void(id:UUID, 
@@ -1102,7 +439,7 @@ async def void(id:UUID,
         raise HTTPException(status_code=422, detail="Failed void. Detail : Spk have invoice active in Memo Pembayaran!")
     
     #schema for history
-    spk_history = await get_by_id_spk(id=id)
+    spk_history = await SpkService().get_by_id_spk(id=id)
     await HistoryService().create_history_spk(spk=spk_history, worker_id=current_worker.id, db_session=db_session)
     
     obj_updated = SpkUpdateSch.from_orm(obj_current)
@@ -1112,7 +449,7 @@ async def void(id:UUID,
     obj_updated.void_at = date.today()
 
     obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session)
-    obj_updated = await crud.spk.get_by_id(id=obj_updated.id)
+    obj_updated = await SpkService().get_by_id_spk(id=id)
     
     background_task.add_task(delete_all_bidang_komponen_biaya, obj_current.bidang_id)
 
@@ -1126,28 +463,9 @@ async def delete_all_bidang_komponen_biaya(bidang_id:UUID):
         db_session = db.session
         await db_session.execute(delete(BidangKomponenBiaya).where(BidangKomponenBiaya.bidang_id == bidang_id))
         await db_session.commit()
-        
-@router.post("/workflow")
-async def create_workflow():
-
-    body = {
-        "client_id": "01HHEH1R23EXMBEKQHHFRZV9Y1",
-        "client_ref_no": "4e0a3adb-7a49-43bd-b529-9c2e11479fe4",
-        "flow_id": "01HHGRBWDZS7ET737MTSP738QV",
-        "additional_info": {},
-        "descs": "",
-        "attachments": []
-    }
-
-    template = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-    workflow_sch = WorkflowCreateSch(reference_id='1fa2aa0e-2ecf-4897-883d-873061dce49f', entity=WorkflowEntityEnum.SPK, flow_id=template.flow_id)
-    workflow_system_sch = WorkflowSystemCreateSch(client_ref_no=str('1fa2aa0e-2ecf-4897-883d-873061dce49f'), flow_id=template.flow_id, descs=f"Need Approval", attachments=[])
-    await crud.workflow.create_(obj_in=workflow_sch, obj_wf=workflow_system_sch)
-
-    return {"result" : "Successfully"}
 
 @router.post("/task-workflow")
-async def create_workflow(payload:Dict):
+async def create_workflow(payload:Dict, request:Request):
     db_session = db.session
     id = payload.get("id", None)
     additional_info = payload.get("additional_info", None)
@@ -1163,7 +481,7 @@ async def create_workflow(payload:Dict):
     
     trying:int = 0
     while obj.file_path is None:
-        await generate_printout(id=id)
+        await SpkService().generate_printout(id=id)
         if trying > 7:
             raise HTTPException(status_code=404, detail="File not found")
         obj = await crud.spk.get(id=id)
@@ -1178,9 +496,10 @@ async def create_workflow(payload:Dict):
             await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
             with_commit = True
 
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
-   
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    public_url = await encrypt_id(id=str(obj.id), request=request)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>

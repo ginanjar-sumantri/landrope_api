@@ -97,4 +97,18 @@ class CRUDBundleHd(CRUDBase[BundleHd, BundleHdCreateSch, BundleHdUpdateSch]):
 
         return response.scalars().first()
 
+    async def get_by_dokumen_not_exists(self, dokumen_id:UUID):
+
+        db_session = db.session
+
+        query = f"""
+                select hd.id from bundle_hd hd
+                left join bundle_dt dt on hd.id = dt.bundle_hd_id and 
+                    dt.dokumen_id = '{dokumen_id}'
+                where dt.id is null
+                """
+        
+        response = await db_session.execute(query)
+        return response.fetchall()
+
 bundlehd = CRUDBundleHd(BundleHd)

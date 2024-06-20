@@ -521,6 +521,7 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         alashak=kjb_dt_current.alashak,
         manager_id=kjb_hd_current.manager_id,
         sales_id=kjb_hd_current.sales_id,
+        pemilik_id=kjb_dt_current.pemilik_id,
         mediator=kjb_hd_current.mediator,
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
@@ -735,8 +736,8 @@ async def remove_link_bidang_and_kelengkapan(payload:HasilPetaLokasiRemoveLink):
 
     # kelengkapan dokumen
     checklist_kelengkapan_hd_old = await crud.checklist_kelengkapan_dokumen_hd.get_by_bidang_id(bidang_id=payload.bidang_id)
-
-    await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
+    if checklist_kelengkapan_hd_old:
+        await crud.checklist_kelengkapan_dokumen_hd.remove(id=checklist_kelengkapan_hd_old.id, db_session=db_session, with_commit=False)
     if bidang_origin:
         await crud.bidang_origin.remove(id=bidang_origin.id, db_session=db_session, with_commit=False)
 

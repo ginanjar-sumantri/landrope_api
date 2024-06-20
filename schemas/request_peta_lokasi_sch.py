@@ -33,7 +33,7 @@ class RequestPetaLokasiHdSch(SQLModel):
 
 
 class RequestPetaLokasiForInputHasilSch(SQLModel):
-    id:UUID
+    id:UUID | None
     code:str | None
     alashak:str | None
     pemilik_name:str | None

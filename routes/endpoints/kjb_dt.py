@@ -1,13 +1,13 @@
 from uuid import UUID
 from fastapi import APIRouter, status, Depends, HTTPException, Request
-from fastapi_pagination import Params
+from fastapi_pagination import Params, Page
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func
 from sqlalchemy.orm import selectinload
 from models import KjbDt, KjbHd, Pemilik, Manager, Sales, KjbPenjual, BundleHd, BundleDt
 from models.request_peta_lokasi_model import RequestPetaLokasi
 from models.worker_model import Worker
-from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch)
+from schemas.kjb_dt_sch import (KjbDtSch, KjbDtCreateSch, KjbDtUpdateSch, KjbDtListSch, KjbDtListRequestPetlokSch, KjbDtDoubleDataSch)
 from schemas.bidang_sch import BidangUpdateSch
 from schemas.hasil_peta_lokasi_sch import HasilPetaLokasiUpdateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
@@ -19,6 +19,7 @@ from shapely import wkt, wkb
 from typing import Dict
 import crud
 import json
+import math
 
 
 router = APIRouter()
@@ -264,3 +265,32 @@ async def update_alashak_bidang_bundle(payload:Dict):
     await db_session.commit()
 
     return {"message" : "successfully"}
+
+@router.get("/double/data/alashak", response_model=GetResponsePaginatedSch[KjbDtDoubleDataSch])
+async def get_double_data_alashak(params:Params=Depends(), keyword:str | None = None, current_worker:Worker = Depends(crud.worker.get_current_user)):
+
+    objs = await crud.kjb_dt.get_double_data_alashak(keyword=keyword)
+
+    start = (params.page - 1) * params.size
+    end = params.page * params.size
+    total_items = len(objs)
+    pages = math.ceil(total_items / params.size)
+
+    data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
+
+    return create_response(data=data)
+
+@router.get("/double/data/alashak/count")
+async def get_count_double_data_alashak(current_worker:Worker = Depends(crud.worker.get_current_user)):
+
+    objs = await crud.kjb_dt.get_double_data_alashak(keyword=None)
+
+    data = {
+        "message": "Data got correctly",
+        "meta": {},
+        "data": {
+            "count" : len(objs)
+        }
+    }
+
+    return data

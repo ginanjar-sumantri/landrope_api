@@ -19,6 +19,7 @@ from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.history_service import HistoryService
 from services.workflow_service import WorkflowService
+from services.encrypt_service import encrypt_id
 from typing import Any, Dict, Generic, List, Type, TypeVar
 from uuid import UUID, uuid4
 from datetime import datetime
@@ -158,9 +159,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         db_session.add(db_obj)
 
         if db_obj.is_draft == False:
-            public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=public_url)
+            public_url = await encrypt_id(id=str(db_obj.id), request=request)
+            wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.KJB.value}")
+            # public_url = await GCStorageService().public_url(file_path=db_obj.file_path)
+            # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{db_obj.code}", url=public_url)
             wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(db_obj.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"}, attachments=[vars(wf_system_attachment)], version=1,
                                                     descs=f"""Dokumen KJB {db_obj.code} ini membutuhkan Approval dari Anda:<br><br>
                                                             Tanggal: {db_obj.created_at.date()}<br>
@@ -355,8 +358,11 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
             flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
             wf_system_attachment:WorkflowSystemAttachmentSch = None
             if obj_current.file_path:
-                public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
-                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
+                # public_url = await GCStorageService().public_url(file_path=obj_current.file_path)
+                # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=public_url)
+                public_url = await encrypt_id(id=str(obj_current.id), request=request)
+                wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj_current.code}", url=f"{public_url}?en={WorkflowEntityEnum.KJB.value}")
+
 
             wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj_current.id), flow_id=flow.flow_id, additional_info={"approval_number" : "ONE_APPROVAL"} if difference_two_approve == False else {"approval_number" : "TWO_APPROVAL"}, version=1, attachments=[vars(wf_system_attachment)] if wf_system_attachment else [],
                                                     descs=f"""Dokumen KJB {obj_current.code} ini membutuhkan Approval dari Anda:<br><br>
@@ -523,6 +529,6 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchone()
-
+      
 kjb_hd = CRUDKjbHd(KjbHd)
 

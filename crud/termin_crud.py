@@ -277,6 +277,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                 and pd.is_void != true
                 and py.is_void != true
                 and tr.id != '{current_termin_id}'
+                and Coalesce(pd.realisasi, False) = False
                 group by tr.id, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.amount
                 order by created_at asc)
                 select id, str_jenis_bayar, tanggal_transaksi, jenis_bayar, sum(amount) as amount, created_at from subquery

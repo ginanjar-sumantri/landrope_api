@@ -18,9 +18,12 @@ from datetime import datetime
 from typing import Dict, Any
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import BidangHelper, BundleHelper
+from services.encrypt_service import encrypt, decrypt
 import crud
 import json
 import time
+from configs.config import settings
+from urllib.parse import urljoin
 
 
 router = APIRouter()
@@ -173,8 +176,8 @@ async def get_list(
                 Manager.name.ilike(f'%{keyword}%'),
                 Sales.name.ilike(f'%{keyword}%'),
                 KjbDt.alashak.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
     
@@ -271,7 +274,3 @@ async def update_to_bidang_bundle(payload:Dict):
     await db_session.commit()
 
     return {"message" : "successfully"}
-
-
-
-

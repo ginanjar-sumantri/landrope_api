@@ -1,7 +1,7 @@
 from models.spk_model import SpkBase, SpkFullBase
 from common.partial import optional
 from schemas.bidang_sch import BidangForSPKByIdSch
-from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenCreateExtSch, SpkKelengkapanDokumenSch, SpkKelengkapanDokumenUpdateExtSch
+from schemas.spk_kelengkapan_dokumen_sch import SpkKelengkapanDokumenSch, SpkKelengkapanDokumenExtSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaExtSch, BidangKomponenBiayaSch
 from common.enum import HasilAnalisaPetaLokasiEnum, JenisBayarEnum, SatuanBayarEnum, JenisBidangEnum, StatusSKEnum, TipeOverlapEnum, JenisAlashakEnum
 from sqlmodel import Field, SQLModel
@@ -12,7 +12,7 @@ from uuid import UUID
 
 class SpkCreateSch(SpkBase):
     spk_beban_biayas:list[BidangKomponenBiayaExtSch] | None
-    spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenCreateExtSch] | None
+    spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenExtSch] | None
 
 class SpkSch(SpkFullBase):
     id_bidang:str | None = Field(alias="id_bidang")
@@ -57,7 +57,7 @@ class SpkByIdSch(SpkFullBase):
 @optional
 class SpkUpdateSch(SpkBase):
     spk_beban_biayas:list[BidangKomponenBiayaExtSch] | None
-    spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenUpdateExtSch] | None
+    spk_kelengkapan_dokumens:list[SpkKelengkapanDokumenExtSch] | None
     file: str | None
 
 
@@ -75,6 +75,7 @@ class SpkPrintOut(SQLModel):
     luas_pbt_perorangan:Optional[Decimal] = Field(default=0)
     luas_gu_pt:Optional[Decimal] = Field(default=0)
     luas_pbt_pt:Optional[Decimal] = Field(default=0)
+    luas_nett:Decimal | None = Field(default=0)
     pemilik_name:Optional[str]
     desa_name:Optional[str]
     project_name:Optional[str]

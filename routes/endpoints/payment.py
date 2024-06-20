@@ -684,13 +684,15 @@ async def get_invoice_by_id(id:UUID):
 
     invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
     
-    bidang_ids = [inv.bidang_id for inv in invoices if inv.use_utj == True and inv.is_void != True]
+    bidang_ids = [inv.bidang_id for inv in invoices if inv.is_void != True]
     utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
     
     invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=id)
 
     invoices_in:list[InvoiceOnMemoSch] = []
     for invoice_bayar in invoice_bayars:
+        if (invoice_bayar.amount or 0) == 0:
+            continue
         if invoice_bayar.termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
             continue
         elif invoice_bayar.termin_bayar.activity == ActivityEnum.UTJ:

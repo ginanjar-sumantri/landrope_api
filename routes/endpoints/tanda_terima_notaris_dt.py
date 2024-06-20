@@ -167,7 +167,7 @@ async def update(id:UUID,
     
     if dokumen.is_multiple != True or dokumen.is_multiple is None:
         if dokumen.is_riwayat:
-            metadata_dict = json.loads(sch.meta_data.replace)
+            metadata_dict = json.loads(sch.meta_data)
             key_value = metadata_dict[f'{dokumen.key_riwayat}']
 
             if key_value is None or key_value == "":

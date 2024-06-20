@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from fastapi import APIRouter, status, Depends, Request, HTTPException, Response, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
@@ -54,6 +54,7 @@ from services.adobe_service import PDFToExcelService
 from services.pdf_service import PdfService
 # from services.rfp_service import RfpService
 from services.termin_service import TerminService
+from services.encrypt_service import encrypt_id
 
 from decimal import Decimal
 from jinja2 import Environment, FileSystemLoader
@@ -82,48 +83,9 @@ async def create(
     db_session = db.session
     sch.is_void = False
 
-    if sch.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
-        for termin_bayar in sch.termin_bayars:
-            if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
-                if termin_bayar.termin_bayar_dts:
-                    invoice_dts = []
-                    for termin_bayar_dt in termin_bayar.termin_bayar_dts:
-                        invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
-
-                    if sum(invoice_dts) != termin_bayar.amount:
-                        raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai {termin_bayar.name} untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
-                                            Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
-            else:
-                invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
-
-                if termin_bayar.activity == ActivityEnum.UTJ:
-                    if len(invoice_bayars) == 0:
-                        raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum terallocate ke bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
-                    elif sum(invoice_bayars) != termin_bayar.amount:
-                        raise HTTPException(status_code=422, detail=f"Giro/Cek untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
-
-                invoice_bayar_amount = sum(invoice_bayars)
-                if termin_bayar.amount != invoice_bayar_amount:
-                    raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
-        
-        for invoice in sch.invoices:
-            invoice_bayar_ = []
-            for inv_bayar in invoice.bayars:
-                tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.BIAYA_TANAH, ActivityEnum.UTJ]), None)
-                if tr_byr:
-                    invoice_bayar_.append(inv_bayar)
-
-            invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
-
-            # utj_amount = 0
-            # if invoice.use_utj:
-            #     bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
-            #     utj_amount = bidang.utj_amount
-
-            invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
-
-            if invoice.amount != (invoice_bayar_amount + invoice_detail_amount):
-                raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
+    if (sch.is_draft or False) is False:
+        if sch.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+            await TerminService().filter_termin(sch=sch)
 
     today = date.today()
     month = roman.toRoman(today.month)
@@ -169,6 +131,12 @@ async def create(
         for dt in invoice.details:
             if dt.is_deleted:
                 continue
+
+            if dt.amount == 0 and (sch.is_draft or False) == False:
+                bidang = await crud.bidang.get(id=invoice.bidang_id)
+                master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
+                
             
             # add komponen biaya baru jika user input komponen biaya namun belum ada di master bidang komponen biaya berdasarkan beban biaya
             if dt.bidang_komponen_biaya_id is None:
@@ -219,24 +187,28 @@ async def create(
             invoice_bayar_new = InvoiceBayarCreateSch(termin_bayar_id=termin_bayar_id, invoice_id=new_obj_invoice.id, amount=dt_bayar.amount)
             await crud.invoice_bayar.create(obj_in=invoice_bayar_new, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
-    if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-        status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
-        await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
     
-    #workflow
-    if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-        wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-        
-        await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
+    if (sch.is_draft or False) == False:
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+            await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+    
+        #workflow
+        if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+            wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+            
+            await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
 
-        GCloudTaskService().create_task(payload={
-                                                    "id":str(new_obj.id)
-                                                }, 
-                                        base_url=f'{request.base_url}landrope/termin/task-workflow')
-
-    await db_session.commit()
-    await db_session.refresh(new_obj)
+            GCloudTaskService().create_task(payload={
+                                                        "id":str(new_obj.id)
+                                                    }, 
+                                            base_url=f'{request.base_url}landrope/termin/task-workflow')
+    try:
+        await db_session.commit()
+        await db_session.refresh(new_obj)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e.message))
 
     new_obj = await crud.termin.get_by_id(id=new_obj.id)
 
@@ -293,7 +265,7 @@ async def get_list(
                         ).outerjoin(Planing, Planing.id == Tahap.planing_id
                         ).outerjoin(Project, Project.id == Planing.project_id
                         ).outerjoin(Desa, Desa.id == Planing.desa_id
-                        ).outerjoin(Workflow, and_(Workflow.reference_id == KjbHd.id, Workflow.entity == WorkflowEntityEnum.TERMIN)
+                        ).outerjoin(Workflow, and_(Workflow.reference_id == Termin.id, Workflow.entity == WorkflowEntityEnum.TERMIN)
                         ).where(Termin.jenis_bayar.in_(jenis_bayars)).distinct()
     
     if filter_list == "list_approval":
@@ -319,8 +291,8 @@ async def get_list(
                 Project.name.ilike(f'%{keyword}%'),
                 Desa.name.ilike(f'%{keyword}%'),
                 Tahap.group.ilike(f'%{keyword}%'),
-                func.lower(Workflow.last_status).contains(func.lower(keyword)),
-                func.lower(Workflow.last_step_app_name).contains(func.lower(keyword))
+                Workflow.last_status.ilike(f'%{keyword}%'),
+                Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
 
@@ -378,68 +350,35 @@ async def update_(
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
+    if obj_current.is_void:
+        raise HTTPException(status_code=422, detail="Memo Sudah divoid")
+    
+    last_status_current:WorkflowLastStatusEnum = WorkflowLastStatusEnum.DRAFT
+    
     workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
+    if workflow:
+        last_status_current = workflow.last_status
 
     # JIKA HANYA UPDATE NOMOR MEMO DAN UPLOAD FILE MEMO BAYAR
-    if workflow:
-        if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
-            object_update_memo = await TerminService().update_nomor_memo_dan_file(sch=sch, obj_current=obj_current, worker_id=current_worker.id, request=request)
-            object_update_memo = await crud.termin.get_by_id(id=object_update_memo.id)
-            return create_response(data=object_update_memo)
+    if last_status_current == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
+        object_update_memo = await TerminService().update_nomor_memo_dan_file(sch=sch, obj_current=obj_current, worker_id=current_worker.id, request=request)
+        object_update_memo = await crud.termin.get_by_id(id=object_update_memo.id)
+        return create_response(data=object_update_memo)
     
     current_ids_invoice = await crud.invoice.get_ids_by_termin_id(termin_id=obj_current.id)
     current_ids_invoice_dt = await crud.invoice_detail.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
     current_ids_invoice_byr = await crud.invoice_bayar.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
     current_ids_termin_byr = await crud.termin_bayar.get_ids_by_termin_id(termin_id=obj_current.id)
 
-    if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        msg_error_wf = "Memo Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval Need Approval!"
+    if (sch.is_draft or False) is False:
+        if sch.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+            msg_error_wf = "Memo Approval Has Been Completed!" if WorkflowLastStatusEnum.COMPLETED else "Memo Approval Need Approval!"
 
-        if workflow.last_status not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED]:
-            raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
-        
-        if workflow.last_status != WorkflowLastStatusEnum.NEED_DATA_UPDATE:
-            for termin_bayar in sch.termin_bayars:
-                if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
-                    if termin_bayar.termin_bayar_dts:
-                        invoice_dts = []
-                        for termin_bayar_dt in termin_bayar.termin_bayar_dts:
-                            invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
-
-                        if sum(invoice_dts) != termin_bayar.amount:
-                            raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
-                                                Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
-                else:
-                    invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
-
-                    if termin_bayar.activity == ActivityEnum.UTJ:
-                        if len(invoice_bayars) == 0:
-                            raise HTTPException(status_code=422, detail=f"Giro/Cek/Tunai untuk UTJ belum terallocate ke bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
-                        elif sum(invoice_bayars) != termin_bayar.amount:
-                            raise HTTPException(status_code=422, detail=f"Giro/Cek/Tunai untuk UTJ belum balance ke allocate bidangnya. Pastikan UTJ pada bidang-bidang di dalam memo sudah dibuat/dipayment")
-
-                    invoice_bayar_amount = sum(invoice_bayars)
-                    if termin_bayar.amount != invoice_bayar_amount:
-                        raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            if last_status_current not in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.DRAFT]:
+                raise HTTPException(status_code=422, detail=f"Failed update. Detail : {msg_error_wf}")
             
-            for invoice in sch.invoices:
-                invoice_bayar_ = []
-                for inv_bayar in invoice.bayars:
-                    tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.BIAYA_TANAH, ActivityEnum.UTJ]), None)
-                    if tr_byr:
-                        invoice_bayar_.append(inv_bayar)
-
-                invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
-
-                # utj_amount = 0
-                # if invoice.use_utj:
-                #     bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
-                #     utj_amount = bidang.utj_amount
-
-                invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
-
-                if invoice.amount != (invoice_bayar_amount + invoice_detail_amount):
-                    raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
+            if last_status_current in [WorkflowLastStatusEnum.NEED_DATA_UPDATE, WorkflowLastStatusEnum.DRAFT, WorkflowLastStatusEnum.REJECTED]:
+                await TerminService().filter_termin(sch=sch)
 
     if sch.jenis_bayar in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         kjb_hd_current = await crud.kjb_hd.get(id=sch.kjb_hd_id)
@@ -461,7 +400,8 @@ async def update_(
         jns_byr = jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)
 
     if sch.file:
-        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}"
+        gn_id = uuid4().hex
+        file_name=f"MEMO PEMBAYARAN-{sch.nomor_memo.replace('/', '_').replace('.', '')}-{obj_current.code.replace('/', '_')}-{gn_id}"
         try:
             file_upload_path = await BundleHelper().upload_to_storage_from_base64(base64_str=sch.file, file_name=file_name)
         except ZeroDivisionError as e:
@@ -522,6 +462,11 @@ async def update_(
             for dt in invoice.details:
                 if dt.is_deleted:
                     continue
+
+                if dt.amount == 0 and (sch.is_draft or False) == False:
+                    bidang = await crud.bidang.get(id=invoice.bidang_id)
+                    master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                    raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
                 
                 if dt.id is None:
                     bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=invoice.bidang_id, beban_biaya_id=dt.beban_biaya_id)
@@ -602,6 +547,11 @@ async def update_(
                 if dt.is_deleted:
                     continue
 
+                if dt.amount == 0 and (sch.is_draft or False) == False :
+                    bidang = await crud.bidang.get(id=invoice.bidang_id)
+                    master_beban_biaya = next((bb for bb in master_beban_biayas if bb.id == dt.beban_biaya_id), None)
+                    raise HTTPException(status_code=422, detail=f"Amount beban biaya {master_beban_biaya.name} pada bidang {bidang.id_bidang} masih 0, cek kembali beban biaya")
+                
                 bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=invoice.bidang_id, beban_biaya_id=dt.beban_biaya_id)    
 
                 if bidang_komponen_biaya_current is None and dt.beban_biaya_id:
@@ -660,28 +610,35 @@ async def update_(
     for trb in current_ids_termin_byr:
         await crud.termin_bayar.remove(id=trb, db_session=db_session, with_commit=False)
 
-    #workflow
-    if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
-        if wf_current:
-            if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
-                raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
+    if (sch.is_draft or False) == False:
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+            status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
+            await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
+    
+        #workflow
+        if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+            wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
+            if wf_current:
+                if wf_current.last_status not in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                    raise HTTPException(status_code=422, detail="Failed update termin. Detail : Workflow is running")
 
-            wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
-            if wf_updated.version is None:
-                wf_updated.version = 1
+                wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
+                if wf_updated.version is None:
+                    wf_updated.version = 1
+                    
+                await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
+            else:
+                flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
+                wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
                 
-            await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-        else:
-            flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
-            wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
+                await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
             
-            await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-        
-        GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
-
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
+            GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+    try:
+        await db_session.commit()
+        await db_session.refresh(obj_updated)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e.message))
 
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         background_task.add_task(generate_printout, obj_updated.id)
@@ -816,7 +773,14 @@ async def get_list_komponen_biaya_by_bidang_id_and_invoice_id(
     
     objs = await crud.bidang_komponen_biaya.get_multi_beban_by_invoice_id(invoice_id=invoice_id, pengembalian=pengembalian, biaya_lain=biaya_lain)
     if bidang_id:
-        objs_2 = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
+        objs_2:list[BidangKomponenBiaya] = []
+        datas = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=bidang_id)
+        for data in datas:
+            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0:
+                continue
+            else:
+                objs_2.append(data)
+            
         for obj2 in objs_2:
             obj1 = next((obj for obj in objs if obj.beban_biaya_id == obj2.beban_biaya_id), None)
             if obj1:
@@ -841,7 +805,13 @@ async def get_list_komponen_biaya_by_spk_id(
     elif spk.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
         objs = await crud.bidang_komponen_biaya.get_multi_beban_biaya_lain_by_bidang_id(bidang_id=spk.bidang_id)
     else:
-        objs = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
+        datas = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
+        for data in datas:
+            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0:
+                continue
+            else:
+                objs.append(data)
+
 
     return create_response(data=objs)
 
@@ -935,7 +905,8 @@ async def get_list_spk_by_tahap_id(
 
     for obj in objs:
         workflow = next((wf for wf in workflows if wf.reference_id == obj.id), None)
-        if workflow.last_status == WorkflowLastStatusEnum.COMPLETED:
+        last_status = workflow.last_status if workflow else ''
+        if last_status == WorkflowLastStatusEnum.COMPLETED:
             objs_return.append(obj)
 
     return create_response(data=objs_return)
@@ -1596,7 +1567,8 @@ async def generate_printout(id:UUID | str):
         raise IdNotFoundException(Termin, id)
     
     termin_header = TerminByIdForPrintOut(**dict(obj))
-    obj_tanggal_transaksi = datetime.strptime(str(termin_header.tanggal_transaksi), "%Y-%m-%d")
+
+    obj_tanggal_transaksi = datetime.strptime(str(termin_header.tanggal_transaksi or date.today()), "%Y-%m-%d")
     tanggal_transaksi = obj_tanggal_transaksi.strftime("%d-%m-%Y")
 
     obj_created_at = datetime.strptime(str(termin_header.created_at.date()), "%Y-%m-%d")
@@ -1604,14 +1576,14 @@ async def generate_printout(id:UUID | str):
     bulan_created_id = bulan_dict.get(bulan_created_en, bulan_created_en)
     created_at = obj_created_at.strftime(f'%d {bulan_created_id} %Y')
 
-    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi), "%Y-%m-%d")
+    date_obj = datetime.strptime(str(termin_header.tanggal_rencana_transaksi or date.today()), "%Y-%m-%d")
     nama_bulan_inggris = date_obj.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
     nama_bulan_indonesia = bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
     tanggal_hasil = date_obj.strftime(f'%d {nama_bulan_indonesia} %Y')
     day_of_week = date_obj.strftime("%A")
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
 
-    remarks = termin_header.remark.splitlines()
+    remarks = (termin_header.remark or '').splitlines()
     #perhitungan utj (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
     amount_utj_used = []
     termin_invoices:list[InvoiceForPrintOutExt] = []
@@ -1992,7 +1964,7 @@ async def void(id:UUID,
     return create_response(data=obj_updated) 
 
 @router.post("/task-workflow")
-async def create_workflow(payload:Dict):
+async def create_workflow(payload:Dict, request:Request):
     
     id = payload.get("id", None)
     obj = await crud.termin.get(id=id)
@@ -2013,9 +1985,10 @@ async def create_workflow(payload:Dict):
         time.sleep(2)
         trying += 1
     
-    public_url = await GCStorageService().public_url(file_path=obj.file_path)
-
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
+    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
+    public_url = await encrypt_id(id=str(obj.id), request=request)
+    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
                                             flow_id=wf_current.flow_id, 
                                             descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>
@@ -2159,9 +2132,9 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
 
 #     data, msg = await RfpService().create_rfp(termin_id=payload["id"])
 
-#     if data is not None:
-#         await crud.termin_rfp_payment.create_(sch=data)
-#     else:
-#         raise HTTPException(status_code=409, detail=msg)
+#     # if data is not None:
+#     #     await crud.termin_rfp_payment.create_(sch=data)
+#     # else:
+#     #     raise HTTPException(status_code=409, detail=msg)
 
 #     return {"message":"successfully"}

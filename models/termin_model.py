@@ -32,6 +32,7 @@ class TerminBase(SQLModel):
     void_at:Optional[date] = Field(nullable=True)
     file_path:str | None = Field(nullable=True)
     file_upload_path:str | None = Field(nullable=True)
+    is_draft: bool | None = Field(nullable=True)
 
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass

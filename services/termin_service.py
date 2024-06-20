@@ -14,7 +14,7 @@ from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch
 from schemas.workflow_sch import WorkflowUpdateSch, WorkflowCreateSch
 from services.helper_service import BundleHelper
 from services.gcloud_task_service import GCloudTaskService
-from common.enum import JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text, WorkflowEntityEnum, WorkflowLastStatusEnum
+from common.enum import JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text, WorkflowEntityEnum, WorkflowLastStatusEnum, ActivityEnum
 from common.generator import generate_code_month
 
 import crud
@@ -24,6 +24,60 @@ from uuid import UUID
 import roman
 
 class TerminService:
+
+    # FILTER TERMIN
+    async def filter_termin(self, sch: TerminCreateSch | TerminUpdateSch):
+        # CHECKING DARI SISI TERMIN BAYAR APAKAH TOTAL PER TERMIN BAYAR SUDAH BALANCE ALLOCATENYA KE SEMUA INVOICE PADA MEMO
+            for termin_bayar in sch.termin_bayars:
+                if termin_bayar.activity == ActivityEnum.BEBAN_BIAYA:
+                    if termin_bayar.termin_bayar_dts:
+                        invoice_dts = []
+                        for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+                            invoice_dts = [inv_dt.amount or 0 for inv in sch.invoices for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id]
+
+                        if sum(invoice_dts) != termin_bayar.amount:
+                            raise HTTPException(status_code=422, detail=f"""Giro/Cek/Tunai {termin_bayar.name} untuk Beban Biaya belum balance ke allocate Beban Biaya pada seluruh bidang di memo bayar. 
+                                                Harap cek kembali nominal Giro/Cek/Tunai dengan total beban biaya yang di pilih pada Info Pembayaran""")
+                else:
+                    invoice_bayars = [inv_bayar.amount or 0 for inv in sch.invoices for inv_bayar in inv.bayars if inv_bayar.id_index == termin_bayar.id_index]
+
+                    if len(invoice_bayars) == 0:
+                        raise HTTPException(status_code=422, detail=f"Giro/Cek '{termin_bayar.name}' belum terallocate ke bidang-bidang pada memo")
+                    
+                    if termin_bayar.amount != sum(invoice_bayars):
+                        raise HTTPException(status_code=422, detail=f"Nominal Allocation belum balance dengan Nominal Giro/Cek/Tunai '{termin_bayar.name}'")
+            
+            # CHECKING DARI SISI INVOICE APAKAH TOTAL BAYAR PER INVOICENYA SUDAH BALACE DENGAN ALLOCATE DARI TERMIN BAYAR
+            # CHECKING ALLOCATE UTJ PERBIDANG APAKAH SUDAH SAMA DENGAN YG TELAH DIPAYMENT
+            for invoice in sch.invoices:
+                invoice_bayar_ = []
+                bidang = await crud.bidang.get_by_id(id=invoice.bidang_id)
+
+                for inv_bayar in invoice.bayars:
+                    tr_byr_utj = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.UTJ]), None)
+                    if tr_byr_utj:
+                        if (tr_byr_utj.amount or 0) != 0:
+                            if inv_bayar.amount != bidang.utj_amount:
+                                raise HTTPException(status_code=422, detail=f"Nominal Allocation UTJ untuk bidang '{bidang.id_bidang}' tidak sama dengan nominal UTJ yang sudah dipayment")
+                            if bidang.utj_realisasi_amount != 0:
+                                raise HTTPException(status_code=422, detail=f"Bidang {bidang.id_bidang} sudah memiliki UTJ realisasi, di memo sebelumnya")
+
+                    tr_byr = next((tr for tr in sch.termin_bayars if tr.id_index == inv_bayar.id_index and tr.activity in [ActivityEnum.BIAYA_TANAH]), None)
+                    if tr_byr:
+                        invoice_bayar_.append(inv_bayar)
+
+                invoice_bayar_amount = sum([inv_bayar.amount or 0 for inv_bayar in invoice_bayar_])
+
+                utj_amount = 0
+                if invoice.use_utj:
+                    utj_amount = bidang.utj_amount
+
+                invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
+
+                if (invoice.amount - utj_amount - invoice_detail_amount) != invoice_bayar_amount:
+                    raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")
+
+
 
     # INITIAL TERMIN
     async def init_termin(self, sch: TerminCreateSch, db_session, worker_id:UUID):

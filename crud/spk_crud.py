@@ -100,9 +100,11 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                                                                             ).options(selectinload(Invoice.payment_details)
                                                                             ).options(selectinload(Invoice.termin))
                                                         ).options(selectinload(Bidang.planing
-                                                                            ).options(selectinload(Planing.project))
+                                                                            ).options(selectinload(Planing.project)
+                                                                            ).options(selectinload(Planing.desa))
                                                         ).options(selectinload(Bidang.sub_project)
-                                                        ).options(selectinload(Bidang.tahap_details))
+                                                        ).options(selectinload(Bidang.tahap_details)
+                                                        ).options(selectinload(Bidang.pemilik))
                                     ).options(selectinload(Spk.kjb_termin)
                                     ).options(selectinload(Spk.spk_kelengkapan_dokumens
                                                         ).options(selectinload(SpkKelengkapanDokumen.bundledt
@@ -192,7 +194,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         
         query = select(Spk).where(and_(
                         Spk.bidang_id == bidang_id, 
-                        Spk.kjb_termin_id == kjb_termin_id, 
+                        Spk.kjb_termin_id == kjb_termin_id,
+                        func.coalesce(Spk.is_draft, False) == False,
                         or_(Spk.is_void != True, Spk.is_void == None))
                         )
         
@@ -473,6 +476,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
                 b.luas_pbt_perorangan,
                 b.luas_gu_pt,
                 b.luas_pbt_pt,
+                b.luas_nett,
                 p.name As pemilik_name,
                 ds.name As desa_name,
                 nt.name As notaris_name,

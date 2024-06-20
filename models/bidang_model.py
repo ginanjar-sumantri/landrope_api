@@ -512,8 +512,21 @@ class Bidang(BidangFullBase, table=True):
         return utj
     
     @property
+    def utj_realisasi_amount(self) -> Decimal | None:
+        utj = 0
+        utj_current = next((invoice_utj for invoice_utj in self.invoices 
+                            if (invoice_utj.jenis_bayar == JenisBayarEnum.UTJ or invoice_utj.jenis_bayar == JenisBayarEnum.UTJ_KHUSUS) 
+                            and invoice_utj.is_void != True), None)
+        
+        if utj_current:
+            amount_payment_details = [payment_detail.amount for payment_detail in utj_current.payment_details if payment_detail.is_void != True and payment_detail.realisasi == True]
+            utj = sum(amount_payment_details) or 0
+        
+        return Decimal(utj)
+    
+    @property
     def has_invoice_lunas(self) -> bool | None:
-        invoice_lunas = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar == JenisBayarEnum.LUNAS or x.jenis_bayar == JenisBayarEnum.PELUNASAN), None)
+        invoice_lunas = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]), None)
         if invoice_lunas:
             return True
         

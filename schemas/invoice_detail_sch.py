@@ -28,6 +28,9 @@ class InvoiceDetailSch(InvoiceDetailFullBase):
     is_void:bool|None = Field(alias="is_void")
     beban_biaya_name:str|None = Field(alias="beban_biaya_name")
     beban_biaya_id: UUID | None
+    satuan_bayar: SatuanBayarEnum | None
+    satuan_harga: SatuanHargaEnum | None
+    komponen_biaya_amount: Decimal | None
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):

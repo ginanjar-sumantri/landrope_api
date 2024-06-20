@@ -101,12 +101,12 @@ class Tahap(TahapFullBase, table=True):
     
     @property
     def dp_count(self) -> int | None:
-        dp_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.DP]
+        dp_termins = [dp for dp in self.termins if dp.jenis_bayar == JenisBayarEnum.DP and (dp.is_void or False) == False]
         return len(dp_termins) or 0    
     
     @property
     def lunas_count(self) -> int | None:
-        lunas_termins = [dp for dp in self.termins if dp.jenis_bayar in  [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]]
+        lunas_termins = [lunas for lunas in self.termins if lunas.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN] and (lunas.is_void or False) == False]
         return len(lunas_termins) or 0    
     
     @property

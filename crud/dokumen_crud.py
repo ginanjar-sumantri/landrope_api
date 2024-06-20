@@ -27,6 +27,21 @@ class CRUDDokumen(CRUDBase[Dokumen, DokumenCreateSch, DokumenUpdateSch]):
 
         return response.scalar_one_or_none()
     
+    async def get_by_name(self, 
+                  *, 
+                  name: str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Dokumen | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Dokumen).where(and_(Dokumen.name == name, Dokumen.is_active == True)
+                            ).options(selectinload(Dokumen.kategori_dokumen)).limit(1)
+
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+
     async def is_dokumen_for_keyword(self, *, id: UUID | str, db_session: AsyncSession | None = None) -> Dokumen | None:
         db_session = db_session or db.session
         query = select(self.model).where(and_(self.model.id == id, self.model.is_keyword == True))

@@ -84,13 +84,13 @@ class HelperService:
         for id in bidang_ids:
             payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
             if len(payment_details) > 0:
-                bidang_current = await crud.bidang.get(id=id)
+                bidang_current = await crud.bidang.get_by_id(id=id)
                 if bidang_current.geom :
                     bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
                 bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
                 await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
             else:
-                bidang_current = await crud.bidang.get(id=id)
+                bidang_current = await crud.bidang.get_by_id(id=id)
                 if bidang_current.geom :
                     bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
                 bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
@@ -171,7 +171,7 @@ class KomponenBiayaHelper:
 
         db_session = db.session
 
-        if formula is None:
+        if formula is None or formula == '':
             return 0
 
         query = f"""select  

@@ -5,6 +5,7 @@ from schemas.kjb_beban_biaya_sch import KjbBebanBiayaSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.bidang_overlap_sch import BidangOverlapForTahap, BidangOverlapRawSch
 from schemas.beban_biaya_sch import BebanBiayaForSpkSch
+from schemas.rekening_sch import RekeningSch
 from common.partial import optional
 from common.as_form import as_form
 from common.enum import JenisAlashakEnum, StatusSKEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum, SatuanBayarEnum
@@ -19,24 +20,6 @@ class BidangCreateSch(BidangBase):
     pass
 
 class BidangSch(BidangFullBase):
-    # created_by_name:str|None = Field(alias="created_by_name")
-    # updated_by_name:str|None = Field(alias="updated_by_name")
-    # pemilik_name:str|None = Field(alias="pemilik_name")
-    # project_name:str|None = Field(alias="project_name")
-    # desa_name:str|None = Field(alias="desa_name")
-    # sub_project_name:str|None = Field(alias="sub_project_name")
-    # planing_name:str|None = Field(alias="planing_name")
-    # jenis_surat_name:str|None = Field(alias="jenis_surat_name")
-    # kategori_name:str|None = Field(alias="kategori_name")
-    # kategori_sub_name:str|None = Field(alias="kategori_sub_name")
-    # kategori_proyek_name:str|None = Field(alias="kategori_proyek_name")
-    # ptsk_name:str|None = Field(alias="ptsk_name")
-    # no_sk:str|None = Field(alias="no_sk")
-    # status_sk:str|None = Field(alias="status_sk")
-    # penampung_name:str|None = Field(alias="penampung_name")
-    # manager_name:str|None = Field(alias="manager_name")
-    # sales_name:str|None = Field(alias="sales_name")
-    # notaris_name:str|None = Field(alias="notaris_name")
     pass
 
 
@@ -114,6 +97,7 @@ class BidangForSPKByIdSch(SQLModel):
     project_name:str | None
     luas_surat:Decimal | None
     luas_ukur:Decimal | None
+    luas_nett:Decimal | None
     luas_gu_perorangan:Decimal | None
     luas_gu_pt:Decimal | None
     luas_pbt_perorangan:Decimal | None
@@ -126,13 +110,14 @@ class BidangForSPKByIdSch(SQLModel):
     bundle_hd_id:UUID | None
     ktp:str | None
     npwp:str | None
+    sppt_pbb_nop: str | None
     percentage_lunas:Optional[int]
     sisa_pelunasan:Decimal | None
     jenis_alashak:JenisAlashakEnum | None
     termins:list[KjbTerminInSpkSch] | None
+    rekenings:list[RekeningSch] | None
 
 class BidangForSPKByIdExtSch(BidangForSPKByIdSch):
-    
     beban_biayas:list[BebanBiayaForSpkSch] | None
     kelengkapan_dokumens:list[ChecklistKelengkapanDokumenDtSch] | None
 

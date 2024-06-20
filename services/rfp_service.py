@@ -2,6 +2,8 @@
 # import requests
 # from uuid import UUID, uuid4
 # from datetime import date, datetime, timedelta
+# from fastapi import HTTPException
+# from common.exceptions import IdNotFoundException
 # from schemas.rfp_sch import RfpCreateResponseSch
 # from common.enum import PaymentMethodEnum, ActivityEnum, SatuanBayarEnum, activity_landrope_to_activity_rfp_dict
 # from configs.config import settings
@@ -15,8 +17,21 @@
 
 #     async def init_rfp(self, termin_id:UUID):
 
-#         termin = await crud.termin.get_by_id(id=termin_id)
+#         termin = await crud.termin.get(id=termin_id)
+#         if termin is None:
+#             raise IdNotFoundException(model=crud.termin.model, id=termin_id)
+        
 #         workflow = await crud.workflow.get_by_reference_id(reference_id=termin.id)
+#         if workflow is None:
+#             raise IdNotFoundException(model=crud.workflow.model, id=termin_id)
+        
+#         tahap = await crud.tahap.get(id=termin.tahap_id)
+#         if tahap is None:
+#             raise IdNotFoundException(model=crud.tahap.model, id=termin.tahap_id)
+        
+#         ptsk = await crud.ptsk.get(id=tahap.ptsk_id)
+#         if ptsk is None:
+#             raise IdNotFoundException(model=crud.ptsk.model, id=tahap.ptsk_id)
     
 #         # INIT RFP HEADER
 #         rfp_hd_id = uuid4()
@@ -25,14 +40,31 @@
 #         obj_rfp_hd["client_id"] = self.RFP_CLIENT_ID
 #         obj_rfp_hd["client_ref_no"] = str(termin.id)
 #         obj_rfp_hd["created_by_outh_id"] = "42b8cb0e-7e78-4728-a89b-493dfc5e4fd1"
-#         obj_rfp_hd["grace_period"] = str(self.add_days(n=7,d=workflow.last_status_at))
+#         obj_rfp_hd["grace_period"] = str(self.add_days(n=7,d=workflow.last_status_at).date())
 #         obj_rfp_hd["date_doc"] = str(workflow.last_status_at.date())
 #         obj_rfp_hd["document_type_code"] = "OPR-INT"
+#         obj_rfp_hd["company_code"] = ptsk.code
+#         obj_rfp_hd["company_name"] = ptsk.name
 #         obj_rfp_hd["ref_no"] = termin.nomor_memo
 
 #         ### SETUP PAY TO
-#         pay_to = [f'{termin_bayar.pay_to} ({termin_bayar.rekening.nomor_rekening} an {termin_bayar.rekening.nama_pemilik_rekening})' for termin_bayar in termin.termin_bayars if termin_bayar.pay_to != None and termin_bayar.rekening_id != None]
-#         obj_rfp_hd["pay_to"] = ", ".join(pay_to)
+#         # pay_to = []
+#         termin_bayars = await crud.termin_bayar.get_multi_by_termin_id(termin_id=termin.id)
+#         # for termin_bayar in termin_bayars:
+#         #     if termin_bayar.rekening_id != None:
+#         #         rekening = await crud.rekening.get(id=termin_bayar.rekening_id)
+#         #         if rekening:
+#         #             p = f"{termin_bayar.pay_to or ''} ({rekening.bank_rekening} {rekening.nomor_rekening} a/n {rekening.nama_pemilik_rekening})"
+#         #         else:
+#         #             p = f"{termin_bayar.pay_to or ''}"
+                
+#         #         if p in pay_to:
+#         #             continue
+
+#         #         pay_to.append(p)
+
+#         # obj_rfp_hd["pay_to"] = ", ".join(pay_to)
+#         obj_rfp_hd["pay_to"] = termin.mediator
         
 #         rfp_hd_descs = []
 
@@ -48,7 +80,7 @@
 #         rfp_hd_descs.append(termin_desc)
 
 #         # INIT RFP LINE, RFP BANK, RFP ALLOCATION
-#         for termin_bayar in termin.termin_bayars:
+#         for termin_bayar in termin_bayars:
 #             obj_rfp_line = {}
 #             obj_rfp_bank = {}
 #             obj_rfp_allocation = {}
@@ -71,7 +103,8 @@
                 
 
 #                 ## INIT RFP LINE DETAIL
-#                 for inv_bayar in termin_bayar.invoice_bayars:
+#                 invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_bayar_id(termin_bayar_id=termin_bayar.id)
+#                 for inv_bayar in invoice_bayars:
 #                     obj_rfp_line_dt = {}
 #                     rfp_line_dt_id = uuid4()
 
@@ -129,9 +162,18 @@
 #                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
 #                 #RFP LINE
-#                 for termin_bayar_dt in termin_bayar.termin_bayar_dts:
+#                 termin_bayar_dts = await crud.termin_bayar_dt.get_multi_by_termin_bayar_id(termin_bayar_id=termin_bayar.id)
+#                 for termin_bayar_dt in termin_bayar_dts:
 #                     beban_biaya = await crud.bebanbiaya.get(id=termin_bayar_dt.beban_biaya_id)
-#                     amount_beban = sum([inv_dt.amount for inv in termin.invoices if inv.is_void != True for inv_dt in inv.details if inv_dt.beban_biaya_id == termin_bayar_dt.beban_biaya_id])
+#                     if beban_biaya is None:
+#                         raise IdNotFoundException(model=crud.bebanbiaya.model, id=termin_bayar_dt.beban_biaya_id)
+
+#                     invoice_details = await crud.invoice_detail.get_multi_by_termin_id_and_beban_biaya_id(termin_id=termin.id, beban_biaya_id=termin_bayar_dt.beban_biaya_id)
+#                     amount_beban = sum([inv_dt.amount for inv_dt in invoice_details])
+
+#                     if beban_biaya.activity_code is None:
+#                         raise HTTPException(status_code=422, detail=f"{beban_biaya.name} belum memiliki activity code")
+
 #                     rfp_activity_code = beban_biaya.activity_code
                     
 #                     rfp_line_id = uuid4()
