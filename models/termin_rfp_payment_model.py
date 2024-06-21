@@ -4,8 +4,8 @@
 
 # class TerminRfpPaymentBase(SQLModel):
 #     termin_id: UUID | None = Field(default=None, foreign_key="termin.id")
-#     rfp_id: UUID | None = Field(default=None)
-#     payment_id: UUID | None = Field(default=None, foreign_key="payment.id")
+#     rfp_id: UUID | None = Field(default=None, nullable=True)
+#     payment_id: UUID | None = Field(default=None, nullable=True, foreign_key="payment.id")
 #     status: str | None = Field(default=None) #status workflow rfp
 
 # class TerminRfpPaymentFullBase(BaseUUIDModel, TerminRfpPaymentBase):
