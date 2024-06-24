@@ -2132,9 +2132,9 @@ async def create_rfp(payload: Dict):
 
     data, msg = await RfpService().create_rfp(termin_id=payload["id"])
 
-    if data is not None:
-        await crud.termin_rfp_payment.create_(sch=data)
-    else:
-        raise HTTPException(status_code=409, detail=msg)
+    # if data is not None:
+    #     await crud.termin_rfp_payment.create_(sch=data)
+    # else:
+    #     raise HTTPException(status_code=409, detail=msg)
 
     return {"message":"successfully"}
