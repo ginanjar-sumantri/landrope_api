@@ -850,7 +850,7 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         db_session = db.session
 
         query = f"""
-                    select 'outstanding_invoice' as tipe_worklist, count(*) as total 
+                    select *
                     from spk
                     inner join workflow ON spk.id = workflow.reference_id
                     where spk.id not in (select spk_id 
