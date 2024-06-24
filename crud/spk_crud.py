@@ -844,5 +844,27 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         response = await db_session.execute(query)
 
         return response.fetchone()
+    
+    async def get_outstanding_spk_create_invoice(self):
+
+        db_session = db.session
+
+        query = f"""
+                    select 'outstanding_invoice' as tipe_worklist, count(*) as total 
+                    from spk
+                    inner join workflow ON spk.id = workflow.reference_id
+                    where spk.id not in (select spk_id 
+                                    from invoice i
+                                    join termin t on t.id = i.termin_id
+                                    where i.is_void != true 
+                                    and t.jenis_bayar not in ('UTJ', 'UTJ_KHUSUS', 'BEGINNING_BALANCE'))
+                    and jenis_bayar not in ('PAJAK', 'BEGINNING_BALANCE')
+                    and is_void != True
+                    and workflow.last_status = 'COMPLETED'
+                """
+        
+        response = await db_session.execute(query)
+        return response.fetchall()
+
 
 spk = CRUDSpk(Spk)

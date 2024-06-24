@@ -183,7 +183,7 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def amount_beban(self) -> Decimal | None:
-        beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False])
+        beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False and (dt.bidang_komponen_biaya.is_void or False) == False])
         
         return beban_penjual
     

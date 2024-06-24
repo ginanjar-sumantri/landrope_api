@@ -359,37 +359,50 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     """
 
         query = text(f"""
-                    SELECT i.*
+                    WITH utj_query AS (SELECT
+                        i.bidang_id AS bidang_id,
+                        SUM(COALESCE(pdt.amount, 0)) AS amount
                     FROM invoice i
-                    inner join bidang b on b.id = i.bidang_id
-                    inner join termin t on t.id = i.termin_id
+                        INNER JOIN termin tr ON tr.id = i.termin_id
+                        LEFT JOIN payment_detail pdt ON i.id = pdt.invoice_id
                     WHERE 
-                    i.amount - ((
-                        CASE
-                        WHEN i.use_utj = True THEN (
-                            SELECT COALESCE(SUM(amount), 0)
-                            FROM invoice i_utj
-                            Inner join termin tr on tr.id = i_utj.termin_id
-                            WHERE i.bidang_id = i_utj.bidang_id
-                            and tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
-                        )
-                        ELSE 0
-                        END
-                    ) + (
-                        select coalesce(sum(amount), 0) 
-                        from payment_detail py
-                        where i.id = py.invoice_id
-                        and py.is_void != true
-                        ) + (
-                            Select 
-                                Coalesce(SUM(idt.amount), 0)
-                                from invoice_detail idt
-                                inner join bidang_komponen_biaya kb on kb.id = idt.bidang_komponen_biaya_id
-                                inner join beban_biaya bb on bb.id = kb.beban_biaya_id
-                                inner join bidang b on b.id = kb.bidang_id
-                                where idt.invoice_id = i.id
-                                and kb.beban_pembeli = false)) > 0
-                                and i.is_void != true
+                        COALESCE(tr.is_void, FALSE) IS FALSE
+                        AND COALESCE(i.is_void, FALSE) IS FALSE
+                        AND tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
+                        AND COALESCE(pdt.is_void, FALSE) IS FALSE
+                        AND COALESCE(pdt.realisasi, FALSE) IS FALSE
+                        GROUP BY i.bidang_id),
+                    payment_detail_query AS (SELECT 
+                        pdt.invoice_id,
+                        SUM(pdt.amount) AS amount
+                    FROM payment_detail pdt
+                        INNER JOIN invoice i ON i.id = pdt.invoice_id
+                    WHERE COALESCE(pdt.is_void, FALSE) IS FALSE
+                        AND COALESCE(i.is_void, FALSE) IS FALSE
+                        AND COALESCE(pdt.realisasi, FALSE) IS FALSE
+                    GROUP BY pdt.invoice_id),
+                    komponen_biaya_query AS (SELECT 
+                        idt.invoice_id,
+                        SUM(idt.amount) AS amount
+                    FROM invoice_detail idt
+                        INNER JOIN bidang_komponen_biaya kb ON kb.id = idt.bidang_komponen_biaya_id
+                        INNER JOIN invoice i ON i.id = idt.invoice_id
+                    WHERE 
+                        COALESCE(i.is_void, FALSE) IS FALSE
+                        AND COALESCE(kb.is_void, FALSE) IS FALSE
+                        AND COALESCE(kb.beban_pembeli, FALSE) IS FALSE
+                    GROUP BY idt.invoice_id)
+                    SELECT
+                        i.*
+                    FROM invoice i
+                        LEFT JOIN utj_query u ON u.bidang_id = i.bidang_id and COALESCE(i.use_utj, FALSE) is TRUE
+                        LEFT JOIN payment_detail_query p ON i.id = p.invoice_id
+                        LEFT JOIN komponen_biaya_query k ON i.id = k.invoice_id
+                        INNER JOIN termin tr ON tr.id = i.termin_id
+                        INNER JOIN bidang b ON b.id = i.bidang_id
+                    WHERE 
+                        i.amount - (COALESCE(u.amount, 0) + COALESCE(p.amount, 0) + COALESCE(k.amount, 0)) > 0
+                        AND COALESCE(i.is_void, FALSE) IS FALSE
                     {filter}
         """)
 

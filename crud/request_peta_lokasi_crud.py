@@ -386,4 +386,18 @@ class CRUDRequestPetaLokasi(CRUDBase[RequestPetaLokasi, RequestPetaLokasiCreateS
 
         return response.fetchall()
     
+    async def get_outstanding_hasil_peta_lokasi(self, *, db_session: AsyncSession | None = None):
+
+        db_session = db_session or db.session
+
+        query = f"""
+                    select rpl.*
+                    from request_peta_lokasi rpl
+                    left join hasil_peta_lokasi hpl on rpl.kjb_dt_id = hpl.kjb_dt_id
+                    where hpl.id is NULL
+                """
+        
+        response = await db_session.execute(query)
+        return response.fetchall() 
+
 request_peta_lokasi = CRUDRequestPetaLokasi(RequestPetaLokasi)
