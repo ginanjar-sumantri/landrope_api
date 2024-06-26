@@ -147,7 +147,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                 Where 
                     NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
                                 inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-                                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL
+                                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL and b_dt.file_path is NULL
                                 Where c_hd.bidang_id = b.id
                                 and c_dt.jenis_bayar IN ('DP', 'UTJ'))
                     AND NOT EXISTS (select 1 from spk s
@@ -178,7 +178,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                 Where 
                     NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_dt c_dt
                                 inner join checklist_kelengkapan_dokumen_hd c_hd ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id
-                                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                                inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL and b_dt.file_path is NULL
                                 Where c_hd.bidang_id = b.id
                                 and c_dt.jenis_bayar IN ('PELUNASAN', 'DP', 'UTJ')
                                 and b_dt.meta_data is null)
@@ -216,7 +216,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                     AND NOT EXISTS (select 1 from checklist_kelengkapan_dokumen_hd c_hd
                                     inner join checklist_kelengkapan_dokumen_dt c_dt ON c_hd.id = c_dt.checklist_kelengkapan_dokumen_hd_id 
                                     and c_dt.jenis_bayar = 'BIAYA_LAIN'
-                                    inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id
+                                    inner join bundle_dt b_dt ON b_dt.id = c_dt.bundle_dt_id and b_dt.meta_data is NULL and b_dt.file_path is NULL
                                     Where c_hd.bidang_id = hpl.bidang_id
                                     and b_dt.meta_data is null)
                     AND NOT EXISTS (select 1 from spk s
