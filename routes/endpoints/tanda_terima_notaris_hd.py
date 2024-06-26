@@ -46,10 +46,10 @@ async def create(
     if not sch.pemilik_id:
         raise HTTPException(status_code=422, detail="Data pemilik harus diisi")
         
-    if sch.pemilik_id:
-        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
-        if not rekenings:
-            raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
+    # if sch.pemilik_id:
+    #     rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
+    #     if not rekenings:
+    #         raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
     
     if kjb_dt.status_peta_lokasi is not None:
         if kjb_dt.status_peta_lokasi != sch.status_peta_lokasi:
@@ -207,10 +207,10 @@ async def update(id:UUID,
     if not sch.pemilik_id:
         raise HTTPException(status_code=422, detail="Data pemilik harus diisi")
         
-    if sch.pemilik_id:
-        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
-        if not rekenings:
-            raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
+    # if sch.pemilik_id:
+    #     rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=sch.pemilik_id)
+    #     if not rekenings:
+    #         raise HTTPException(status_code=404, detail="Pemilik ini belum memiliki no rekening")
     
     
     if file:

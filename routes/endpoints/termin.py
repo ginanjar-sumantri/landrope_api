@@ -121,11 +121,11 @@ async def create(
         invoice_sch = InvoiceCreateSch(**invoice.dict(), termin_id=new_obj.id, code=f"INV/{last_number}/{jns_byr}/LA/{month}/{year}", is_void=False)
         new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
-        #remove bidang komponen biaya
-        await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
-                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
+        # #remove bidang komponen biaya
+        # await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+        #                                                                 BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
 
-        master_beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[bb.beban_biaya_id for bb in invoice.details if bb.beban_biaya_id is not None])
+        master_beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[bb.beban_biaya_id for bb in invoice.details if bb.beban_biaya_id is not None and bb.is_deleted != True])
 
         #add invoice_detail
         for dt in invoice.details:
@@ -204,6 +204,11 @@ async def create(
                                                         "id":str(new_obj.id)
                                                     }, 
                                             base_url=f'{request.base_url}landrope/termin/task-workflow')
+
+    #remove bidang komponen biaya
+    await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for invoice in sch.invoices for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))        
+    
     try:
         await db_session.commit()
         await db_session.refresh(new_obj)
@@ -445,11 +450,11 @@ async def update_(
 
     for invoice in sch.invoices:
 
-        #remove bidang komponen biaya
-        await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
-                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
+        # #remove bidang komponen biaya
+        # await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+        #                                                                 BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
         
-        master_beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[bb.beban_biaya_id for bb in invoice.details if bb.beban_biaya_id is not None])
+        master_beban_biayas = await crud.bebanbiaya.get_by_ids(list_ids=[bb.beban_biaya_id for bb in invoice.details if bb.beban_biaya_id is not None and bb.is_deleted != True])
 
         if invoice.id:
             invoice_current = await crud.invoice.get_by_id(id=invoice.id)
@@ -634,6 +639,11 @@ async def update_(
                 await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
             
             GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+
+    #remove bidang komponen biaya
+    await db_session.execute(delete(BidangKomponenBiaya).where(and_(BidangKomponenBiaya.id.in_(r.bidang_komponen_biaya_id for invoice in sch.invoices for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted), 
+                                                                        BidangKomponenBiaya.bidang_id == invoice.bidang_id)))
+    
     try:
         await db_session.commit()
         await db_session.refresh(obj_updated)
