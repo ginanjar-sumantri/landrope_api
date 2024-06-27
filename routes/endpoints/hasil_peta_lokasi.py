@@ -13,10 +13,9 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiTaskUpdate, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
-                                           HasilPetaLokasiReadySpkExtSch, HasilPetaLokasiRemoveLink, JenisBayarOnReady)
-from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
-                                                  HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
-from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
+                                           HasilPetaLokasiReadySpkExtSch, HasilPetaLokasiRemoveLink)
+from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailTaskUpdate)
+from schemas.bidang_overlap_sch import BidangOverlapSch
 from schemas.bidang_sch import BidangSch, BidangUpdateSch, BidangSrcSch
 from schemas.bundle_hd_sch import BundleHdUpdateSch
 from schemas.bundle_dt_sch import BundleDtCreateSch, BundleDtUpdateSch
@@ -24,7 +23,6 @@ from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailCreateSch
 from schemas.utj_khusus_detail_sch import UtjKhususDetailUpdateSch
 from schemas.bidang_origin_sch import BidangOriginSch
-from schemas.kjb_dt_sch import KjbDtUpdateSch
 from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch, 
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, ContentNoChangeException, DocumentFileNotFoundException)
@@ -36,6 +34,7 @@ from services.gcloud_task_service import GCloudTaskService
 from services.geom_service import GeomService
 from services.helper_service import HelperService, KomponenBiayaHelper, BundleHelper
 from services.history_service import HistoryService
+from services.hasil_peta_lokasi_service import HasilPetaLokasiService
 from shapely import wkb, to_wkt, wkt
 from decimal import Decimal
 from datetime import date
@@ -45,7 +44,6 @@ from io import BytesIO
 import geopandas as gpd
 import pandas as pd
 import roman
-import math
 
 
 
@@ -949,68 +947,12 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
 @router.get("/ready/spk", response_model=GetResponsePaginatedSch[HasilPetaLokasiReadySpkExtSch])
 async def ready_spk(keyword:str | None = None, params: Params=Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    spks = await crud.hasil_peta_lokasi.get_ready_spk(keyword=keyword)
-
-    # AMBIL SEMUA ID
-    ids = [data.id for data in spks]
-    # DISTINCT ID YANG SAMA
-    ids = list(set(ids))
-
-    # SETUP UNTUK PAGINATION
-    start = (params.page - 1) * params.size
-    end = params.page * params.size
-    total_items = len(ids)
-    pages = math.ceil(total_items / params.size)
-
-    # AMBIL ID YANG AKAN DILOOPING DAN DIMAPING SESUAI SCHEMA
-    ids = ids[start:end]
-
-    objs:list[HasilPetaLokasiReadySpkExtSch] = []
-
-    # INISIALISASI SEMUA OBJECT SESUAI JUMLAH ID YANG TERPILIH PADA PAGINATION
-    for id in ids:
-        datas = list(filter(lambda obj: obj.id == id, spks))
-
-        # GET FIRST DATA FOR DEFAULT
-        data = datas[0]
-
-        # SETUP DATA BIDANG
-        data_ready_spk = HasilPetaLokasiReadySpkExtSch(id=data.id, id_bidang=data.id_bidang, alashak=data.alashak,
-                                                    satuan_bayar=data.satuan_bayar, satuan_harga=data.satuan_harga, 
-                                                    planing_id=data.planing_id, kjb_hd_code=data.kjb_hd_code, group=data.group, 
-                                                    manager_id=data.manager_id, pemilik_id=data.pemilik_id, kjb_hd_id=data.kjb_hd_id,
-                                                    hasil_petlok_id=data.hasil_petlok_id, req_petlok_id=data.req_petlok_id, 
-                                                    kjb_dt_id=data.kjb_dt_id, project_name=data.project_name, desa_name=data.desa_name, 
-                                                    manager_name=data.manager_name)
-            
-        
-
-        # CEK APAKAH PEMILIK BIDANG MEMILIKI REKENING
-        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=data.pemilik_id)
-        data_ready_spk.rekening_on_ready = False if not rekenings else True
-        # CEK APAKAH KJB HARGA SUDAH DITENTUKAN
-        data_ready_spk.kjb_harga_on_ready = False if data.kjb_harga_id is None else True
-        # CEK APAKAH SK PADA BIDANG SUDAH DITENTUKAN
-        data_ready_spk.sk_on_ready = False if data.skpt_id is None else True
-
-        # SETUP JENIS BAYAR ON READY SESUAI DOKUMEN KELENGKAPAN
-        jenis_bayar_on_ready = []
-        for jns in datas:
-            j = JenisBayarOnReady(kjb_termin_id=jns.kjb_termin_id, nilai=jns.nilai, jenis_bayar=jns.jenis_bayar)
-            jenis_bayar_on_ready.append(j)
-
-        data_ready_spk.jenis_bayar_on_ready = jenis_bayar_on_ready
-
-        objs.append(data_ready_spk)
-
-    result = Page(items=objs, size=params.size, page=params.page, pages=pages, total=total_items)
-
+    result = await HasilPetaLokasiService().get_ready_spk(keyword=keyword, params=params)
+    
     return create_response(data=result)
 
 @router.get("/report/ready/spk/")
-async def report_ready_spk(
-                    current_worker:Worker = Depends(crud.worker.get_active_worker)
-            ):
+async def report_ready_spk(current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
 

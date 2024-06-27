@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import HTTPBearer
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_
+from sqlmodel import select, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 import crud
@@ -22,7 +22,7 @@ token_auth_scheme = HTTPBearer()
 class CRUDWorker(CRUDBase[Worker, WorkerCreateSch, WorkerUpdateSch]):
     async def get_by_email(self, *, email: str, db_session: AsyncSession | None = None) -> Worker:
         db_session = db_session or db.session
-        obj = await db_session.execute(select(Worker).where(Worker.email == email))
+        obj = await db_session.execute(select(Worker).where(func.lower(Worker.email) == email.lower()))
         return obj.scalar_one_or_none()
 
     # async def get_by_phone(self, *, phone: str, db_session: AsyncSession | None = None) -> Worker:
