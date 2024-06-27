@@ -96,6 +96,7 @@ class TaskStatusEnum(str, Enum):
     Done = "Done"
     Done_With_Error = "Done_With_Error"
     Failed = "Failed"
+    Expired = "Expired"
 
 class TipeOverlapEnum(str, Enum):
     BintangLanjut = "Bintang_Lanjut"

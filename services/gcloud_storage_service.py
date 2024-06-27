@@ -72,6 +72,20 @@ class GCStorageService:
         # return the whole path to the file
         return upload_to+filename, filename
 
+    @staticmethod
+    async def path_and_rename_export_file(upload_file: UploadFile, file_name:str = None) -> str:
+        
+        upload_to = 'export_file/'
+        ext = upload_file.filename.split('.')[-1]
+        
+        if file_name:
+            filename = f'{file_name}.{ext}'
+        else:
+            # set filename as random string
+            filename = f'{uuid.uuid4().hex}.{ext}'
+        # return the whole path to the file
+        return upload_to+filename
+
     async def upload_image(self, file: UploadFile, obj_current: ModelType) -> str:
         bucket = self.storage_client.get_bucket(self.bucket_name)
         file_path = await self.path_and_rename(model_type=obj_current, upload_file=file)
@@ -91,6 +105,16 @@ class GCStorageService:
 
         return file_path
     
+    async def upload_export_file(self, file: UploadFile, file_name:str = None, is_public:bool=False) -> str:
+        bucket = self.storage_client.get_bucket(self.bucket_name)
+        file_path = await self.path_and_rename_export_file(upload_file=file, file_name=file_name)
+        blob = bucket.blob(file_path)
+        blob.upload_from_file(file_obj=file.file,
+                              content_type=file.content_type)
+        if is_public:
+            blob.make_public()
+
+        return file_path
     
     async def upload_excel(self, file: UploadFile) -> Tuple[str | None, str | None]:
         bucket = self.storage_client.get_bucket(self.bucket_name)
@@ -142,7 +166,6 @@ class GCStorageService:
         file_content = blob.download_as_bytes()
 
         return file_content
-
 
     def generate_upload_signed_url_v4(self, blob_name) -> str | None:
         if blob_name is not None:

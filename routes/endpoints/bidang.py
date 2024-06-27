@@ -29,6 +29,7 @@ from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService, KomponenBiayaHelper
+from services.bidang_service import BidangService
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from decimal import Decimal
@@ -709,6 +710,16 @@ async def export_shp(
         return GeomService.export_shp_zip(data=results, obj_name=obj_name)
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+    
+@router.post("/export/bulk/shp/stream")
+async def export_shp(
+            param:BidangParameterDownload|None,
+            bg_task:BackgroundTasks,
+            current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
+
+    return create_response({"detail": "SUCCESS"})
 
 @router.post("/export/excel")
 async def export_excel(param:BidangParameterDownload|None = None,

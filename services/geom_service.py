@@ -130,51 +130,124 @@ class GeomService(Generic[T]):
             raise HTTPException(status_code=404, detail="File failed to upload, please make sure again Geometry Type is 'POLYGON' or 'LINESTRING' 2D")
     
     def export_shp_zip(data:List[T]| None, obj_name:str):
-
+        try:
         # Mengubah data list object menjadi dictionary dan memasukkan kedalam variable list my_objects
-        my_objects = list(map(lambda obj: obj.__dict__, data))
+            my_objects = list(map(lambda obj: obj.__dict__, data))
 
-        # Maping pandas dataframe list dictionary my_object
-        df = pd.DataFrame.from_dict(my_objects)
+            # Maping pandas dataframe list dictionary my_object
+            df = pd.DataFrame.from_dict(my_objects)
 
-        # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
-        desired_types = ['str' 'geometry']
-        df = df.applymap(lambda x: convert_to_string(x) if x not in desired_types else x)
+            # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
+            desired_types = ['str' 'geometry']
+            df = df.applymap(lambda x: convert_to_string(x) if x not in desired_types else x)
 
-        # Memindahkan semua nilai geometry dalam dataframe['geom'] ke dalam varable gs (digunakan untuk geodataframe)
-        gs = geopandas.GeoSeries.from_wkt(df['geom'])
+            # Memindahkan semua nilai geometry dalam dataframe['geom'] ke dalam varable gs (digunakan untuk geodataframe)
+            gs = geopandas.GeoSeries.from_wkt(df['geom'])
 
-        # Hapus kolom-kolom yang tidak diperlukan
-        df = df.drop('geom', axis=1)
+            # Hapus kolom-kolom yang tidak diperlukan
+            df = df.drop('geom', axis=1)
 
-        f_updated = df.get("update_at", None)
-        if f_updated is not None:
-            df = df.drop('updated_at', axis=1)
-        
-        f_created = df.get("created_at", None)
-        if f_created is not None:
-            df = df.drop('created_at', axis=1)
+            f_updated = df.get("update_at", None)
+            if f_updated is not None:
+                df = df.drop('updated_at', axis=1)
             
-        # columns_to_drop = [col for col in df.columns if "_id" in col]
-        # df = df.drop(columns=columns_to_drop)
+            f_created = df.get("created_at", None)
+            if f_created is not None:
+                df = df.drop('created_at', axis=1)
+                
+            # columns_to_drop = [col for col in df.columns if "_id" in col]
+            # df = df.drop(columns=columns_to_drop)
 
-        # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
-        gdf = geopandas.GeoDataFrame(df, geometry=gs)
+            # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
+            gdf = geopandas.GeoDataFrame(df, geometry=gs)
 
-        tempdir = tempfile.mkdtemp()
+            tempdir = tempfile.mkdtemp()
 
-        # mengekspor GeoDataFrame ke dalam file shapefile
-        output_folder = os.path.join(tempdir, 'shapefile')
-        gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
+            # mengekspor GeoDataFrame ke dalam file shapefile
+            output_folder = os.path.join(tempdir, 'shapefile')
+            gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
 
-        # membuat file zip dan menambahkan file shapefile ke dalamnya
-        output_zip = os.path.join(tempdir, f'{obj_name}.zip')
-        with zipfile.ZipFile(output_zip, 'w') as zip:
-            zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
-            zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
-            zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
+            # membuat file zip dan menambahkan file shapefile ke dalamnya
+            output_zip = os.path.join(tempdir, f'{obj_name}.zip')
+            with zipfile.ZipFile(output_zip, 'w') as zip:
+                zip.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
+                zip.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
+                zip.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
 
-        return FileResponse(output_zip, media_type='application/zip', filename=f'{obj_name}.zip')
+            return FileResponse(output_zip, media_type='application/zip', filename=f'{obj_name}.zip')
+        
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=str(e.args))
+        finally:
+            # Menghapus direktori sementara
+            for root, dirs, files in os.walk(tempdir, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))
+            os.rmdir(tempdir)
+    
+    def export_shp_bytes(data:List[T]| None, obj_name:str):
+        try:
+            # Mengubah data list object menjadi dictionary dan memasukkan kedalam variable list my_objects
+            my_objects = list(map(lambda obj: obj.__dict__, data))
+
+            # Maping pandas dataframe list dictionary my_object
+            df = pd.DataFrame.from_dict(my_objects)
+
+            # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
+            desired_types = ['str' 'geometry']
+            df = df.applymap(lambda x: convert_to_string(x) if x not in desired_types else x)
+
+            # Memindahkan semua nilai geometry dalam dataframe['geom'] ke dalam varable gs (digunakan untuk geodataframe)
+            gs = geopandas.GeoSeries.from_wkt(df['geom'])
+
+            # Hapus kolom-kolom yang tidak diperlukan
+            df = df.drop('geom', axis=1)
+
+            f_updated = df.get("update_at", None)
+            if f_updated is not None:
+                df = df.drop('updated_at', axis=1)
+            
+            f_created = df.get("created_at", None)
+            if f_created is not None:
+                df = df.drop('created_at', axis=1)
+                
+            # columns_to_drop = [col for col in df.columns if "_id" in col]
+            # df = df.drop(columns=columns_to_drop)
+
+            # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
+            gdf = geopandas.GeoDataFrame(df, geometry=gs)
+
+            tempdir = tempfile.mkdtemp()
+
+            # mengekspor GeoDataFrame ke dalam file shapefile
+            output_folder = os.path.join(tempdir, 'shapefile')
+            gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
+
+            # Membuat file zip dalam memori
+            bytes_io = BytesIO()
+            with zipfile.ZipFile(bytes_io, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                zipf.write(os.path.join(output_folder, 'shapefile.shp'), 'shapefile.shp')
+                zipf.write(os.path.join(output_folder, 'shapefile.shx'), 'shapefile.shx')
+                zipf.write(os.path.join(output_folder, 'shapefile.dbf'), 'shapefile.dbf')
+
+            # Mengatur posisi ke awal dari buffer
+            bytes_io.seek(0)
+
+            # Menghapus direktori sementara
+            for root, dirs, files in os.walk(tempdir, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))
+            os.rmdir(tempdir)
+
+            return bytes_io
+        
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=str(e.args))
+
 
 
 def convert_to_string(value):

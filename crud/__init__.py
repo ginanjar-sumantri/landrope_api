@@ -87,6 +87,7 @@ from .payment_giro_detail_crud import payment_giro_detail
 from .import_log_crud import import_log
 from .import_log_error_crud import import_log_error
 
+from .export_log_crud import export_log
 
 from .workflow_crud import workflow
 from .workflow_history_crud import workflow_history
