@@ -19,7 +19,7 @@ class BidangService:
         
         export_log = await crud.export_log.create(obj_in=export_log_new, created_by_id=created_by_id)
 
-        bg_task.add_task(self.generate_file_shp, param, export_log.id)
+        await self.generate_file_shp(param, export_log.id)
 
         return export_log
 
