@@ -13,8 +13,7 @@ from models.checklist_kelengkapan_dokumen_model import ChecklistKelengkapanDokum
 from schemas.hasil_peta_lokasi_sch import (HasilPetaLokasiSch, HasilPetaLokasiTaskUpdate, 
                                            HasilPetaLokasiCreateExtSch, HasilPetaLokasiByIdSch, 
                                            HasilPetaLokasiUpdateSch, HasilPetaLokasiUpdateExtSch,
-                                           HasilPetaLokasiTaskUpdateBidang, HasilPetaLokasiTaskUpdateKulitBintang,
-                                           HasilPetaLokasiReadySpkSch, HasilPetaLokasiRemoveLink)
+                                           HasilPetaLokasiReadySpkExtSch, HasilPetaLokasiRemoveLink, JenisBayarOnReady)
 from schemas.hasil_peta_lokasi_detail_sch import (HasilPetaLokasiDetailCreateSch, HasilPetaLokasiDetailCreateExtSch,
                                                   HasilPetaLokasiDetailUpdateSch, HasilPetaLokasiDetailTaskUpdate)
 from schemas.bidang_overlap_sch import BidangOverlapCreateSch, BidangOverlapSch
@@ -947,19 +946,66 @@ async def report_detail(start_date:date | None = None, end_date:date|None = None
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=generated_excel.xlsx"})
 
-@router.get("/ready/spk", response_model=GetResponsePaginatedSch[HasilPetaLokasiReadySpkSch])
-async def ready_spk(keyword:str | None = None, params: Params=Depends()):
+@router.get("/ready/spk", response_model=GetResponsePaginatedSch[HasilPetaLokasiReadySpkExtSch])
+async def ready_spk(keyword:str | None = None, params: Params=Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    objs = await crud.hasil_peta_lokasi.get_ready_spk(keyword=keyword)
+    spks = await crud.hasil_peta_lokasi.get_ready_spk(keyword=keyword)
 
+    # AMBIL SEMUA ID
+    ids = [data.id for data in spks]
+    # DISTINCT ID YANG SAMA
+    ids = list(set(ids))
+
+    # SETUP UNTUK PAGINATION
     start = (params.page - 1) * params.size
     end = params.page * params.size
-    total_items = len(objs)
+    total_items = len(ids)
     pages = math.ceil(total_items / params.size)
 
-    data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
+    # AMBIL ID YANG AKAN DILOOPING DAN DIMAPING SESUAI SCHEMA
+    ids = ids[start:end]
 
-    return create_response(data=data)
+    objs:list[HasilPetaLokasiReadySpkExtSch] = []
+
+    # INISIALISASI SEMUA OBJECT SESUAI JUMLAH ID YANG TERPILIH PADA PAGINATION
+    for id in ids:
+        datas = list(filter(lambda obj: obj.id == id, spks))
+
+        # GET FIRST DATA FOR DEFAULT
+        data = datas[0]
+
+        # SETUP DATA BIDANG
+        data_ready_spk = HasilPetaLokasiReadySpkExtSch(id=data.id, id_bidang=data.id_bidang, alashak=data.alashak,
+                                                    satuan_bayar=data.satuan_bayar, satuan_harga=data.satuan_harga, 
+                                                    planing_id=data.planing_id, kjb_hd_code=data.kjb_hd_code, group=data.group, 
+                                                    manager_id=data.manager_id, pemilik_id=data.pemilik_id, kjb_hd_id=data.kjb_hd_id,
+                                                    hasil_petlok_id=data.hasil_petlok_id, req_petlok_id=data.req_petlok_id, 
+                                                    kjb_dt_id=data.kjb_dt_id, project_name=data.project_name, desa_name=data.desa_name, 
+                                                    manager_name=data.manager_name)
+            
+        
+
+        # CEK APAKAH PEMILIK BIDANG MEMILIKI REKENING
+        rekenings = await crud.rekening.get_by_pemilik_id(pemilik_id=data.pemilik_id)
+        data_ready_spk.rekening_on_ready = False if not rekenings else True
+        # CEK APAKAH KJB HARGA SUDAH DITENTUKAN
+        data_ready_spk.kjb_harga_on_ready = False if data.kjb_harga_id is None else True
+        # CEK APAKAH SK PADA BIDANG SUDAH DITENTUKAN
+        data_ready_spk.sk_on_ready = False if data.skpt_id is None else True
+
+        # SETUP JENIS BAYAR ON READY SESUAI DOKUMEN KELENGKAPAN
+        jenis_bayar_on_ready = []
+        for jns in datas:
+            j = JenisBayarOnReady(kjb_termin_id=jns.kjb_termin_id, nilai=jns.nilai, jenis_bayar=jns.jenis_bayar)
+            jenis_bayar_on_ready.append(j)
+
+        data_ready_spk.jenis_bayar_on_ready = jenis_bayar_on_ready
+
+        objs.append(data_ready_spk)
+
+    result = Page(items=objs, size=params.size, page=params.page, pages=pages, total=total_items)
+
+    return create_response(data=result)
 
 @router.get("/report/ready/spk/")
 async def report_ready_spk(

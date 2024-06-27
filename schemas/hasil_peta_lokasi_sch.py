@@ -116,4 +116,45 @@ class HasilPetaLokasiReadySpkSch(SQLModel):
     project_name: str | None
     desa_name: str | None
     manager_name: str | None
+    kjb_harga_id: UUID | None = None
+    pemilik_id: UUID | None = None
+    kjb_hd_id: UUID | None = None
+    hasil_petlok_id: UUID | None = None
+    req_petlok_id: UUID | None = None
+    kjb_dt_id: UUID | None = None
+    skpt_id:UUID | None = None
+
+
+class JenisBayarOnReady(SQLModel):
+    kjb_termin_id:UUID|None
+    nilai:Decimal|None
+    jenis_bayar:JenisBayarEnum
+
+
+class HasilPetaLokasiReadySpkExtSch(SQLModel):
+    id:UUID|None
+    id_bidang:str|None
+    alashak:str|None
+    satuan_bayar:SatuanBayarEnum|None
+    satuan_harga:SatuanHargaEnum|None
+    planing_id: UUID | None
+    kjb_hd_code: str | None
+    group: str | None
+    manager_id: UUID | None
+    project_name: str | None
+    desa_name: str | None
+    manager_name: str | None
+    jenis_bayar_on_ready: list[JenisBayarOnReady] | None = []
+    rekening_on_ready: bool | None = False
+    kjb_harga_on_ready: bool | None = False
+    sk_on_ready: bool | None = False
+    kjb_harga_id: UUID | None = None
+    pemilik_id: UUID | None = None
+    kjb_hd_id: UUID | None = None
+    hasil_petlok_id: UUID | None = None
+    req_petlok_id: UUID | None = None
+    kjb_dt_id: UUID | None = None
+
+
+
 
