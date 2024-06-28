@@ -162,6 +162,20 @@ class HelperService:
                 obj_updated = await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, updated_by_id=bundle_dt.updated_by_id)
 
                 await KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_id=[obj_updated.id])
+    
+    def get_media_type(ext:str) -> str | None:
+        if ext.lower() in ['jpg', 'jpeg']:
+            return "image/jpeg"
+        elif ext.lower() in ['png']:
+            return "image/png"
+        elif ext.lower() in ['pdf']:
+            return "application/pdf"
+        elif ext.lower() in ['zip']:
+            return "application/zip"
+        elif ext.lower() in ['xlsx']:
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        else:
+            return None
         
 class KomponenBiayaHelper:
 

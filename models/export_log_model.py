@@ -20,5 +20,10 @@ class ExportLogFullBase(BaseUUIDModel, ExportLogBase):
     pass
 
 class ExportLog(ExportLogFullBase, table=True):
-    pass
+    worker: "Worker" = Relationship(  
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "ExportLog.created_by_id==Worker.id",
+        }
+    )
 

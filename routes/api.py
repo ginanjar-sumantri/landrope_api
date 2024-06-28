@@ -7,7 +7,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               kategori, kategori_sub, kategori_proyek, giro, spk, spk_history, tahap, termin, invoice, payment, utj_khusus,
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual, kjb_history,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
-                              hasil_peta_lokasi_detail, hasil_peta_lokasi_history, import_log, order_gambar_ukur,
+                              hasil_peta_lokasi_detail, hasil_peta_lokasi_history, import_log, export_log, order_gambar_ukur,
                               report_map, dashboard, workflow, export_excel, report, attachment_file)
 
 api_router = APIRouter()
@@ -84,6 +84,7 @@ api_router.include_router(giro.router, prefix="/giro", tags=["giro"])
 api_router.include_router(keterangan_req_petlok.router, prefix="/keterangan_req_petlok", tags=["keterangan_req_petlok"])
 
 api_router.include_router(import_log.router, prefix="/importlog", tags=["importlog"])
+api_router.include_router(export_log.router, prefix="/exportlog", tags=["exportlog"])
 
 api_router.include_router(report_map.router, prefix="/report_map", tags=["report_map"])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
