@@ -190,10 +190,10 @@ class GeomService(Generic[T]):
     def export_shp_bytes(data:List[T]| None, obj_name:str):
         try:
             # Mengubah data list object menjadi dictionary dan memasukkan kedalam variable list my_objects
-            my_objects = list(map(lambda obj: obj.__dict__, data))
+            # my_objects = list(map(lambda obj: obj.__dict__, data))
 
             # Maping pandas dataframe list dictionary my_object
-            df = pd.DataFrame.from_dict(my_objects)
+            df = pd.DataFrame.from_dict(data)
 
             # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
             desired_types = ['str' 'geometry']

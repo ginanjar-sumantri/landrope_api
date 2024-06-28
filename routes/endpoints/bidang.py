@@ -711,17 +711,15 @@ async def export_shp(
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
     
-@router.post("/export/bulk/shp/stream", response_model=GetResponseBaseSch[list[BidangShpSch]])
+@router.post("/export/bulk/shp/stream")
 async def export_shp(
             param:BidangParameterDownload|None,
             bg_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-    results = await crud.bidang.get_multi_export_shape_file(param=param)
 
-    # await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
+    await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
 
-    return create_response(data=results)
+    return create_response({"detail": "SUCCESS"})
 
 @router.post("/export/excel")
 async def export_excel(param:BidangParameterDownload|None = None,

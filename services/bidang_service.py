@@ -19,7 +19,8 @@ class BidangService:
         
         export_log = await crud.export_log.create(obj_in=export_log_new, created_by_id=created_by_id)
 
-        await self.generate_file_shp(param, export_log.id)
+        # bg_task.add_task(self.generate_file_shp, param, export_log.id)
+        await self.generate_file_shp(param=param, export_log_id=export_log.id)
 
         return export_log
 
@@ -55,12 +56,6 @@ class BidangService:
             export_log_update.status = TaskStatusEnum.Failed
 
             await crud.export_log.update(obj_current=export_log, obj_new=export_log_update)
-
-        
-
-
-
-
     
     def add_days(self, n, d:date | None = datetime.today()):
         return d + timedelta(n)

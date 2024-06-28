@@ -665,7 +665,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response = await db_session.execute(query)
         return response.scalars().all()
 
-    async def get_multi_export_shape_file(self, param:BidangParameterDownload|None = None) -> list[BidangShpSch] : 
+    async def get_multi_export_shape_file(self, param:BidangParameterDownload|None = None) : 
 
         db_session = db.session
 
@@ -745,7 +745,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         
         response = await db_session.execute(query)
 
-        result = [BidangShpSch(**dict(bd)) for bd in response.fetchall()]
+        result = [dict(bd) for bd in response.fetchall()]
         return result
 
     async def get_multi_by_tahap_id_excel(self, tahap_id:UUID|str|None = None) -> list[BidangRptExcel] : 
