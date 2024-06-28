@@ -14,7 +14,7 @@ import geopandas
 import fiona as fio
 import math
 import shapely
-from shapely import wkb
+from shapely import wkb, wkt
 
 T = TypeVar('T')
 
@@ -189,39 +189,28 @@ class GeomService(Generic[T]):
     
     def export_shp_bytes(data:List[T]| None, obj_name:str):
         try:
-            # Mengubah data list object menjadi dictionary dan memasukkan kedalam variable list my_objects
-            # my_objects = list(map(lambda obj: obj.__dict__, data))
+            
+            # Konversi data (list[row]) menjadi DataFrame
+            df = pd.DataFrame(data, columns=data[0].keys())
 
-            # Maping pandas dataframe list dictionary my_object
-            df = pd.DataFrame.from_dict(data)
-
-            # Convert semua kolom yang tipe datanya bukan string atau geometry. ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
+            # Convert semua kolom yang tipe datanya bukan string atau geometry. 
+            # Ini diperlukan sebab geodataframe tidak bisa menghandle tipe data selain string dan geometry
             desired_types = ['str' 'geometry']
             df = df.applymap(lambda x: convert_to_string(x) if x not in desired_types else x)
 
-            # Memindahkan semua nilai geometry dalam dataframe['geom'] ke dalam varable gs (digunakan untuk geodataframe)
-            gs = geopandas.GeoSeries.from_wkt(df['geom'])
+            # Misalkan kolom 'geom' berisi WKT (Well-Known Text) string
+            # Ubah kolom 'geom' menjadi GeoSeries
+            df['geometry'] = df['geom'].apply(wkt.loads)
 
-            # Hapus kolom-kolom yang tidak diperlukan
-            df = df.drop('geom', axis=1)
+            # Hapus kolom geom
+            df = df.drop(columns='geom')
 
-            f_updated = df.get("update_at", None)
-            if f_updated is not None:
-                df = df.drop('updated_at', axis=1)
-            
-            f_created = df.get("created_at", None)
-            if f_created is not None:
-                df = df.drop('created_at', axis=1)
-                
-            # columns_to_drop = [col for col in df.columns if "_id" in col]
-            # df = df.drop(columns=columns_to_drop)
-
-            # Memindahkan data dari dataframe dan geometry dari gs ke dalam geodataframe
-            gdf = geopandas.GeoDataFrame(df, geometry=gs)
+            # Membuat GeoDataFrame
+            gdf = geopandas.GeoDataFrame(df, geometry='geometry')
 
             tempdir = tempfile.mkdtemp()
 
-            # mengekspor GeoDataFrame ke dalam file shapefile
+            # Create shape file dari GeoDataFrame
             output_folder = os.path.join(tempdir, 'shapefile')
             gdf.to_file(filename=output_folder, driver='ESRI Shapefile')
 

@@ -716,10 +716,11 @@ async def export_shp(
             param:BidangParameterDownload|None,
             bg_task:BackgroundTasks,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+        await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
 
-    await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
-
-    return create_response({"detail": "SUCCESS"})
+        return create_response({"detail": "SUCCESS"})
+    
 
 @router.post("/export/excel")
 async def export_excel(param:BidangParameterDownload|None = None,
