@@ -104,7 +104,6 @@ class GeomService(Generic[T]):
 
         return new_geo
 
-
     def from_map_to_wkt(buffer:bytes, content_type:str):
         try:
             if content_type == "application/x-zip-compressed":
@@ -236,8 +235,6 @@ class GeomService(Generic[T]):
         
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
-
-
 
 def convert_to_string(value):
     return str(value)

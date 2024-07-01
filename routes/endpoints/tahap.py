@@ -7,7 +7,7 @@ from sqlmodel import select, or_, and_
 from sqlalchemy import String, cast
 from sqlalchemy.orm import selectinload
 from models import Tahap, TahapDetail, Bidang, Worker, Planing, Skpt, Ptsk, Project, Desa, Termin, BidangOverlap
-from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch)
+from schemas.tahap_sch import (TahapSch, TahapByIdSch, TahapCreateSch, TahapUpdateSch, TahapFilterJson)
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch, TahapDetailExtSch
 from schemas.main_project_sch import MainProjectUpdateSch
 from schemas.bidang_sch import BidangSrcSch, BidangByIdForTahapSch, BidangUpdateSch
@@ -112,7 +112,8 @@ async def get_list(
             filter_query:str = None,
             project_id:UUID|None = None,
             ptsk_id:UUID|None = None,
-            filter_list:str = None,
+            filter_list:str | None = None,
+            filter_json: str | None = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -143,6 +144,19 @@ async def get_list(
                 Ptsk.name.ilike(f'%{keyword}%')
             )
         )
+
+    if filter_json:
+        json_loads = json.loads(filter_json)
+        tahap_filter_json = TahapFilterJson(**dict(json_loads))
+
+        if tahap_filter_json.nomor_tahap:
+            query = query.filter(cast(Tahap.nomor_tahap, String).ilike(f'%{tahap_filter_json.nomor_tahap}%'))
+        if tahap_filter_json.project:
+            query = query.filter(cast(Project.name, String).ilike(f'%{tahap_filter_json.project}%'))
+        if tahap_filter_json.desa:
+            query = query.filter(cast(Desa.name, String).ilike(f'%{tahap_filter_json.desa}%'))
+        if tahap_filter_json.group:
+            query = query.filter(cast(Tahap.group, String).ilike(f'%{tahap_filter_json.group}%'))
 
     if filter_query:
         filter_query = json.loads(filter_query)

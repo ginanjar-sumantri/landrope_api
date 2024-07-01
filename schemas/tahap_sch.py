@@ -27,7 +27,6 @@ class TahapSch(TahapFullBase):
 class TahapSrcSch(TahapFullBase):
     project_name:Optional[str]
 
-
 class TahapByIdSch(TahapFullBase):
     planing_name:Optional[str] = Field(alias="planing_name")
     project_name:Optional[str] = Field(alias="project_name")
@@ -53,3 +52,10 @@ class TahapForTerminByIdSch(SQLModel):
 @optional
 class TahapUpdateSch(TahapBase):
     details:list[TahapDetailUpdateExtSch]
+
+class TahapFilterJson(SQLModel):
+    nomor_tahap: int | None
+    project: str | None
+    desa: str | None
+    ptsk: str | None
+    group: str | None
