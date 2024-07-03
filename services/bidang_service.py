@@ -26,8 +26,8 @@ class BidangService:
         export_log = await crud.export_log.create(obj_in=export_log_new, created_by_id=created_by_id)
 
         GCloudTaskService().create_task(payload={  
-                                                "projects": param.projects,
-                                                "desas": param.desas,
+                                                "projects": [str(pr) for pr in param.projects],
+                                                "desas": [str(ds) for ds in param.desas],
                                                 "jenis_bidangs": param.jenis_bidangs,
                                                 "export_log_id" : str(export_log.id)
                                             }, 
