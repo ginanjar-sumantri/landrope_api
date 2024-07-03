@@ -31,7 +31,7 @@ class BidangService:
                                                 "jenis_bidangs": param.jenis_bidangs,
                                                 "export_log_id" : str(export_log.id)
                                             }, 
-                                        base_url=f'{request.base_url}landrope/task/generate/shp')
+                                        base_url=f'{request.base_url}landrope/bidang/task/generate/shp')
 
         return export_log
 
