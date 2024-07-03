@@ -533,6 +533,14 @@ class Bidang(BidangFullBase, table=True):
         return False
     
     @property
+    def has_beginning_balance(self) -> bool | None:
+        invoice_beg_bal = next((x for x in self.invoices if x.is_void != True and x.jenis_bayar in [JenisBayarEnum.BEGINNING_BALANCE]), None)
+        if invoice_beg_bal and self.sisa_pelunasan == 0:
+            return True
+        
+        return False
+    
+    @property
     def parent_id_bidang(self) -> str | None:
         if self.parent_bintang:
             return self.parent_bintang.id_bidang

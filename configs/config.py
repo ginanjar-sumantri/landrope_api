@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     ADOBE_CLIENT_SECRET:str
     KEY_ENCRYPT_DOC:str
 
+    INSTANCE:str
+
     class Config:
         env_file = ".env"
 

@@ -35,6 +35,7 @@ class BidangKomponenBiayaSch(BidangKomponenBiayaFullBase):
 class BidangKomponenBiayaListSch(BidangKomponenBiayaSch):
     amount_calculate:Decimal|None = Field(alias="amount_calculate")
     has_invoice_lunas:bool|None = Field(alias="has_invoice_lunas")
+    has_beginning_balance:bool|None = Field(alias="has_beginning_balance")
 
 @optional
 class BidangKomponenBiayaUpdateSch(BidangKomponenBiayaBase):

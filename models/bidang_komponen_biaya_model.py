@@ -112,6 +112,10 @@ class BidangKomponenBiaya(BidangKomponenBiayaFullBase, table=True):
     def has_invoice_lunas(self) -> bool | None:
         return getattr(getattr(self, "bidang", False), "has_invoice_lunas", False)
     
+    @property
+    def has_beginning_balance(self) -> bool | None:
+        return getattr(getattr(self, "bidang", False), "has_beginning_balance", False)
+    
     #region NOT USE
     # @property
     # def amount_calculate(self) -> Decimal | None:

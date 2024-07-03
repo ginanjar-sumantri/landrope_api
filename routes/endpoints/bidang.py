@@ -36,6 +36,7 @@ from decimal import Decimal
 from datetime import datetime
 from itertools import islice
 from io import BytesIO
+from typing import Dict
 import pandas as pd
 
 
@@ -720,7 +721,14 @@ async def export_shp(
         await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
 
         return create_response({"detail": "SUCCESS"})
-    
+
+@router.post("/task/generate/shp")
+async def task_generate_shp(payload:Dict, request:Request):
+
+    await BidangService().call_generate_shp_file_functions(payload=payload, request=request)
+
+    return create_response({"detail": "SUCCESS"})
+
 
 @router.post("/export/excel")
 async def export_excel(param:BidangParameterDownload|None = None,
