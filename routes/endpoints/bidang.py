@@ -696,29 +696,29 @@ async def export_shp(
     else:
         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
     
-@router.post("/export/bulk/shp", response_class=Response)
+# @router.post("/export/bulk/shp", response_class=Response)
+# async def export_shp(
+#             param:BidangParameterDownload|None,
+#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+#     results = await crud.bidang.get_multi_export_shape_file(param=param)
+
+#     if results:
+#         obj_name = results[0].__class__.__name__
+#         if len(results) == 1:
+#             obj_name = f"{obj_name}-{results[0].n_idbidang}"
+
+#         return GeomService.export_shp_zip(data=results, obj_name=obj_name)
+#     else:
+#         raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
+    
+@router.post("/export/bulk/shp")
 async def export_shp(
             param:BidangParameterDownload|None,
-            current_worker:Worker = Depends(crud.worker.get_active_worker)):
-
-    results = await crud.bidang.get_multi_export_shape_file(param=param)
-
-    if results:
-        obj_name = results[0].__class__.__name__
-        if len(results) == 1:
-            obj_name = f"{obj_name}-{results[0].n_idbidang}"
-
-        return GeomService.export_shp_zip(data=results, obj_name=obj_name)
-    else:
-        raise HTTPException(status_code=422, detail="Failed Export, please contact administrator!")
-    
-@router.post("/export/bulk/shp/stream")
-async def export_shp(
-            param:BidangParameterDownload|None,
-            bg_task:BackgroundTasks,
+            request:Request,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-        await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, bg_task=bg_task)
+        await BidangService().create_export_log_with_generate_file_shp(param=param, created_by_id=current_worker.id, request=request)
 
         return create_response({"detail": "SUCCESS"})
 

@@ -213,7 +213,7 @@ async def create(
         await db_session.commit()
         await db_session.refresh(new_obj)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e.message))
+        raise HTTPException(status_code=422, detail=str(e.args))
 
     new_obj = await crud.termin.get_by_id(id=new_obj.id)
 
@@ -676,7 +676,7 @@ async def update_(
         await db_session.commit()
         await db_session.refresh(obj_updated)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e.message))
+        raise HTTPException(status_code=422, detail=str(e.args))
 
     if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
         background_task.add_task(generate_printout, obj_updated.id)
