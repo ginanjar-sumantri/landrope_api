@@ -149,7 +149,7 @@ class TerminFilterJson(SQLModel):
     project: str | None
     desa: str | None
     ptsk: str | None
-    nomor_tahap: int | None
+    nomor_tahap: str | None
     group: str | None
     jenis_bayar: str | None
     tanggal_pengajuan: date | None

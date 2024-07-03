@@ -54,7 +54,7 @@ class TahapUpdateSch(TahapBase):
     details:list[TahapDetailUpdateExtSch]
 
 class TahapFilterJson(SQLModel):
-    nomor_tahap: int | None
+    nomor_tahap: str | None
     project: str | None
     desa: str | None
     ptsk: str | None
