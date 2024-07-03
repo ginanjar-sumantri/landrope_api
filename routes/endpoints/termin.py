@@ -4,8 +4,8 @@ from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, and_, func, update, delete
-from sqlalchemy import cast, String
-from sqlalchemy.orm import selectinload
+from sqlalchemy import cast, String, Date
+from sqlalchemy.orm import selectinload, aliased
 import crud
 from models import (Termin, Worker, Invoice, InvoiceDetail, InvoiceBayar, Tahap, TahapDetail, KjbHd, Spk, Bidang, TerminBayar, TerminBayarDt,
                     PaymentDetail, Payment, PaymentGiroDetail, Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project,
@@ -16,7 +16,7 @@ from schemas.tahap_detail_sch import TahapDetailForPrintOut, TahapDetailForExcel
 from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, 
                                 TerminByIdSch, TerminByIdForPrintOut,
                                 TerminBidangIDSch, TerminIdSch, TerminHistoriesSch,
-                                TerminBebanBiayaForPrintOut, TerminVoidSch)
+                                TerminBebanBiayaForPrintOut, TerminVoidSch, TerminFilterJson)
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch, TerminBayarForPrintout
 from schemas.termin_bayar_dt_sch import TerminBayarDtCreateSch, TerminBayarDtUpdateSch
 from schemas.invoice_sch import (InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOutExt, InvoiceHistoryforPrintOut,
@@ -242,8 +242,9 @@ async def get_list(
             order_by:str = None, 
             keyword:str = None,
             is_utj:bool = False,
-            filter_query:str = None,
+            filter_query:str | None = None,
             filter_list: str | None = None,
+            filter_json: str | None = None,
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Gets a paginated list objects"""
@@ -300,6 +301,33 @@ async def get_list(
                 Workflow.step_name.ilike(f'%{keyword}%')
             )
         )
+
+    if filter_json:
+        json_loads = json.loads(filter_json)
+        termin_filter_json = TerminFilterJson(**dict(json_loads))
+
+        if termin_filter_json.code:
+            query = query.filter(cast(Termin.code, String).ilike(f'%{termin_filter_json.code}%'))
+        if termin_filter_json.project:
+            query = query.filter(cast(Project.name, String).ilike(f'%{termin_filter_json.project}%'))
+        if termin_filter_json.desa:
+            query = query.filter(cast(Desa.name, String).ilike(f'%{termin_filter_json.desa}%'))
+        if termin_filter_json.ptsk:
+            query = query.filter(cast(Ptsk.name, String).ilike(f'%{termin_filter_json.ptsk}%'))
+        if termin_filter_json.nomor_tahap:
+            query = query.filter(cast(Tahap.nomor_tahap, String).ilike(f'%{termin_filter_json.nomor_tahap}%'))
+        if termin_filter_json.group:
+            query = query.filter(cast(Tahap.group, String).ilike(f'%{termin_filter_json.group}%'))
+        if termin_filter_json.jenis_bayar:
+            query = query.filter(cast(func.replace(Termin.jenis_bayar, '_', ' '), String).ilike(f'%{termin_filter_json.jenis_bayar}%'))
+        if termin_filter_json.tanggal_pengajuan:
+            query = query.filter(cast(cast(Termin.created_at, Date), String).ilike(f'%{termin_filter_json.tanggal_pengajuan}%'))
+        if termin_filter_json.nomor_memo:
+            query = query.filter(cast(Termin.nomor_memo, String).ilike(f'%{termin_filter_json.nomor_memo}%'))
+        if termin_filter_json.status:
+            query = query.filter(or_(cast(Workflow.last_status, String).ilike(f'%{termin_filter_json.status}%'), cast(Workflow.step_name, String).ilike(f'%{termin_filter_json.status}%')))
+        if termin_filter_json.last_update_by:
+            query = query.filter(cast(Worker.name, String).ilike(f'%{termin_filter_json.last_update_by}%'))
 
     if filter_query:
         filter_query = json.loads(filter_query)

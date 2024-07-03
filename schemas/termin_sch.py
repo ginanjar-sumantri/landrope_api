@@ -144,3 +144,16 @@ class TerminSearchSch(SQLModel):
     nomor_memo: str | None
     nomor_tahap: int | None
 
+class TerminFilterJson(SQLModel):
+    code: str | None
+    project: str | None
+    desa: str | None
+    ptsk: str | None
+    nomor_tahap: int | None
+    group: str | None
+    jenis_bayar: str | None
+    tanggal_pengajuan: date | None
+    nomor_memo: str | None
+    status: str | None
+    last_update_by: str | None
+
