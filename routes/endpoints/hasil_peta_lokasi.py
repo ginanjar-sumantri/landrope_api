@@ -956,34 +956,7 @@ async def report_ready_spk(current_worker:Worker = Depends(crud.worker.get_activ
     
     """Gets a paginated list objects"""
 
-    filename:str = ''
-
-    objs = await crud.hasil_peta_lokasi.get_ready_spk()
-
-    data = [{
-                "Id Bidang" : obj.id_bidang, 
-                "Alashak" : obj.alashak,
-                "Project" : obj.project_name, 
-                "Desa" : obj.desa_name,
-                "No KJB" : obj.kjb_hd_code,
-                "Group" : obj.group,
-                "Manager" : obj.manager_name,
-                "Jenis Bayar" : obj.jenis_bayar.value,
-                "Nilai" : obj.nilai
-            }
-            for obj in objs]
-
-    
-    df = pd.DataFrame(data=data)
-
-    output = BytesIO()
-    df.to_excel(output, index=False, sheet_name=f'Ready SPK')
-
-    output.seek(0)
-
-    return StreamingResponse(BytesIO(output.getvalue()), 
-                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            headers={"Content-Disposition": "attachment;filename=ready_spk.xlsx"})
+    return await HasilPetaLokasiService().get_report_ready_spk()
 
 @router.get("/generate-kelengkapan/bidang")
 async def generate_kelengkapan_bidang():
