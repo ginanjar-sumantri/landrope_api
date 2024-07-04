@@ -13,8 +13,8 @@ class ExportLogService:
     async def create_export_log(self, name, media_type, created_by_id) -> ExportLog:
         
         # CREATE EXPORT LOG DATA
-        export_log_new = ExportLogCreateSch(name="BIDANG SHP", status=TaskStatusEnum.OnProgress, 
-                                            media_type=".zip", expired_date=self.add_days(n=14).date())
+        export_log_new = ExportLogCreateSch(name=name, status=TaskStatusEnum.OnProgress, 
+                                            media_type=media_type, expired_date=self.add_days(n=14).date())
         
         export_log = await crud.export_log.create(obj_in=export_log_new, created_by_id=created_by_id)
 
