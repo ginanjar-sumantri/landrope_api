@@ -58,7 +58,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 
     sch.id_bidang = await generate_id_bidang(sch.planing_id, db_session=db_session, with_commit=False)
 
-    sch.planing_id = await generate_no_peta(sch.planing_id, db_session=db_session, with_commit=False)
+    sch.no_peta = await generate_no_peta(sch.planing_id, id_bidang=sch.id_bidang, db_session=db_session)
 
     jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
     if jenis_surat is None:
