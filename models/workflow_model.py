@@ -7,6 +7,7 @@ from pydantic import EmailStr
 
 class WorkflowBase(SQLModel):
     reference_id:UUID = Field(nullable=False) #id object (spk, memo tanah dll)
+    txn_id:str | None = Field(nullable=True) #id object workflow
     step_name:str | None = Field(nullable=True)
     last_status:WorkflowLastStatusEnum|None = Field(nullable=True)
     last_status_at:datetime|None = Field(nullable=True)

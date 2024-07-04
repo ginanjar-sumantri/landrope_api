@@ -34,6 +34,7 @@ async def notification(sch: WorkflowSystemCallbackSch, request:Request):
         await crud.workflow_next_approver.delete_by_workflow_id(workflow_id=obj_current.id, db_session=db_session, with_commit=False)
         
         obj_new = WorkflowUpdateSch(reference_id=obj_current.reference_id,
+                                    txn_id=sch.txn_id,
                                     entity=obj_current.entity, 
                                     flow_id=obj_current.flow_id,
                                     step_name=sch.step_name,
