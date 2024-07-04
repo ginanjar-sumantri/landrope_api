@@ -216,7 +216,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                             hd.code as kjb_hd_code,
                             b.group,
                             b.manager_id,
-                            null as kjb_harga_id,
+                            hg.id as kjb_harga_id,
                             b.pemilik_id,
                             b.skpt_id,
                             hd.id as kjb_hd_id,
@@ -226,6 +226,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                         from hasil_peta_lokasi hpl
                             inner join bidang b ON b.id = hpl.bidang_id
                             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+							 inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
                             inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
                         Where 
                             EXISTS (select 1 
@@ -258,7 +259,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                             hd.code as kjb_hd_code,
                             b.group,
                             b.manager_id,
-                            null as kjb_harga_id,
+                            hg.id as kjb_harga_id,
                             b.pemilik_id,
                             b.skpt_id,
                             hd.id as kjb_hd_id,
@@ -268,6 +269,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                         from hasil_peta_lokasi hpl
                             inner join bidang b ON b.id = hpl.bidang_id
                             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
+							 inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
                             inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
                         Where NOT EXISTS (select 1 from spk s
                                         where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
