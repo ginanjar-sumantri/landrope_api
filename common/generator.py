@@ -125,11 +125,9 @@ async def generate_code_month(entity:CodeCounterEnum,
         return code
 
 
-async def generate_no_peta(planing_id: UUID | str,
-                           id_bidang,
-                           db_session: AsyncSession | None = None) -> str:
+async def generate_no_peta(planing_id: UUID | str, id_bidang: str) -> str:
     
-    planing = await crud.planing.get_by_id(id=planing_id, db_session=db_session)
+    planing = await crud.planing.get_by_id(id=planing_id)
 
     code_project = planing.project.code[-2:] 
     code_desa = planing.desa.code
