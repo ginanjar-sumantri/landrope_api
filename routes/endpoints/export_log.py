@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from fastapi_pagination import Params
 from sqlmodel import select
 from models import Worker, ExportLog
 from common.exceptions import IdNotFoundException
 from schemas.response_sch import create_response, GetResponsePaginatedSch
 from schemas.export_log_sch import ExportLogSch
-from services.gcloud_storage_service import GCStorageService
-from services.helper_service import HelperService
+from services.export_log_service import ExportLogService
 from uuid import UUID
 import crud
 import json
@@ -17,6 +15,7 @@ router = APIRouter()
 
 @router.get("", response_model=GetResponsePaginatedSch[ExportLogSch])
 async def get_list(
+        bg_task:BackgroundTasks,
         params: Params=Depends(), 
         order_by:str = None, 
         keyword:str = None, 
@@ -36,6 +35,9 @@ async def get_list(
             query = query.where(getattr(ExportLog, key) == value)
 
     objs = await crud.export_log.get_multi_paginated(params=params, query=query)
+
+    bg_task.add_task(ExportLogService.deleted_file_expired())
+
     return create_response(data=objs)
 
 @router.get("/download/file/{id}")
@@ -51,18 +53,6 @@ async def get_document_or_file(id: UUID, current_worker:Worker = Depends(crud.wo
     if obj.file_path is None:
         raise HTTPException(status_code=404, detail=f"File not found!")
     
-    try:
-        file_bytes = await GCStorageService().download_dokumen(file_path=obj.file_path)
+    response = await ExportLogService().get_file_export(obj=obj)
 
-        ext = obj.file_path.split('.')[-1]
-        media_type = HelperService.get_media_type(ext=ext)
-        if media_type is None:
-            raise HTTPException(status_code=422, detail="File extentions of file not support")
-        
-        response = Response(content=file_bytes, media_type=media_type)
-        response.headers["Content-Disposition"] = f"attachment; filename={obj.name}-{obj.id}.{ext}"
-        return response
-    
-            
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e.args))
+    return response
