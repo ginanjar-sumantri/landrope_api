@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150, sa_column=(Column("id_bidang", String, unique=True)))
     id_bidang_lama:Optional[str] = Field(nullable=True, sa_column=(Column("id_bidang_lama", String, unique=True)))
-    no_peta:Optional[str] = Field(nullable=True)
+    no_peta:Optional[str] = Field(nullable=True, sa_column=(Column("no_peta", String, unique=True)))
     pemilik_id:Optional[UUID] = Field(nullable=True, foreign_key="pemilik.id")
     jenis_bidang:JenisBidangEnum | None = Field(nullable=True)
     status:StatusBidangEnum | None = Field(nullable=False)

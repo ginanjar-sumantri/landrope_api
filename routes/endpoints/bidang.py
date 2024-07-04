@@ -22,7 +22,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
                                   PostResponseBaseSch, PutResponseBaseSch, create_response)
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException,
                                ImportFailedException, DocumentFileNotFoundException)
-from common.generator import generate_id_bidang
+from common.generator import generate_id_bidang, generate_no_peta
 from common.rounder import RoundTwo
 from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, JenisBayarEnum
 from services.geom_service import GeomService
@@ -57,6 +57,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
     db_session = db.session
 
     sch.id_bidang = await generate_id_bidang(sch.planing_id, db_session=db_session, with_commit=False)
+
+    sch.planing_id = await generate_no_peta(sch.planing_id, db_session=db_session, with_commit=False)
 
     jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
     if jenis_surat is None:

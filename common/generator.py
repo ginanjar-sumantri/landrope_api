@@ -123,7 +123,25 @@ async def generate_code_month(entity:CodeCounterEnum,
         
         code = str(code_counter).zfill(max_digit)
         return code
+
+
+async def generate_no_peta(planing_id: UUID | str,
+                           db_session: AsyncSession | None = None,
+                           with_commit: bool | None = True) -> str:
+    # id_bidang = "S1P0060560133"
+    planing = await crud.planing.get_by_id(id=planing_id, db_session=db_session)
+
+    code_project = planing.project.code[-2:] 
+    code_desa = planing.desa.code
+    # code_bidang = str(id_bidang)[-4:]  
+
+    no_peta = f"{code_project}{code_desa}"
+
+    return no_peta
+
+
     
+
 
 
 
