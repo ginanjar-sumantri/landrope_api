@@ -1,6 +1,6 @@
 from fastapi import UploadFile, BackgroundTasks, HTTPException
-from schemas.export_log_sch import ExportLogCreateSch, ExportLogUpdateSch
-from services.geom_service import GeomService
+from schemas.export_log_sch import ExportLogUpdateSch
+from services.export_log_service import ExportLogService
 from services.gcloud_task_service import GCloudTaskService
 from configs.config import settings
 from common.enum import TaskStatusEnum
@@ -19,11 +19,7 @@ class BidangService:
     # FUNGSI UNTUK CREATE EXPORT LOG, SEKALIGUS GENERATE FILE ZIP (SHP) DAN DIUPLOAD KE CLOUD STORAGE
     async def create_export_log_with_generate_file_shp(self, param, created_by_id, request):
 
-        # CREATE EXPORT LOG DATA
-        export_log_new = ExportLogCreateSch(name="BIDANG SHP", status=TaskStatusEnum.OnProgress, 
-                                            media_type=".zip", expired_date=self.add_days(n=14).date())
-        
-        export_log = await crud.export_log.create(obj_in=export_log_new, created_by_id=created_by_id)
+        export_log = await ExportLogService().create_export_log(name="BIDANG SHP", media_type=".zip", created_by_id=created_by_id)
 
         GCloudTaskService().create_task(payload={  
                                                 "projects": [str(pr) for pr in param.projects],
@@ -86,8 +82,7 @@ class BidangService:
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
         
-    def add_days(self, n, d:date | None = datetime.today()):
-        return d + timedelta(n)
+    
 
 
         
