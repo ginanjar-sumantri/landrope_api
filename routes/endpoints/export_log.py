@@ -36,7 +36,7 @@ async def get_list(
 
     objs = await crud.export_log.get_multi_paginated(params=params, query=query)
 
-    bg_task.add_task(ExportLogService.deleted_file_expired())
+    bg_task.add_task(ExportLogService.deleted_file_expired)
 
     return create_response(data=objs)
 
