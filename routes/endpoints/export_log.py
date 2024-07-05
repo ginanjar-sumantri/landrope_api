@@ -34,7 +34,7 @@ async def get_list(
         for key, value in filter_query.items():
             query = query.where(getattr(ExportLog, key) == value)
 
-    objs = await crud.export_log.get_multi_paginated(params=params, query=query)
+    objs = await crud.export_log.get_multi_paginated_ordered(params=params, query=query)
 
     bg_task.add_task(ExportLogService.deleted_file_expired)
 
