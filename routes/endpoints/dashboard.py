@@ -21,8 +21,12 @@ async def dashboard_outstanding():
     data = []
     gu_pt = OutStandingSch(tipe_worklist="outstanding_gu_pbt", total=len(outstanding_gu_pbt))
     data.append(gu_pt)
-    spk = OutStandingSch(tipe_worklist="outstanding_spk", total=len(outstanding_spk))
+
+    ids_ready_spk = [data.id for data in outstanding_spk]
+    ids_ready_spk = list(set(ids_ready_spk))
+    spk = OutStandingSch(tipe_worklist="outstanding_spk", total=len(ids_ready_spk))
     data.append(spk)
+    
     hasil_peta_lokasi = OutStandingSch(tipe_worklist="outstanding_hasil_peta_lokasi", total=len(outstanding_hasil_peta_lokasi))
     data.append(hasil_peta_lokasi)
     invoice = OutStandingSch(tipe_worklist="outstanding_invoice", total=len(outstanding_invoice))
