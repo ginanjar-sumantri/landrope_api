@@ -177,14 +177,6 @@ class GeomService(Generic[T]):
         
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
-        finally:
-            # Menghapus direktori sementara
-            for root, dirs, files in os.walk(tempdir, topdown=False):
-                for name in files:
-                    os.remove(os.path.join(root, name))
-                for name in dirs:
-                    os.rmdir(os.path.join(root, name))
-            os.rmdir(tempdir)
     
     def export_shp_bytes(data:List[T]| None, obj_name:str):
         try:
