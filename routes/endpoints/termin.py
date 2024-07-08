@@ -845,7 +845,7 @@ async def get_list_komponen_biaya_by_spk_id(
     else:
         datas = await crud.bidang_komponen_biaya.get_multi_beban_by_bidang_id(bidang_id=spk.bidang_id)
         for data in datas:
-            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0:
+            if (data.komponen_biaya_outstanding or 0) == 0 and (data.estimated_amount or 0) != 0 and (data.is_retur or False) == False:
                 continue
             else:
                 objs.append(data)

@@ -178,7 +178,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         case
                                 when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
                                 when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
-                        else '(Beban Penjual)'
+                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PELUNASAN' and bkb.is_retur = true then '(Beban Pembeli)'
+                                else '(Beban Penjual)'
                         end as tanggungan,
                         idt.amount As amount,
                         bkb.beban_pembeli,
