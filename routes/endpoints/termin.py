@@ -2134,7 +2134,7 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
 
     if satuan_bayar == SatuanBayarEnum.Amount and satuan_harga == SatuanHargaEnum.Lumpsum:
         if bidang_komponen_biaya_current:
-            result.estimated_amount = amount - bidang_komponen_biaya_current.invoice_detail_amount
+            result.estimated_amount = amount
             result.bidang_id = bidang_id
             result.amount = amount
             result.beban_biaya_id = master_beban_biaya.id
@@ -2147,7 +2147,7 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
         if bidang_komponen_biaya_current:
             if amount:
                 estimated_amount = await KomponenBiayaHelper().get_estimated_amount_v2(bidang_id=bidang_id, formula=master_beban_biaya.formula, beban_biaya_id=master_beban_biaya.id, amount=amount)
-                estimated_amount = estimated_amount - bidang_komponen_biaya_current.invoice_detail_amount
+                estimated_amount = estimated_amount
                 result.estimated_amount = estimated_amount
                 result.bidang_id = bidang_id
                 result.amount = amount
