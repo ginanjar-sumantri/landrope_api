@@ -27,3 +27,10 @@ class ExportLog(ExportLogFullBase, table=True):
         }
     )
 
+    @property
+    def created_by_name(self) -> str | None:
+        if self.worker:
+            return self.worker.name
+        
+        return None
+
