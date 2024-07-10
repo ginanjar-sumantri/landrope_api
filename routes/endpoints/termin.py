@@ -2096,9 +2096,9 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID):
 
     if master_beban_biaya.satuan_bayar == SatuanBayarEnum.Amount and master_beban_biaya.satuan_harga == SatuanHargaEnum.Lumpsum:
         if bidang_komponen_biaya_current:
-            result.estimated_amount = master_beban_biaya.amount - bidang_komponen_biaya_current.invoice_detail_amount
+            result.estimated_amount = bidang_komponen_biaya_current.estimated_amount
             result.bidang_id = bidang_id
-            result.amount = master_beban_biaya.amount
+            result.amount = bidang_komponen_biaya_current.amount
             result.beban_biaya_id = master_beban_biaya.id
         else:
             result.estimated_amount = master_beban_biaya.amount 
@@ -2107,7 +2107,7 @@ async def get_estimated_amount(bidang_id:UUID, beban_biaya_id:UUID):
             result.beban_biaya_id = master_beban_biaya.id
     else:
         if bidang_komponen_biaya_current:
-            result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
+            result.estimated_amount = bidang_komponen_biaya_current.estimated_amount
             result.bidang_id = bidang_id
             result.beban_biaya_id = master_beban_biaya.id
         else:
@@ -2153,7 +2153,7 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
                 result.amount = amount
                 result.beban_biaya_id = master_beban_biaya.id
             else:
-                result.estimated_amount = bidang_komponen_biaya_current.komponen_biaya_outstanding
+                result.estimated_amount = bidang_komponen_biaya_current.estimated_amount
                 result.bidang_id = bidang_id
                 result.beban_biaya_id = master_beban_biaya.id
         else:
