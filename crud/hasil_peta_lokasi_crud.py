@@ -208,8 +208,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                             b.id_bidang,
                             b.alashak,
                             null as kjb_termin_id,
-                            null as satuan_bayar,
-                            null as satuan_harga,
+                            hd.satuan_bayar,
+                            hd.satuan_harga,
                             null as nilai,
                             'PENGEMBALIAN_BEBAN_PENJUAL' as jenis_bayar,
                             b.planing_id,
@@ -251,8 +251,8 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                             b.id_bidang,
                             b.alashak,
                             null as kjb_termin_id,
-                            null as satuan_bayar,
-                            null as satuan_harga,
+                            hd.satuan_bayar,
+                            hd.satuan_harga,
                             null as nilai,
                             'PAJAK' as jenis_bayar,
                             b.planing_id,
@@ -269,7 +269,7 @@ class CRUDHasilPetaLokasi(CRUDBase[HasilPetaLokasi, HasilPetaLokasiCreateSch, Ha
                         from hasil_peta_lokasi hpl
                             inner join bidang b ON b.id = hpl.bidang_id
                             inner join kjb_dt dt ON dt.id = hpl.kjb_dt_id
-							 inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
+							inner join kjb_harga hg ON hg.kjb_hd_id = dt.kjb_hd_id and hg.jenis_alashak = dt.jenis_alashak
                             inner join kjb_hd hd ON hd.id = dt.kjb_hd_id
                         Where NOT EXISTS (select 1 from spk s
                                         where s.bidang_id = b.id AND s.jenis_bayar = 'PAJAK' and s.is_void is FALSE)
