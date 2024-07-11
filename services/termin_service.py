@@ -72,7 +72,31 @@ class TerminService:
                 if invoice.use_utj:
                     utj_amount = bidang.utj_amount
 
-                invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
+                # invoice_detail_amount = sum([inv_detail.amount for inv_detail in invoice.details if inv_detail.beban_pembeli == False])
+
+                inv_dtl_amount = []
+                for inv_detail in invoice.details:
+                    bkb = await crud.bidang_komponen_biaya.get_by_bidang_id_and_beban_biaya_id(bidang_id=invoice.bidang_id, beban_biaya_id=inv_detail.beban_biaya_id)
+                    if bkb:
+                        if sch.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+                            if inv_detail.beban_pembeli == False and (bkb.is_retur or False) == True and sch.jenis_bayar == JenisBayarEnum.DP:
+                                inv_dtl_amount.append(inv_detail.amount)
+                            elif inv_detail.beban_pembeli == False and (bkb.is_retur or False) == True and sch.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                                continue
+                            elif inv_detail.beban_pembeli == False and (bkb.is_retur or False) == False and sch.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                                inv_dtl_amount.append(inv_detail.amount)
+                            else:
+                                inv_dtl_amount.append(inv_detail.amount)
+                        else:
+                            continue
+                    else:
+                        if sch.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+                            if inv_detail.beban_pembeli == False:
+                                inv_dtl_amount.append(inv_detail.amount)
+                        else:
+                            continue
+
+                invoice_detail_amount = sum(inv_dtl_amount)
 
                 if (invoice.amount - utj_amount - invoice_detail_amount) != invoice_bayar_amount:
                     raise HTTPException(status_code=422, detail="Allocation belum balance dengan Total Bayar Invoice, Cek Kembali masing-masing Total Bayar Invoice dengan Allocationnya!")

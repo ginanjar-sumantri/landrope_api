@@ -183,6 +183,7 @@ class Invoice(InvoiceFullBase, table=True):
     
     @property
     def amount_beban(self) -> Decimal | None:
+        beban_penjual = 0
         beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False and (dt.bidang_komponen_biaya.is_void or False) == False])
         
         return beban_penjual
@@ -331,9 +332,13 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     def amount_beban_penjual(self) -> Decimal | None:
         amount = 0
         if self.invoice.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-            if self.bidang_komponen_biaya.beban_pembeli == False:
+            if self.bidang_komponen_biaya.beban_pembeli == False and self.bidang_komponen_biaya.is_retur and self.invoice.jenis_bayar == JenisBayarEnum.DP:
                 amount = self.amount or 0
-        
+            if self.bidang_komponen_biaya.beban_pembeli == False and self.bidang_komponen_biaya.is_retur and self.invoice.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                amount = amount
+            if self.bidang_komponen_biaya.beban_pembeli == False and self.bidang_komponen_biaya.is_retur == False and self.invoice.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                amount = self.amount or 0
+                
         return round(amount, 0)
     
     @property
