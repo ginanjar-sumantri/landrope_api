@@ -161,6 +161,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                                 *, 
                                                 id: UUID | str,
                                                 jenis_bayar:JenisBayarEnum | None = None,
+                                                is_history: bool | None = False,
                                                 db_session: AsyncSession | None = None
                                                 ) -> List[TerminBebanBiayaForPrintOut] | None:
         db_session = db_session or db.session
@@ -172,15 +173,28 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         if jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
              filter_by_jenis_bayar = "and bkb.is_add_pay = true"
 
-        query = text(f"""
-                        With subquery as (select
-                        bb.name as beban_biaya_name,
+        if is_history == False:
+             tanggungan = """
                         case
                                 when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
                                 when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
-                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PELUNASAN' and bkb.is_retur = true then '(Beban Pembeli)'
+                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PELUNASAN' and bkb.is_retur = true then '(Pengembalian Beban Penjual)'
                                 else '(Beban Penjual)'
                         end as tanggungan,
+                        """
+        else:
+             tanggungan = """
+                        case
+                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
+                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
+                                else '(Beban Penjual)'
+                        end as tanggungan,
+                        """
+
+        query = text(f"""
+                        With subquery as (select
+                        bb.name as beban_biaya_name,
+                        {tanggungan}
                         idt.amount As amount,
                         bkb.beban_pembeli,
                         bkb.is_void
