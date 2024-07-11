@@ -102,6 +102,7 @@ class TerminBebanBiayaForPrintOut(SQLModel):
     # id_bidang:Optional[str]
     beban_biaya_name:Optional[str]
     beban_pembeli:Optional[bool]
+    is_retur: bool | None
     is_void:Optional[bool]
     tanggungan:Optional[str]
     amount:Optional[Decimal]

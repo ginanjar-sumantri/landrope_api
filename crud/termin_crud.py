@@ -197,7 +197,8 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         {tanggungan}
                         idt.amount As amount,
                         bkb.beban_pembeli,
-                        bkb.is_void
+                        bkb.is_void,
+                        COALESCE(bkb.is_retur, FALSE) AS is_retur
                         from termin t
                         inner join invoice i on i.termin_id = t.id
                         inner join invoice_detail idt on idt.invoice_id = i.id
@@ -210,9 +211,9 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         {filter_by_jenis_bayar}
                         and t.id = '{str(id)}'
                         )
-                        Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli, is_void
+                        Select beban_biaya_name, tanggungan, coalesce(sum(amount), 0) as amount, beban_pembeli, is_retur, is_void
                         from subquery
-                        group by beban_biaya_name, tanggungan, beban_pembeli, is_void
+                        group by beban_biaya_name, tanggungan, beban_pembeli, is_retur, is_void
                      """)
 
 
