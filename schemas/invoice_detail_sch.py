@@ -31,6 +31,7 @@ class InvoiceDetailSch(InvoiceDetailFullBase):
     satuan_bayar: SatuanBayarEnum | None
     satuan_harga: SatuanHargaEnum | None
     komponen_biaya_amount: Decimal | None
+    is_retur: bool | None
 
 @optional
 class InvoiceDetailUpdateSch(InvoiceDetailBase):

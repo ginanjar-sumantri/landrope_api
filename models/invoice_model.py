@@ -361,6 +361,10 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
     @property
     def komponen_biaya_amount(self) -> Decimal | None:
         return getattr(getattr(self, 'bidang_komponen_biaya', None), 'amount', None)
+    
+    @property
+    def is_retur(self) -> Decimal | None:
+        return getattr(getattr(self, 'bidang_komponen_biaya', None), 'is_retur', None)
 
 
 class InvoiceBayarBase(SQLModel):
