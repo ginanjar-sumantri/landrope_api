@@ -1746,7 +1746,7 @@ async def generate_printout(id:UUID | str):
         termin_histories.append(termin_history)
 
     komponen_biayas = []
-    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=id, jenis_bayar=termin_header.jenis_bayar)
+    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin.id, jenis_bayar=termin_header.jenis_bayar)
     for bb in obj_komponen_biayas:
         beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
