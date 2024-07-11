@@ -253,16 +253,24 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
 
         return result_return
     
-    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID], current_termin_id:UUID
+    async def get_multi_by_bidang_ids(self, bidang_ids:list[UUID], current_termin_id:UUID, jenis_bayar_current: JenisBayarEnum
                                       ) -> list[TerminHistoriesSch]:
         
         db_session = db.session
+
+        filter_query = ""
 
         ids:str = ""
         for bidang_id in bidang_ids:
                 ids += f"'{bidang_id}',"
         
         ids = ids[0:-1]
+
+        if jenis_bayar_current == JenisBayarEnum.DP:
+             filter_query = "and tr.jenis_bayar not in ('PELUNASAN', 'PENGEMBALIAN_BEBAN_PENJUAL')"
+        elif jenis_bayar_current == JenisBayarEnum.PELUNASAN:
+             filter_query = "and tr.jenis_bayar not in ('PENGEMBALIAN_BEBAN_PENJUAL')"
+             
 
         query = text(f"""
                 with subquery as (select
@@ -294,6 +302,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                 and py.is_void != true
                 and tr.id != '{current_termin_id}'
                 and Coalesce(pd.realisasi, False) = False
+                {filter_query}
                 group by tr.id, tr.tanggal_transaksi, i.created_at, s.satuan_bayar, s.amount
                 order by created_at asc)
                 select id, str_jenis_bayar, tanggal_transaksi, jenis_bayar, sum(amount) as amount, created_at from subquery
