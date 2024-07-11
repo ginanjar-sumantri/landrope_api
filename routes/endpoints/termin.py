@@ -1717,15 +1717,15 @@ async def generate_printout(id:UUID | str):
             sum_luas_bayar = "{:,.0f}".format(sum([invoice_.luas_bayar or 0 for invoice_ in invoice_in_termin_histories if invoice_.luas_bayar is not None]))
             termin_history.str_jenis_bayar = f"{termin_history.str_jenis_bayar} {count_bidang}BID luas {sum_luas_bayar}m2"
 
-        komponen_biayas = []
+        history_komponen_biayas = []
         obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin.id, jenis_bayar=termin.jenis_bayar, is_history=True)
         for bb in obj_komponen_biayas:
             beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
             beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
             beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
-            komponen_biayas.append(beban_biaya)
+            history_komponen_biayas.append(beban_biaya)
 
-        termin_history.beban_biayas = komponen_biayas
+        termin_history.beban_biayas = history_komponen_biayas
         invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
 
         nomor_uruts = []
@@ -1746,14 +1746,14 @@ async def generate_printout(id:UUID | str):
         termin_histories.append(termin_history)
 
     komponen_biayas = []
-    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin.id, jenis_bayar=termin_header.jenis_bayar)
+    obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin_header.id, jenis_bayar=termin_header.jenis_bayar)
     for bb in obj_komponen_biayas:
         beban_biaya = TerminBebanBiayaForPrintOut(**dict(bb))
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
         beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
     
-    amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True]
+    amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True and beban_penjual.is_retur == False]
     amount_beban_biaya = sum(amount_beban_biayas)
 
     harga_aktas = []
