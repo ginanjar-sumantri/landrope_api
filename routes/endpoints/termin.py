@@ -1622,7 +1622,7 @@ async def generate_printout(id:UUID | str):
     hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
 
     remarks = (termin_header.remark or '').splitlines()
-    #perhitungan utj (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
+    # PERHITUNGAN UTJ (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
     amount_utj_used = []
     termin_invoices:list[InvoiceForPrintOutExt] = []
     obj_invoices = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
@@ -1634,7 +1634,7 @@ async def generate_printout(id:UUID | str):
     
     amount_utj = sum(amount_utj_used) or 0
 
-    #untuk list bidang dalam 1 tahap
+    # LIST BIDANG DALAM SATU TAHAP
     obj_bidangs = await crud.tahap_detail.get_multi_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id)
 
     bidangs:list[TahapDetailForPrintOut] = []
@@ -1700,8 +1700,9 @@ async def generate_printout(id:UUID | str):
     total_luas_bayar = "{:,.0f}".format(sum([b.luas_bayar for b in obj_bidangs]))
     total_harga = "{:,.0f}".format(sum([b.total_harga for b in obj_bidangs]))
 
+    # HISTORY TERMIN, BEBAN BIAYA
     termin_histories = []
-    current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id)
+    current_termin_histories = await crud.termin.get_multi_by_bidang_ids(bidang_ids=list_bidang_id, current_termin_id=id, jenis_bayar_current=obj.jenis_bayar)
     for termin in current_termin_histories:
         termin_history = TerminHistoriesSch(**dict(termin))
         if termin_history.tanggal_transaksi:
@@ -1745,6 +1746,7 @@ async def generate_printout(id:UUID | str):
         termin_history.index_bidang = f"No. {index_no}"
         termin_histories.append(termin_history)
 
+    # KOMPONEN BIAYA TERMIN CURRENT
     komponen_biayas = []
     obj_komponen_biayas = await crud.termin.get_beban_biaya_by_id_for_printout(id=termin_header.id, jenis_bayar=termin_header.jenis_bayar)
     for bb in obj_komponen_biayas:
@@ -1752,8 +1754,21 @@ async def generate_printout(id:UUID | str):
         beban_biaya.beban_biaya_name = f"{beban_biaya.beban_biaya_name} {beban_biaya.tanggungan}"
         beban_biaya.amountExt = "{:,.0f}".format(beban_biaya.amount)
         komponen_biayas.append(beban_biaya)
+
+    # PERHITUNGAN KOMPONEN BIAYA TERMIN CURRENT
+    amount_beban_biayas = []
+    for beban_penjual in obj_komponen_biayas:
+        if obj.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
+            if beban_penjual.beban_pembeli == False and (beban_penjual.is_retur or False) == True and beban_penjual.is_void != True and obj.jenis_bayar == JenisBayarEnum.DP:
+                amount_beban_biayas.append(beban_penjual.amount)
+            elif beban_penjual.beban_pembeli == False and (beban_penjual.is_retur or False) == True and beban_penjual.is_void != True and obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                continue
+            elif beban_penjual.beban_pembeli == False and (beban_penjual.is_retur or False) == False and beban_penjual.is_void != True and obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+                amount_beban_biayas.append(beban_penjual.amount)
+            elif beban_penjual.beban_pembeli == False:
+                amount_beban_biayas.append(beban_penjual.amount)
     
-    amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True and beban_penjual.is_retur == False]
+    # amount_beban_biayas = [beban_penjual.amount for beban_penjual in obj_komponen_biayas if beban_penjual.beban_pembeli == False and beban_penjual.is_void != True and beban_penjual.is_retur == False]
     amount_beban_biaya = sum(amount_beban_biayas)
 
     harga_aktas = []
