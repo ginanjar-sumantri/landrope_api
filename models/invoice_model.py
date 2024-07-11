@@ -18,7 +18,8 @@ class InvoiceBase(SQLModel):
     spk_id:Optional[UUID] = Field(foreign_key="spk.id", nullable=True)
     bidang_id:Optional[UUID] = Field(foreign_key="bidang.id", nullable=True)
     amount:Optional[Decimal] = Field(nullable=True, default=0)
-    is_void:Optional[bool] = Field(nullable=True)
+    amount_netto: Decimal | None = Field(nullable=True, default=0)
+    is_void:Optional[bool] = Field(nullable=True, default=False)
     remark:Optional[str] = Field(nullable=True)
     use_utj:Optional[bool] = Field(nullable=True, default=False)
     void_by_id:Optional[UUID] = Field(foreign_key="worker.id", nullable=True)
@@ -338,7 +339,7 @@ class InvoiceDetail(InvoiceDetailFullBase, table=True):
                 amount = amount
             if self.bidang_komponen_biaya.beban_pembeli == False and self.bidang_komponen_biaya.is_retur == False and self.invoice.jenis_bayar == JenisBayarEnum.PELUNASAN:
                 amount = self.amount or 0
-                
+
         return round(amount, 0)
     
     @property
