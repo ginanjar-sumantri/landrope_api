@@ -178,12 +178,12 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         With subquery as (select
                         bb.name as beban_biaya_name,
                         case
-                                when idt.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
-                                when idt.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
+                                when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
+                                when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
                                 else '(Beban Penjual)'
                         end as tanggungan,
                         idt.amount As amount,
-                        idt.beban_pembeli,
+                        COALESCE(idt.beban_pembeli, bkb.beban_pembeli) as beban_pembeli,
                         bkb.is_void,
                         COALESCE(bkb.is_retur, FALSE) AS is_retur
                         from termin t
