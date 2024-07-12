@@ -66,6 +66,7 @@ class TerminByIdForPrintOut(SQLModel):
     created_at:Optional[datetime]
     nomor_tahap:Optional[int]
     amount:Optional[Decimal]
+    amount_netto:Optional[Decimal]
     project_name:Optional[str]
     desa_name:Optional[str]
     ptsk_name:Optional[str]

@@ -35,6 +35,23 @@ class CRUDTerminBayarDt(CRUDBase[TerminBayarDt, TerminBayarDtCreateSch, TerminBa
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    # FOR TERMIN UPDATE FUNCTION
+    async def get_ids_by_termin_bayar_ids(self, 
+                            *,
+                            list_ids:List[UUID] | None = None,
+                            db_session : AsyncSession | None = None
+                            ) -> List[UUID] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(TerminBayarDt).where(TerminBayarDt.termin_bayar_id.in_(list_ids))
+
+        response =  await db_session.execute(query)
+        result = response.scalars().all()
+        
+        datas = [data.id for data in result]
+        return datas
 
 
 termin_bayar_dt = CRUDTerminBayarDt(TerminBayarDt)

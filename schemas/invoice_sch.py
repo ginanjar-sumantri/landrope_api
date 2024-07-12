@@ -19,6 +19,7 @@ class InvoiceExtSch(SQLModel):
     spk_id:Optional[UUID]
     bidang_id:Optional[UUID]
     amount:Optional[Decimal]
+    amount_netto: Decimal | None    
     use_utj:Optional[bool]
     details: list[InvoiceDetailExtSch]|None
     bayars: list[InvoiceBayarExtSch] | None

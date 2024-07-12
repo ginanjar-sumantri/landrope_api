@@ -391,11 +391,11 @@ class Bidang(BidangFullBase, table=True):
             komponen_biaya_beban_penjual = [kb for kb in self.komponen_biayas if kb.beban_pembeli == False and kb.is_void != True and kb.is_paid == True]
             for beban in komponen_biaya_beban_penjual:
                 if beban.satuan_bayar == SatuanBayarEnum.Percentage and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * ((self.luas_bayar or self.luas_surat) * (harga or 0)/100)
+                    amount = (beban.estimated_amount or 0) * ((self.luas_bayar or self.luas_surat) * (harga or 0)/100)
                 elif beban.satuan_bayar == SatuanBayarEnum.Amount and beban.satuan_harga == SatuanHargaEnum.PerMeter2:
-                    amount = (beban.amount or 0) * (self.luas_bayar or self.luas_surat)
+                    amount = (beban.estimated_amount or 0) * (self.luas_bayar or self.luas_surat)
                 else:
-                    amount = beban.amount or 0
+                    amount = beban.estimated_amount or 0
                 
                 calculate.append(Decimal(amount))
             
@@ -417,7 +417,7 @@ class Bidang(BidangFullBase, table=True):
     def total_invoice(self) -> Decimal | None:
         total_invoice:Decimal = 0
         if len(self.invoices) > 0:
-            list_invoices = [inv.amount for inv in self.invoices if inv.is_void != True]
+            list_invoices = [inv.amount_netto for inv in self.invoices if inv.is_void != True]
             total_invoice = Decimal(sum(list_invoices))
         
         return Decimal(total_invoice)
@@ -452,11 +452,13 @@ class Bidang(BidangFullBase, table=True):
             payments = [payment.amount for invoice in self.invoices if invoice.is_void != True and invoice.jenis_bayar != JenisBayarEnum.BIAYA_LAIN for payment in invoice.payment_details if payment.is_void != True and payment.realisasi != True]
             total_payment = Decimal(sum(payments))
         
-        if len(self.komponen_biayas) > 0:
-            beban_biayas = [x.invoice_detail_amount for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True and x.is_retur != True]
-            total_beban_penjual = Decimal(sum(beban_biayas))
+        # if len(self.komponen_biayas) > 0:
+        #     beban_biayas = [x.invoice_detail_amount for x in self.komponen_biayas if x.is_void != True and x.is_paid == True and x.beban_pembeli == False and x.is_add_pay != True and x.is_retur != True]
+        #     total_beban_penjual = Decimal(sum(beban_biayas))
 
-        return Decimal(total_payment + total_beban_penjual)
+        # return Decimal(total_payment + total_beban_penjual)
+
+        return Decimal(total_payment)
     
     @property
     def sisa_pelunasan(self) -> Decimal | None:
