@@ -176,16 +176,23 @@ class Invoice(InvoiceFullBase, table=True):
             array_payment = [payment_dtl.amount for payment_dtl in self.payment_details if payment_dtl.is_void != True and payment_dtl.realisasi != True]
             total_payment = sum(array_payment)
         
-        return Decimal(self.amount - Decimal(total_payment) - self.amount_beban - self.utj_amount)
+        # OLD
+        # return Decimal(self.amount - Decimal(total_payment) - self.amount_beban - self.utj_amount)
+
+        return Decimal(self.amount_netto - Decimal(total_payment))
     
-    @property
-    def amount_nett(self) -> Decimal | None:
-        return Decimal(self.amount - self.amount_beban - self.utj_amount)
+    # @property
+    # def amount_nett(self) -> Decimal | None:
+    #     return Decimal(self.amount - self.amount_beban - self.utj_amount)
     
     @property
     def amount_beban(self) -> Decimal | None:
         beban_penjual = 0
-        beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False and (dt.bidang_komponen_biaya.is_void or False) == False])
+
+        #OLD
+        # beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.bidang_komponen_biaya.beban_pembeli ==  False and (dt.bidang_komponen_biaya.is_void or False) == False])
+
+        beban_penjual = sum([dt.amount_beban_penjual for dt in self.details if dt.beban_pembeli ==  False])
         
         return beban_penjual
     
@@ -300,6 +307,7 @@ class InvoiceDetailBase(SQLModel):
     invoice_id:Optional[UUID] = Field(foreign_key="invoice.id")
     bidang_komponen_biaya_id:Optional[UUID] = Field(foreign_key="bidang_komponen_biaya.id")
     amount:Optional[Decimal] = Field(nullable=True)
+    beban_pembeli: bool | None = Field(nullable=True)
 
 class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):
     pass

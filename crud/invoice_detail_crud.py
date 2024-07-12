@@ -48,7 +48,7 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
-    #for termin update function
+    # FOR TERMIN UPDATE FUNCTION
     async def get_ids_by_invoice_ids(self, 
                             *,
                             list_ids:List[UUID] | None = None,

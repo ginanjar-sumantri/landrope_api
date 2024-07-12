@@ -145,19 +145,6 @@ async def update(id:UUID, sch:InvoiceUpdateSch,
     obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-@router.delete("/delete", response_model=DeleteResponseBaseSch[InvoiceSch], status_code=status.HTTP_200_OK)
-async def delete(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-    """Delete a object"""
-
-    obj_current = await crud.invoice.get(id=id)
-    if not obj_current:
-        raise IdNotFoundException(Invoice, id)
-    
-    obj_deleted = await crud.invoice.remove(id=id)
-
-    return obj_deleted
-
 @router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdVoidSch])
 async def void(id:UUID, sch:InvoiceVoidSch,
                background_task:BackgroundTasks,

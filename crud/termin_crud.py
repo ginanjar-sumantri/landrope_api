@@ -101,6 +101,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         t.nomor_tahap,
                         tr.nomor_memo,
                         SUM(i.amount) as amount,
+                        SUM(COALESCE(i.amount_netto, 0)) as amount_netto,
                         pr.name as project_name,
                         ds.name as desa_name,
                         pt.name as ptsk_name,
@@ -173,30 +174,16 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         if jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
              filter_by_jenis_bayar = "and bkb.is_add_pay = true"
 
-        if is_history == False:
-             tanggungan = """
-                        case
-                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
-                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
-                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PELUNASAN' and bkb.is_retur = true then '(Pengembalian Beban Penjual)'
-                                else '(Beban Penjual)'
-                        end as tanggungan,
-                        """
-        else:
-             tanggungan = """
-                        case
-                                when bkb.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
-                                when bkb.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
-                                else '(Beban Penjual)'
-                        end as tanggungan,
-                        """
-
         query = text(f"""
                         With subquery as (select
                         bb.name as beban_biaya_name,
-                        {tanggungan}
+                        case
+                                when idt.beban_pembeli is true and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
+                                when idt.beban_pembeli is false and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
+                                else '(Beban Penjual)'
+                        end as tanggungan,
                         idt.amount As amount,
-                        bkb.beban_pembeli,
+                        idt.beban_pembeli,
                         bkb.is_void,
                         COALESCE(bkb.is_retur, FALSE) AS is_retur
                         from termin t
@@ -267,11 +254,10 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
         ids = ids[0:-1]
 
         if jenis_bayar_current == JenisBayarEnum.DP:
-             filter_query = "and tr.jenis_bayar not in ('PELUNASAN', 'PENGEMBALIAN_BEBAN_PENJUAL')"
+             filter_query = f"and tr.jenis_bayar not in ('{JenisBayarEnum.PELUNASAN.value}', '{JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value}', '{JenisBayarEnum.SISA_PELUNASAN.value}')"
         elif jenis_bayar_current == JenisBayarEnum.PELUNASAN:
-             filter_query = "and tr.jenis_bayar not in ('PENGEMBALIAN_BEBAN_PENJUAL')"
+             filter_query = f"and tr.jenis_bayar not in ('{JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL.value}', '{JenisBayarEnum.SISA_PELUNASAN.value}')"
              
-
         query = text(f"""
                 with subquery as (select
                 tr.id,
