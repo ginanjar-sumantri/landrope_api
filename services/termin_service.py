@@ -874,11 +874,11 @@ class TerminService:
             bidangs.append(bidang)
             no = no + 1
         
-        nomor_urut:str = ", ".join(nomor_urut_bidang)
-        # for no in nomor_urut_bidang:
-        #     nomor_urut += f"{no}, "
+        nomor_urut:str = ""
+        for no in nomor_urut_bidang:
+            nomor_urut += f"{no}, "
         
-        # nomor_urut = f"No. {nomor_urut[0:-2]}"
+        nomor_urut = f"No. {nomor_urut[0:-2]}"
 
         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
 
