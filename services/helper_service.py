@@ -80,6 +80,7 @@ class HelperService:
         trans_at = trans_at.replace(tzinfo=None)
         return trans_at
 
+    # FUNCTION UNTUK UPDATE STATUS BEBAS/BELUM BEBAS BIDANG
     async def bidang_update_status(self, bidang_ids:list[UUID]):
         for id in bidang_ids:
             payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
