@@ -7,9 +7,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import selectinload
 from models import (Invoice, Worker, Bidang, Termin, PaymentDetail, Payment, InvoiceDetail, BidangKomponenBiaya,
                     Planing, Ptsk, Skpt, Project, Desa, Tahap, PaymentGiroDetail)
-from models.code_counter_model import CodeCounterEnum
 from schemas.invoice_sch import (InvoiceSch, InvoiceCreateSch, InvoiceUpdateSch, InvoiceByIdSch, InvoiceVoidSch, InvoiceByIdVoidSch)
-from schemas.termin_sch import TerminUpdateBaseSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, 
                                   DeleteResponseBaseSch, GetResponsePaginatedSch, 
                                   PutResponseBaseSch, create_response)
@@ -17,10 +15,9 @@ from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code_month
 from common.enum import JenisBayarEnum, WorkflowLastStatusEnum, WorkflowEntityEnum
 from services.helper_service import HelperService
-from datetime import date
+from services.invoice_service import InvoiceService
 import crud
 import json
-import roman
 
 
 router = APIRouter()
@@ -145,7 +142,7 @@ async def update(id:UUID, sch:InvoiceUpdateSch,
     obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdVoidSch])
+@router.put("/void/{id}")
 async def void(id:UUID, sch:InvoiceVoidSch,
                background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -169,51 +166,16 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:
         raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
     
-    obj_updated = obj_current
-    obj_updated.is_void = True
-    obj_updated.void_reason = sch.void_reason
-    obj_updated.void_by_id = current_worker.id
-    obj_updated.void_at = date.today()
-
-    obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
-    if obj_current.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL:
-        for dt in obj_current.details:
-            bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.get(id=dt.bidang_komponen_biaya_id)
-            bidang_komponen_biaya_updated = bidang_komponen_biaya_current
-            
-
-            await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_updated, db_session=db_session, with_commit=False)
-
+    await InvoiceService().void(obj_current=obj_current, current_worker=current_worker, reason=sch.void_reason, db_session=db_session)
+    
     bidang_ids = []
-    for dt in obj_current.payment_details:
-        payment_dtl_updated = dt
-        payment_dtl_updated.is_void = True
-        payment_dtl_updated.void_reason = sch.void_reason
-        payment_dtl_updated.void_by_id = current_worker.id
-        payment_dtl_updated.void_at = date.today()
-        
-        await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
-
-    # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID
-    invoices_active = await crud.invoice.get_multi_invoice_active_by_termin_id(termin_id=obj_current.termin_id, db_session=db_session)
-    if len(invoices_active) == 0:
-        termin = await crud.termin.get(id=obj_current.termin_id)
-        termin_updated = TerminUpdateBaseSch(**termin.dict())
-        termin_updated.is_void = True
-        termin_updated.void_reason = sch.void_reason
-        termin_updated.void_by_id = current_worker.id
-        termin_updated.void_at = date.today()
-        await crud.termin.update(obj_current=termin, obj_new=termin_updated, db_session=db_session, with_commit=False)
-
-    await db_session.commit()
-
-    bidang_ids.append(obj_updated.bidang_id)
-
+    bidang_ids.append(obj_current.bidang_id)
+    
+    # BACKGROUND TASKS UNTUK UPDATE STATUS BEBAS/BELUM BEBAS BIDANG
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
 
-    obj_updated = await crud.invoice.get_by_id(id=obj_updated.id)
-    return create_response(data=obj_updated) 
+    return create_response({"detail": "SUCCESS"})
+
 
 @router.get("/updated/payment_status",)
 async def payment_status_updated():
