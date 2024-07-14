@@ -359,19 +359,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     """
 
         query = text(f"""
-                    WITH utj_query AS (SELECT
-                        i.bidang_id AS bidang_id,
-                        SUM(COALESCE(pdt.amount, 0)) AS amount
-                    FROM invoice i
-                        INNER JOIN termin tr ON tr.id = i.termin_id
-                        LEFT JOIN payment_detail pdt ON i.id = pdt.invoice_id
-                    WHERE 
-                        COALESCE(tr.is_void, FALSE) IS FALSE
-                        AND COALESCE(i.is_void, FALSE) IS FALSE
-                        AND tr.jenis_bayar in ('UTJ', 'UTJ_KHUSUS')
-                        AND COALESCE(pdt.is_void, FALSE) IS FALSE
-                        AND COALESCE(pdt.realisasi, FALSE) IS FALSE
-                        GROUP BY i.bidang_id),
+                    WITH
                     payment_detail_query AS (SELECT 
                         pdt.invoice_id,
                         SUM(pdt.amount) AS amount
@@ -380,28 +368,15 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                     WHERE COALESCE(pdt.is_void, FALSE) IS FALSE
                         AND COALESCE(i.is_void, FALSE) IS FALSE
                         AND COALESCE(pdt.realisasi, FALSE) IS FALSE
-                    GROUP BY pdt.invoice_id),
-                    komponen_biaya_query AS (SELECT 
-                        idt.invoice_id,
-                        SUM(idt.amount) AS amount
-                    FROM invoice_detail idt
-                        INNER JOIN bidang_komponen_biaya kb ON kb.id = idt.bidang_komponen_biaya_id
-                        INNER JOIN invoice i ON i.id = idt.invoice_id
-                    WHERE 
-                        COALESCE(i.is_void, FALSE) IS FALSE
-                        AND COALESCE(kb.is_void, FALSE) IS FALSE
-                        AND COALESCE(kb.beban_pembeli, FALSE) IS FALSE
-                    GROUP BY idt.invoice_id)
+                    GROUP BY pdt.invoice_id)
                     SELECT
                         i.*
                     FROM invoice i
-                        LEFT JOIN utj_query u ON u.bidang_id = i.bidang_id and COALESCE(i.use_utj, FALSE) is TRUE
                         LEFT JOIN payment_detail_query p ON i.id = p.invoice_id
-                        LEFT JOIN komponen_biaya_query k ON i.id = k.invoice_id
                         INNER JOIN termin tr ON tr.id = i.termin_id
                         INNER JOIN bidang b ON b.id = i.bidang_id
                     WHERE 
-                        i.amount - (COALESCE(u.amount, 0) + COALESCE(p.amount, 0) + COALESCE(k.amount, 0)) > 0
+                        COALESCE(i.amount_netto, 0) - COALESCE(p.amount, 0) > 0
                         AND COALESCE(i.is_void, FALSE) IS FALSE
                     {filter}
         """)
