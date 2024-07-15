@@ -10,22 +10,33 @@ from schemas.workflow_history_sch import WorkflowHistoryCreateSch
 from schemas.workflow_next_approver_sch import WorkflowNextApproverCreateSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 from services.helper_service import HelperService
+from services.signature_service import SignatureService
 from services.gcloud_task_service import GCloudTaskService
+from configs.config import settings
 from common.exceptions import (IdNotFoundException, ImportFailedException)
 from common.generator import generate_code
 from common.enum import WorkflowLastStatusEnum, WorkflowEntityEnum
 from models.code_counter_model import CodeCounterEnum
 from datetime import datetime
 import crud
+import json
 
 router = APIRouter()
 
 @router.post("/notification")
-async def notification(sch: WorkflowSystemCallbackSch, request:Request):
+async def notification(payload: dict, request:Request):
     
     """Create a new object"""
     try:
         db_session = db.session
+
+        signature = request.headers.get("Signature", None)
+        verify = SignatureService().verify_signature_request(msg=payload, signature=signature, client_public_key=settings.WF_PUBLIC_KEY)
+
+        if verify == False:
+            raise HTTPException(status_code=401, detail="Signature not authorize!")
+
+        sch = WorkflowSystemCallbackSch(**payload)
 
         obj_current = await crud.workflow.get_by_reference_id(reference_id=sch.client_reff_no)
         if obj_current is None:

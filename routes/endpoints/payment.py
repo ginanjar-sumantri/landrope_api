@@ -38,7 +38,7 @@ async def create(
     sum_amount_invoice = sum([invoice.amount for invoice in sch.details])
     sum_amount_komponen = sum([komponen.amount for komponen in sch.komponens])
 
-    if (sum_amount_invoice + sum_amount_komponen) > sum_amount_giro:
+    if (sum_amount_invoice + sum_amount_komponen) != sum_amount_giro:
         HTTPException(status_code=422, detail="Total semua pembayaran tidak boleh lebih besar dari Total Giro/Cek")
 
     bidang_ids = []
