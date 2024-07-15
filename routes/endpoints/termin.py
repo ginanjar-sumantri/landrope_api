@@ -251,7 +251,7 @@ async def update_(
             if total_utj > kjb_hd_current.utj_amount:
                 raise HTTPException(status_code=422, detail="Total UTJ tidak boleh lebih besar dari UTJ amount di KJB")
             
-        obj_updated = await TerminService().edit_termin(obj_current=obj_updated, sch=sch, db_session=db_session, current_worker=current_worker, request=request)
+        obj_updated = await TerminService().edit_termin(obj_current=obj_current, sch=sch, db_session=db_session, current_worker=current_worker, request=request)
 
         if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
             background_task.add_task(TerminService.generate_printout, obj_updated.id)
