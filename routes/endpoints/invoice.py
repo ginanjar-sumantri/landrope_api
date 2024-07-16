@@ -142,7 +142,7 @@ async def update(id:UUID, sch:InvoiceUpdateSch,
     obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-@router.put("/void/{id}")
+@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
 async def void(id:UUID, sch:InvoiceVoidSch,
                background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
@@ -173,7 +173,9 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     # BACKGROUND TASKS UNTUK UPDATE STATUS BEBAS/BELUM BEBAS BIDANG
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
 
-    return create_response({"detail": "SUCCESS"})
+    obj_updated = await crud.invoice.get_by_id(id=obj_current.id)
+
+    return create_response(data=obj_updated)
 
 
 @router.get("/updated/payment_status",)
