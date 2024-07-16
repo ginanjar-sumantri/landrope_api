@@ -43,7 +43,8 @@ class CRUDBebanBiaya(CRUDBase[BebanBiaya, BebanBiayaCreateSch, BebanBiayaUpdateS
             from 
                 beban_biaya 
             inner join 
-                bidang_komponen_biaya on beban_biaya.id = bidang_komponen_biaya.beban_biaya_id
+                bidang_komponen_biaya on beban_biaya.id = bidang_komponen_biaya.beban_biaya_id 
+                and (bidang_komponen_biaya.beban_pembeli = True or bidang_komponen_biaya.is_retur = True)
             inner join 
                 invoice_detail on bidang_komponen_biaya.id = invoice_detail.bidang_komponen_biaya_id
             inner join 
