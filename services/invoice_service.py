@@ -3,6 +3,7 @@ from fastapi import HTTPException
 
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
+import crud.payment_komponen_biaya_detail_crud
 from models import Invoice, Worker
 from schemas.invoice_sch import InvoiceUpdateSch
 from schemas.payment_detail_sch import PaymentDetailUpdateSch
@@ -59,8 +60,15 @@ class InvoiceService:
             
             await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
+        
+
         # DELETE INVOICE DETAIL KETIKA INVOICE BUKAN DARI UTJ/UTJ KHUSUS
         for inv_dtl in obj_current.details:
+            payment_komponen_biayas = await crud.payment_komponen_biaya_detail.get_by_invoice_detail_id(invoice_detail_id=inv_dtl.id)
+
+            for pkb in payment_komponen_biayas:
+                await crud.payment_komponen_biaya_detail.remove(id=pkb.id, db_session=db_session, with_commit=False)
+
             await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
 
         # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID
