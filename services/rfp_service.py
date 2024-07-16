@@ -271,7 +271,6 @@ class RfpService:
     async def rfp_void(self, rfp_head:RfpHeadNotificationSch):
         
         db_session = db.session
-        db_session.autoflush = False
 
         termin = await crud.termin.get(id=rfp_head.client_ref_no)
 
