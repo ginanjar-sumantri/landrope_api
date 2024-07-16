@@ -18,6 +18,18 @@ from sqlalchemy import exc
 
 
 class CRUDPaymentKomponenBiayaDetail(CRUDBase[PaymentKomponenBiayaDetail, PaymentKomponenBiayaDetailCreateSch, PaymentKomponenBiayaDetailUpdateSch]):
-    pass
+    async def get_by_invoice_detail_id(self, 
+                  *, 
+                  invoice_detail_id: UUID | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> List[PaymentKomponenBiayaDetail] | None:
+        
+        db_session = db_session or db.session
+        
+        query = select(PaymentKomponenBiayaDetail).where(PaymentKomponenBiayaDetail.invoice_detail_id == invoice_detail_id)
+        
+        response = await db_session.execute(query)
+
+        return response.scalars().all()
 
 payment_komponen_biaya_detail = CRUDPaymentKomponenBiayaDetail(PaymentKomponenBiayaDetail)
