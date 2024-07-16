@@ -142,7 +142,7 @@ async def update(id:UUID, sch:InvoiceUpdateSch,
     obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     return create_response(data=obj_updated)
 
-@router.put("/void/{id}", response_model=GetResponseBaseSch[InvoiceByIdSch])
+@router.put("/void/{id}")
 async def void(id:UUID, sch:InvoiceVoidSch,
                background_task:BackgroundTasks,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
