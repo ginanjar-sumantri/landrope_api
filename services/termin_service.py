@@ -133,6 +133,8 @@ class TerminService:
                                             code=f"INV/{last_number}/{jenis_bayar_to_text.get(sch.jenis_bayar, sch.jenis_bayar)}/LA/{month}/{year}", 
                                             is_void=False
                                         )
+            # KALAU UTJ AMBIL AMOUNT NETTONYA DARI AMOUNT
+            invoice_sch.amount_netto = invoice.amount if sch.jenis_bayar in (JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS) else invoice.amount_netto
             
             new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
@@ -322,6 +324,8 @@ class TerminService:
             if invoice_current:
                 invoice_updated_sch = InvoiceUpdateSch(**invoice.dict())
                 invoice_updated_sch.is_void = invoice_current.is_void
+                # KALAU UTJ AMBIL AMOUNT NETTONYA DARI AMOUNT
+                invoice_updated_sch.amount_netto = invoice.amount if sch.jenis_bayar in (JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS) else invoice.amount_netto
                 invoice_updated = await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated_sch, with_commit=False, db_session=db_session, updated_by_id=current_worker.id)
                 current_ids_invoice.remove(invoice_current.id)
 
@@ -436,6 +440,9 @@ class TerminService:
                                                 code=f"INV/{last_number}/{jns_byr}/LA/{month}/{year}", 
                                                 is_void=False
                                             )
+                
+                # KALAU UTJ AMBIL AMOUNT NETTONYA DARI AMOUNT
+                invoice_sch.amount_netto = invoice.amount if sch.jenis_bayar in (JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS) else invoice.amount_netto
                 
                 new_obj_invoice = await crud.invoice.create(obj_in=invoice_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
 
