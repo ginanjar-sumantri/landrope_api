@@ -148,7 +148,6 @@ async def void(id:UUID, sch:InvoiceVoidSch,
                  current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """void a obj by its ids"""
-    db_session = db.session
 
     obj_current = await crud.invoice.get_by_id(id=id)
 
@@ -166,7 +165,7 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:
         raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
     
-    await InvoiceService().void(obj_current=obj_current, current_worker=current_worker, reason=sch.void_reason, db_session=db_session)
+    await InvoiceService().void(obj_current=obj_current, current_worker=current_worker, reason=sch.void_reason)
     
     bidang_ids = []
     bidang_ids.append(obj_current.bidang_id)

@@ -328,12 +328,13 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
     async def get_multi_invoice_active_by_termin_id(self, 
                   *, 
                   termin_id: UUID | str | None = None,
+                  invoice_id: UUID | str | None = None,
                   db_session: AsyncSession | None = None
                   ) -> list[Invoice] | None:
         
         db_session = db_session or db.session
         
-        query = select(Invoice).where(and_(func.coalesce(Invoice.is_void, False) == False, Invoice.termin_id == termin_id))
+        query = select(Invoice).where(and_(Invoice.is_void == False, Invoice.id != invoice_id, Invoice.termin_id == termin_id))
         
         response = await db_session.execute(query)
 

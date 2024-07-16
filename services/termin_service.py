@@ -807,12 +807,12 @@ class TerminService:
         termin_header = TerminByIdForPrintOut(**dict(obj))
 
         # MENGUBAH TANGGAL TRANSAKSI DAN CREATED DATE MENJADI FORMAT INDONESIA SESUAI DENGAN FORMAT USER
-        tanggal_transaksi = termin_header.tanggal_transaksi.strftime("%d-%m-%Y")
+        tanggal_transaksi = (termin_header.tanggal_transaksi or date.today()).strftime("%d-%m-%Y")
         bulan_created_en = termin_header.created_at.strftime('%B')
         bulan_created_id = self.bulan_dict.get(bulan_created_en, bulan_created_en)
         created_at = termin_header.created_at.strftime(f'%d {bulan_created_id} %Y')
 
-        nama_bulan_inggris = termin_header.tanggal_rencana_transaksi.strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
+        nama_bulan_inggris = (termin_header.tanggal_rencana_transaksi or date.today()).strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
         nama_bulan_indonesia = self.bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
         tanggal_hasil = termin_header.tanggal_rencana_transaksi.strftime(f'%d {nama_bulan_indonesia} %Y')
         day_of_week = termin_header.tanggal_rencana_transaksi.strftime("%A")
