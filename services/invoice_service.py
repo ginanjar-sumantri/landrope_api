@@ -60,11 +60,10 @@ class InvoiceService:
             await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
         # DELETE INVOICE DETAIL KETIKA INVOICE BUKAN DARI UTJ/UTJ KHUSUS
-        if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
-            for inv_dtl in obj_current.details:
-                await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
+        for inv_dtl in obj_current.details:
+            await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
 
-         # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID
+        # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID
         invoices_active = await crud.invoice.get_multi_invoice_active_by_termin_id(termin_id=obj_current.termin_id, invoice_id=obj_current.id, db_session=db_session)
         if len(invoices_active) == 0:
             termin = await crud.termin.get(id=obj_current.termin_id)

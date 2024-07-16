@@ -7,8 +7,9 @@ from fastapi_async_sqlalchemy import db
 from common.exceptions import IdNotFoundException
 from schemas.termin_sch import TerminUpdateBaseSch
 from schemas.rfp_sch import RfpHeadNotificationSch
+from schemas.invoice_sch import InvoiceUpdateSch
 from schemas.payment_sch import PaymentCreateSch
-from schemas.payment_detail_sch import PaymentDetailExtSch
+from schemas.payment_detail_sch import PaymentDetailExtSch, PaymentDetailUpdateSch
 from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch
 from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch
 from services.invoice_service import InvoiceService
@@ -281,7 +282,38 @@ class RfpService:
 
         invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
         for invoice in invoices:
-            await InvoiceService().void(obj_current=invoice, current_worker=worker, reason=rfp_head.void_reason)
+            obj_updated = InvoiceUpdateSch.from_orm(invoice)
+            obj_updated.is_void = True
+            obj_updated.void_reason = rfp_head.void_reason
+            obj_updated.void_by_id = worker.id
+            obj_updated.void_at = date.today()
+
+            await crud.invoice.update(obj_current=invoice, obj_new=obj_updated, db_session=db_session, with_commit=False)
+
+            # VOID PAYMENT DETAIL
+            for dt in invoice.payment_details:
+                payment_dtl_updated = PaymentDetailUpdateSch.from_orm(dt)
+                payment_dtl_updated.is_void = True
+                payment_dtl_updated.void_reason = rfp_head.void_reason
+                payment_dtl_updated.void_by_id = worker.id
+                payment_dtl_updated.void_at = date.today()
+                
+                await crud.payment_detail.update(obj_current=dt, obj_new=payment_dtl_updated, db_session=db_session, with_commit=False)
+
+            # DELETE INVOICE DETAIL KETIKA INVOICE BUKAN DARI UTJ/UTJ KHUSUS
+            for inv_dtl in invoice.details:
+                await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
+
+        # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID
+        invoices_active = await crud.invoice.get_multi_invoice_active_by_termin_id(termin_id=invoice.termin_id, invoice_id=invoice.id, db_session=db_session)
+        if len(invoices_active) == 0:
+            termin = await crud.termin.get(id=invoice.termin_id)
+            termin_updated = TerminUpdateBaseSch.from_orm(termin)
+            termin_updated.is_void = True
+            termin_updated.void_reason = rfp_head.void_reason
+            termin_updated.void_by_id = worker.id
+            termin_updated.void_at = date.today()
+            await crud.termin.update(obj_current=termin, obj_new=termin_updated, db_session=db_session, with_commit=False)
 
         try:
             await db_session.commit()

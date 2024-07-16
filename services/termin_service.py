@@ -297,7 +297,7 @@ class TerminService:
                             await crud.termin_bayar_dt.update(obj_current=termin_bayar_dt_current, obj_new=termin_bayar_dt_updated_sch, db_session=db_session, with_commit=False)
                             current_ids_termin_byr_dt.remove(termin_bayar_dt_current.id)
                         else:
-                            termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                            termin_bayar_dt_sch = TerminBayarDtCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
                             await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
             # ADD
             else:
@@ -307,7 +307,7 @@ class TerminService:
                 # ADD TERMIN BAYAR DETAIL
                 if termin_bayar.termin_bayar_dts:
                     for termin_bayar_dt in termin_bayar.termin_bayar_dts:
-                        termin_bayar_dt_sch = TerminBayarCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
+                        termin_bayar_dt_sch = TerminBayarDtCreateSch(**termin_bayar_dt.dict(), termin_bayar_id=obj_termin_bayar.id)
                         await crud.termin_bayar_dt.create(obj_in=termin_bayar_dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
         
             termin_bayar_temp.append({"termin_bayar_id" : obj_termin_bayar.id, "id_index" : termin_bayar.id_index})
