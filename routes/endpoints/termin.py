@@ -10,7 +10,7 @@ import crud
 from models import (Termin, Worker, Invoice, InvoiceDetail, Tahap, TahapDetail, KjbHd, Spk, Bidang, PaymentDetail, Payment, PaymentGiroDetail, 
                     Planing, Workflow, WorkflowNextApprover, BidangKomponenBiaya, Planing, Project, Desa, Ptsk)
 from schemas.tahap_sch import TahapSrcSch
-from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, TerminByIdSch, TerminBidangIDSch, TerminIdSch, TerminVoidSch, TerminFilterJson)
+from schemas.termin_sch import (TerminSch, TerminCreateSch, TerminUpdateSch, TerminByIdSch, TerminBidangIDSch, TerminIdSch, TerminVoidSch, TerminFilterJson, TerminUpdateBaseSch)
 from schemas.invoice_sch import (InvoiceHistoryInTermin)
 from schemas.spk_sch import SpkSrcSch, SpkInTerminSch, SpkIdSch, SpkJenisBayarSch
 from schemas.kjb_hd_sch import KjbHdForTerminByIdSch, KjbHdSearchSch
@@ -901,7 +901,7 @@ async def create_workflow(payload:Dict, request:Request):
     wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
     await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
 
-    return {"message" : "successfully"}
+    return create_response({"detail": "SUCCESS"})
 
 # TASK CREATE RFP
 @router.post("/task/create_rfp")
@@ -909,9 +909,17 @@ async def create_rfp(payload: Dict):
 
     data, msg = await RfpService().create_rfp(termin_id=payload["id"])
 
-    # if data is not None:
-    #     await crud.termin_rfp_payment.create_(sch=data)
-    # else:
-    #     raise HTTPException(status_code=409, detail=msg)
+    if data is not None:
+        termin_current = await crud.termin.get(id=data.client_ref_no)
+        if termin_current is None:
+            raise HTTPException(status_code=404, detail="Memo Bayar not found!")
+        
+        termin_updated = TerminUpdateBaseSch.from_orm(termin_current)
+        termin_updated.rfp_ref_no = data.id
+        termin_updated.rfp_last_status = data.current_step
 
-    return {"message":"successfully"}
+        await crud.termin.update(obj_current=termin_current, obj_new=termin_updated)
+    else:
+        raise HTTPException(status_code=409, detail=msg)
+
+    return create_response({"detail": "SUCCESS"})
