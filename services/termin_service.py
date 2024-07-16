@@ -251,7 +251,7 @@ class TerminService:
         current_ids_invoice_dt = await crud.invoice_detail.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
         current_ids_invoice_byr = await crud.invoice_bayar.get_ids_by_invoice_ids(list_ids=current_ids_invoice)
         current_ids_termin_byr = await crud.termin_bayar.get_ids_by_termin_id(termin_id=obj_current.id)
-        current_ids_termin_byr_dt = await crud.termin_bayar_dt.get_ids_by_termin_bayar_ids(list_ids=current_ids_invoice_byr)
+        current_ids_termin_byr_dt = await crud.termin_bayar_dt.get_ids_by_termin_bayar_ids(list_ids=current_ids_termin_byr)
 
         # REMOVE BIDANG KOMPONEN BIAYA YANG TERPILIH FLAG IS_DELETE PADA INVOICE DETAIL
         current_ids_bidang_komponen_biaya = [r.bidang_komponen_biaya_id for invoice in sch.invoices for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted]
