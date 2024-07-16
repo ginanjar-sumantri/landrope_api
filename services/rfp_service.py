@@ -11,6 +11,7 @@ from schemas.payment_sch import PaymentCreateSch
 from schemas.payment_detail_sch import PaymentDetailExtSch
 from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch
 from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch
+from services.invoice_service import InvoiceService
 from common.enum import PaymentMethodEnum, ActivityEnum, SatuanBayarEnum, activity_landrope_to_activity_rfp_dict
 from configs.config import settings
 
@@ -255,14 +256,58 @@ class RfpService:
         rfp_head = RfpHeadNotificationSch(**rfp_header_payload)
 
         if rfp_head.is_void:
-            pass
+            await self.rfp_void(rfp_head=rfp_head)
+            return True
 
         if rfp_head.current_step != "Completed":
-            pass
+            await self.rfp_updated_status(rfp_head=rfp_head)
+            return True
 
         if rfp_head.current_step == "Completed":
-            await self.rfp_completed(rfp_header_payload=rfp_header_payload)
-  
+            await self.rfp_completed(rfp_head=rfp_header_payload)
+            return True
+
+    # JIKA RFP VOID
+    async def rfp_void(self, rfp_head:RfpHeadNotificationSch):
+        
+        db_session = db.session
+        db_session.autoflush = False
+
+        termin = await crud.termin.get(id=rfp_head.client_ref_no)
+
+        if termin is None:
+            raise HTTPException(status_code=404, detail=f"termin not found. Id : {rfp_head.client_ref_no}")
+        
+        worker = await crud.worker.get(id=termin.updated_by_id)
+
+        invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
+        for invoice in invoices:
+            await InvoiceService().void(obj_current=invoice, current_worker=worker, reason=rfp_head.void_reason)
+
+        try:
+            await db_session.commit()
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=str(e.args))
+
+    # UPDATE RFP LAST STATUS PADA MEMO BAYAR (TERMIN)
+    async def rfp_updated_status(self, rfp_head:RfpHeadNotificationSch):
+        
+        termin = await crud.termin.get(id=rfp_head.client_ref_no)
+
+        if termin is None:
+            raise HTTPException(status_code=404, detail=f"termin not found. Id : {rfp_head.client_ref_no}")
+        
+        # UPDATE TERMIN
+        termin_update = TerminUpdateBaseSch.from_orm(termin)
+        termin_update.rfp_ref_no = rfp_head.id
+        termin_update.rfp_last_status = rfp_head.current_step
+
+        try:
+            await crud.termin.update(obj_current=termin, obj_new=termin_update)
+        except Exception as e:
+            raise HTTPException(status_code=409, detail=str(e.args))
+
+    # UPDTE RFP LAST STATUS PADA MEMO BAYAR (TERMIN) SEKALIGUS GENERATE PAYMENT
     async def rfp_completed(self, rfp_head:RfpHeadNotificationSch):
 
         termin = await crud.termin.get(id=rfp_head.client_ref_no)
@@ -370,7 +415,7 @@ class RfpService:
 
         try:
             db_session = db.session
-            
+
             await crud.payment.create(obj_in=payment, db_session=db_session, with_commit=False)
             await crud.termin.update(obj_current=termin, obj_new=termin_update, db_session=db_session, with_commit=False)
 

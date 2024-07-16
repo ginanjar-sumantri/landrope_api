@@ -7,4 +7,6 @@ router = APIRouter()
 @router.post("/notification")
 async def notification(payload: dict, request:Request):
 
-    return {"result" : True}
+    result = await RfpService().notification_center(payload=payload)
+
+    return {"result" : result}
