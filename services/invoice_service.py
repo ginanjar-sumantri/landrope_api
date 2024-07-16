@@ -14,10 +14,8 @@ import crud
 class InvoiceService:
 
     async def void(self, obj_current: Invoice, current_worker: Worker, reason: str, db_session: AsyncSession):
-        
-        termin = await crud.termin.get(id=obj_current.termin_id)
 
-        if termin.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
+        if obj_current.termin.jenis_bayar in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
             await self.void_invoice_utj(obj_current=obj_current, db_session=db_session)
         else:
             await self.void_invoice_reguler(obj_current=obj_current, reason=reason, current_worker=current_worker, db_session=db_session)
@@ -25,11 +23,15 @@ class InvoiceService:
 
     # VOID INVOICE UTJ. DELETE DATA INVOICE DAN PAYMENT DETAIL
     async def void_invoice_utj(self, obj_current: Invoice, db_session: AsyncSession):
-        payment_details = await crud.payment_detail.get_payment_detail_by_invoice_id(invoice_id=obj_current.id)
-        for payment_detail in payment_details:
+        for payment_detail in obj_current.payment_details:
             await crud.payment_detail.remove(id=payment_detail.id, db_session=db_session, with_commit=False)
 
         await crud.invoice.remove(id=obj_current.id, db_session=db_session, with_commit=False)
+
+        try:
+            await db_session.commit()
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=str(e.args))
 
     # VOID INVOICE DILUAR UTJ. UPDATE FLAG IS VOID, VOID REASON PADA INVOICE DAN TERMIN. DELETE INVOICE DETAIL.
     async def void_invoice_reguler(self, obj_current: Invoice, reason: str, current_worker: Worker, db_session: AsyncSession):
@@ -43,8 +45,7 @@ class InvoiceService:
         obj_updated = await crud.invoice.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
         # VOID PAYMENT DETAIL
-        payment_details = await crud.payment_detail.get_payment_detail_by_invoice_id(invoice_id=obj_current.id)
-        for dt in payment_details:
+        for dt in obj_current.payment_details:
             payment_dtl_updated = PaymentDetailUpdateSch.from_orm(dt)
             payment_dtl_updated.is_void = True
             payment_dtl_updated.void_reason = reason
@@ -68,5 +69,10 @@ class InvoiceService:
         if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ, JenisBayarEnum.UTJ_KHUSUS]:
             for inv_dtl in obj_current.details:
                 await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
+
+        try:
+            await db_session.commit()
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=str(e.args))
 
         

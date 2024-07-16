@@ -150,15 +150,13 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     """void a obj by its ids"""
     db_session = db.session
 
-    obj_current = await crud.invoice.get(id=id)
+    obj_current = await crud.invoice.get_by_id(id=id)
 
     if not obj_current:
         raise IdNotFoundException(Invoice, id)
     
-    termin = await crud.termin.get(id=obj_current.termin_id)
-    
-    if termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-        workflow = await crud.workflow.get_by_reference_id(reference_id=termin.id)
+    if obj_current.termin.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+        workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.termin.id)
         if workflow:
             if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
                 raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
@@ -169,11 +167,6 @@ async def void(id:UUID, sch:InvoiceVoidSch,
         raise HTTPException(status_code=422, detail="Failed void. Detail : Bidang on invoice already have invoice lunas!")
     
     await InvoiceService().void(obj_current=obj_current, current_worker=current_worker, reason=sch.void_reason, db_session=db_session)
-
-    try:
-        await db_session.commit()
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e.args))
     
     bidang_ids = []
     bidang_ids.append(obj_current.bidang_id)
