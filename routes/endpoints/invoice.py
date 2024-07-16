@@ -173,9 +173,8 @@ async def void(id:UUID, sch:InvoiceVoidSch,
     # BACKGROUND TASKS UNTUK UPDATE STATUS BEBAS/BELUM BEBAS BIDANG
     background_task.add_task(HelperService().bidang_update_status, bidang_ids)
 
-    obj_updated = await crud.invoice.get_by_id(id=obj_current.id)
 
-    return create_response(data=obj_updated)
+    return create_response({"detail": "SUCCESS"})
 
 
 @router.get("/updated/payment_status",)
