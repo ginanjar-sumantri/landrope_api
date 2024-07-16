@@ -3,7 +3,9 @@ import requests
 from uuid import UUID, uuid4
 from datetime import date, datetime, timedelta
 from fastapi import HTTPException
+from fastapi_async_sqlalchemy import db
 from common.exceptions import IdNotFoundException
+from schemas.termin_sch import TerminUpdateBaseSch
 from schemas.rfp_sch import RfpHeadNotificationSch
 from schemas.payment_sch import PaymentCreateSch
 from schemas.payment_detail_sch import PaymentDetailExtSch
@@ -260,8 +262,7 @@ class RfpService:
 
         if rfp_head.current_step == "Completed":
             await self.rfp_completed(rfp_header_payload=rfp_header_payload)
-
-    
+  
     async def rfp_completed(self, rfp_head:RfpHeadNotificationSch):
 
         termin = await crud.termin.get(id=rfp_head.client_ref_no)
@@ -358,12 +359,26 @@ class RfpService:
             
             payment_komponen_biaya_details.append(payment_komponen_biaya_detail)
 
-        
         payment.details = payment_details
         payment.giros = payment_giro_details
         payment.komponens = payment_komponen_biaya_details
-        
 
+        # UPDATE TERMIN
+        termin_update = TerminUpdateBaseSch.from_orm(termin)
+        termin_update.rfp_ref_no = rfp_head.id
+        termin_update.rfp_last_status = rfp_head.current_step
+
+        try:
+            db_session = db.session
+            
+            await crud.payment.create(obj_in=payment, db_session=db_session, with_commit=False)
+            await crud.termin.update(obj_current=termin, obj_new=termin_update, db_session=db_session, with_commit=False)
+
+            await db_session.commit()
+
+        except Exception as e:
+            pass
+        
     def add_days(self, n, d:date | None = datetime.today()):
         return d + timedelta(n)
 

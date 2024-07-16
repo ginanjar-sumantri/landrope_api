@@ -34,6 +34,11 @@ class TerminBase(SQLModel):
     file_upload_path:str | None = Field(nullable=True)
     is_draft: bool | None = Field(nullable=True)
 
+    rfp_ref_no: str | None = Field(nullable=True)
+    rfp_last_status: str | None = Field(nullable=True)
+
+    # workflow_id: UUID | str | None = Field(foreign_key="workflow.id", nullable=True)
+
 class TerminFullBase(BaseUUIDModel, TerminBase):
     pass
 

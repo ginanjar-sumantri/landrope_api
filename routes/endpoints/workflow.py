@@ -26,7 +26,7 @@ router = APIRouter()
 @router.post("/notification")
 async def notification(payload: dict, request:Request):
     
-    """Create a new object"""
+    """Notification Workflow"""
     try:
         db_session = db.session
 
