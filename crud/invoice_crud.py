@@ -532,9 +532,6 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             ).where(Invoice.bidang_id == bidang_id)
         
         response = await db_session.execute(query)
-        result = response.scalars().all()
-
-        datas = [data.id for data in result]
-        return datas
+        return response.scalars().all()
     
 invoice = CRUDInvoice(Invoice)
