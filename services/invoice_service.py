@@ -64,6 +64,8 @@ class InvoiceService:
 
         # DELETE INVOICE DETAIL KETIKA INVOICE BUKAN DARI UTJ/UTJ KHUSUS
         for inv_dtl in obj_current.details:
+
+             # DELETE PAYMENT KOMPONEN BIAYA DETAIL BY INVOICE DETAIL ID
             payment_komponen_biayas = await crud.payment_komponen_biaya_detail.get_by_invoice_detail_id(invoice_detail_id=inv_dtl.id)
 
             for pkb in payment_komponen_biayas:
