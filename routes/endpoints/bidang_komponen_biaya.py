@@ -82,7 +82,7 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
         for invoice_draft in invoice_drafts:
             invoice_updated = InvoiceUpdateSch.from_orm(invoice_draft)
             invoice_updated.amount_netto = invoice_updated.amount_netto + sch.estimated_amount
-            await crud.invoice.update(obj_current=invoice_draft, obj_new=obj_updated, db_session=db_session, with_commit=False)
+            await crud.invoice.update(obj_current=invoice_draft, obj_new=invoice_updated, db_session=db_session, with_commit=False)
 
             invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id(invoice_id=invoice_draft.id)
 
@@ -98,7 +98,7 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
         for invoice_draft in invoice_drafts:
             invoice_updated = InvoiceUpdateSch.from_orm(invoice_draft)
             invoice_updated.amount_netto = invoice_updated.amount_netto - sch.estimated_amount
-            await crud.invoice.update(obj_current=invoice_draft, obj_new=obj_updated, db_session=db_session, with_commit=False)
+            await crud.invoice.update(obj_current=invoice_draft, obj_new=invoice_updated, db_session=db_session, with_commit=False)
 
             invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id(invoice_id=invoice_draft.id)
 
