@@ -260,13 +260,13 @@ class RfpService:
             await self.rfp_void(rfp_head=rfp_head)
             return True
 
-        if rfp_head.current_step != "Completed":
+        if rfp_head.current_step == "Completed":
             await self.rfp_updated_status(rfp_head=rfp_head)
             return True
 
-        if rfp_head.current_step == "Completed":
-            await self.rfp_completed(rfp_head=rfp_header_payload)
-            return True
+        # if rfp_head.current_step == "Completed":
+        #     await self.rfp_completed(rfp_head=rfp_header_payload)
+        #     return True
 
     # JIKA RFP VOID
     async def rfp_void(self, rfp_head:RfpHeadNotificationSch):
@@ -302,6 +302,13 @@ class RfpService:
 
             # DELETE INVOICE DETAIL KETIKA INVOICE BUKAN DARI UTJ/UTJ KHUSUS
             for inv_dtl in invoice.details:
+
+                # DELETE PAYMENT KOMPONEN BIAYA DETAIL
+                payment_komponen_biayas = await crud.payment_komponen_biaya_detail.get_by_invoice_detail_id(invoice_detail_id=inv_dtl.id)
+
+                for pkb in payment_komponen_biayas:
+                    await crud.payment_komponen_biaya_detail.remove(id=pkb.id, db_session=db_session, with_commit=False)
+
                 await crud.invoice_detail.remove(id=inv_dtl.id, db_session=db_session, with_commit=False)
 
         # VOID TERMIN APA BILA SEMUA INVOICE YANG ADA DI TERMIN TERSEBUT SUDAH DIVOID

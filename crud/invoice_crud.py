@@ -524,5 +524,17 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response = await db_session.execute(query)
 
         return response.scalars().all()
+    
+    async def get_multi_by_bidang_id_and_termin_is_draft(self, *, bidang_id:UUID | str | None = None) -> list[Invoice]:
+        db_session = db.session
 
+        query = select(Invoice).join(Termin, and_(Termin.is_draft == True, Termin.id == Invoice.termin_id)
+                            ).where(Invoice.bidang_id == bidang_id)
+        
+        response = await db_session.execute(query)
+        result = response.scalars().all()
+
+        datas = [data.id for data in result]
+        return datas
+    
 invoice = CRUDInvoice(Invoice)
