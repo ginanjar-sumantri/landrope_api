@@ -200,7 +200,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                         inner join beban_biaya bb on bb.id = bkb.beban_biaya_id
                         where 
                         i.is_void != true
-                        and bkb.is_void != true
+                        --and bkb.is_void != true
                         {filter_by_jenis_bayar}
                         and t.id = '{str(id)}'
                         )
