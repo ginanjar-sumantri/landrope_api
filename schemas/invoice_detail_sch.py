@@ -16,6 +16,7 @@ class InvoiceDetailExtSch(SQLModel):
     is_exclude_spk:bool | None
     amount:Optional[Decimal]
     is_deleted:bool | None
+    is_retur:bool | None
     beban_pembeli:bool | None
     satuan_bayar: SatuanBayarEnum | None
     satuan_harga: SatuanHargaEnum | None
