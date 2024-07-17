@@ -181,7 +181,7 @@ class CRUDTermin(CRUDBase[Termin, TerminCreateSch, TerminUpdateSch]):
                                 when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is true and COALESCE(idt.is_retur, false) = false then '(Beban Pembeli)'
                                 when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is false and COALESCE(idt.is_retur, false) = true then '(Pengembalian Beban Penjual)'
                                 else '(Beban Penjual)'
-                        end as tanggungan
+                        end as tanggungan,
                         /*case
                                 when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is true and bkb.is_retur = false and t.jenis_bayar != 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Beban Pembeli)'
                                 when COALESCE(idt.beban_pembeli, bkb.beban_pembeli) is false and bkb.is_retur = true and t.jenis_bayar = 'PENGEMBALIAN_BEBAN_PENJUAL' then '(Pengembalian Beban Penjual)'
