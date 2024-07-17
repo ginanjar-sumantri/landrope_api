@@ -308,6 +308,7 @@ class InvoiceDetailBase(SQLModel):
     bidang_komponen_biaya_id:Optional[UUID] = Field(foreign_key="bidang_komponen_biaya.id")
     amount:Optional[Decimal] = Field(nullable=True)
     beban_pembeli: bool | None = Field(nullable=True)
+    is_retur: bool | None = Field(nullable=True)
 
 class InvoiceDetailFullBase(BaseUUIDModel, InvoiceDetailBase):
     pass
