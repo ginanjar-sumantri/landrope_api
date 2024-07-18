@@ -22,6 +22,7 @@ class RfpAllocationNotificationSch(SQLModel):
 
 class RfpHeadNotificationSch(SQLModel):
     id: str | None = Field(alias='id')
+    doc_no: str | None = Field(alias='doc_no')
     client_ref_no: str = Field(alias='client_ref_no')
     current_step: str | None = Field(alias='current_step')
     descs: str | None = Field(alias='descs')

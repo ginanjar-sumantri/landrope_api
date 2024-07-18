@@ -260,13 +260,13 @@ class RfpService:
             await self.rfp_void(rfp_head=rfp_head)
             return True
 
-        if rfp_head.current_step == "Completed":
+        if rfp_head.current_step != "Completed":
             await self.rfp_updated_status(rfp_head=rfp_head)
             return True
 
-        # if rfp_head.current_step == "Completed":
-        #     await self.rfp_completed(rfp_head=rfp_header_payload)
-        #     return True
+        if rfp_head.current_step == "Completed":
+            await self.rfp_completed(rfp_head=rfp_head)
+            return True
 
     # JIKA RFP VOID
     async def rfp_void(self, rfp_head:RfpHeadNotificationSch):
@@ -368,14 +368,14 @@ class RfpService:
         
 
         # INIT PAYMENT
-        payment = PaymentCreateSch(payment_method=PaymentMethodEnum.Giro, remark=rfp_head.descs)
+        payment = PaymentCreateSch(payment_method=PaymentMethodEnum.Giro, remark=f"{rfp_head.descs} (GENERATE FROM RFP DOC NO {rfp_head.doc_no})")
         
         termin_bayars = await crud.termin_bayar.get_multi_by_termin_id(termin_id=termin.id)
 
         # INIT PAYMENT GIRO DETAIL
         payment_giro_details = []
         for termin_bayar in termin_bayars:
-            rfp_line = next((line for line in rfp_lines if line.reff_no == termin_bayar.id), None)
+            rfp_line = next((line for line in rfp_lines if line.reff_no == str(termin_bayar.id)), None)
             if rfp_line is None:
                 raise HTTPException(status_code=404, detail=f"rfp line for termin bayar {termin_bayar.id} not found")
             
@@ -404,11 +404,11 @@ class RfpService:
         # INIT PAYMENT DETAIL
         payment_details = []
 
-        invoices = await crud.invoice.get_multi_by_termin_id(termin_id=id)
+        invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
     
         bidang_ids = [inv.bidang_id for inv in invoices if inv.is_void != True]
         utj_invoices = await crud.invoice.get_multi_by_bidang_ids(bidang_ids=bidang_ids)
-        invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=id)
+        invoice_bayars = await crud.invoice_bayar.get_multi_by_termin_id(termin_id=termin.id)
 
         for invoice_bayar in invoice_bayars:
             if (invoice_bayar.amount or 0) == 0:
@@ -433,7 +433,7 @@ class RfpService:
         # INIT PAYMENT KOMPONEN BIAYA DETAIL
         payment_komponen_biaya_details = []
         termin_bayar_details = await crud.termin_bayar_dt.get_by_termin_id(termin_id=termin.id)
-        komponens = await crud.bebanbiaya.get_multi_grouping_beban_biaya_by_termin_id(termin_id=id)
+        komponens = await crud.bebanbiaya.get_multi_grouping_beban_biaya_by_termin_id(termin_id=termin.id)
 
         for termin_bayar_dt in termin_bayar_details:
             komponen = next((kb for kb in komponens if kb.beban_biaya_id == termin_bayar_dt.beban_biaya_id), None)
