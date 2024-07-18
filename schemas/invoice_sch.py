@@ -37,7 +37,15 @@ class InvoiceSch(InvoiceFullBase):
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
     spk_amount:Optional[Decimal] = Field(alias="spk_amount")
     has_payment:Optional[bool] = Field(alias="has_payment")
-    amount_nett:Optional[Decimal] = Field(alias="amount_nett")
+    # amount_nett:Optional[Decimal] = Field(alias="amount_nett")
+
+    spk_code:Optional[str] = Field(alias="spk_code")
+    luas_bayar:Optional[Decimal] = Field(alias="luas_bayar")
+    harga_transaksi:Optional[Decimal] = Field(alias="harga_transaksi")
+    utj_amount:Optional[Decimal] = Field(alias="utj_amount")
+    utj_outstanding:Decimal | None
+    spk_nilai: Decimal | None
+    satuan_bayar: SatuanBayarEnum | None
 
     step_name_workflow:Optional[str] = Field(alias="step_name_workflow")
     status_workflow:Optional[str] = Field(alias="status_workflow")
@@ -73,7 +81,7 @@ class InvoiceByIdSch(InvoiceFullBase):
     nomor_memo:Optional[str] = Field(alias="nomor_memo")
     code_termin:Optional[str] = Field(alias="code_termin")
     invoice_outstanding:Optional[Decimal] = Field(alias="invoice_outstanding")
-    amount_nett:Optional[Decimal] = Field(alias="amount_nett")
+    # amount_nett:Optional[Decimal] = Field(alias="amount_nett")
 
     payment_details:list[PaymentDetailSch]
     details:list[InvoiceDetailSch]
