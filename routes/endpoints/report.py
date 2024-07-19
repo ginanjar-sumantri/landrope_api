@@ -1209,3 +1209,64 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
     return StreamingResponse(excel_data,
                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                              headers={"Content-Disposition": "attachment; filename=report_workflow_spk.xlsx"})
+
+# REPORT UNTUK MENGETAHUI APPROVAL WORKFLOW TERMIN PER BIDANG & PER JENIS BAYAR
+@router.get("/report/workflow-termin")
+async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title =  "REPORT WORKFLOW TERMIN"
+    ws.firstHeader
+
+    
+    r1c12 = ws.cell(row=1, column=12)
+    r1c12.value="STATUS WORKFLOW"
+    r1c12.alignment=Alignment(horizontal="center", vertical="center")
+    r1c12.font=Font(bold=True)
+    ws.merge_cells(start_row=1, start_column=12, end_row=1, end_column=15)
+
+    header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", "Jenis Bayar", "Manager", "Tanggal Buat",
+                     "Approval LA", "Verifikasi Accounting",  "COMPLETED", "Created By"]
+
+
+    for idx, val in enumerate(header_string):
+        ws.cell(row=2, column=idx + 1, value=val).font = Font(bold=True)
+
+    query = f"""SELECT * FROM _a_report_workflow_termin()"""
+
+    db_session = db.session
+    response = await db_session.execute(query)
+    result = response.all()
+
+    x = 2
+    for row_data in result:
+        x += 1
+        ws.cell(row=x, column=1, value=row_data[0])
+        ws.cell(row=x, column=2, value=row_data[1])
+        ws.cell(row=x, column=3, value=row_data[2])
+        ws.cell(row=x, column=4, value=row_data[3])
+        ws.cell(row=x, column=5, value=row_data[4])
+        ws.cell(row=x, column=6, value=row_data[5])
+        ws.cell(row=x, column=7, value=row_data[6])
+        ws.cell(row=x, column=8, value=row_data[7])
+        ws.cell(row=x, column=9, value=row_data[8])
+        ws.cell(row=x, column=10, value=row_data[9])
+        ws.cell(row=x, column=11, value=row_data[10])
+        ws.cell(row=x, column=12, value=row_data[11])
+        ws.cell(row=x, column=13, value=row_data[12])
+        ws.cell(row=x, column=14, value=row_data[13])
+        ws.cell(row=x, column=15, value=row_data[14])
+
+    excel_data = BytesIO()
+
+    # Simpan workbook ke objek BytesIO
+    wb.save(excel_data)
+
+    # Set posisi objek BytesIO ke awal
+    excel_data.seek(0)
+    
+
+    return StreamingResponse(excel_data,
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                             headers={"Content-Disposition": "attachment; filename=report_workflow_termin.xlsx"})
