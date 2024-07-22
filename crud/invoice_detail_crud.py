@@ -62,6 +62,21 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_multi_by_invoice_id_and_bidang_komponen_biaya_id(self, 
+                            *,
+                            invoice_id:UUID,
+                            bidang_komponen_biaya_id: UUID,
+                            db_session : AsyncSession | None = None
+                            ) -> List[InvoiceDetail] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                ).where(and_(InvoiceDetail.invoice_id == invoice_id, InvoiceDetail.bidang_komponen_biaya_id == bidang_komponen_biaya_id))
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
     # FOR TERMIN UPDATE FUNCTION
     async def get_ids_by_invoice_ids(self, 
                             *,

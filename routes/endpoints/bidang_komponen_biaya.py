@@ -84,7 +84,7 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
             invoice_updated.amount_netto = invoice_updated.amount_netto + sch.estimated_amount
             await crud.invoice.update(obj_current=invoice_draft, obj_new=invoice_updated, db_session=db_session, with_commit=False)
 
-            invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id(invoice_id=invoice_draft.id)
+            invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id_and_bidang_komponen_biaya_id(invoice_id=invoice_draft.id, bidang_komponen_biaya_id=obj_current.id)
 
             for invoice_detail_draft in invoice_detail_drafts:
                 invoice_detail_updated = InvoiceDetailUpdateSch.from_orm(invoice_detail_draft)
@@ -100,7 +100,7 @@ async def update(id:UUID, sch:BidangKomponenBiayaUpdateSch,
             invoice_updated.amount_netto = invoice_updated.amount_netto - sch.estimated_amount
             await crud.invoice.update(obj_current=invoice_draft, obj_new=invoice_updated, db_session=db_session, with_commit=False)
 
-            invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id(invoice_id=invoice_draft.id)
+            invoice_detail_drafts = await crud.invoice_detail.get_multi_by_invoice_id_and_bidang_komponen_biaya_id(invoice_id=invoice_draft.id, bidang_komponen_biaya_id=obj_current.id)
 
             for invoice_detail_draft in invoice_detail_drafts:
                 invoice_detail_updated = InvoiceDetailUpdateSch.from_orm(invoice_detail_draft)
