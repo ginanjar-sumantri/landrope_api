@@ -1228,6 +1228,29 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
 
     header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", "Jenis Bayar", "Manager", "Tanggal Buat",
                      "Approval LA", "Verifikasi Accounting",  "COMPLETED", "Created By"]
+    
+    # header_string = ["Id Bidang", 
+    #                 "Id Bidang Lama",
+    #                 "Project", 
+    #                 "Desa",
+    #                 "Nomor Tahap",
+    #                 "Nomor Memo",
+    #                 "Group",
+    #                 "Pemilik",
+    #                 "Manager",
+    #                 "Alashak",
+    #                 "Luas Surat",
+    #                 "Luas Bayar", 
+    #                 "Harga Transaksi", 
+    #                 "Jenis Bayar",
+    #                 "Jumlah",
+    #                 "Nomor Giro",
+    #                 "Tanggal Pembayaran",
+    #                 "Tanggal Buat",
+    #                 "Approval LA",
+    #                 "Verivikasi Accounting",
+    #                 "COMPLETED",
+    #                 "Created By"]
 
 
     for idx, val in enumerate(header_string):
