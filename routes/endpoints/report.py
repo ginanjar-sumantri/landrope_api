@@ -1275,11 +1275,11 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
         ws.cell(row=x, column=8, value=row_data[7])
         ws.cell(row=x, column=9, value=row_data[8])
         ws.cell(row=x, column=10, value=row_data[9])
-        ws.cell(row=x, column=11, value=row_data[10])
-        ws.cell(row=x, column=12, value=row_data[11])
-        ws.cell(row=x, column=13, value=row_data[12])
+        ws.cell(row=x, column=11, value=row_data[10]).number_format = '0.00'
+        ws.cell(row=x, column=12, value=row_data[11]).number_format = '0.00'
+        ws.cell(row=x, column=13, value=row_data[12]).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
         ws.cell(row=x, column=14, value=row_data[13])
-        ws.cell(row=x, column=15, value=row_data[14])
+        ws.cell(row=x, column=15, value=row_data[14]).number_format = '"Rp "#,##0.00_);[Red]("Rp"#,##0.00)'
         ws.cell(row=x, column=16, value=row_data[15])
         ws.cell(row=x, column=17, value=row_data[16])
         ws.cell(row=x, column=18, value=row_data[17])
