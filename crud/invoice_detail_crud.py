@@ -56,7 +56,8 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         
         db_session = db_session or db.session
 
-        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id)
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                ).where(InvoiceDetail.invoice_id == invoice_id)
 
         response =  await db_session.execute(query)
         return response.scalars().all()
