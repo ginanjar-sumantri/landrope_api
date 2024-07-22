@@ -1226,31 +1226,31 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
     r1c12.font=Font(bold=True)
     ws.merge_cells(start_row=1, start_column=12, end_row=1, end_column=15)
 
-    header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", "Jenis Bayar", "Manager", "Tanggal Buat",
-                     "Approval LA", "Verifikasi Accounting",  "COMPLETED", "Created By"]
+    # header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", "Jenis Bayar", "Manager", "Tanggal Buat",
+    #                  "Approval LA", "Verifikasi Accounting",  "COMPLETED", "Created By"]
     
-    # header_string = ["Id Bidang", 
-    #                 "Id Bidang Lama",
-    #                 "Project", 
-    #                 "Desa",
-    #                 "Nomor Tahap",
-    #                 "Nomor Memo",
-    #                 "Group",
-    #                 "Pemilik",
-    #                 "Manager",
-    #                 "Alashak",
-    #                 "Luas Surat",
-    #                 "Luas Bayar", 
-    #                 "Harga Transaksi", 
-    #                 "Jenis Bayar",
-    #                 "Jumlah",
-    #                 "Nomor Giro",
-    #                 "Tanggal Pembayaran",
-    #                 "Tanggal Buat",
-    #                 "Approval LA",
-    #                 "Verivikasi Accounting",
-    #                 "COMPLETED",
-    #                 "Created By"]
+    header_string = ["Id Bidang", 
+                    "Id Bidang Lama",
+                    "Project", 
+                    "Desa",
+                    "Nomor Tahap",
+                    "Nomor Memo",
+                    "Group",
+                    "Pemilik",
+                    "Manager",
+                    "Alashak",
+                    "Luas Surat",
+                    "Luas Bayar", 
+                    "Harga Transaksi", 
+                    "Jenis Bayar",
+                    "Jumlah",
+                    "Nomor Giro",
+                    "Tanggal Pembayaran",
+                    "Tanggal Buat",
+                    "Approval LA",
+                    "Verivikasi Accounting",
+                    "COMPLETED",
+                    "Created By"]
 
 
     for idx, val in enumerate(header_string):
@@ -1280,6 +1280,13 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
         ws.cell(row=x, column=13, value=row_data[12])
         ws.cell(row=x, column=14, value=row_data[13])
         ws.cell(row=x, column=15, value=row_data[14])
+        ws.cell(row=x, column=16, value=row_data[15])
+        ws.cell(row=x, column=17, value=row_data[16])
+        ws.cell(row=x, column=18, value=row_data[17])
+        ws.cell(row=x, column=19, value=row_data[18])
+        ws.cell(row=x, column=20, value=row_data[19])
+        ws.cell(row=x, column=21, value=row_data[20])
+        ws.cell(row=x, column=22, value=row_data[21])
 
     excel_data = BytesIO()
 
