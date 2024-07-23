@@ -183,7 +183,7 @@ class RfpService:
                     obj_rfp_line["activity_code"] = rfp_activity_code
                     obj_rfp_line["amount"] = str(amount_beban)
                     obj_rfp_line["descs"] = termin.nomor_memo
-                    obj_rfp_line["reff_no"] = termin_bayar.id
+                    obj_rfp_line["reff_no"] = str(termin_bayar.id)
                     obj_rfp_line["rfp_line_dts"] = []
                     obj_rfp_hd["rfp_lines"].append(obj_rfp_line)
 
