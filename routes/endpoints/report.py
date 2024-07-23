@@ -1225,9 +1225,6 @@ async def report_spk_workflow(current_worker:Worker = Depends(crud.worker.get_ac
     r1c12.alignment=Alignment(horizontal="center", vertical="center")
     r1c12.font=Font(bold=True)
     ws.merge_cells(start_row=1, start_column=12, end_row=1, end_column=15)
-
-    # header_string = ["Id Bidang", "Id Bidang Lama", "Group", "Pemilik", "Alashak", "Project", "Desa", "Luas Surat", "Jenis Bayar", "Manager", "Tanggal Buat",
-    #                  "Approval LA", "Verifikasi Accounting",  "COMPLETED", "Created By"]
     
     header_string = ["Id Bidang", 
                     "Id Bidang Lama",

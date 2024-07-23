@@ -390,7 +390,7 @@ async def get_estimated_amount_edited(bidang_id:UUID, beban_biaya_id:UUID,
 @router.get("/print-out/{id}")
 async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.get_active_worker)):
 
-    """Print out UTJ"""
+    """Print out Memo Bayar"""
     obj_current = await crud.termin.get(id=id)
     if not obj_current:
         raise IdNotFoundException(Termin, id)
@@ -398,7 +398,7 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     # file_path = obj_current.file_path
 
     # if file_path is None:
-    file_path = await TerminService().generate_printout(id=id)
+    file_path = await TerminService().generate_printout_memo_bayar(id=id)
     
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
@@ -433,6 +433,21 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.code.replace('/', '_')}.{ext}"
     return response
+
+@router.get("/print-out/excel/{id}")
+async def printout(id:UUID | str,
+                   current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    obj_current = await crud.termin.get(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Termin, id)
+    
+    excel = await TerminService().generate_printout_to_excel(id=id)
+
+    return StreamingResponse(excel, 
+                                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                headers={"Content-Disposition": "attachment;filename=memo_pembayaran.xlsx"})  
+
 
 # REPORT EXCEL MEMO BAYAR
 @router.post("/export/excel")

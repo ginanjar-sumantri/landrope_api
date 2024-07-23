@@ -22,6 +22,7 @@ from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import BidangHelper
 from services.pdf_service import PdfService
+from services.adobe_service import PDFToExcelService
 from common.exceptions import IdNotFoundException
 from common.enum import (JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text, WorkflowEntityEnum, 
                         WorkflowLastStatusEnum, ActivityEnum, jenis_bayar_to_termin_status_pembebasan_dict, StatusSKEnum, HasilAnalisaPetaLokasiEnum)
@@ -797,9 +798,8 @@ class TerminService:
         
         return file_path
     
-    # GENERATE PRINTOUT MEMO BAYAR
-    async def generate_printout(self, id:UUID | str):
 
+    async def generate_printout(self, id:UUID | str):
         obj = await crud.termin.get_by_id_for_printout(id=id)
         if obj is None:
             raise IdNotFoundException(Termin, id)
@@ -1003,6 +1003,13 @@ class TerminService:
         except Exception as e:
             raise HTTPException(status_code=500, detail="Failed generate document")
         
+        return doc
+
+    # GENERATE PRINTOUT MEMO BAYAR
+    async def generate_printout_memo_bayar(self, id:UUID | str):
+
+        doc = await self.generate_printout(id=id)
+        
         obj_current = await crud.termin.get(id=id)
 
         binary_io_data = BytesIO(doc)
@@ -1018,6 +1025,17 @@ class TerminService:
             raise HTTPException(status_code=500, detail="Failed generate document")
         
         return file_path
+
+    # GENERATE PRINTOUT MEMO BAYAR TO EXCEL
+    async def generate_printout_to_excel(self, id:UUID | str):
+
+        doc = await self.generate_printout(id=id)
+        excel = await PDFToExcelService().export_pdf_to_excel(data=doc)
+
+        return excel
+
+
+
 
     # GENERATE TERMIN TO HTML CONTENT UNTUK GENERATE JADI EXCEL
     async def generate_html_content(self, list_tahap_detail:list[TahapDetailForExcel], overlap_exists:bool|None = False, tanggal:str|None = '') -> str | None:
