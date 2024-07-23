@@ -188,7 +188,8 @@ class RfpService:
                     obj_rfp_hd["rfp_lines"].append(obj_rfp_line)
 
                     ## INIT RFP LINE DETAIL
-                    for invoice in termin.invoices:
+                    invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
+                    for invoice in invoices:
                         obj_rfp_line_dt = {}
                         rfp_line_dt_id = uuid4()
 
