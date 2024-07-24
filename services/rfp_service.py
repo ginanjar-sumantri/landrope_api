@@ -144,6 +144,7 @@ class RfpService:
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
+                obj_rfp_bank["desc"] = termin.nomor_memo
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 # RFP ALLOCATION
@@ -161,6 +162,7 @@ class RfpService:
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
+                obj_rfp_bank["desc"] = termin.nomor_memo
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 #RFP LINE
