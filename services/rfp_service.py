@@ -441,7 +441,7 @@ class RfpService:
         for termin_bayar_dt in termin_bayar_details:
             komponen = next((kb for kb in komponens if kb.beban_biaya_id == termin_bayar_dt.beban_biaya_id), None)
             payment_komponen_biaya_detail = PaymentKomponenBiayaDetailExtSch(beban_biaya_id=termin_bayar_dt.beban_biaya_id, id_index=termin_bayar_dt.termin_bayar_id,
-                                                                            amount=(komponen.amount or 0))
+                                                                            amount=(komponen.amount or 0), termin_id=termin.id)
             
             payment_komponen_biaya_details.append(payment_komponen_biaya_detail)
 
