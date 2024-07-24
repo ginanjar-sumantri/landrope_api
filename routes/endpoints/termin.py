@@ -228,7 +228,7 @@ async def update_(
         object_update_memo = await crud.termin.get_by_id(id=object_update_memo.id)
 
         if object_update_memo.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-            background_task.add_task(TerminService.generate_printout, object_update_memo.id)
+            background_task.add_task(TerminService.generate_printout_memo_bayar, object_update_memo.id)
             background_task.add_task(TerminService.merge_memo_signed, object_update_memo.id)
 
         return create_response(data=object_update_memo)
@@ -254,7 +254,7 @@ async def update_(
         obj_updated = await TerminService().edit_termin(obj_current=obj_current, sch=sch, db_session=db_session, current_worker=current_worker, request=request)
 
         if obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
-            background_task.add_task(TerminService.generate_printout, obj_updated.id)
+            background_task.add_task(TerminService.generate_printout_memo_bayar, obj_updated.id)
             background_task.add_task(TerminService.merge_memo_signed, obj_updated.id)
         else:
             background_task.add_task(TerminService.generate_printout_utj, obj_updated.id)
@@ -889,7 +889,7 @@ async def create_workflow(payload:Dict, request:Request):
     
     trying:int = 0
     while obj.file_path is None:
-        await TerminService().generate_printout(id=id)
+        await TerminService().generate_printout_memo_bayar(id=id)
         if trying > 7:
             raise HTTPException(status_code=404, detail="File not found")
         obj = await crud.termin.get(id=id)
