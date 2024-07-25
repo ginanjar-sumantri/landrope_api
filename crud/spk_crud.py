@@ -358,13 +358,8 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
             else:
                 jenis_bayar = [jenis_bayar]
 
-            query = query.where(
-                                and_(
-                                    Spk.jenis_bayar.in_(jenis_bayar),
-                                    Tahap.id == tahap_id,
-                                    Termin.id == termin_id,
-                                    Invoice.is_void != True
-                                    ))
+            query = query.where(or_(and_(Spk.jenis_bayar.in_(jenis_bayar), Tahap.id == tahap_id), Termin.id == termin_id))
+            query = query.filter(func.coalesce(Invoice.is_void, False) != True)
         
         if keyword:
             query = query.filter(or_(
