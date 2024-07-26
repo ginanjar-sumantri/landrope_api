@@ -423,6 +423,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         query = text(f"""
                     with payment as (select sum(amount) as amount, invoice_id from payment_detail
                     where is_void != True
+                    and COALESCE(realisasi, False) is False
                     group by invoice_id)
                     select i.* from invoice i
                     left join payment p on p.invoice_id = i.id
