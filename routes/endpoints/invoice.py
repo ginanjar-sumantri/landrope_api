@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException, status
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, case, cast, Float, and_
@@ -159,7 +159,9 @@ async def void(id:UUID, sch:InvoiceVoidSch,
         if workflow:
             if workflow.last_status == WorkflowLastStatusEnum.NEED_DATA_UPDATE:
                 raise HTTPException(status_code=422, detail=f"Failed void. Detail : Need Data Update")
-
+            
+    if obj_current.termin.rfp_ref_no is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invoice has have RFP")
     
     bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
     if obj_current.jenis_bayar not in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL, JenisBayarEnum.SISA_PELUNASAN, JenisBayarEnum.BIAYA_LAIN] and bidang_current.has_invoice_lunas:

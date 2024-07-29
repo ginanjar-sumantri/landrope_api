@@ -2,7 +2,7 @@ import crud
 import requests
 from uuid import UUID, uuid4
 from datetime import date, datetime, timedelta
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi_async_sqlalchemy import db
 from common.exceptions import IdNotFoundException
 from schemas.termin_sch import TerminUpdateBaseSch
@@ -12,7 +12,7 @@ from schemas.payment_sch import PaymentCreateSch
 from schemas.payment_detail_sch import PaymentDetailExtSch, PaymentDetailUpdateSch
 from schemas.payment_giro_detail_sch import PaymentGiroDetailExtSch
 from schemas.payment_komponen_biaya_detail_sch import PaymentKomponenBiayaDetailExtSch
-from services.invoice_service import InvoiceService
+from services.payment_service import PaymentService
 from common.enum import PaymentMethodEnum, ActivityEnum, SatuanBayarEnum, activity_landrope_to_activity_rfp_dict
 from configs.config import settings
 
@@ -250,7 +250,7 @@ class RfpService:
         except Exception as e:
             return None, self.CONNECTION_FAILED
 
-    async def notification_center(self, payload):
+    async def notification_center(self, background_task, payload):
 
         rfp_header_payload = payload.get('data', None)
 
@@ -268,7 +268,7 @@ class RfpService:
             return True
 
         if rfp_head.current_step == "Completed":
-            await self.rfp_completed(rfp_head=rfp_head)
+            await self.rfp_completed(background_task=background_task, rfp_head=rfp_head)
             return True
 
     # JIKA RFP VOID
@@ -349,7 +349,7 @@ class RfpService:
             raise HTTPException(status_code=409, detail=str(e.args))
 
     # UPDTE RFP LAST STATUS PADA MEMO BAYAR (TERMIN) SEKALIGUS GENERATE PAYMENT
-    async def rfp_completed(self, rfp_head:RfpHeadNotificationSch):
+    async def rfp_completed(self, background_task, rfp_head:RfpHeadNotificationSch):
 
         termin = await crud.termin.get(id=rfp_head.client_ref_no)
 
@@ -457,13 +457,16 @@ class RfpService:
         try:
             db_session = db.session
 
-            await crud.payment.create(obj_in=payment, db_session=db_session, with_commit=False)
+            new_obj = await crud.payment.create(obj_in=payment, db_session=db_session, with_commit=False)
             await crud.termin.update(obj_current=termin, obj_new=termin_update, db_session=db_session, with_commit=False)
 
             await db_session.commit()
 
+            background_task.add_task(PaymentService().bidang_update_status, bidang_ids)
+            background_task.add_task(PaymentService().invoice_update_payment_status, new_obj.id)
+
         except Exception as e:
-            pass
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.args) if e.args != "" or e.args is not None else str(e.detail))
         
     def add_days(self, n, d:date | None = datetime.today()):
         return d + timedelta(n)
