@@ -298,7 +298,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                         db_session.add(new_termin)
                 
             else:
-                new_harga = KjbHarga(**harga.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_harga = KjbHarga(**harga.dict(exclude={"termins"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_harga)
 
                 for termin in harga.termins:
