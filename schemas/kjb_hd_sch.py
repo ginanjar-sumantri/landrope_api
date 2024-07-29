@@ -41,10 +41,10 @@ class KjbHdByIdSch(KjbHdFullBase):
     bebanbiayas:List[KjbBebanBiayaSch] | None
     penjuals:List[KjbPenjualSch] | None
     
-    desa_name:str = Field(alias="desa_name")
-    manager_name:str = Field(alias="manager_name")
-    sales_name:str = Field(alias="sales_name")
-    total_luas_surat:Decimal = Field(alias="total_luas_surat")
+    desa_name:str | None = Field(alias="desa_name")
+    manager_name:str | None = Field(alias="manager_name")
+    sales_name:str | None = Field(alias="sales_name")
+    total_luas_surat:Decimal | None = Field(alias="total_luas_surat")
 
     status_workflow:str|None
     step_name_workflow:str|None
