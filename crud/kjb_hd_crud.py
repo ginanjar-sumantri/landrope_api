@@ -258,7 +258,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 existing_rekening.updated_by_id = updated_by_id
                 db_session.add(existing_rekening)
             else:
-                new_rekening = KjbRekening(**rekening.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_rekening = KjbRekening(**rekening.dict(exclude={"id"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_rekening)
             
             if rekening.pemilik_id:
@@ -294,15 +294,15 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                         db_session.add(existing_termin)
 
                     else:
-                        new_termin = KjbTermin(**termin.dict(), kjb_harga_id=existing_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                        new_termin = KjbTermin(**termin.dict(exclude={"id"}), kjb_harga_id=existing_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                         db_session.add(new_termin)
                 
             else:
-                new_harga = KjbHarga(**harga.dict(exclude={"termins"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_harga = KjbHarga(**harga.dict(exclude={"termins", "id"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_harga)
 
                 for termin in harga.termins:
-                    new_termin = KjbTermin(**termin.dict(), kjb_harga_id=new_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                    new_termin = KjbTermin(**termin.dict(exclude={"id"}), kjb_harga_id=new_harga.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                     db_session.add(new_termin)
         
         
@@ -322,7 +322,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 existing_bebanbiaya.updated_by_id = updated_by_id
                 db_session.add(existing_bebanbiaya)
             else:
-                new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_bebanbiaya = KjbBebanBiaya(**beban_biaya.dict(exclude={"id"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_bebanbiaya)
                 if difference_two_approve == False:
                     difference_two_approve = True if is_draft == False else False
@@ -337,7 +337,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 existing_penjual.updated_by_id = updated_by_id
                 db_session.add(existing_penjual)
             else:
-                new_penjual = KjbPenjual(**penjual.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_penjual = KjbPenjual(**penjual.dict(exclude={"id"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_penjual)
         
         for detail in obj_new.details:
@@ -351,7 +351,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
                 db_session.add(existing_detail)
 
             else:
-                new_detail = KjbDt(**detail.dict(), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
+                new_detail = KjbDt(**detail.dict(exclude={"id"}), kjb_hd_id=obj_current.id, created_by_id=updated_by_id, updated_by_id=updated_by_id)
                 db_session.add(new_detail)
         
         if obj_new.is_draft == False:
