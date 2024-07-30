@@ -72,7 +72,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         try:
             geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         except Exception as e:
-            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
@@ -277,7 +277,7 @@ async def update(id:UUID,
             try:
                 geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
             except Exception as e:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error read file. Detail = {str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+                raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
 
             if geo_dataframe.geometry[0].geom_type == "LineString":
                 polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
