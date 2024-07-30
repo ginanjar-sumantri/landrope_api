@@ -87,7 +87,7 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         is_valid = geom_shape.is_valid
         if is_valid is False:
             validity_reason = explain_validity(geom_shape)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry rincik tidak valid! Validity Reason : {validity_reason}')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
 
         sch.geom = geom
 
@@ -255,60 +255,57 @@ async def update(id:UUID,
                  current_worker:Worker = Depends(crud.worker.get_current_user)):
 
     """Update a obj by its id"""
-    try:
-        db_session = db.session
+    
+    db_session = db.session
 
-        obj_current = await crud.bidang.get_by_id(id=id)
-        if not obj_current:
-            raise IdNotFoundException(Bidang, id)
+    obj_current = await crud.bidang.get_by_id(id=id)
+    if not obj_current:
+        raise IdNotFoundException(Bidang, id)
 
-        if obj_current.geom :
-            obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
+    if obj_current.geom :
+        obj_current.geom = wkt.dumps(wkb.loads(obj_current.geom.data, hex=True))
 
-        if obj_current.geom_ori :
-            obj_current.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
+    if obj_current.geom_ori :
+        obj_current.geom_ori = wkt.dumps(wkb.loads(obj_current.geom_ori.data, hex=True))
 
-        jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
-        if jenis_surat is None:
-            raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
+    jenis_surat = await crud.jenissurat.get(id=sch.jenis_surat_id)
+    if jenis_surat is None:
+        raise IdNotFoundException(JenisSurat, sch.jenis_surat_id)
 
-        if file:
-            geo_dataframe = None
-            try:
-                geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
-            except Exception as e:
-                raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
+    if file:
+        geo_dataframe = None
+        try:
+            geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
 
-            if geo_dataframe.geometry[0].geom_type == "LineString":
-                polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
-                geo_dataframe['geometry'] = polygon.geometry
+        if geo_dataframe.geometry[0].geom_type == "LineString":
+            polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
+            geo_dataframe['geometry'] = polygon.geometry
 
-            sch = BidangSch(**sch.dict())
-            geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-            
-            # MEMERIKSA APAKAH GEOMETRY VALID
-            geom_ = wkt.loads(geom)
-            geom_shape = shape(geom_)
-            is_valid = geom_shape.is_valid
-            if is_valid is False:
-                validity_reason = explain_validity(geom_shape)
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry rincik tidak valid! Validity Reason : {validity_reason}')
-
-            sch.geom = geom
+        sch = BidangSch(**sch.dict())
+        geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
         
-        sch.jenis_alashak = jenis_surat.jenis_alashak
-        sch.bundle_hd_id = obj_current.bundle_hd_id
-        sch.status_pembebasan = obj_current.status_pembebasan
+        # MEMERIKSA APAKAH GEOMETRY VALID
+        geom_ = wkt.loads(geom)
+        geom_shape = shape(geom_)
+        is_valid = geom_shape.is_valid
+        if is_valid is False:
+            validity_reason = explain_validity(geom_shape)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
 
-        obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
-        obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
+        sch.geom = geom
+    
+    sch.jenis_alashak = jenis_surat.jenis_alashak
+    sch.bundle_hd_id = obj_current.bundle_hd_id
+    sch.status_pembebasan = obj_current.status_pembebasan
 
-        background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_ids=[obj_updated.id]))
-        
-        return create_response(data=obj_updated)
-    except Exception as e:
-        await db_session.rollback()
-        raise HTTPException(status_code=422, detail=str(e.detail) if e.args == '' or e.args is None else str(e.args))
+    obj_updated = await crud.bidang.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, db_session=db_session)
+    obj_updated = await crud.bidang.get_by_id(id=obj_updated.id)
+
+    background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya(bidang_ids=[obj_updated.id]))
+    
+    return create_response(data=obj_updated)
 
 @router.post(
         "/bulk",

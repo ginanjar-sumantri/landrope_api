@@ -81,7 +81,7 @@ class RfpService:
         spk_of_amount = await crud.spk.get(id=next((inv_h.spk_id for inv_h in invoice_in_termin_histories), None))
         amount = f"{str(spk_of_amount.amount) + '%' if spk_of_amount.satuan_bayar == SatuanBayarEnum.Percentage else ''}"
             
-        uraian = f"{termin.jenis_bayar} {amount} {count_bidang}BID luas {sum_luas_surat}m2, GROUP {termin.group}"
+        uraian = f"{termin.jenis_bayar} {amount} {count_bidang} Bidang, luas {sum_luas_surat}m2, GROUP {termin.group}"
         rfp_hd_descs.append(uraian)
 
         obj_rfp_hd["uraian"] = uraian
@@ -468,8 +468,8 @@ class RfpService:
 
             await db_session.commit()
 
-            background_task.add_task(PaymentService().bidang_update_status, bidang_ids)
-            background_task.add_task(PaymentService().invoice_update_payment_status, new_obj.id)
+            background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
+            background_task.add_task(PaymentService.invoice_update_payment_status, new_obj.id)
 
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.args) if e.args != "" or e.args is not None else str(e.detail))
