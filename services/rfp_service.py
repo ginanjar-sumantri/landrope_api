@@ -76,9 +76,15 @@ class RfpService:
         # SETUP FIRST DESC for RFP HEADER
         invoice_in_termin_histories = await crud.invoice.get_multi_invoice_id_luas_bayar_by_termin_id(termin_id=termin.id)
         count_bidang = len(invoice_in_termin_histories)
-        sum_luas_bayar = "{:,.0f}".format(sum([invoice_.luas_bayar or 0 for invoice_ in invoice_in_termin_histories if invoice_.luas_bayar is not None]))
-        termin_desc = f"{termin.jenis_bayar} {count_bidang}BID luas {sum_luas_bayar}m2"
-        rfp_hd_descs.append(termin_desc)
+        sum_luas_surat = "{:,.0f}".format(sum([invoice_.luas_surat or 0 for invoice_ in invoice_in_termin_histories if invoice_.luas_surat is not None]))
+        
+        spk_of_amount = await crud.spk.get(id=next((inv_h.spk_id for inv_h in invoice_in_termin_histories), None))
+        amount = f"{str(spk_of_amount.amount) + '%' if spk_of_amount.satuan_bayar == SatuanBayarEnum.Percentage else ''}"
+            
+        uraian = f"{termin.jenis_bayar} {amount} {count_bidang}BID luas {sum_luas_surat}m2, GROUP {termin.group}"
+        rfp_hd_descs.append(uraian)
+
+        obj_rfp_hd["uraian"] = uraian
 
         # INIT RFP LINE, RFP BANK, RFP ALLOCATION
         for termin_bayar in termin_bayars:
@@ -125,7 +131,7 @@ class RfpService:
 
                     description: str = ""
 
-                    if spk:
+                    if spk and termin_bayar.activity == ActivityEnum.BIAYA_TANAH:
                         amount = f"{str(spk.amount) + '%' if spk.satuan_bayar == SatuanBayarEnum.Percentage else ''}"
                         description = f"{id_bidang_complete} {spk.jenis_bayar} {amount}, GROUP {termin.tahap.group or ''}"
                         obj_rfp_line_dt["desc"] = description
