@@ -213,11 +213,15 @@ class CRUDSpk(CRUDBase[Spk, SpkCreateSch, SpkUpdateSch]):
         db_session = db_session or db.session
         
         query = select(Spk).where(and_(
-                        Spk.bidang_id == bidang_id, 
-                        Spk.jenis_bayar == jenis_bayar,
+                        Spk.bidang_id == bidang_id,
                         func.coalesce(Spk.is_void, False) != True
                         )
                         )
+        
+        if jenis_bayar in [JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]:
+            query = query.filter(Spk.jenis_bayar.in_([JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]))
+        else:
+            query = query.filter(Spk.jenis_bayar == jenis_bayar)
         
         response = await db_session.execute(query)
 

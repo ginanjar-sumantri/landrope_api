@@ -32,6 +32,7 @@ from services.helper_service import HelperService, KomponenBiayaHelper
 from services.bidang_service import BidangService
 from shapely.geometry import shape
 from shapely import wkt, wkb
+from shapely.validation import explain_validity
 from decimal import Decimal
 from datetime import datetime
 from itertools import islice
@@ -71,16 +72,24 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         try:
             geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
         except Exception as e:
-            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+            raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
 
         if geo_dataframe.geometry[0].geom_type == "LineString":
             polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
             geo_dataframe['geometry'] = polygon.geometry
 
         sch = BidangSch(**sch.dict())
-        sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-    else:
-        raise ImportFailedException()
+        geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+            
+        # MEMERIKSA APAKAH GEOMETRY VALID
+        geom_ = wkt.loads(geom)
+        geom_shape = shape(geom_)
+        is_valid = geom_shape.is_valid
+        if is_valid is False:
+            validity_reason = explain_validity(geom_shape)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
+
+        sch.geom = geom
 
     new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
 
@@ -268,14 +277,24 @@ async def update(id:UUID,
             try:
                 geo_dataframe = GeomService.file_to_geodataframe(file=file.file)
             except Exception as e:
-                raise HTTPException(status_code=422, detail=f"Error read file. Detail = {str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+                raise HTTPException(status_code=422, detail=f"Error read file. Detail Error : {str(e.detail) if str(e.args) == '()' or e.args is None else str(e.args)}")
 
             if geo_dataframe.geometry[0].geom_type == "LineString":
                 polygon = GeomService.linestring_to_polygon(shape(geo_dataframe.geometry[0]))
                 geo_dataframe['geometry'] = polygon.geometry
 
             sch = BidangSch(**sch.dict())
-            sch.geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+            geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+                
+            # MEMERIKSA APAKAH GEOMETRY VALID
+            geom_ = wkt.loads(geom)
+            geom_shape = shape(geom_)
+            is_valid = geom_shape.is_valid
+            if is_valid is False:
+                validity_reason = explain_validity(geom_shape)
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
+
+            sch.geom = geom
         
         sch.jenis_alashak = jenis_surat.jenis_alashak
         sch.bundle_hd_id = obj_current.bundle_hd_id
@@ -402,6 +421,19 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     parent_id=geo_data.get('parent_id', ''),
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
+
+            # MEMERIKSA APAKAH GEOMETRY VALID
+            geom_ = wkt.loads(shp_data.geom)
+            geom_shape = shape(geom_)
+            is_valid = geom_shape.is_valid
+            if is_valid is False:
+                validity_reason = explain_validity(geom_shape)
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Geometry rincik tidak valid! Validity Reason : {validity_reason}"
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
+                if done:
+                    break
+
+                continue
 
             id_bidang_on_proc = shp_data.o_idbidang if shp_data.o_idbidang not in null_values else shp_data.n_idbidang
             on_row = i
