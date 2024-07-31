@@ -2,7 +2,7 @@ import json
 import crud
 import time
 from uuid import UUID
-from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request, BackgroundTasks, status
+from fastapi import APIRouter, Depends, status, UploadFile, Response, HTTPException, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
@@ -285,7 +285,7 @@ async def update(id:UUID,
 
         sch = BidangSch(**sch.dict())
         geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
-        
+            
         # MEMERIKSA APAKAH GEOMETRY VALID
         geom_ = wkt.loads(geom)
         geom_shape = shape(geom_)
@@ -418,7 +418,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     parent_id=geo_data.get('parent_id', ''),
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
-            
+
             # MEMERIKSA APAKAH GEOMETRY VALID
             geom_ = wkt.loads(shp_data.geom)
             geom_shape = shape(geom_)
