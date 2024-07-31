@@ -57,8 +57,8 @@ async def create(
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id)
     new_obj = await crud.payment.get_by_id(id=new_obj.id)
 
-    background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
-    background_task.add_task(PaymentService.invoice_update_payment_status, new_obj.id)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+    background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=new_obj.id))
     
     return create_response(data=new_obj)
 
@@ -181,9 +181,9 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
 
-    background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
-    background_task.add_task(PaymentService.invoice_update_payment_status, obj_updated.id)
-
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+    background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=obj_updated.id))
+    
     return create_response(data=obj_updated)
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
@@ -220,7 +220,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
 
     await db_session.commit()
 
-    background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
 
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
@@ -258,7 +258,7 @@ async def void_detail(
         await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
-    background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
 

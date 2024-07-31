@@ -468,8 +468,8 @@ class RfpService:
 
             await db_session.commit()
 
-            background_task.add_task(PaymentService.bidang_update_status, bidang_ids)
-            background_task.add_task(PaymentService.invoice_update_payment_status, new_obj.id)
+            background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+            background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=new_obj.id))
 
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.args) if e.args != "" or e.args is not None else str(e.detail))
