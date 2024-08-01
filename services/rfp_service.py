@@ -151,7 +151,7 @@ class RfpService:
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
-                obj_rfp_bank["descs"] = termin.nomor_memo
+                obj_rfp_bank["descs"] = termin_bayar.activity.value
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 # RFP ALLOCATION
@@ -169,15 +169,19 @@ class RfpService:
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
-                obj_rfp_bank["descs"] = termin.nomor_memo
+                # obj_rfp_bank["descs"] = termin.nomor_memo [PINDAH KE BAWAH]
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 #RFP LINE
                 termin_bayar_dts = await crud.termin_bayar_dt.get_multi_by_termin_bayar_id(termin_bayar_id=termin_bayar.id)
+                beban_biaya_names = []
                 for termin_bayar_dt in termin_bayar_dts:
+                    
                     beban_biaya = await crud.bebanbiaya.get(id=termin_bayar_dt.beban_biaya_id)
                     if beban_biaya is None:
                         raise IdNotFoundException(model=crud.bebanbiaya.model, id=termin_bayar_dt.beban_biaya_id)
+                    
+                    beban_biaya_names.append(beban_biaya.name)
 
                     invoice_details = await crud.invoice_detail.get_multi_by_termin_id_and_beban_biaya_id(termin_id=termin.id, beban_biaya_id=termin_bayar_dt.beban_biaya_id)
                     amount_beban = sum([inv_dt.amount for inv_dt in invoice_details])
@@ -230,6 +234,9 @@ class RfpService:
                     obj_rfp_allocation["rfp_bank_id"] = str(rfp_bank_id)
                     obj_rfp_allocation["rfp_line_id"] = str(rfp_line_id)
                     obj_rfp_hd["rfp_allocations"].append(obj_rfp_allocation)
+
+                obj_rfp_bank["descs"] = ", ".join(beban_biaya_names)
+                
         
         obj_rfp_hd["descs"] = ",".join(rfp_hd_descs)
 
