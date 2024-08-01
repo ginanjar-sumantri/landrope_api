@@ -556,8 +556,8 @@ class SpkService:
     async def filter_sisa_pelunasan(self, bidang_id:UUID):
         bidang = await crud.bidang.get_by_id_for_spk(id=bidang_id)
 
-        if bidang.has_invoice_lunas != True:
-            raise HTTPException(status_code=422, detail="Bidang tidak memiliki pembayaran pelunasan")
+        if bidang.has_invoice_lunas != True and bidang.has_beginning_balance != True:
+            raise HTTPException(status_code=422, detail="Bidang tidak memiliki pembayaran Pelunasan/Lunas/Beginning Balance")
         
         if bidang.sisa_pelunasan == 0:
             raise HTTPException(status_code=422, detail="Bidang tidak memiliki sisa pelunasan")
