@@ -151,7 +151,7 @@ class RfpService:
                 obj_rfp_bank["id"] = str(rfp_bank_id)
                 obj_rfp_bank["amount"] = str(termin_bayar.amount)
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
-                obj_rfp_bank["descs"] = termin_bayar.activity.value
+                obj_rfp_bank["descs"] = str(termin_bayar.activity).replace("_", " ")
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
 
                 # RFP ALLOCATION
