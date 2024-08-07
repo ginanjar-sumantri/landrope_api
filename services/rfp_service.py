@@ -496,13 +496,13 @@ class RfpService:
                         obj_payment_komponen_biaya_dt_created = PaymentKomponenBiayaDetailCreateSch(payment_id=obj_payment.id, 
                                                                                                     invoice_detail_id=invoice_detail.id, 
                                                                                                     payment_giro_detail_id=obj_payment_giro_dt.id, 
-                                                                                                    amount=rfp_line_dt.amount)
+                                                                                                    amount=rfp_line_dt.estimated_amount)
                         
                         await crud.payment_komponen_biaya_detail.create(obj_in=obj_payment_komponen_biaya_dt_created, db_session=db_session, with_commit=False)
 
                         # UPDATE INVOICE DETAIL
                         obj_invoice_dt_updated = InvoiceDetailUpdateSch.from_orm(invoice_detail)
-                        obj_invoice_dt_updated.amount = rfp_line_dt.amount
+                        obj_invoice_dt_updated.amount = rfp_line_dt.estimated_amount
 
                         await crud.invoice_detail.update(obj_current=invoice_detail, obj_new=obj_invoice_dt_updated, db_session=db_session, with_commit=False)
 
