@@ -82,11 +82,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
         geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
             
         # MEMERIKSA APAKAH GEOMETRY VALID
-        geom_ = wkt.loads(geom)
-        geom_shape = shape(geom_)
-        is_valid = geom_shape.is_valid
+        is_valid, validity_reason = GeomService.checking_validity_geom(geom=geom)
         if is_valid is False:
-            validity_reason = explain_validity(geom_shape)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
 
         sch.geom = geom
@@ -287,11 +284,8 @@ async def update(id:UUID,
         geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
             
         # MEMERIKSA APAKAH GEOMETRY VALID
-        geom_ = wkt.loads(geom)
-        geom_shape = shape(geom_)
-        is_valid = geom_shape.is_valid
+        is_valid, validity_reason = GeomService.checking_validity_geom(geom=geom)
         if is_valid is False:
-            validity_reason = explain_validity(geom_shape)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
 
         sch.geom = geom
@@ -420,11 +414,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
             )
 
             # MEMERIKSA APAKAH GEOMETRY VALID
-            geom_ = wkt.loads(shp_data.geom)
-            geom_shape = shape(geom_)
-            is_valid = geom_shape.is_valid
+            is_valid, validity_reason = GeomService.checking_validity_geom(geom=shp_data.geom)
             if is_valid is False:
-                validity_reason = explain_validity(geom_shape)
                 error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Geometry rincik tidak valid! Validity Reason : {validity_reason}"
                 done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
                 if done:

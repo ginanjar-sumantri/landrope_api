@@ -34,7 +34,7 @@ class PaymentService:
 
         for payment_detail in payment_details_current:
             if payment_detail.is_void:
-                payment_detais = await crud.payment_detail.get_multi_payment_actived_by_invoice_id()
+                # payment_detais = await crud.payment_detail.get_multi_payment_actived_by_invoice_id()
                 continue
             else:
                 invoice_current = await crud.invoice.get(id=payment_detail.invoice_id)

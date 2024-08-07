@@ -1,6 +1,6 @@
 
 from geojson import FeatureCollection
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
 from shapely.geometry import Polygon, shape, MultiPolygon
 from io import BytesIO
@@ -15,6 +15,7 @@ import fiona as fio
 import math
 import shapely
 from shapely import wkb, wkt
+from shapely.validation import explain_validity
 
 T = TypeVar('T')
 
@@ -63,6 +64,17 @@ class GeomService(Generic[T]):
     def single_geometry_to_wkt(geometry):
         """Convert geometry geo data frame"""
         return geopandas.GeoSeries(geometry).geometry.to_wkt()[0]
+    
+    def checking_validity_geom(geom):
+        geom_ = wkt.loads(geom)
+        geom_shape = shape(geom_)
+        is_valid = geom_shape.is_valid
+        if is_valid is False:
+            validity_reason = explain_validity(geom_shape)
+            return is_valid, validity_reason
+            # raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
+        
+        return is_valid, None
     
     def bulk_geometry_to_wkt(geometry, i):
         """Convert geometry geo data frame"""

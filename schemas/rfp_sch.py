@@ -3,9 +3,16 @@ from uuid import UUID
 from datetime import date
 from decimal import Decimal
 
+class RFPLineDtNotificationSch(SQLModel):
+    name: str | None = Field(alias='name')
+    amount: Decimal | None = Field(alias='amount')
+    estimated_amount: Decimal | None = Field(alias='estimated_amount')
+
 class RfpLineNotificationSch(SQLModel):
     id: str | None = Field(alias='id')
     reff_no: str | None = Field(alias='reff_no')
+    amount: Decimal | None = Field(alias='amount')
+    rfp_line_dts: list[RFPLineDtNotificationSch] | None
 
 class RfpBankNotificationSch(SQLModel):
     id: str | None = Field(alias='id')
@@ -13,6 +20,7 @@ class RfpBankNotificationSch(SQLModel):
     bank_code: str | None = Field(alias='bank_code')
     date_doc: date | None = Field(alias='date_doc')
     posting_date: date | None = Field(alias='posting_date')
+    amount: Decimal | None = Field(alias='amount')
 
 class RfpAllocationNotificationSch(SQLModel):
     amount: Decimal | None = Field(alias='amount')

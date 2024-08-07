@@ -1,9 +1,9 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, and_, func
 from sqlalchemy.orm import selectinload
 from fastapi_async_sqlalchemy import db
 from crud.base_crud import CRUDBase
-from models import Giro, Payment, PaymentGiroDetail
+from models import Giro, Payment, PaymentGiroDetail, PaymentDetail
 from schemas.giro_sch import GiroCreateSch, GiroUpdateSch
 from common.enum import PaymentMethodEnum
 from uuid import UUID
@@ -59,4 +59,20 @@ class CRUDGiro(CRUDBase[Giro, GiroCreateSch, GiroUpdateSch]):
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
 
+    async def get_distinct_giro_by_invoice_ids(self, 
+                                *, 
+                                invoice_ids: list[UUID] | list[str],
+                                db_session : AsyncSession | None = None
+                                ) -> list[PaymentGiroDetail] | None:
+        
+        db_session = db_session or db.session
+        query = select(Giro).join(PaymentGiroDetail.giro_id == Giro.id
+                            ).join(PaymentDetail.payment_giro_detail_id == PaymentGiroDetail.id
+                            ).where(and_(
+                                    func.coalesce(PaymentDetail.is_void, False) == False,
+                                    PaymentDetail.invoice_id.in_(invoice_ids) 
+                                    )).distinct()
+        
+        response =  await db_session.execute(query)
+        return response.scalars().all()
 giro = CRUDGiro(Giro)
