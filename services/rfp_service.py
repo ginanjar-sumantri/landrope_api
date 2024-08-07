@@ -127,6 +127,9 @@ class RfpService:
                     if invoice.is_void:
                         continue
 
+                    if inv_bayar.amount == 0:
+                        continue
+
                     bidang = await crud.bidang.get(id=invoice.bidang_id)
                     spk = await crud.spk.get(id=invoice.spk_id)
 
