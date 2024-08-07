@@ -271,9 +271,11 @@ async def update_to_bidang_bundle(payload:Dict):
     for kjb_dt in obj.kjb_dts:
         if kjb_dt.hasil_peta_lokasi:
             await BidangHelper().update_from_kjb_to_bidang(kjb_dt_id=kjb_dt.id, db_session=db_session, worker_id=obj.updated_by_id)
+        
+        bundle_hd = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
 
-        if kjb_dt.bundlehd:
-            await BundleHelper().merge_alashak(bundle=kjb_dt.bundlehd, worker_id=obj.updated_by_id, alashak=kjb_dt.alashak, db_session=db_session)
+        if bundle_hd:
+            await BundleHelper().merge_alashak(bundle=bundle_hd, worker_id=obj.updated_by_id, alashak=kjb_dt.alashak, db_session=db_session)
     
     await db_session.commit()
 
