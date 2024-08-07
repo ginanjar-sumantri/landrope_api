@@ -408,7 +408,7 @@ class TerminService:
                     else:
                         ## START KOMPONEN BIAYA
                         # EDIT KOMPONEN BIAYA
-                        invoice_dts_calculate = await crud.invoice_detail.get_for_calculate_estimated_amount(invoice_id=new_obj_invoice.id, 
+                        invoice_dts_calculate = await crud.invoice_detail.get_for_calculate_estimated_amount(invoice_id=invoice.id, 
                                                                                                         bidang_komponen_biaya_id=bidang_komponen_biaya_current.id, 
                                                                                                         invoice_dt_id=invoice_dtl_current.id)
                     
