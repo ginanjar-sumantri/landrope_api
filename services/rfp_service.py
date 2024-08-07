@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from fastapi import HTTPException, status
 from fastapi_async_sqlalchemy import db
 from common.exceptions import IdNotFoundException
+from models import Payment, PaymentDetail, PaymentGiroDetail, PaymentKomponenBiayaDetail, Giro
 from schemas.termin_sch import TerminUpdateBaseSch
 from schemas.rfp_sch import RfpHeadNotificationSch
 from schemas.invoice_sch import InvoiceUpdateSch
@@ -290,11 +291,11 @@ class RfpService:
             await self.rfp_void(rfp_head=rfp_head)
             return True
 
-        if rfp_head.current_step not in ["Completed", "Finance Approval"]:
+        if rfp_head.current_step not in ["Completed", "Posting to GL"]:
             await self.rfp_updated_status(rfp_head=rfp_head)
             return True
         
-        if rfp_head.current_step == "Finance Approval":
+        if rfp_head.current_step == "Posting to GL":
             await self.rfp_generate_payment_giro_buka(background_task=background_task, rfp_head=rfp_head)
             return True
 
@@ -406,7 +407,7 @@ class RfpService:
         
         # CREATE PAYMENT
         last_number = await generate_code(entity=CodeCounterEnum.Payment, db_session=db_session, with_commit=False)
-        obj_payment_created = PaymentCreateSch(code=f"PAY-{last_number}", payment_method=PaymentMethodEnum.Giro, remark=f"{rfp_head.descs} (GENERATE FROM RFP DOC NO {rfp_head.doc_no})")
+        obj_payment_created = Payment(code=f"PAY-{last_number}", payment_method=PaymentMethodEnum.Giro, remark=f"{rfp_head.descs} (GENERATE FROM RFP DOC NO {rfp_head.doc_no})")
         obj_payment = await crud.payment.create(obj_in=obj_payment_created, db_session=db_session, with_commit=False)
         
         # CREATE GIRO
@@ -422,14 +423,14 @@ class RfpService:
                 obj_giro = await crud.giro.update(obj_current=obj_giro, obj_new=obj_giro_updated, db_session=db_session, with_commit=False)
             else:
                 last = await generate_code(entity=CodeCounterEnum.Giro, db_session=db_session, with_commit=False)
-                obj_giro_created= GiroCreateSch(code=f"{PaymentMethodEnum.Giro.value}-{last}", nomor_giro=rfp_bank.giro_no,
+                obj_giro_created= Giro(code=f"{PaymentMethodEnum.Giro.value}-{last}", nomor_giro=rfp_bank.giro_no,
                                                 amount=rfp_bank.amount, is_active=True, from_master=False,
                                                 bank_code=rfp_bank.bank_code, payment_method=PaymentMethodEnum.Giro,
                                                 tanggal_buka=rfp_bank.date_doc, tanggal_cair=rfp_bank.posting_date)
                 
                 obj_giro = await crud.giro.create(obj_in=obj_giro_created, db_session=db_session, with_commit=False)
             
-            giro_temps.append({"id": obj_giro, "rfp_bank_id": rfp_bank.id})
+            giro_temps.append({"id": obj_giro.id, "rfp_bank_id": rfp_bank.id})
 
 
         # CREATE PAYMENT GIRO DETAIL
@@ -459,7 +460,7 @@ class RfpService:
             
             # CREATE PAYMENT GIRO DETAIL 
             giro_src = next((giro_temp for giro_temp in giro_temps if giro_temp["rfp_bank_id"] == rfp_bank.id), None)
-            obj_payment_giro_dt_created = PaymentGiroDetailCreateSch(payment_id=obj_payment.id, payment_method=PaymentMethodEnum.Giro,
+            obj_payment_giro_dt_created = PaymentGiroDetail(payment_id=obj_payment.id, payment_method=PaymentMethodEnum.Giro,
                                                                         giro_id=giro_src["id"], amount=rfp_line.amount, pay_to=obj_termin_bayar.pay_to)
             
             obj_payment_giro_dt = await crud.payment_giro_detail.create(obj_in=obj_payment_giro_dt_created, db_session=db_session, with_commit=False)
@@ -474,9 +475,10 @@ class RfpService:
                 
                 # BIAYA TANAH
                 if obj_termin_bayar.activity == ActivityEnum.BIAYA_TANAH:
-                    invoice_bayar = next((inv_bayar for inv_bayar in invoice_bayars if inv_bayar.termin_bayar_id == obj_termin_bayar.id), None)
+                    invoice_bidang = next((inv for inv in invoices if inv.bidang_id == obj_bidang.id), None)
+                    invoice_bayar = next((inv_bayar for inv_bayar in invoice_bayars if inv_bayar.termin_bayar_id == obj_termin_bayar.id and inv_bayar.invoice_id == invoice_bidang.id), None)
                     
-                    obj_payment_detail_created = PaymentDetailCreateSch(payment_id=obj_payment.id, invoice_id=invoice_bayar.invoice_id, 
+                    obj_payment_detail_created = PaymentDetail(payment_id=obj_payment.id, invoice_id=invoice_bayar.invoice_id, 
                                                                         amount=rfp_line_dt.amount, is_void=False, remark="Generate From RFP", 
                                                                         payment_giro_detail_id=obj_payment_giro_dt.id, realisasi=False)
                     await crud.payment_detail.create(obj_in=obj_payment_detail_created, db_session=db_session, with_commit=False)
@@ -485,7 +487,7 @@ class RfpService:
                 elif obj_termin_bayar.activity == ActivityEnum.UTJ:
                     utj_invoice = next((utj for utj in utj_invoices if utj.bidang_id == obj_bidang.id), None)
                     
-                    obj_payment_detail_created = PaymentDetailCreateSch(payment_id=obj_payment.id, invoice_id=utj_invoice.id, 
+                    obj_payment_detail_created = PaymentDetail(payment_id=obj_payment.id, invoice_id=utj_invoice.id, 
                                                                         amount=rfp_line_dt.amount, is_void=False, remark="Generate From RFP", 
                                                                         payment_giro_detail_id=obj_payment_giro_dt.id, realisasi=True)
                     await crud.payment_detail.create(obj_in=obj_payment_detail_created, db_session=db_session, with_commit=False)
@@ -493,13 +495,14 @@ class RfpService:
                 # KOMPONEN BIAYA
                 else:
                     termin_bayar_dt = next((t_bayar_dt for t_bayar_dt in termin_bayar_details if t_bayar_dt.termin_bayar_id == obj_termin_bayar.id), None)
-                    invoice_details = await crud.invoice_detail.get_multi_by_termin_id_and_beban_biaya_id(termin_id=obj_termin_bayar.termin_id, beban_biaya_id=termin_bayar_dt.beban_biaya_id)
+                    invoice_details = await crud.invoice_detail.get_multi_by_termin_id_and_beban_biaya_id_and_bidang_id(termin_id=obj_termin_bayar.termin_id, beban_biaya_id=termin_bayar_dt.beban_biaya_id, bidang_id=obj_bidang.id)
 
                     for invoice_detail in invoice_details:
-                        obj_payment_komponen_biaya_dt_created = PaymentKomponenBiayaDetailCreateSch(payment_id=obj_payment.id, 
+                        obj_payment_komponen_biaya_dt_created = PaymentKomponenBiayaDetail(payment_id=obj_payment.id, 
                                                                                                     invoice_detail_id=invoice_detail.id, 
                                                                                                     payment_giro_detail_id=obj_payment_giro_dt.id, 
-                                                                                                    amount=rfp_line_dt.estimated_amount)
+                                                                                                    amount=rfp_line_dt.estimated_amount,
+                                                                                                    beban_biaya_id=invoice_detail.beban_biaya_id)
                         
                         await crud.payment_komponen_biaya_detail.create(obj_in=obj_payment_komponen_biaya_dt_created, db_session=db_session, with_commit=False)
 
@@ -518,11 +521,11 @@ class RfpService:
 
                         await crud.bidang_komponen_biaya.update(obj_current=obj_bidang_komponen_biaya, obj_new=obj_bidang_komponen_biaya_updated, db_session=db_session, with_commit=False)
 
-                # UPDATE TERMIN BAYAR
-                obj_termin_bayar_updated = TerminBayarUpdateSch.from_orm(obj_termin_bayar)
-                obj_termin_bayar_updated.amount = rfp_line.amount
+            # UPDATE TERMIN BAYAR
+            obj_termin_bayar_updated = TerminBayarUpdateSch.from_orm(obj_termin_bayar)
+            obj_termin_bayar_updated.amount = rfp_line.amount
 
-                await crud.termin_bayar.update(obj_current=obj_termin_bayar, obj_new=obj_termin_bayar_updated, db_session=db_session, with_commit=False)
+            await crud.termin_bayar.update(obj_current=obj_termin_bayar, obj_new=obj_termin_bayar_updated, db_session=db_session, with_commit=False)
 
             # UPDATE TERMIN
             termin_update = TerminUpdateBaseSch.from_orm(termin)
@@ -531,15 +534,15 @@ class RfpService:
 
             await crud.termin.update(obj_current=termin, obj_new=termin_update, db_session=db_session, with_commit=False)
 
-            try:
+        try:
 
-                await db_session.commit()
+            await db_session.commit()
 
-            except Exception as e:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args)
-            
-            background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
-            background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=obj_payment.id))
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.args)
+        
+        background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+        background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=obj_payment.id))
 
     # UPDATE RFP LAST STATUS RFP PADA MEMO BAYAR (TERMIN)
     # UPDATE TANGGAL CAIR GIRO
@@ -568,8 +571,9 @@ class RfpService:
         invoices = await crud.invoice.get_multi_by_termin_id(termin_id=termin.id)
         bidang_ids = list(set([inv.bidang_id for inv in invoices if inv.is_void != True]))
         payment_details = await crud.payment_detail.get_multi_payment_actived_by_invoice_id(list_ids=[inv.id for inv in invoices])
+        payment_id = next((pay_dt.payment_id for pay_dt in payment_details), None)
         payment_ids = list(set([dt.payment_id for dt in payment_details]))
-        giros = await crud.giro.get_distinct_giro_by_invoice_ids(invoice_ids=[inv.id for inv in invoices])
+        giros = await crud.giro.get_distinct_giro_by_payment_id(payment_id=payment_id)
 
         for bank in rfp_banks:
             obj_giro = next((giro for giro in giros if bank.giro_no == giro.nomor_giro and bank.bank_code == giro.bank_code and bank.date_doc == giro.tanggal_buka), None)

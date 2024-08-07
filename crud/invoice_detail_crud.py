@@ -153,6 +153,20 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response = await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_multi_by_termin_id_and_beban_biaya_id_and_bidang_id(self, *, termin_id:UUID, beban_biaya_id:UUID, bidang_id:UUID, db_session:AsyncSession | None = None) -> list[InvoiceDetail] | None:
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(InvoiceDetail.invoice
+                                    ).join(Invoice.termin
+                                    ).join(InvoiceDetail.bidang_komponen_biaya
+                                    ).where(and_(Termin.id == termin_id, 
+                                                BidangKomponenBiaya.beban_biaya_id == beban_biaya_id, 
+                                                Invoice.is_void != True,
+                                                Invoice.bidang_id == bidang_id))
+        
+        response = await db_session.execute(query)
+        return response.scalars().all()
+    
     async def get_by_komponen_biaya_id_and_termin_is_draft(self, 
                             *,
                             id:UUID | None = None,

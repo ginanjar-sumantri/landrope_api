@@ -3,7 +3,7 @@ from sqlmodel import select, and_, func
 from sqlalchemy.orm import selectinload
 from fastapi_async_sqlalchemy import db
 from crud.base_crud import CRUDBase
-from models import Giro, Payment, PaymentGiroDetail, PaymentDetail
+from models import Giro, Payment, PaymentGiroDetail, PaymentDetail, PaymentKomponenBiayaDetail
 from schemas.giro_sch import GiroCreateSch, GiroUpdateSch
 from common.enum import PaymentMethodEnum
 from uuid import UUID
@@ -59,18 +59,15 @@ class CRUDGiro(CRUDBase[Giro, GiroCreateSch, GiroUpdateSch]):
         obj = await db_session.execute(query)
         return obj.scalar_one_or_none()
 
-    async def get_distinct_giro_by_invoice_ids(self, 
+    async def get_distinct_giro_by_payment_id(self, 
                                 *, 
-                                invoice_ids: list[UUID] | list[str],
+                                payment_id: list[UUID] | list[str],
                                 db_session : AsyncSession | None = None
-                                ) -> list[PaymentGiroDetail] | None:
+                                ) -> list[Giro] | None:
         
         db_session = db_session or db.session
-        query = select(Giro).join(PaymentGiroDetail.giro_id == Giro.id
-                            ).join(PaymentDetail.payment_giro_detail_id == PaymentGiroDetail.id
-                            ).where(and_(
-                                    func.coalesce(PaymentDetail.is_void, False) == False,
-                                    PaymentDetail.invoice_id.in_(invoice_ids) 
+        query = select(Giro).join(PaymentGiroDetail, PaymentGiroDetail.giro_id == Giro.id
+                            ).where(and_(PaymentGiroDetail.payment_id == payment_id 
                                     )).distinct()
         
         response =  await db_session.execute(query)
