@@ -1,5 +1,5 @@
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from fastapi_async_sqlalchemy import db
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -29,6 +29,14 @@ class InvoiceService:
 
     # VOID INVOICE UTJ. DELETE DATA INVOICE DAN PAYMENT DETAIL
     async def void_invoice_utj(self, obj_current: Invoice, db_session: AsyncSession):
+
+        # PERIKSA APAKAH UTJ BIDANG TERSEBUT TELAH MEMILIKI REALISASI DI MEMO PEMBAYARAN (DP, LUNAS/PELUNASAN)
+        invoice_have_termin_bayar_utj = await crud.invoice.get_invoice_have_termin_bayar_utj_by_bidang_id(bidang_id=obj_current.bidang_id)
+        if invoice_have_termin_bayar_utj:
+            termin = await crud.termin.get(id=invoice_have_termin_bayar_utj.termin_id)
+            bidang = await crud.bidang.get(id=obj_current.bidang_id)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"UTJ bidang {bidang.id_bidang} memiliki realisasi pada memo {termin.code}")
+
         for payment_detail in obj_current.payment_details:
             await crud.payment_detail.remove(id=payment_detail.id, db_session=db_session, with_commit=False)
 
