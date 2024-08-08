@@ -198,6 +198,7 @@ class BidangShpExSch(BaseGeoModel):
 class BidangSrcSch(SQLModel):
     id:UUID|None
     id_bidang:str|None
+    id_bidang_lama:str|None
     alashak:str|None
 
 class BidangForTreeReportSch(SQLModel):

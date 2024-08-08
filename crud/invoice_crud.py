@@ -6,9 +6,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
-from common.enum import JenisBayarEnum
+from common.enum import JenisBayarEnum, ActivityEnum
 from crud.base_crud import CRUDBase
-from models import Invoice, InvoiceDetail, BidangKomponenBiaya, PaymentDetail, Payment, Termin, Bidang, Skpt, Planing, Spk
+from models import (Invoice, InvoiceDetail, InvoiceBayar, BidangKomponenBiaya, PaymentDetail, Payment, 
+                    Termin, TerminBayar, Bidang, Skpt, Planing, Spk)
 from schemas.invoice_sch import InvoiceCreateSch, InvoiceUpdateSch, InvoiceForPrintOutUtj, InvoiceForPrintOut, InvoiceHistoryforPrintOut, InvoiceLuasBayarSch
 from typing import List
 from uuid import UUID
@@ -535,4 +536,28 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         response = await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_invoice_have_termin_bayar_utj_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Invoice| None:
+        
+        db_session = db_session or db.session
+        
+        query = select(Invoice).join(InvoiceBayar, Invoice.id == InvoiceBayar.invoice_id
+                            ).join(TerminBayar, TerminBayar.id == InvoiceBayar.termin_bayar_id
+                            ).where(and_(
+                                 Invoice.is_void == False,
+                                 InvoiceBayar.amount > 0,
+                                 TerminBayar.activity == ActivityEnum.UTJ,
+                                 Invoice.bidang_id == bidang_id
+                            )
+                            ).limit(1)
+
+        
+        
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+
 invoice = CRUDInvoice(Invoice)

@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Depends, UploadFile, Response, Request, B
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Params, Page
 from fastapi_async_sqlalchemy import db
-from sqlmodel import select, and_
+from sqlmodel import select, and_, or_
 import crud
 from models.hasil_peta_lokasi_model import HasilPetaLokasi, HasilPetaLokasiDetail
 from models.worker_model import Worker
@@ -138,7 +138,11 @@ async def get_list(
                             ))
     
     if keyword:
-        query = query.filter(Bidang.id_bidang.ilike(f'%{keyword}%'))
+        query = query.filter(or_(
+                                    Bidang.id_bidang.ilike(f'%{keyword}%'),
+                                    Bidang.id_bidang_lama.ilike(f'%{keyword}%'),
+                                )
+                            )
 
 
     objs = await crud.bidang.get_multi_paginated(params=params, query=query)
