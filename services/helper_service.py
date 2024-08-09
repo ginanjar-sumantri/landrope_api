@@ -386,8 +386,10 @@ class BundleHelper:
                             file_path : str | None = None,
                             worker_id : UUID | str = None):
 
+        bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
+
         # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
-        bundledt_obj_current = next((x for x in bundle_hd_obj.bundledts if x.dokumen_id == dokumen.id and x.bundle_hd_id == bundle_hd_obj.id), None)
+        bundledt_obj_current = next((x for x in bundle_dts if x.dokumen_id == dokumen.id and x.bundle_hd_id == bundle_hd_obj.id), None)
         
         if bundledt_obj_current is None:
             code = bundle_hd_obj.code + dokumen.code
@@ -542,7 +544,7 @@ class BundleHelper:
     #update bundle alashak for default if metadata not exists
         file_path:str | None = None
         dokumen = await crud.dokumen.get_by_name(name="ALAS HAK")
-        bundle = await crud.bundlehd.get_by_id(id=bundle.id)
+        # bundle = await crud.bundlehd.get_by_id(id=bundle.id)
         bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
         if bundledt_current:
             if bundledt_current.meta_data is None:
