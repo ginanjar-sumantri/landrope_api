@@ -258,20 +258,42 @@ async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
     return create_response(data=obj_updated)
 
 @router.post("/task/update-to-bidang")
-async def update_to_bidang_bundle(payload:Dict):
+async def update_to_bidang(payload:Dict):
 
     db_session = db.session
 
     id = payload.get("id", None)
-    obj = await crud.kjb_hd.get_by_id(id=id)
+    obj = await crud.kjb_hd.get(id=id)
 
     if not obj:
         raise IdNotFoundException(KjbHd, id)
     
-    for kjb_dt in obj.kjb_dts:
-        if kjb_dt.hasil_peta_lokasi:
+    kjb_dts = await crud.kjb_dt.get_multi_by_kjb_hd_id(kjb_hd_id=obj.id)
+    
+    for kjb_dt in kjb_dts:
+        hasil_peta_lokasi = await crud.hasil_peta_lokasi.get_by_kjb_dt_id(kjb_dt_id=kjb_dt.id)
+        if hasil_peta_lokasi:
             await BidangHelper().update_from_kjb_to_bidang(kjb_dt_id=kjb_dt.id, db_session=db_session, worker_id=obj.updated_by_id)
-        
+    
+    await db_session.commit()
+
+    return {"message" : "successfully"}
+
+@router.post("/task/update-to-alashak-bundle")
+async def update_to_bidang(payload:Dict):
+
+    db_session = db.session
+
+    id = payload.get("id", None)
+    obj = await crud.kjb_hd.get(id=id)
+
+    if not obj:
+        raise IdNotFoundException(KjbHd, id)
+    
+    kjb_dts = await crud.kjb_dt.get_multi_by_kjb_hd_id(kjb_hd_id=obj.id)
+    
+    for kjb_dt in kjb_dts:
+
         bundle_hd = await crud.bundlehd.get(id=kjb_dt.bundle_hd_id)
 
         if bundle_hd:
