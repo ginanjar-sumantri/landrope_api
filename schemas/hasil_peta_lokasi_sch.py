@@ -19,6 +19,7 @@ class HasilPetaLokasiCreateExtSch(HasilPetaLokasiBase):
 
 class HasilPetaLokasiSch(HasilPetaLokasiFullBase):
     id_bidang:str|None = Field(alias="id_bidang")
+    id_bidang_lama:str|None = Field(alias="id_bidang_lama")
     alashak_bidang:str|None = Field(alias="alashak_bidang")
     alashak_kjb_dt:str|None = Field(alias="alashak_kjb_dt")
     project_name:str|None = Field(alias="project_name")

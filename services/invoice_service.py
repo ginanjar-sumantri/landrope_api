@@ -36,6 +36,13 @@ class InvoiceService:
             termin = await crud.termin.get(id=invoice_have_termin_bayar_utj.termin_id)
             bidang = await crud.bidang.get(id=obj_current.bidang_id)
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"UTJ bidang {bidang.id_bidang} memiliki realisasi pada memo {termin.code}")
+        
+        # UBAH USE UTJ FALSE PADA INVOICE MEMO 
+        invoice_draft_use_utj = await crud.invoice.get_invoice_draft_use_utj_by_bidang_id(bidang_id=obj_current.bidang_id)
+        if invoice_draft_use_utj:
+            invoice_updated = InvoiceUpdateSch.from_orm(invoice_draft_use_utj)
+            invoice_updated.use_utj = False
+            await crud.invoice.update(obj_current=invoice_draft_use_utj, obj_new=invoice_updated, db_session=db_session, with_commit=False)
 
         for payment_detail in obj_current.payment_details:
             await crud.payment_detail.remove(id=payment_detail.id, db_session=db_session, with_commit=False)

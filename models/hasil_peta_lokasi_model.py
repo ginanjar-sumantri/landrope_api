@@ -118,6 +118,10 @@ class HasilPetaLokasi(HasilPetaLokasiFullBase, table=True):
         return getattr(getattr(self, 'bidang', None), 'id_bidang', None)
     
     @property
+    def id_bidang_lama(self) -> str | None:
+        return getattr(getattr(self, 'bidang', None), 'id_bidang_lama', None)
+    
+    @property
     def alashak_bidang(self) -> str | None:
         return getattr(getattr(self, 'bidang', None), 'alashak', None)
     

@@ -465,7 +465,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         db_session = db_session or db.session
 
         query = text(f"""
-                        select i.id, b.luas_bayar, b.luas_surat, i.spk_id
+                        select i.id, b.luas_bayar 
                         from invoice i
                         inner join bidang b on i.bidang_id = b.id
                         where i.termin_id = '{str(termin_id)}'
@@ -556,8 +556,25 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
                             )
                             ).limit(1)
 
+        response = await db_session.execute(query)
+
+        return response.scalar_one_or_none()
+    
+    async def get_invoice_draft_use_utj_by_bidang_id(self, 
+                  *, 
+                  bidang_id: UUID | str | None = None,
+                  db_session: AsyncSession | None = None
+                  ) -> Invoice| None:
         
+        db_session = db_session or db.session
         
+        query = select(Invoice).join(Termin, Termin.id == Invoice.termin_id
+                            ).where(and_(
+                                            func.coalesce(Termin.is_draft, False) == True,
+                                            func.coalesce(Invoice.use_utj, False) == True,
+                                            Invoice.bidang_id == bidang_id
+                                        )).limit(1)
+
         response = await db_session.execute(query)
 
         return response.scalar_one_or_none()
