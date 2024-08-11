@@ -130,7 +130,7 @@ async def get_list(
     """Gets a paginated list objects"""
 
     status_ = [StatusBidangEnum.Belum_Bebas]
-    query = select(Bidang.id, Bidang.id_bidang).select_from(Bidang
+    query = select(Bidang.id, Bidang.id_bidang, Bidang.id_bidang_lama).select_from(Bidang
                     ).where(and_(
                                 Bidang.status.in_(status_),
                                 Bidang.jenis_bidang != JenisBidangEnum.Bintang,
