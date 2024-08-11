@@ -546,11 +546,13 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         
         query = select(Invoice).join(InvoiceBayar, Invoice.id == InvoiceBayar.invoice_id
                             ).join(TerminBayar, TerminBayar.id == InvoiceBayar.termin_bayar_id
+                            ).join(Termin, Termin.id == TerminBayar.termin_id
                             ).where(and_(
                                  Invoice.is_void == False,
                                  InvoiceBayar.amount > 0,
                                  TerminBayar.activity == ActivityEnum.UTJ,
-                                 Invoice.bidang_id == bidang_id
+                                 Invoice.bidang_id == bidang_id,
+                                 func.coalesce(Termin.is_draft, False) == False
                             )
                             ).limit(1)
 
