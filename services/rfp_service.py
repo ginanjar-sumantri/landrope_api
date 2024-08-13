@@ -18,6 +18,7 @@ from schemas.termin_bayar_sch import TerminBayarUpdateSch
 from schemas.giro_sch import GiroCreateSch, GiroUpdateSch
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaUpdateSch
 from services.payment_service import PaymentService
+from services.helper_service import HelperService
 from common.enum import PaymentMethodEnum, ActivityEnum, SatuanBayarEnum, activity_landrope_to_activity_rfp_dict
 from common.generator import generate_code
 from models.code_counter_model import CodeCounterEnum
@@ -68,7 +69,8 @@ class RfpService:
         pay_to = []
         termin_bayars = await crud.termin_bayar.get_multi_by_termin_id(termin_id=termin.id)
         for termin_bayar in termin_bayars:
-            p = f"{termin_bayar.pay_to or ''} ({float(termin_bayar.amount)})"
+            money = HelperService.rupiah_format(termin_bayar.amount)
+            p = f"{termin_bayar.pay_to or ''} ({money})"
 
             pay_to.append(p)
 
@@ -113,7 +115,8 @@ class RfpService:
                 obj_rfp_line["amount"] = str(termin_bayar.amount)
                 obj_rfp_line["descs"] = termin.nomor_memo
                 obj_rfp_line["reff_no"] = str(termin_bayar.id)
-                obj_rfp_line["pay_to"] = f"{termin_bayar.pay_to or ''} ({float(termin_bayar.amount)})"
+                rfp_line_money = HelperService.rupiah_format(termin_bayar.amount)
+                obj_rfp_line["pay_to"] = f"{termin_bayar.pay_to or ''} ({rfp_line_money})"
                 obj_rfp_line["rfp_line_dts"] = []
                 obj_rfp_hd["rfp_lines"].append(obj_rfp_line)
                 
@@ -207,7 +210,8 @@ class RfpService:
                     obj_rfp_line["amount"] = str(amount_beban)
                     obj_rfp_line["descs"] = termin.nomor_memo
                     obj_rfp_line["reff_no"] = str(termin_bayar.id)
-                    obj_rfp_line["pay_to"] = f"{termin_bayar.pay_to or ''} ({float(termin_bayar.amount)})"
+                    rfp_line_money = HelperService.rupiah_format(termin_bayar.amount)
+                    obj_rfp_line["pay_to"] = f"{termin_bayar.pay_to or ''} ({rfp_line_money})"
                     obj_rfp_line["rfp_line_dts"] = []
                     obj_rfp_hd["rfp_lines"].append(obj_rfp_line)
 
