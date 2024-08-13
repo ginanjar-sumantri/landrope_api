@@ -581,8 +581,11 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 else:
                     shp_data.n_idbidang = bidang_lama.id_bidang
 
+            if shp_data.no_peta in null_values:
+                shp_data.no_peta = await generate_no_peta(planing_id=plan.id, id_bidang=shp_data.n_idbidang)
+
             sch = BidangSch(id_bidang=shp_data.n_idbidang,
-                            id_bidang_lama=shp_data.o_idbidang,
+                            id_bidang_lama=shp_data.o_idbidang if shp_data.o_idbidang != 'nan' else None,
                             no_peta=shp_data.no_peta,
                             pemilik_id=pemilik,
                             jenis_bidang=HelperService().FindJenisBidang(shp_data.proses),
