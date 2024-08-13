@@ -112,7 +112,7 @@ class RfpService:
                 rfp_line_id = uuid4()
                 obj_rfp_line["id"] = str(rfp_line_id)
                 obj_rfp_line["activity_code"] = rfp_activity_code
-                obj_rfp_line["amount"] = str(termin_bayar.amount)
+                obj_rfp_line["amount"] = str(float(termin_bayar.amount))
                 obj_rfp_line["descs"] = termin.nomor_memo
                 obj_rfp_line["reff_no"] = str(termin_bayar.id)
                 rfp_line_money = HelperService.rupiah_format(termin_bayar.amount)
@@ -163,7 +163,7 @@ class RfpService:
                 # RFP BANK
                 rfp_bank_id = uuid4()
                 obj_rfp_bank["id"] = str(rfp_bank_id)
-                obj_rfp_bank["amount"] = str(termin_bayar.amount)
+                obj_rfp_bank["amount"] = str(float(termin_bayar.amount))
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
                 obj_rfp_bank["descs"] = str(termin_bayar.activity).replace("_", " ")
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
@@ -171,7 +171,7 @@ class RfpService:
                 # RFP ALLOCATION
                 rfp_allocation_id = uuid4()
                 obj_rfp_allocation["id"] = str(rfp_allocation_id)
-                obj_rfp_allocation["amount"] = str(termin_bayar.amount)
+                obj_rfp_allocation["amount"] = str(float(termin_bayar.amount))
                 obj_rfp_allocation["rfp_head_id"] = str(rfp_hd_id)
                 obj_rfp_allocation["rfp_bank_id"] = str(rfp_bank_id)
                 obj_rfp_allocation["rfp_line_id"] = str(rfp_line_id)
@@ -180,7 +180,7 @@ class RfpService:
                 # RFP BANK
                 rfp_bank_id = uuid4()
                 obj_rfp_bank["id"] = str(rfp_bank_id)
-                obj_rfp_bank["amount"] = str(termin_bayar.amount)
+                obj_rfp_bank["amount"] = str(float(termin_bayar.amount))
                 obj_rfp_bank["date_doc"] = str(workflow.last_status_at.date())
                 # obj_rfp_bank["descs"] = termin.nomor_memo [PINDAH KE BAWAH]
                 obj_rfp_hd["rfp_banks"].append(obj_rfp_bank)
@@ -207,7 +207,7 @@ class RfpService:
                     rfp_line_id = uuid4()
                     obj_rfp_line["id"] = str(rfp_line_id)
                     obj_rfp_line["activity_code"] = rfp_activity_code
-                    obj_rfp_line["amount"] = str(amount_beban)
+                    obj_rfp_line["amount"] = str(float(amount_beban))
                     obj_rfp_line["descs"] = termin.nomor_memo
                     obj_rfp_line["reff_no"] = str(termin_bayar.id)
                     rfp_line_money = HelperService.rupiah_format(termin_bayar.amount)
@@ -246,7 +246,7 @@ class RfpService:
                     # RFP ALLOCATION
                     rfp_allocation_id = uuid4()
                     obj_rfp_allocation["id"] = str(rfp_allocation_id)
-                    obj_rfp_allocation["amount"] = str(termin_bayar.amount)
+                    obj_rfp_allocation["amount"] = str(float(termin_bayar.amount))
                     obj_rfp_allocation["rfp_head_id"] = str(rfp_hd_id)
                     obj_rfp_allocation["rfp_bank_id"] = str(rfp_bank_id)
                     obj_rfp_allocation["rfp_line_id"] = str(rfp_line_id)

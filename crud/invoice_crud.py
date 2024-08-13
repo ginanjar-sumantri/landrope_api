@@ -465,7 +465,7 @@ class CRUDInvoice(CRUDBase[Invoice, InvoiceCreateSch, InvoiceUpdateSch]):
         db_session = db_session or db.session
 
         query = text(f"""
-                        select i.id, b.luas_bayar 
+                        select i.id, b.luas_bayar, i.spk_id, b.luas_surat
                         from invoice i
                         inner join bidang b on i.bidang_id = b.id
                         where i.termin_id = '{str(termin_id)}'
