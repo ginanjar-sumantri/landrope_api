@@ -816,7 +816,6 @@ class TerminService:
         
         return file_path
     
-
     async def generate_printout(self, id:UUID | str):
         obj = await crud.termin.get_by_id_for_printout(id=id)
         if obj is None:
@@ -826,28 +825,17 @@ class TerminService:
 
         # MENGUBAH TANGGAL TRANSAKSI DAN CREATED DATE MENJADI FORMAT INDONESIA SESUAI DENGAN FORMAT USER
         tanggal_transaksi = (termin_header.tanggal_transaksi or date.today()).strftime("%d-%m-%Y")
-        bulan_created_en = termin_header.created_at.strftime('%B')
-        bulan_created_id = self.bulan_dict.get(bulan_created_en, bulan_created_en)
-        created_at = termin_header.created_at.strftime(f'%d {bulan_created_id} %Y')
+        created_at = HelperService().indonesia_format_date(termin_header.created_at)
 
-        nama_bulan_inggris = (termin_header.tanggal_rencana_transaksi or date.today()).strftime('%B')  # Mendapatkan nama bulan dalam bahasa Inggris
-        nama_bulan_indonesia = self.bulan_dict.get(nama_bulan_inggris, nama_bulan_inggris)  # Mengonversi ke bahasa Indonesia
-        tanggal_hasil = termin_header.tanggal_rencana_transaksi.strftime(f'%d {nama_bulan_indonesia} %Y')
-        day_of_week = termin_header.tanggal_rencana_transaksi.strftime("%A")
-        hari_transaksi:str|None = HelperService().ToDayName(day_of_week)
+        tanggal_rencana_transaksi = HelperService().indonesia_format_date(termin_header.tanggal_rencana_transaksi or date.today())
+        day = termin_header.tanggal_rencana_transaksi.strftime("%A")
+        hari_transaksi:str|None = HelperService().ToDayName(day)
 
         remarks = (termin_header.remark or '').splitlines()
+
         # PERHITUNGAN UTJ (jika invoice dlm termin dikurangi utj) & data invoice di termin yg akan di printout
-        # amount_utj_used = []
-        termin_invoices:list[InvoiceForPrintOutExt] = []
         obj_invoices = await crud.invoice.get_invoice_by_termin_id_for_printout(termin_id=id)
-        for inv in obj_invoices:
-            iv = InvoiceForPrintOutExt(**dict(inv))
-            # invoice_curr = await crud.invoice.get_utj_amount_by_id(id=iv.id)
-            # amount_utj_used.append(invoice_curr.utj_amount)
-            termin_invoices.append(iv)
-        
-        # amount_utj = sum(amount_utj_used) or 0
+        termin_invoices:list[InvoiceForPrintOutExt] = [InvoiceForPrintOutExt(**dict(inv)) for inv in obj_invoices]
 
         # LIST BIDANG DALAM SATU TAHAP
         obj_bidangs = await crud.tahap_detail.get_multi_by_tahap_id_for_printout(tahap_id=termin_header.tahap_id)
@@ -857,22 +845,19 @@ class TerminService:
         overlap_exists = False
         no = 1
         for bd in obj_bidangs:
-            bidang = TahapDetailForPrintOut(**dict(bd),
-                                        no=no,
-                                        total_hargaExt="{:,.0f}".format(bd.total_harga),
-                                        harga_transaksiExt = "{:,.0f}".format(bd.harga_transaksi),
-                                        luas_suratExt = "{:,.0f}".format(bd.luas_surat),
-                                        luas_nettExt = "{:,.0f}".format(bd.luas_nett),
-                                        luas_ukurExt = "{:,.0f}".format(bd.luas_ukur),
-                                        luas_gu_peroranganExt = "{:,.0f}".format(bd.luas_gu_perorangan),
-                                        luas_pbt_peroranganExt = "{:,.0f}".format(bd.luas_pbt_perorangan),
-                                        luas_bayarExt = "{:,.0f}".format(bd.luas_bayar),
-                                        is_bold=False)
-            
-
-            bidang_in_termin = next((bd_in_termin for bd_in_termin in termin_invoices if bd_in_termin.bidang_id == bidang.bidang_id), None)
+            bidang_in_termin = next((bd_in_termin for bd_in_termin in termin_invoices if bd_in_termin.bidang_id == bd.bidang_id), None)
+            bidang = TahapDetailForPrintOut(**dict(bd),no=no,
+                                        total_hargaExt = HelperService.rupiah_format_zero(bd.total_harga),
+                                        harga_transaksiExt = HelperService.rupiah_format_zero(bd.harga_transaksi),
+                                        luas_suratExt = HelperService.rupiah_format_zero(bd.luas_surat),
+                                        luas_nettExt = HelperService.rupiah_format_zero(bd.luas_nett),
+                                        luas_ukurExt = HelperService.rupiah_format_zero(bd.luas_ukur),
+                                        luas_gu_peroranganExt = HelperService.rupiah_format_zero(bd.luas_gu_perorangan),
+                                        luas_pbt_peroranganExt = HelperService.rupiah_format_zero(bd.luas_pbt_perorangan),
+                                        luas_bayarExt = HelperService.rupiah_format_zero(bd.luas_bayar),
+                                        is_bold=True if bidang_in_termin else False)
+                        
             if bidang_in_termin:
-                bidang.is_bold = True
                 nomor_urut_bidang.append(bidang.no)
 
             overlaps = await crud.bidangoverlap.get_multi_by_bidang_id_for_printout(bidang_id=bd.bidang_id)
@@ -884,9 +869,10 @@ class TerminService:
                     nib_perorangan:str = ""
                     nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
                     if nib_perorangan_meta_data:
-                        if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
+                        if nib_perorangan_meta_data.meta_data and nib_perorangan_meta_data.meta_data != "":
                             metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
-                            nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
+                            nib_perorangan = metadata_dict.get(nib_perorangan_meta_data.key_field, "")
+
                     overlap.nib = nib_perorangan
 
                 list_overlap.append(overlap)
@@ -907,13 +893,13 @@ class TerminService:
 
         list_bidang_id = [bd.bidang_id for bd in obj_bidangs]
 
-        total_luas_surat = "{:,.0f}".format(sum([b.luas_surat for b in obj_bidangs]))
-        total_luas_ukur = "{:,.0f}".format(sum([b.luas_ukur for b in obj_bidangs]))
-        total_luas_gu_perorangan = "{:,.0f}".format(sum([b.luas_gu_perorangan for b in obj_bidangs]))
-        total_luas_nett = "{:,.0f}".format(sum([b.luas_nett for b in obj_bidangs]))
-        total_luas_pbt_perorangan = "{:,.0f}".format(sum([b.luas_pbt_perorangan for b in obj_bidangs]))
-        total_luas_bayar = "{:,.0f}".format(sum([b.luas_bayar for b in obj_bidangs]))
-        total_harga = "{:,.0f}".format(sum([b.total_harga for b in obj_bidangs]))
+        total_luas_surat = HelperService.rupiah_format_zero(sum([b.luas_surat for b in obj_bidangs]))
+        total_luas_ukur = HelperService.rupiah_format_zero(sum([b.luas_ukur for b in obj_bidangs]))
+        total_luas_gu_perorangan = HelperService.rupiah_format_zero(sum([b.luas_gu_perorangan for b in obj_bidangs]))
+        total_luas_nett = HelperService.rupiah_format_zero(sum([b.luas_nett for b in obj_bidangs]))
+        total_luas_pbt_perorangan = HelperService.rupiah_format_zero(sum([b.luas_pbt_perorangan for b in obj_bidangs]))
+        total_luas_bayar = HelperService.rupiah_format_zero(sum([b.luas_bayar for b in obj_bidangs]))
+        total_harga = HelperService.rupiah_format_zero(sum([b.total_harga for b in obj_bidangs]))
 
         # HISTORY TERMIN, BEBAN BIAYA
         termin_histories = []
@@ -1009,7 +995,7 @@ class TerminService:
                                         data_payment=obj_termin_bayar,
                                         nomor_urut_bidang=nomor_urut,
                                         tanggal_transaksi=tanggal_transaksi,
-                                        tanggal_rencana_transaksi=tanggal_hasil,
+                                        tanggal_rencana_transaksi=tanggal_rencana_transaksi,
                                         hari_transaksi=hari_transaksi,
                                         jenis_bayar=termin_header.jenis_bayar_ext.replace('_', ' '),
                                         amount="{:,.0f}".format(((termin_header.amount_netto))),
@@ -1051,9 +1037,6 @@ class TerminService:
         excel = await PDFToExcelService().export_pdf_to_excel(data=doc)
 
         return excel
-
-
-
 
     # GENERATE TERMIN TO HTML CONTENT UNTUK GENERATE JADI EXCEL
     async def generate_html_content(self, list_tahap_detail:list[TahapDetailForExcel], overlap_exists:bool|None = False, tanggal:str|None = '') -> str | None:
@@ -1286,17 +1269,3 @@ class TerminService:
         
         await db_session.commit()
 
-    bulan_dict = {
-        "January": "Januari",
-        "February": "Februari",
-        "March": "Maret",
-        "April": "April",
-        "May": "Mei",
-        "June": "Juni",
-        "July": "Juli",
-        "August": "Agustus",
-        "September": "September",
-        "October": "Oktober",
-        "November": "November",
-        "December": "Desember"
-    }

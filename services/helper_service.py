@@ -180,6 +180,33 @@ class HelperService:
 
     def rupiah_format(obj):
         return '{:,.2f}'.format(obj)
+    
+    def rupiah_format_zero(obj):
+        return '{:,.0f}'.format(obj)
+    
+    # FORMAT DATE DENGAN BULAN MENGGUNAKAN BAHASA INDONESIA
+    # EX : 10 Januari 2024
+    def indonesia_format_date(self, obj):
+        bulan_on_english = obj.strftime('%B')
+        bulan_on_indonesia = self.bulan_dict.get(bulan_on_english, bulan_on_english)
+        indonesia_format = obj.strftime(f'%d {bulan_on_indonesia} %Y')
+
+        return indonesia_format
+
+    bulan_dict = {
+        "January": "Januari",
+        "February": "Februari",
+        "March": "Maret",
+        "April": "April",
+        "May": "Mei",
+        "June": "Juni",
+        "July": "Juli",
+        "August": "Agustus",
+        "September": "September",
+        "October": "Oktober",
+        "November": "November",
+        "December": "Desember"
+    }
       
 class KomponenBiayaHelper:
 

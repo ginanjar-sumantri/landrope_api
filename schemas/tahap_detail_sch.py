@@ -118,8 +118,7 @@ class TahapDetailForPrintOut(SQLModel):
     no_peta:Optional[str]
     harga_transaksi:Optional[Decimal]
     total_harga:Optional[Decimal]
-
-    no:Optional[int]
+    
     harga_transaksiExt:Optional[str]
     total_hargaExt:Optional[str]
     luas_suratExt:Optional[str]

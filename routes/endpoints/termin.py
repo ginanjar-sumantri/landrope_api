@@ -395,11 +395,13 @@ async def printout(id:UUID | str, current_worker:Worker = Depends(crud.worker.ge
     if not obj_current:
         raise IdNotFoundException(Termin, id)
     
-    # file_path = obj_current.file_path
-
-    # if file_path is None:
-    file_path = await TerminService().generate_printout_memo_bayar(id=id)
+    workflow = await crud.workflow.get_by_reference_id(reference_id=obj_current.id)
     
+    if workflow.last_status != WorkflowLastStatusEnum.COMPLETED:
+        file_path = await TerminService().generate_printout_memo_bayar(id=id)
+    else:
+        file_path = obj_current.file_path
+
     try:
         file_bytes = await GCStorageService().download_dokumen(file_path=file_path)
     except Exception as e:
@@ -447,7 +449,6 @@ async def printout(id:UUID | str,
     return StreamingResponse(excel, 
                                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                 headers={"Content-Disposition": "attachment;filename=memo_pembayaran.xlsx"})  
-
 
 # REPORT EXCEL MEMO BAYAR
 @router.post("/export/excel")
