@@ -391,6 +391,8 @@ class BundleHelper:
         
         bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
 
+        bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
+
         # Memeriksa apakah dokumen yang dimaksud eksis di bundle detail (bisa jadi dokumen baru di master dan belum tergenerate)
         bundledt_obj_current = next((x for x in bundle_dts if x.dokumen_id == dokumen.id and x.bundle_hd_id == bundle_hd_obj.id), None)
         
