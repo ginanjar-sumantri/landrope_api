@@ -80,6 +80,9 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
 
         sch = BidangSch(**sch.dict())
         geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+
+        if geom is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Data Geometry Bidang tidak ditemukan dalam file')
             
         # MEMERIKSA APAKAH GEOMETRY VALID
         is_valid, validity_reason = GeomService.checking_validity_geom(geom=geom)
@@ -87,6 +90,8 @@ async def create(sch: BidangCreateSch = Depends(BidangCreateSch.as_form), file:U
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Geometry tidak valid! Validity Reason : {validity_reason}')
 
         sch.geom = geom
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File Geometry wajib dilampirkan!")
 
     new_obj = await crud.bidang.create(obj_in=sch, created_by_id=current_worker.id, db_session=db_session)
 
@@ -282,6 +287,9 @@ async def update(id:UUID,
 
         sch = BidangSch(**sch.dict())
         geom = GeomService.single_geometry_to_wkt(geo_dataframe.geometry)
+
+        if geom is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f'Data Geometry Bidang tidak ditemukan dalam file')
             
         # MEMERIKSA APAKAH GEOMETRY VALID
         is_valid, validity_reason = GeomService.checking_validity_geom(geom=geom)
@@ -412,6 +420,15 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     parent_id=geo_data.get('parent_id', ''),
                                     geom=GeomService.single_geometry_to_wkt(geo_data.geometry)
             )
+
+            if shp_data.geom is None:
+                error_m = f"IdBidang {shp_data.o_idbidang} {shp_data.n_idbidang}, Data Geometry Bidang tidak ditemukan"
+                done, count = await manipulation_import_log(error_m=error_m, i=i, log=log, count=count)
+                # if last row (done)
+                if done:
+                    break
+
+                continue
 
             # MEMERIKSA APAKAH GEOMETRY VALID
             is_valid, validity_reason = GeomService.checking_validity_geom(geom=shp_data.geom)
