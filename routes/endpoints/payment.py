@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, status, Depends, BackgroundTasks, HTTPException, status
 from fastapi_pagination import Params
 from fastapi_async_sqlalchemy import db
 from sqlmodel import select, or_, func, and_, text
@@ -14,6 +14,7 @@ from schemas.bidang_sch import BidangUpdateSch
 from schemas.termin_sch import TerminSearchSch
 from schemas.beban_biaya_sch import BebanBiayaGroupingSch
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
+from services.payment_service import PaymentService
 from common.exceptions import (IdNotFoundException, ImportFailedException, ContentNoChangeException)
 from common.generator import generate_code
 from common.enum import StatusBidangEnum, PaymentMethodEnum, JenisBayarEnum, WorkflowLastStatusEnum, PaymentStatusEnum, ActivityEnum, WorkflowEntityEnum
@@ -56,8 +57,8 @@ async def create(
     new_obj = await crud.payment.create(obj_in=sch, created_by_id=current_worker.id)
     new_obj = await crud.payment.get_by_id(id=new_obj.id)
 
-    background_task.add_task(bidang_update_status, bidang_ids)
-    background_task.add_task(invoice_update_payment_status, new_obj.id)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+    background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=new_obj.id))
     
     return create_response(data=new_obj)
 
@@ -180,9 +181,9 @@ async def update(id:UUID, sch:PaymentUpdateSch,
     obj_updated = await crud.payment.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
     obj_updated = await crud.payment.get_by_id(id=obj_updated.id)
 
-    background_task.add_task(bidang_update_status, bidang_ids)
-    background_task.add_task(invoice_update_payment_status, obj_updated.id)
-
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
+    background_task.add_task(await PaymentService().invoice_update_payment_status(payment_id=obj_updated.id))
+    
     return create_response(data=obj_updated)
 
 @router.put("/void/{id}", response_model=GetResponseBaseSch[PaymentSch])
@@ -219,7 +220,7 @@ async def void(id:UUID, sch:PaymentVoidSch,
 
     await db_session.commit()
 
-    background_task.add_task(bidang_update_status, bidang_ids)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
 
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
@@ -243,6 +244,9 @@ async def void_detail(
     for dt in sch.details:
         payment_dtl_current = await crud.payment_detail.get(id=dt.id)
         invoice_current = await crud.invoice.get(id=payment_dtl_current.invoice_id)
+        termin_current = await crud.termin.get(id=invoice_current.termin_id)
+        if termin_current.rfp_ref_no is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invoice in payment has RFP")
         payment_dtl_updated = payment_dtl_current
         payment_dtl_updated.is_void = True
         payment_dtl_updated.void_reason = dt.void_reason
@@ -254,7 +258,7 @@ async def void_detail(
         await crud.payment_detail.update(obj_current=payment_dtl_current, obj_new=payment_dtl_updated, updated_by_id=current_worker.id, db_session=db_session, with_commit=False)
 
     await db_session.commit()
-    background_task.add_task(bidang_update_status, bidang_ids)
+    background_task.add_task(await PaymentService().bidang_update_status(bidang_ids=bidang_ids))
     obj_updated = await crud.payment.get_by_id(id=obj_current.id)
     return create_response(data=obj_updated) 
 
@@ -566,58 +570,6 @@ async def get_invoice_by_id(id:UUID):
 
     return create_response(data=invoices)
 
-
-async def bidang_update_status(bidang_ids:list[UUID]):
-    for id in bidang_ids:
-        payment_details = await crud.payment_detail.get_payment_detail_by_bidang_id(bidang_id=id)
-        if len(payment_details) > 0:
-            bidang_current = await crud.bidang.get_by_id(id=id)
-            if bidang_current.geom :
-                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-            bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Bebas)
-            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
-        else:
-            bidang_current = await crud.bidang.get_by_id(id=id)
-            if bidang_current.geom :
-                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-            bidang_updated = BidangUpdateSch(status=StatusBidangEnum.Deal)
-            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated)
-
-async def invoice_update_payment_status(payment_id:UUID):
-    
-    db_session = db.session
-    payment_current = await crud.payment.get_by_id(id=payment_id)
-    payment_details_current = await crud.payment_detail.get_by_payment_id(payment_id=payment_id)
-
-    for payment_detail in payment_details_current:
-        if payment_detail.is_void:
-            payment_detais = await crud.payment_detail.get_multi_payment_actived_by_invoice_id()
-            continue
-        else:
-            invoice_current = await crud.invoice.get(id=payment_detail.invoice_id)
-            invoice_updated = InvoiceUpdateSch.from_orm(invoice_current)
-            if payment_current.giro_id:
-                if payment_current.tanggal_buka is None and payment_current.tanggal_cair is None:
-                    invoice_updated.payment_status = None
-                if payment_current.tanggal_buka:
-                    invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
-                if payment_current.tanggal_cair:
-                    invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
-            else:
-                payment_giro_detail = await crud.payment_giro_detail.get(id=payment_detail.payment_giro_detail_id)
-                if payment_giro_detail.payment_method == PaymentMethodEnum.Giro:
-                    giro = await crud.giro.get(id=payment_giro_detail.giro_id)
-                    if giro:
-                        if giro.tanggal_buka:
-                            invoice_updated.payment_status = PaymentStatusEnum.BUKA_GIRO
-                        if giro.tanggal_cair:
-                            invoice_updated.payment_status = PaymentStatusEnum.CAIR_GIRO
-                        if giro.tanggal_buka is None and giro.tanggal_cair is None:
-                            invoice_updated.payment_status = None
-        
-        await crud.invoice.update(obj_current=invoice_current, obj_new=invoice_updated, db_session=db_session, with_commit=False)
-    
-    await db_session.commit()
 
 
 

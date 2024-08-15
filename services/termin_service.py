@@ -193,13 +193,19 @@ class TerminService:
 
                 # UPDATE KOMPONEN BIAYA DI MASTER JIKA KOMPONEN BIAYA EXISTS SESUAI DENGAN INPUTAN USER
                 else:
+                    invoice_dts_calculate = await crud.invoice_detail.get_for_calculate_estimated_amount(invoice_id=new_obj_invoice.id, 
+                                                                                                        bidang_komponen_biaya_id=bidang_komponen_biaya_current.id, 
+                                                                                                        invoice_dt_id=None)
+                    
+                    calculate_estimated_amount = sum([invoice_dt_calculate.amount for invoice_dt_calculate in invoice_dts_calculate])
+
                     bidang_komponen_biaya_new = BidangKomponenBiayaUpdateSch.from_orm(bidang_komponen_biaya_current)
                     bidang_komponen_biaya_new.amount = dt.komponen_biaya_amount
                     bidang_komponen_biaya_new.satuan_bayar = dt.satuan_bayar
                     bidang_komponen_biaya_new.satuan_harga = dt.satuan_harga
                     bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
                     bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                    bidang_komponen_biaya_new.estimated_amount = dt.amount
+                    bidang_komponen_biaya_new.estimated_amount = dt.amount + calculate_estimated_amount
 
                     bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
                     
@@ -402,13 +408,19 @@ class TerminService:
                     else:
                         ## START KOMPONEN BIAYA
                         # EDIT KOMPONEN BIAYA
+                        invoice_dts_calculate = await crud.invoice_detail.get_for_calculate_estimated_amount(invoice_id=invoice.id, 
+                                                                                                        bidang_komponen_biaya_id=bidang_komponen_biaya_current.id, 
+                                                                                                        invoice_dt_id=invoice_dtl_current.id)
+                    
+                        calculate_estimated_amount = sum([invoice_dt_calculate.amount for invoice_dt_calculate in invoice_dts_calculate])
+
                         bidang_komponen_biaya_new = BidangKomponenBiayaUpdateSch.from_orm(bidang_komponen_biaya_current)
                         bidang_komponen_biaya_new.amount = dt.komponen_biaya_amount
                         bidang_komponen_biaya_new.satuan_bayar = dt.satuan_bayar
                         bidang_komponen_biaya_new.satuan_harga = dt.satuan_harga
                         bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
                         bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                        bidang_komponen_biaya_new.estimated_amount = dt.amount
+                        bidang_komponen_biaya_new.estimated_amount = dt.amount + calculate_estimated_amount
 
                         bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
                         dt.bidang_komponen_biaya_id = bidang_komponen_biaya_current.id
@@ -497,13 +509,19 @@ class TerminService:
 
                     # UPDATE KOMPONEN BIAYA DI MASTER JIKA KOMPONEN BIAYA EXISTS SESUAI DENGAN INPUTAN USER
                     else:
+                        invoice_dts_calculate = await crud.invoice_detail.get_for_calculate_estimated_amount(invoice_id=new_obj_invoice.id, 
+                                                                                                        bidang_komponen_biaya_id=bidang_komponen_biaya_current.id, 
+                                                                                                        invoice_dt_id=None)
+                    
+                        calculate_estimated_amount = sum([invoice_dt_calculate.amount for invoice_dt_calculate in invoice_dts_calculate])
+
                         bidang_komponen_biaya_new = BidangKomponenBiayaUpdateSch.from_orm(bidang_komponen_biaya_current)
                         bidang_komponen_biaya_new.amount = dt.komponen_biaya_amount
                         bidang_komponen_biaya_new.satuan_bayar = dt.satuan_bayar
                         bidang_komponen_biaya_new.satuan_harga = dt.satuan_harga
                         bidang_komponen_biaya_new.beban_biaya_id = dt.beban_biaya_id
                         bidang_komponen_biaya_new.beban_pembeli = dt.beban_pembeli
-                        bidang_komponen_biaya_new.estimated_amount = dt.amount
+                        bidang_komponen_biaya_new.estimated_amount = dt.amount + calculate_estimated_amount
 
                         bidang_komponen_biaya_current = await crud.bidang_komponen_biaya.update(obj_current=bidang_komponen_biaya_current, obj_new=bidang_komponen_biaya_new, db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
                         

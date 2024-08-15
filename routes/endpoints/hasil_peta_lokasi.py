@@ -527,8 +527,8 @@ async def update_bidang_override(payload:HasilPetaLokasiTaskUpdate, background_t
         telepon_mediator=kjb_hd_current.telepon_mediator,
         notaris_id=tanda_terima_notaris_current.notaris_id,
         bundle_hd_id=kjb_dt_current.bundle_hd_id,
-        harga_akta=kjb_dt_current.harga_akta,
-        harga_transaksi=kjb_dt_current.harga_transaksi,
+        harga_akta=kjb_dt_current.harga_akta if bidang_current.has_beginning_balance is False else bidang_current.harga_akta,
+        harga_transaksi=kjb_dt_current.harga_transaksi if bidang_current.has_beginning_balance is False else bidang_current.harga_transaksi,
         # harga_ptsl=kjb_dt_current.harga_ptsl,
         # is_ptsl=kjb_dt_current.is_ptsl
         )

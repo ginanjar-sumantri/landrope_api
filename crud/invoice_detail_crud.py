@@ -1,7 +1,7 @@
 from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
-from sqlmodel import select, or_, and_
+from sqlmodel import select, or_, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
@@ -77,6 +77,30 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
+    async def get_for_calculate_estimated_amount(self, 
+                            *,
+                            invoice_id:UUID,
+                            bidang_komponen_biaya_id: UUID,
+                            invoice_dt_id: UUID | None = None,
+                            db_session : AsyncSession | None = None
+                            ) -> List[InvoiceDetail] | None:
+        
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                ).join(Termin, Termin.id == Invoice.termin_id
+                                ).where(and_(InvoiceDetail.invoice_id == invoice_id, 
+                                            InvoiceDetail.bidang_komponen_biaya_id == bidang_komponen_biaya_id,
+                                            func.coalesce(Invoice.is_void, False) == False,
+                                            func.coalesce(Termin.is_void, False) == False))
+        
+        if invoice_dt_id:
+            query = query.filter(InvoiceDetail.id != invoice_dt_id)
+
+        response =  await db_session.execute(query)
+        return response.scalars().all()
+    
+
     # FOR TERMIN UPDATE FUNCTION
     async def get_ids_by_invoice_ids(self, 
                             *,
@@ -125,6 +149,20 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
                                     ).where(and_(Termin.id == termin_id, 
                                                 BidangKomponenBiaya.beban_biaya_id == beban_biaya_id, 
                                                 Invoice.is_void != True))
+        
+        response = await db_session.execute(query)
+        return response.scalars().all()
+    
+    async def get_multi_by_termin_id_and_beban_biaya_id_and_bidang_id(self, *, termin_id:UUID, beban_biaya_id:UUID, bidang_id:UUID, db_session:AsyncSession | None = None) -> list[InvoiceDetail] | None:
+        db_session = db_session or db.session
+
+        query = select(InvoiceDetail).join(InvoiceDetail.invoice
+                                    ).join(Invoice.termin
+                                    ).join(InvoiceDetail.bidang_komponen_biaya
+                                    ).where(and_(Termin.id == termin_id, 
+                                                BidangKomponenBiaya.beban_biaya_id == beban_biaya_id, 
+                                                Invoice.is_void != True,
+                                                Invoice.bidang_id == bidang_id))
         
         response = await db_session.execute(query)
         return response.scalars().all()

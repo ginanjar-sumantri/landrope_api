@@ -209,6 +209,8 @@ class InvoiceVoidSch(SQLModel):
 class InvoiceLuasBayarSch(SQLModel):
     id:UUID|None
     luas_bayar:Decimal|None = Field(default=0)
+    luas_surat:Decimal|None
+    spk_id:UUID|None
     
     
 

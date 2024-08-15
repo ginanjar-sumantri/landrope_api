@@ -177,7 +177,10 @@ class HelperService:
             return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         else:
             return None
-        
+
+    def rupiah_format(obj):
+        return '{:,.2f}'.format(obj)
+      
 class KomponenBiayaHelper:
 
     async def get_estimated_amount(self, bidang_id:UUID, bidang_komponen_biaya_id:UUID, formula:str | None = None) -> Decimal | None:
@@ -385,6 +388,10 @@ class BundleHelper:
                             jumlah_waris:int | None = None,
                             file_path : str | None = None,
                             worker_id : UUID | str = None):
+        
+        bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
+
+        bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
 
         bundle_dts = await crud.bundledt.get_by_bundle_hd_id(bundle_hd_id=bundle_hd_obj.id)
 
