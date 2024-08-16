@@ -43,7 +43,7 @@ class BidangService:
                                                 "export_log_id": str(export_log.id),
                                                 "is_analyst": is_analyst
                                             }, 
-                                        base_url=f'{request.base_url}landrope/bidang/task/generate/excel')
+                                        base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
 
         return export_log
 
