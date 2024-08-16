@@ -134,34 +134,34 @@ class BidangService:
                     "is_analyst" : payload.get("is_analyst", False)
                 }
 
-            response = requests.post(url_functions, json=body, headers=headers)
-            if response.status_code == 200:
-                export_log_update = ExportLogUpdateSch.from_orm(export_log)
+            requests.post(url_functions, json=body, headers=headers)
+            # if response.status_code == 200:
+            #     export_log_update = ExportLogUpdateSch.from_orm(export_log)
 
-                if response.json()['status'] == 'OK':
-                    file_path = response.json()['data']['file_path']
+            #     if response.json()['status'] == 'OK':
+            #         file_path = response.json()['data']['file_path']
 
-                    # UPDATE EXPORT STATUS OK
-                    export_log_update.file_path = file_path
-                    export_log_update.status = TaskStatusEnum.Done
-                else:
+            #         # UPDATE EXPORT STATUS OK
+            #         export_log_update.file_path = file_path
+            #         export_log_update.status = TaskStatusEnum.Done
+            #     else:
 
-                    err_detail = response.json()['detail']
-                    # UPDATE EXPORT STATUS FAILED
-                    export_log_update.error_msg = err_detail
-                    export_log_update.status = TaskStatusEnum.Done_With_Error
+            #         err_detail = response.json()['detail']
+            #         # UPDATE EXPORT STATUS FAILED
+            #         export_log_update.error_msg = err_detail
+            #         export_log_update.status = TaskStatusEnum.Done_With_Error
 
-                await crud.export_log.update(obj_current=export_log, obj_new=export_log_update)
+            #     await crud.export_log.update(obj_current=export_log, obj_new=export_log_update)
                 
-            else:
-                # print(f'{response.status_code}:{response.reason}')
-                export_log_update = ExportLogUpdateSch.from_orm(export_log)
-                export_log_update.error_msg = str(response.reason)
-                export_log_update.status = TaskStatusEnum.Failed
+            # else:
+            #     # print(f'{response.status_code}:{response.reason}')
+            #     export_log_update = ExportLogUpdateSch.from_orm(export_log)
+            #     export_log_update.error_msg = str(response.reason)
+            #     export_log_update.status = TaskStatusEnum.Failed
 
-                await crud.export_log.update(obj_current=export_log, obj_new=export_log_update)
+            #     await crud.export_log.update(obj_current=export_log, obj_new=export_log_update)
                 
-                raise HTTPException(status_code=response.status_code, detail=response.reason)
+            #     raise HTTPException(status_code=response.status_code, detail=response.reason)
             
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
