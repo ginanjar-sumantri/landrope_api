@@ -34,7 +34,7 @@ class BidangService:
     # FUNGSI UNTUK CREATE EXPORT LOG, SEKALIGUS GENERATE FILE EXCEL DAN DIUPLOAD KE CLOUD STORAGE
     async def create_export_log_with_generate_file_excel(self, param, created_by_id, is_analyst, request):
 
-        export_log = await ExportLogService().create_export_log(name="BIDANG SHP", media_type=".zip", created_by_id=created_by_id)
+        export_log = await ExportLogService().create_export_log(name="BIDANG EXCEL", media_type=".xlsx", created_by_id=created_by_id)
 
         GCloudTaskService().create_task(payload={  
                                                 "projects": [str(pr) for pr in param.projects],
