@@ -780,74 +780,6 @@ async def task_generate_shp(payload:Dict, request:Request):
 
     return create_response({"detail": "SUCCESS"})
 
-
-# @router.post("/export/excel")
-# async def export_excel(param:BidangParameterDownload|None = None,
-#                        current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-#     """Export data to Excel"""
-
-#     result = await crud.bidang.get_multi_export(param=param)
-
-#     datas = [{"Id Bidang" : bidang.id_bidang,
-#               "Id Bidang Lama" : bidang.id_bidang_lama,
-#               "No Peta" : bidang.no_peta,
-#               "Pemilik" : bidang.pemilik_name,
-#               "Jenis Bidang" : bidang.jenis_bidang,
-#               "Status" : bidang.status,
-#               "Project" : bidang.project_name,
-#               "Desa" : bidang.desa_name,
-#               "Sub Project" : bidang.sub_project_name,
-#               "Group" : bidang.group,
-#               "Jenis Alashak" : bidang.jenis_alashak,
-#               "Jenis Surat" : bidang.jenis_surat_name,
-#               "Alashak" : bidang.alashak,
-#               "Kategori" : bidang.kategori_name,
-#               "Kategori Sub" : bidang.kategori_sub_name,
-#               "Kategori Proyek" : bidang.kategori_proyek_name,
-#               "Ptsk" : bidang.ptsk_name,
-#               "No SK" : bidang.no_sk,
-#               "Status SK" : bidang.status_sk,
-#               "Penampung" : bidang.penampung_name,
-#               "Manager" : bidang.manager_name,
-#               "Sales" : bidang.sales_name,
-#               "Mediator" : bidang.mediator,
-#               "Telepon Mediator" : bidang.telepon_mediator,
-#               "Notaris" : bidang.notaris_name,
-#               "Tahap" : bidang.nomor_tahap,
-#               "Luas Surat" : "{:,.2f}".format(bidang.luas_surat or 0),
-#               "Luas Ukur" : "{:,.2f}".format(bidang.luas_ukur or 0),
-#               "Luas GU Perorangan" : "{:,.2f}".format(bidang.luas_gu_perorangan or 0),
-#               "Luas GU PT" : "{:,.2f}".format(bidang.luas_gu_pt or 0),
-#               "Luas Nett" : "{:,.2f}".format(bidang.luas_nett or 0),
-#               "Luas Clear" : "{:,.2f}".format(bidang.luas_clear or 0),
-#               "Luas PBT Perorangan" : "{:,.2f}".format(bidang.luas_pbt_perorangan or 0),
-#               "Luas PBT PT" : "{:,.2f}".format(bidang.luas_pbt_pt or 0),
-#               "Luas Bayar" : "{:,.2f}".format(bidang.luas_bayar or 0),
-#               "Harga Akta" : "{:,.2f}".format(bidang.harga_akta or 0),
-#               "Harga Transaksi" : "{:,.2f}".format(bidang.harga_transaksi or 0),
-#               "NJOP" : "{:,.2f}".format(bidang.njop or 0),
-#               "Total Harga" : "{:,.2f}".format(bidang.total_harga_transaksi or 0),
-#               "Total Bayar" : "{:,.2f}".format(bidang.total_payment or 0),
-#               "Sisa Pelunasan" : "{:,.2f}".format(bidang.sisa_pelunasan or 0)
-#             } for bidang in result]
-    
-#     df = pd.DataFrame(data=datas)
-
-#     if current_worker.is_analyst:
-#         df = df.drop(['Luas Bayar','Harga Akta', 'Harga Transaksi', 'NJOP', 'Total Harga', 'Total Bayar', 'Sisa Pelunasan'], axis=1)
-    
-#     df = df.fillna('')
-
-#     output = BytesIO()
-#     df.to_excel(output, index=False, sheet_name=f'BIDANG')
-
-#     output.seek(0)
-
-#     return StreamingResponse(BytesIO(output.getvalue()), 
-#                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                             headers={"Content-Disposition": "attachment;filename=bidang_data.xlsx"})
-
 @router.post("/export/excel")
 async def export_excel(param:BidangParameterDownload|None,
                        request:Request,
@@ -859,13 +791,6 @@ async def export_excel(param:BidangParameterDownload|None,
                                                                     created_by_id=current_worker.id, 
                                                                     is_analyst=current_worker.is_analyst,
                                                                     request=request)
-
-    return create_response({"detail": "SUCCESS"})
-
-@router.post("/task/generate/excel")
-async def task_generate_shp(payload:Dict):
-
-    await BidangService().call_generate_excel_file_functions(payload=payload)
 
     return create_response({"detail": "SUCCESS"})
 
