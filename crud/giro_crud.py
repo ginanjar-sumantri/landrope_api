@@ -46,7 +46,7 @@ class CRUDGiro(CRUDBase[Giro, GiroCreateSch, GiroUpdateSch]):
         nomor_giro: str,
         payment_method: PaymentMethodEnum,
         db_session: AsyncSession | None = None
-    ) -> Giro:
+    ) -> Giro | None:
         db_session = db_session or db.session
         query = select(Giro)
         query = query.filter(Giro.nomor_giro == nomor_giro)
