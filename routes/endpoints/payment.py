@@ -378,9 +378,9 @@ async def get_invoice_by_id(id:UUID):
 
 @router.get("/search/giro", response_model=GetResponseBaseSch[list[GiroSch]])
 async def get_list(
-                keyword:str = None,
-                payment_id:UUID = None, 
-                filter_query:str=None,
+                keyword:str | None = None,
+                payment_id:UUID | None = None, 
+                filter_query:str | None = None,
                 payment_method:PaymentMethodEnum|None = None,
                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     

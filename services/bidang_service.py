@@ -36,12 +36,15 @@ class BidangService:
 
         export_log = await ExportLogService().create_export_log(name="BIDANG EXCEL", media_type=".xlsx", created_by_id=created_by_id)
 
+        is_staging = True if self.INSTANCE == "STAGING" else False
+
         GCloudTaskService().create_task(payload={  
                                                 "projects": [str(pr) for pr in param.projects],
                                                 "desas": [str(ds) for ds in param.desas],
                                                 "jenis_bidangs": param.jenis_bidangs,
                                                 "export_log_id": str(export_log.id),
-                                                "is_analyst": is_analyst
+                                                "is_analyst": is_analyst,
+                                                "is_staging" : is_staging
                                             }, 
                                         base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
 
