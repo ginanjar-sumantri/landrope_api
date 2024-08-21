@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request, UploadFile
+from fastapi import HTTPException, Request, UploadFile, status
 from fastapi_async_sqlalchemy import db
 from sqlmodel import delete, and_
 
@@ -18,19 +18,22 @@ from schemas.bundle_dt_sch import BundleDtRiwayatSch
 from schemas.checklist_kelengkapan_dokumen_dt_sch import ChecklistKelengkapanDokumenDtSch
 from schemas.kjb_termin_sch import KjbTerminInSpkSch
 from schemas.rekening_sch import RekeningSch
-from schemas.workflow_sch import WorkflowCreateSch, WorkflowUpdateSch
+from schemas.workflow_sch import WorkflowCreateSch, WorkflowUpdateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
 
 from services.helper_service import BidangHelper, BundleHelper
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.history_service import HistoryService
 from services.pdf_service import PdfService
+from services.encrypt_service import encrypt_id
+from services.workflow_service import WorkflowService
 
 from uuid import UUID, uuid4
 from io import BytesIO
 from jinja2 import Environment, FileSystemLoader
 import crud
 import json
+import logging
 
 class SpkService:
 
@@ -114,6 +117,9 @@ class SpkService:
 
         bidang = await crud.bidang.get(id=sch.bidang_id)
 
+        if bidang.skpt_id == None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"PTSK pada bidang {bidang.id_bidang} belum ditentukan, mohon lakukan update pada modul Input Hasil Peta Lokasi")
+
         new_obj = await self.init_spk(sch=sch, current_worker=current_worker, id_bidang=bidang.id_bidang, db_session=db_session)
 
         await self.init_komponen_biaya(sch=sch, current_worker=current_worker, db_session=db_session)
@@ -121,29 +127,44 @@ class SpkService:
         await self.init_spk_kelengkapan_dokumen(sch=sch, spk_id=new_obj.id, current_worker=current_worker, db_session=db_session)
 
         if (sch.is_draft or False) is False:
+            # UPDATE STATUS PEMBEBASAN BIDANG
             if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
                 status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
                 await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
 
-            #workflow
+            # CREATE WORKFLOW
             if new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
                 flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
-                wf_sch = WorkflowCreateSch(reference_id=new_obj.id, 
-                                        entity=WorkflowEntityEnum.SPK, 
-                                        flow_id=flow.flow_id, 
-                                        version=1, 
-                                        last_status=WorkflowLastStatusEnum.ISSUED, 
-                                        step_name="ISSUED")
+                wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.SPK, 
+                                            flow_id=flow.flow_id, version=1, 
+                                            last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
                 
                 await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
-
-                GCloudTaskService().create_task(payload={"id":str(new_obj.id), 
-                                                        "additional_info":new_obj.jenis_bayar}, 
-                                                base_url=f'{request.base_url}landrope/spk/task-workflow')
-
+        
         try:
             await db_session.commit()
             await db_session.refresh(new_obj)
+
+            # CREATE TASK UPLOAD PRINTOUT (STORAGE & BUNDLE)
+            payload = {
+                "id": str(new_obj.id)
+            }
+
+            url = f'{request.base_url}landrope/spk/task-upload-printout'
+
+            GCloudTaskService().create_task(payload=payload, base_url=url)
+
+            # CREATE TASK WORKFLOW SERVICE
+            if (sch.is_draft or False) is False and new_obj.jenis_bayar != JenisBayarEnum.PAJAK:
+                payload = {
+                    "id": str(new_obj.id),
+                    "additional_info": new_obj.jenis_bayar
+                }
+
+                url = f'{request.base_url}landrope/spk/task-workflow'
+
+                GCloudTaskService().create_task(payload=payload, base_url=url)
+
         except Exception as e:
             raise HTTPException(status_code=409, detail=str(e.message))
 
@@ -182,43 +203,53 @@ class SpkService:
         obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
         await self.init_komponen_biaya(sch=sch, current_worker=current_worker, db_session=db_session)
+        await self.init_spk_kelengkapan_dokumen(spk_id=obj_current.id, sch=sch, current_worker=current_worker, db_session=db_session)
 
         await db_session.execute(delete(SpkKelengkapanDokumen).where(and_(SpkKelengkapanDokumen.id.notin_(r.id for r in sch.spk_kelengkapan_dokumens if r.id is not None), 
                                                         SpkKelengkapanDokumen.spk_id == obj_updated.id)))
-        await self.init_spk_kelengkapan_dokumen(spk_id=obj_current.id, sch=sch, current_worker=current_worker, db_session=db_session)
-
+        
         if (sch.is_draft or False) is False:
             if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
                 status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)
                 await BidangHelper().update_status_pembebasan(list_bidang_id=[sch.bidang_id], status_pembebasan=status_pembebasan, db_session=db_session)
 
-            #workflow
+            # WORKFLOW
             if obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
                 wf_current = await crud.workflow.get_by_reference_id(reference_id=obj_updated.id)
                 if wf_current:
                     if wf_current.last_status in [WorkflowLastStatusEnum.REJECTED, WorkflowLastStatusEnum.NEED_DATA_UPDATE]:
+                        # REISSUED WORKFLOW
                         wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status", "step_name"}), last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED" if WorkflowLastStatusEnum.REJECTED else "On Progress Update Data")
                         await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-                        GCloudTaskService().create_task(payload={
-                                                                "id":str(obj_updated.id), 
-                                                                "additional_info":obj_updated.jenis_bayar
-                                                            }, 
-                                                    base_url=f'{request.base_url}landrope/spk/task-workflow')
                 else:
                     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.SPK)
                     wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.SPK, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
                     
                     await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-                
-                    GCloudTaskService().create_task(payload={
-                                                                "id":str(obj_updated.id), 
-                                                                "additional_info":obj_updated.jenis_bayar
-                                                            }, 
-                                                    base_url=f'{request.base_url}landrope/spk/task-workflow')
-
         try:
             await db_session.commit()
             await db_session.refresh(obj_updated)
+
+            # CREATE TASK UPLOAD PRINTOUT (STORAGE & BUNDLE)
+            payload = {
+                "id": str(obj_updated.id)
+            }
+
+            url = f'{request.base_url}landrope/spk/task-upload-printout'
+
+            GCloudTaskService().create_task(payload=payload, base_url=url)
+
+            # CREATE TASK WORKFLOW
+            if (sch.is_draft or False) is False and obj_updated.jenis_bayar != JenisBayarEnum.PAJAK:
+                payload = {
+                    "id":str(obj_updated.id), 
+                    "additional_info":obj_updated.jenis_bayar
+                }
+
+                url = f'{request.base_url}landrope/spk/task-workflow'
+
+                GCloudTaskService().create_task(payload=payload, base_url=url)
+        
         except Exception as e:
             raise HTTPException(status_code=409, detail=str(e.message))
 
@@ -537,6 +568,59 @@ class SpkService:
             datas.append(data)
         
         return datas
+
+    # TASK WORKFLOW
+    async def task_workflow(self, obj: Spk, additional_info: str, request):
+
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+        if not wf_current:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        public_url = await encrypt_id(id=str(obj.id), request=request)
+        wf_system_attachment = WorkflowSystemAttachmentSch(name=obj.code, url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
+        wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj.id), 
+                                                flow_id=wf_current.flow_id, 
+                                                descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                        Tanggal: {obj.created_at.date()}<br>
+                                                        Dokumen: {obj.code}<br><br>
+                                                        KJB: {obj.kjb_hd_code or ""}<br><br>
+                                                        Berikut lampiran dokumen terkait : """, 
+                                                additional_info={"jenis_bayar" : str(additional_info)}, 
+                                                attachments=[vars(wf_system_attachment)],
+                                                version=wf_current.version)
+        
+        body = vars(wf_system_sch)
+        response, msg = await WorkflowService().create_workflow(body=body)
+
+        if response is None:
+            logging.error(msg=f"Spk {obj.code} Failed to connect workflow system. Detail : {msg}")
+            raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+        
+        wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
+        await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
+
+        return True
+
+    # TASK GENERATE PRINTOUT FOR UPLOAD TO STORAGE & MERGE TO BUNDLE DOKUMEN SPK
+    async def task_generate_printout_and_merge_to_bundle(self, obj: Spk):
+        
+        try:
+            db_session = db.session
+            file_path: str | None = obj.file_path
+
+            if file_path is None:
+                file_path = await SpkService().generate_printout(id=obj.id)
+
+            if obj.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]:
+                bidang = await crud.bidang.get(id=obj.bidang_id)
+                bundle = await crud.bundlehd.get(id=bidang.bundle_hd_id)
+                if bundle:
+                    await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
+                    await db_session.commit()
+
+        except Exception as e:
+            logging.error(msg=f"Spk {obj.code} error generate printout. Detail: {str(e.args)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.args))
 
     async def filter_biaya_lain(self, beban_biaya_ids:list[UUID], bidang_id:UUID):
 

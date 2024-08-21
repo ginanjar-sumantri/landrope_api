@@ -42,9 +42,9 @@ async def create(
     """Create a new object"""
 
     if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
-            spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
-            if spk_exists:
-                raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
+        spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
+        if spk_exists:
+            raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
 
     #Filter
     if (sch.is_draft or False) is False:
@@ -465,8 +465,8 @@ async def delete_all_bidang_komponen_biaya(bidang_id:UUID):
         await db_session.commit()
 
 @router.post("/task-workflow")
-async def create_workflow(payload:Dict, request:Request):
-    db_session = db.session
+async def task_workflow(payload:Dict, request:Request):
+
     id = payload.get("id", None)
     additional_info = payload.get("additional_info", None)
 
@@ -475,54 +475,22 @@ async def create_workflow(payload:Dict, request:Request):
     if not obj:
         raise IdNotFoundException(Spk, id)
     
-    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-    if not wf_current:
-        raise HTTPException(status_code=404, detail="Workflow not found")
+    await SpkService().task_workflow(obj=obj, additional_info=additional_info, request=request)
     
-    trying:int = 0
-    while obj.file_path is None:
-        await SpkService().generate_printout(id=id)
-        if trying > 7:
-            raise HTTPException(status_code=404, detail="File not found")
-        obj = await crud.spk.get(id=id)
-        time.sleep(2)
-        trying += 1
+    return {"message" : "successfully"}
 
-    with_commit:bool = False
-    if obj.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.PELUNASAN, JenisBayarEnum.LUNAS]:
-        bidang = await crud.bidang.get(id=obj.bidang_id)
-        bundle = await crud.bundlehd.get_by_id(id=bidang.bundle_hd_id)
-        if bundle:
-            await BundleHelper().merge_spk(bundle=bundle, code=f"{obj.code}-{str(obj.updated_at.date())}", tanggal=obj.updated_at.date(), file_path=obj.file_path, worker_id=obj.updated_by_id, db_session=db_session)
-            with_commit = True
+@router.post("/task-upload-printout")
+async def task_upload_printout(payload:Dict):
 
-    # public_url = await GCStorageService().public_url(file_path=obj.file_path)
-    # wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=public_url)
-    public_url = await encrypt_id(id=str(obj.id), request=request)
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.SPK.value}")
-    wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=wf_current.flow_id, 
-                                            descs=f"""Dokumen SPK {obj.code} ini membutuhkan Approval dari Anda:<br><br>
-                                                    Tanggal: {obj.created_at.date()}<br>
-                                                    Dokumen: {obj.code}<br><br>
-                                                    KJB: {obj.kjb_hd_code or ""}<br><br>
-                                                    Berikut lampiran dokumen terkait : """, 
-                                            additional_info={"jenis_bayar" : str(additional_info)}, 
-                                            attachments=[vars(wf_system_attachment)],
-                                            version=wf_current.version)
+    id = payload.get("id", None)
+
+    obj = await crud.spk.get_by_id(id=id)
+
+    if not obj:
+        raise IdNotFoundException(Spk, id)
     
-    body = vars(wf_system_sch)
-    response, msg = await WorkflowService().create_workflow(body=body)
-
-    if response is None:
-        raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+    await SpkService().task_generate_printout_and_merge_to_bundle(obj=obj)
     
-    wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
-    await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
-
-    if with_commit:
-        await db_session.commit()
-
     return {"message" : "successfully"}
 
 @router.get("/download-file/{id}")

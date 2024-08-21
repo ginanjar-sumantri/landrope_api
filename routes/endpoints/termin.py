@@ -883,38 +883,7 @@ async def create_workflow(payload:Dict, request:Request):
     if not obj:
         raise IdNotFoundException(Spk, id)
     
-    wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-    if not wf_current:
-        raise HTTPException(status_code=404, detail="Workflow not found")
-    
-    trying:int = 0
-    while obj.file_path is None:
-        await TerminService().generate_printout_memo_bayar(id=id)
-        if trying > 7:
-            raise HTTPException(status_code=404, detail="File not found")
-        obj = await crud.termin.get(id=id)
-        time.sleep(2)
-        trying += 1
-    
-    public_url = await encrypt_id(id=str(obj.id), request=request)
-    wf_system_attachment = WorkflowSystemAttachmentSch(name=f"{obj.code}", url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
-    wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-                                            flow_id=wf_current.flow_id, 
-                                            descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>
-                                                    Tanggal: {obj.created_at.date()}<br>
-                                                    Dokumen: {obj.code}<br><br>
-                                                    Berikut lampiran dokumen terkait : """,
-                                            attachments=[vars(wf_system_attachment)],
-                                            version=wf_current.version)
-    
-    body = vars(wf_system_sch)
-    response, msg = await WorkflowService().create_workflow(body=body)
-
-    if response is None:
-        raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
-    
-    wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
-    await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
+    await TerminService().task_workflow(obj=obj, request=request)
 
     return create_response({"detail": "SUCCESS"})
 
