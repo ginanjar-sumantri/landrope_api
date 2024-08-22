@@ -203,11 +203,12 @@ class SpkService:
         obj_updated = await crud.spk.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, with_commit=False)
 
         await self.init_komponen_biaya(sch=sch, current_worker=current_worker, db_session=db_session)
-        await self.init_spk_kelengkapan_dokumen(spk_id=obj_current.id, sch=sch, current_worker=current_worker, db_session=db_session)
 
         await db_session.execute(delete(SpkKelengkapanDokumen).where(and_(SpkKelengkapanDokumen.id.notin_(r.id for r in sch.spk_kelengkapan_dokumens if r.id is not None), 
                                                         SpkKelengkapanDokumen.spk_id == obj_updated.id)))
-        
+
+        await self.init_spk_kelengkapan_dokumen(spk_id=obj_current.id, sch=sch, current_worker=current_worker, db_session=db_session)
+
         if (sch.is_draft or False) is False:
             if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
                 status_pembebasan = jenis_bayar_to_spk_status_pembebasan.get(sch.jenis_bayar, None)

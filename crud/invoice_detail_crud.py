@@ -180,4 +180,22 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalar_one_or_none()
 
+    # FOR SPK PELUNASAN
+    async def get_multi_beban_penjual_has_use_and_not_paid_by_bidang_id(self, *, bidang_id:UUID) -> list[InvoiceDetail] | None:
+
+        db_session = db.session
+        query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
+                                    ).join(BidangKomponenBiaya, BidangKomponenBiaya.id == InvoiceDetail.bidang_komponen_biaya_id
+                                    ).where(and_(
+                                        Invoice.is_void == False,
+                                        BidangKomponenBiaya.is_paid == False,
+                                        BidangKomponenBiaya.beban_pembeli == False,
+                                        BidangKomponenBiaya.is_void == False,
+                                        BidangKomponenBiaya.is_retur == False,
+                                        Invoice.bidang_id == bidang_id
+                                    ))
+        
+        response = await db_session.execute(query)
+        return response.scalars().all()
+
 invoice_detail = CRUDInvoiceDetail(InvoiceDetail)
