@@ -688,13 +688,13 @@ class TerminService:
             bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
             spk.amount = bidang.sisa_pelunasan
         elif obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
-            beban_penjual_on_exists_invoice = await crud.invoice_detail.get_multi_beban_penjual_has_use_and_not_paid_by_bidang_id(bidang_id=obj.bidang_id)
-            beban_penjual_amount: Decimal = sum([beban.amount for beban in beban_penjual_on_exists_invoice]) or 0
+            # beban_penjual_on_exists_invoice = await crud.invoice_detail.get_multi_beban_penjual_has_use_and_not_paid_by_bidang_id(bidang_id=obj.bidang_id)
+            # beban_penjual_amount: Decimal = sum([beban.amount for beban in beban_penjual_on_exists_invoice]) or 0
             bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
             if bidang.utj_has_use:
-                spk.amount = bidang.sisa_pelunasan - beban_penjual_amount
+                spk.amount = bidang.sisa_pelunasan
             else:
-                spk.amount = (bidang.sisa_pelunasan + bidang.utj_amount) - beban_penjual_amount
+                spk.amount = bidang.sisa_pelunasan + bidang.utj_amount
 
         return spk
     
