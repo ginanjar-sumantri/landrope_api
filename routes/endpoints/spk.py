@@ -41,7 +41,7 @@ async def create(
     
     """Create a new object"""
 
-    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+    if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PAJAK]:
         spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
         if spk_exists:
             raise HTTPException(status_code=422, detail="SPK bidang dengan jenis bayar yang sama sudah ada")
@@ -315,7 +315,7 @@ async def update(id:UUID,
             beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
             await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
 
-        if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
+        if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PAJAK]:
             spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)
             if spk_exists:
                 if spk_exists.id != obj_current.id:

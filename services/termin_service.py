@@ -660,7 +660,7 @@ class TerminService:
                             # harga_transaksi=obj.bidang.harga_transaksi if (obj.bidang.is_ptsl or False) == False else obj.bidang.harga_ptsl, 
                             harga_transaksi=obj.bidang.harga_transaksi, 
                             harga_akta=obj.bidang.harga_akta, 
-                            amount=round(obj.spk_amount,0), 
+                            amount=round(obj.spk_amount, 0), 
                             utj_amount=obj.utj_amount, 
                             project_id=obj.bidang.planing.project_id, 
                             project_name=obj.bidang.project_name, 
@@ -688,11 +688,13 @@ class TerminService:
             bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
             spk.amount = bidang.sisa_pelunasan
         elif obj.jenis_bayar == JenisBayarEnum.PELUNASAN:
+            beban_penjual_on_exists_invoice = await crud.invoice_detail.get_multi_beban_penjual_has_use_and_not_paid_by_bidang_id(bidang_id=obj.bidang_id)
+            beban_penjual_amount: Decimal = sum([beban.amount for beban in beban_penjual_on_exists_invoice]) or 0
             bidang = await crud.bidang.get_by_id(id=obj.bidang_id)
             if bidang.utj_has_use:
-                spk.amount = bidang.sisa_pelunasan
+                spk.amount = bidang.sisa_pelunasan - beban_penjual_amount
             else:
-                spk.amount = bidang.sisa_pelunasan + bidang.utj_amount
+                spk.amount = (bidang.sisa_pelunasan + bidang.utj_amount) - beban_penjual_amount
 
         return spk
     
