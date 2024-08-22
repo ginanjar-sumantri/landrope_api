@@ -723,7 +723,7 @@ class TerminService:
 
     # TASK WORKFLOW
     async def task_workflow(self, obj: Termin, request):
-        wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj.id)
         if not wf_current:
             raise HTTPException(status_code=404, detail="Workflow not found")
         
@@ -732,7 +732,7 @@ class TerminService:
             await TerminService().generate_printout_memo_bayar(id=obj.id)
             if trying > 7:
                 raise HTTPException(status_code=404, detail="File not found")
-            obj = await crud.termin.get(id=id)
+            obj = await crud.termin.get(id=obj.id)
             time.sleep(2)
             trying += 1
         
