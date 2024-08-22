@@ -4,6 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import and_, delete, update
 from models.code_counter_model import CodeCounterEnum
 from models import Termin, Worker, Invoice
+
 from schemas.kjb_harga_sch import KjbHargaAktaSch
 from schemas.termin_sch import TerminCreateSch, TerminUpdateSch, TerminByIdForPrintOut, TerminHistoriesSch, TerminBebanBiayaForPrintOut, TerminVoidSch
 from schemas.termin_bayar_sch import TerminBayarCreateSch, TerminBayarUpdateSch
@@ -16,13 +17,17 @@ from schemas.spk_sch import SpkInTerminSch
 from schemas.bidang_overlap_sch import BidangOverlapForPrintout
 from schemas.bidang_komponen_biaya_sch import BidangKomponenBiayaCreateSch, BidangKomponenBiayaUpdateSch
 from schemas.hasil_peta_lokasi_detail_sch import HasilPetaLokasiDetailForUtj
-from schemas.workflow_sch import WorkflowUpdateSch, WorkflowCreateSch
+from schemas.workflow_sch import WorkflowUpdateSch, WorkflowCreateSch, WorkflowSystemCreateSch, WorkflowSystemAttachmentSch
+
 from services.helper_service import BundleHelper, HelperService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import BidangHelper
 from services.pdf_service import PdfService
 from services.adobe_service import PDFToExcelService
+from services.encrypt_service import encrypt_id
+from services.workflow_service import WorkflowService
+
 from common.exceptions import IdNotFoundException
 from common.enum import (JenisBayarEnum, jenis_bayar_to_code_counter_enum, jenis_bayar_to_text, WorkflowEntityEnum, 
                         WorkflowLastStatusEnum, ActivityEnum, jenis_bayar_to_termin_status_pembebasan_dict, StatusSKEnum, HasilAnalisaPetaLokasiEnum)
@@ -31,6 +36,8 @@ from common.generator import generate_code_month
 import crud
 import roman
 import json
+import logging
+import time
 
 from datetime import date, datetime
 from uuid import UUID, uuid4
@@ -102,7 +109,7 @@ class TerminService:
         return new_obj
 
     # CREATE TERMIN, INVOICE, INVOICE DETAIL, INVOICE BAYAR, TERMIN BAYAR
-    async def create_termin(self, sch: TerminCreateSch, db_session:AsyncSession, current_worker:Worker, request):
+    async def create_termin(self, sch: TerminCreateSch, db_session:AsyncSession, current_worker:Worker, request:Request):
 
         today = date.today()
         month = roman.toRoman(today.month)
@@ -228,14 +235,11 @@ class TerminService:
                 status_pembebasan = jenis_bayar_to_termin_status_pembebasan_dict.get(sch.jenis_bayar, None)
                 await BidangHelper().update_status_pembebasan(list_bidang_id=[inv.bidang_id for inv in sch.invoices], status_pembebasan=status_pembebasan, db_session=db_session)
         
-            # WORKFLOW
+            # CREATE WORKFLOW
             if new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
                 flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.TERMIN)
                 wf_sch = WorkflowCreateSch(reference_id=new_obj.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
-                
                 await crud.workflow.create(obj_in=wf_sch, created_by_id=new_obj.created_by_id, db_session=db_session, with_commit=False)
-
-                GCloudTaskService().create_task(payload={"id":str(new_obj.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
 
         # REMOVE BIDANG KOMPONEN BIAYA YANG TERPILIH FLAG IS_DELETE PADA INVOICE DETAIL
         current_ids_bidang_komponen_biaya = [r.bidang_komponen_biaya_id for invoice in sch.invoices for r in invoice.details if r.bidang_komponen_biaya_id is not None and r.is_deleted]
@@ -245,13 +249,18 @@ class TerminService:
         try:
             await db_session.commit()
             await db_session.refresh(new_obj)
+
+            # CREATE TASK WORKFLOW SERVICE
+            if (sch.is_draft or False) == False and new_obj.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+                GCloudTaskService().create_task(payload={"id":str(new_obj.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
         
         return new_obj
     
     #EDIT TERMIN, INVOICE, INVOICE DETAIL, INVOICE BAYAR, TERMIN BAYAR
-    async def edit_termin(self, obj_current:Termin, sch: TerminUpdateSch, db_session:AsyncSession, current_worker:Worker, request):
+    async def edit_termin(self, obj_current:Termin, sch: TerminUpdateSch, db_session:AsyncSession, current_worker:Worker, request:Request):
             
         # POPULATE SEMUA ID UNTUK KEPERLUAN DELETE DI AKHIR FUNGSI
         current_ids_invoice = await crud.invoice.get_ids_by_termin_id(termin_id=obj_current.id)
@@ -580,12 +589,15 @@ class TerminService:
                     wf_sch = WorkflowCreateSch(reference_id=obj_updated.id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
                     
                     await crud.workflow.create(obj_in=wf_sch, created_by_id=obj_updated.updated_by_id, db_session=db_session, with_commit=False)
-                
-                GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
         
         try:
             await db_session.commit()
             await db_session.refresh(obj_updated)
+            
+            # CREATE TASK WORKFLOW SERVICE
+            if (sch.is_draft or False) == False and obj_updated.jenis_bayar not in [JenisBayarEnum.UTJ_KHUSUS, JenisBayarEnum.UTJ]:
+                GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+
         except Exception as e:
             raise HTTPException(status_code=422, detail=str(e.args))
         
@@ -616,6 +628,9 @@ class TerminService:
         await db_session.commit()
         await db_session.refresh(obj_updated)
 
+        # CREATE TASK WORKFLOW SERVICE
+        GCloudTaskService().create_task(payload={"id":str(obj_updated.id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
+
         return obj_updated
 
     # SEND WORKFLOW
@@ -635,8 +650,6 @@ class TerminService:
             wf_sch = WorkflowCreateSch(reference_id=reference_id, entity=WorkflowEntityEnum.TERMIN, flow_id=flow.flow_id, version=1, last_status=WorkflowLastStatusEnum.ISSUED, step_name="ISSUED")
             
             await crud.workflow.create(obj_in=wf_sch, created_by_id=worker_id, db_session=db_session, with_commit=False)
-        
-        GCloudTaskService().create_task(payload={"id":str(reference_id)}, base_url=f'{request.base_url}landrope/termin/task-workflow')
 
     # GET BY ID SPK YANG INGIN DIBUAT MEMONYA
     async def get_spk_by_id(self, spk_id:UUID) -> SpkInTerminSch:
@@ -725,6 +738,43 @@ class TerminService:
         await db_session.commit()
 
         return obj_updated
+
+    # TASK WORKFLOW
+    async def task_workflow(self, obj: Termin, request):
+        wf_current = await crud.workflow.get_by_reference_id(reference_id=obj.id)
+        if not wf_current:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+        
+        trying:int = 0
+        while obj.file_path is None:
+            await TerminService().generate_printout_memo_bayar(id=obj.id)
+            if trying > 7:
+                raise HTTPException(status_code=404, detail="File not found")
+            obj = await crud.termin.get(id=obj.id)
+            time.sleep(2)
+            trying += 1
+        
+        public_url = await encrypt_id(id=str(obj.id), request=request)
+        wf_system_attachment = WorkflowSystemAttachmentSch(name=obj.code, url=f"{public_url}?en={WorkflowEntityEnum.TERMIN.value}")
+        wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(obj.id), 
+                                                flow_id=wf_current.flow_id, 
+                                                descs=f"""Dokumen Memo Pembayaran {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+                                                        Tanggal: {obj.created_at.date()}<br>
+                                                        Dokumen: {obj.code}<br><br>
+                                                        Berikut lampiran dokumen terkait : """,
+                                                attachments=[vars(wf_system_attachment)],
+                                                version=wf_current.version)
+        
+        body = vars(wf_system_sch)
+        response, msg = await WorkflowService().create_workflow(body=body)
+
+        if response is None:
+            logging.error(msg=f"Termin {obj.code} Failed to connect workflow system. Detail : {msg}")
+            raise HTTPException(status_code=422, detail=f"Failed to connect workflow system. Detail : {msg}")
+        
+        wf_updated = WorkflowUpdateSch(**wf_current.dict(exclude={"last_status"}), last_status=response.last_status)
+        
+        await crud.workflow.update(obj_current=wf_current, obj_new=wf_updated, updated_by_id=obj.updated_by_id)
 
     # FILTER KOMPONEN BIAYA
     async def make_sure_all_komponen_biaya_not_outstanding(self, sch: TerminCreateSch):

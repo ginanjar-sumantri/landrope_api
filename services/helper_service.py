@@ -708,7 +708,6 @@ class BundleHelper:
 
         dokumen = await crud.dokumen.get_by_name(name="SURAT PERINTAH KERJA")
         if dokumen:
-            bundle = await crud.bundlehd.get_by_id(id=bundle.id)
             bundledt_current = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle.id, dokumen_id=dokumen.id)
 
             if bundledt_current:

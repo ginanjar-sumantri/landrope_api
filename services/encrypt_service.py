@@ -24,8 +24,7 @@ def decrypt(text: str) -> str:
 async def encrypt_id(id: str, request: Request):
     """Encrypt a UUID"""
     try:
-        kjbhd_id = UUID(id)
-        encrypted_id = encrypt(str(kjbhd_id))
+        encrypted_id = encrypt(id)
         url = f'{request.base_url}landrope/attachment_file/document/{encrypted_id}'
         return url
     except ValueError:
