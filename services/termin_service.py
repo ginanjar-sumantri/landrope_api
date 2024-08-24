@@ -918,7 +918,7 @@ class TerminService:
                     nib_perorangan_meta_data = await crud.bundledt.get_meta_data_by_dokumen_name_and_bidang_id(dokumen_name='NIB PERORANGAN', bidang_id=bidang_utama.id)
                     if nib_perorangan_meta_data:
                         if nib_perorangan_meta_data.meta_data is not None and nib_perorangan_meta_data.meta_data != "":
-                            metadata_dict = json.loads(nib_perorangan_meta_data.meta_data.replace("'", "\""))
+                            metadata_dict = json.loads(nib_perorangan_meta_data.meta_data)
                             nib_perorangan = metadata_dict[f'{nib_perorangan_meta_data.key_field}']
                     overlap.nib = nib_perorangan
 
