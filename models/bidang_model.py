@@ -8,7 +8,7 @@ from decimal import Decimal
 from pydantic import condecimal
 from common.enum import (JenisBidangEnum, StatusBidangEnum, JenisAlashakEnum, StatusSKEnum,
                          StatusBidangEnum, HasilAnalisaPetaLokasiEnum, ProsesBPNOrderGambarUkurEnum,
-                         SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum, StatusPembebasanEnum)
+                         SatuanBayarEnum, SatuanHargaEnum, JenisBayarEnum, StatusPembebasanEnum, KategoriLahanEnum)
 from geoalchemy2 import Geometry
 import json
 from datetime import datetime
@@ -33,6 +33,7 @@ class BidangBase(SQLModel):
     kategori_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori.id")
     kategori_sub_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori_sub.id")
     kategori_proyek_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori_proyek.id")
+    kategori_lahan: KategoriLahanEnum | None = Field(nullable=True, default=KategoriLahanEnum.DARAT)
     skpt_id:Optional[UUID] = Field(nullable=True, foreign_key="skpt.id") #PT SK
     penampung_id:Optional[UUID] = Field(nullable=True, foreign_key="ptsk.id") #PT Penampung
     manager_id:Optional[UUID] = Field(nullable=True, foreign_key="manager.id")

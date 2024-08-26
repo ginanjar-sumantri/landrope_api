@@ -152,6 +152,7 @@ class BidangShpSch(BaseGeoModel):
     kat:str | None
     kat_bidang:str | None
     kat_proyek:str | None
+    kat_lahan: str | None
     ptsk:str | None
     penampung:str | None
     no_sk:str | None
