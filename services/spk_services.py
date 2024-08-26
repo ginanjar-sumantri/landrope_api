@@ -426,7 +426,7 @@ class SpkService:
             bundle_dt_alashak = await crud.bundledt.get_by_bundle_hd_id_and_dokumen_id(bundle_hd_id=bundle_hd_id, dokumen_id=dokumen.id)
 
             if bundle_dt_alashak.riwayat_data:
-                riwayat_data = json.loads(bundle_dt_alashak.riwayat_data.replace("'", '"'))
+                riwayat_data = json.loads(bundle_dt_alashak.riwayat_data)
                 if len(riwayat_data["riwayat"]) == 0:
                     return []
                 else:

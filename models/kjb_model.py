@@ -35,6 +35,7 @@ class KjbHdBase(SQLModel):
     nama_group:str | None = Field(nullable=True, max_length=200)
     kategori_penjual:KategoriPenjualEnum | None = Field(nullable=True)
     desa_id:UUID | None = Field(foreign_key="desa.id", nullable=True)
+    project_id:UUID | None = Field(foreign_key="project.id", nullable=True)
     luas_kjb:Decimal | None = Field(nullable=True)
     tanggal_kjb:date| None = Field(default=date.today(), nullable=True)
     remark:str | None = Field(nullable=True)
@@ -54,6 +55,7 @@ class KjbHdFullBase(BaseUUIDModel, KjbHdBase):
 
 class KjbHd(KjbHdFullBase, table=True):
     desa:"Desa" = Relationship(sa_relationship_kwargs={'lazy':'select'})
+    project:"Project" = Relationship(sa_relationship_kwargs={'lazy':'select'})
     manager:"Manager" = Relationship(sa_relationship_kwargs={'lazy':'select'})
     sales:"Sales" = Relationship(sa_relationship_kwargs={'lazy':'select'})
 
