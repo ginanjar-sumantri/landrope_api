@@ -217,3 +217,7 @@ activity_landrope_to_activity_rfp_dict = {
     ActivityEnum.UTJ : "LAND0001",
     ActivityEnum.BIAYA_TANAH : "LAND0002"
 }
+
+class KategoriLahanEnum(str, Enum):
+    LAUT = "LAUT"
+    DARAT = "DARAT"

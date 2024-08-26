@@ -24,7 +24,7 @@ from common.exceptions import (IdNotFoundException, NameExistException, ContentN
                                ImportFailedException, DocumentFileNotFoundException)
 from common.generator import generate_id_bidang, generate_no_peta
 from common.rounder import RoundTwo
-from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, JenisBayarEnum
+from common.enum import TaskStatusEnum, StatusBidangEnum, JenisBidangEnum, JenisAlashakEnum, HasilAnalisaPetaLokasiEnum, JenisBayarEnum, KategoriLahanEnum
 from services.geom_service import GeomService
 from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
@@ -329,7 +329,7 @@ async def create_bulking_task(
     """Create a new object"""
 
     field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
-                        "kat", "kat_bidang", "kat_proyek", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
+                        "kat", "kat_bidang", "kat_proyek", "kat_lahan", "ptsk", "penampung", "no_sk", "status_sk", "manager", "sales", "mediator", 
                         "proses", "status", "group", "no_peta", "desa", "project", "kota", "kecamatan", "parent_id"]
 
     # field_values = ["n_idbidang", "o_idbidang", "pemilik", "code_desa", "dokumen", "sub_surat", "alashak", "luassurat",
@@ -408,6 +408,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                                     kat=geo_data.get('kat', ''),
                                     kat_bidang=geo_data.get('kat_bidang', ''),
                                     kat_proyek=geo_data.get('kat_proyek', ''),
+                                    kat_lahan=geo_data.get('kat_lahan', KategoriLahanEnum.DARAT),
                                     ptsk=geo_data.get('ptsk', ''),
                                     penampung=geo_data.get('penampung',''),
                                     no_sk=geo_data.get('no_sk', ''),
@@ -719,6 +720,7 @@ async def export_shp(
                            kat=data.kategori_name,
                            kat_bidang=data.kategori_sub_name,
                            kat_proyek=data.kategori_proyek_name,
+                           kat_lahan=data.kategori_lahan,
                            ptsk=data.ptsk_name,
                            penampung=data.penampung_name,
                            no_sk=data.no_sk,
