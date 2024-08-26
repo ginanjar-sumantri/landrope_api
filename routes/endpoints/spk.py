@@ -48,9 +48,14 @@ async def create(
 
     #Filter
     if (sch.is_draft or False) is False:
+        bidang_current = await crud.bidang.get_by_id_for_spk(id=sch.bidang_id)
+
         if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
             beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
             await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
+
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.TAMBAHAN_DP] and bidang_current.has_invoice_lunas:
+            raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
 
         if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN]:
             await SpkService().filter_have_input_peta_lokasi(bidang_id=sch.bidang_id)
@@ -311,12 +316,12 @@ async def update(id:UUID,
     if (sch.is_draft or False) is False:
         bidang_current = await crud.bidang.get_by_id_for_spk(id=obj_current.bidang_id)
 
-        if sch.jenis_bayar not in [JenisBayarEnum.BIAYA_LAIN]:
-            if bidang_current.has_invoice_lunas:
-                raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
-        else:
+        if sch.jenis_bayar == JenisBayarEnum.BIAYA_LAIN:
             beban_biaya_ids = [x.beban_biaya_id for x in sch.spk_beban_biayas]
             await SpkService().filter_biaya_lain(beban_biaya_ids=beban_biaya_ids, bidang_id=sch.bidang_id)
+
+        if sch.jenis_bayar in [JenisBayarEnum.DP, JenisBayarEnum.TAMBAHAN_DP] and bidang_current.has_invoice_lunas:
+            raise HTTPException(status_code=422, detail="Failed Update. Detail : Bidang already have Invoice Lunas")
 
         if sch.jenis_bayar in [JenisBayarEnum.LUNAS, JenisBayarEnum.PELUNASAN, JenisBayarEnum.PAJAK]:
             spk_exists = await crud.spk.get_by_bidang_id_jenis_bayar(bidang_id=sch.bidang_id, jenis_bayar=sch.jenis_bayar)

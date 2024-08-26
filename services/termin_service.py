@@ -679,6 +679,7 @@ class TerminService:
                             harga_transaksi=obj.bidang.harga_transaksi, 
                             harga_akta=obj.bidang.harga_akta, 
                             amount=round(obj.spk_amount, 0), 
+                            amount=round(obj.spk_amount, 0), 
                             utj_amount=obj.utj_amount, 
                             project_id=obj.bidang.planing.project_id, 
                             project_name=obj.bidang.project_name, 
