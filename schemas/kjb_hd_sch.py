@@ -24,7 +24,8 @@ class KjbHdCreateSch(KjbHdBase):
 
 
 class KjbHdSch(KjbHdFullBase):
-    desa_name:str = Field(alias="desa_name")
+    desa_name: str | None = Field(alias="desa_name")
+    project_name: str | None = Field(alias="project_name")
     manager_name:str = Field(alias="manager_name")
     sales_name:str = Field(alias="sales_name")
     total_luas_surat:Decimal = Field(alias="total_luas_surat")
@@ -41,7 +42,8 @@ class KjbHdByIdSch(KjbHdFullBase):
     bebanbiayas:List[KjbBebanBiayaSch] | None
     penjuals:List[KjbPenjualSch] | None
     
-    desa_name:str | None = Field(alias="desa_name")
+    desa_name: str | None = Field(alias="desa_name")
+    project_name: str | None = Field(alias="project_name")
     manager_name:str | None = Field(alias="manager_name")
     sales_name:str | None = Field(alias="sales_name")
     total_luas_surat:Decimal | None = Field(alias="total_luas_surat")
