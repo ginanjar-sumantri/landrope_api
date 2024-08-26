@@ -30,6 +30,7 @@ from services.gcloud_task_service import GCloudTaskService
 from services.gcloud_storage_service import GCStorageService
 from services.helper_service import HelperService, KomponenBiayaHelper
 from services.bidang_service import BidangService
+from services.closing_service import ClosingService
 from shapely.geometry import shape
 from shapely import wkt, wkb
 from shapely.validation import explain_validity
@@ -807,6 +808,13 @@ async def get_list_for_report_map(project_id:UUID,
     objs = await crud.bidang.get_all_bidang_tree_report_map(project_id=project_id, desa_id=desa_id, ptsk_id=ptsk_id)
 
     return create_response(data=objs)
+
+@router.get("/closing/bidang")
+async def closing_bidang():
+    
+    await ClosingService().closing_bidang()
+
+    return create_response({"detail": "SUCCESS"})
 
     
 

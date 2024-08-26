@@ -40,5 +40,8 @@ from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKom
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover
 
+from .bidang_closing_model import BidangClosing
+from .planing_closing_model import PlaningClosing
+
 # from .termin_rfp_payment_model import TerminRfpPayment
 
