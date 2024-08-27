@@ -186,9 +186,6 @@ class Bidang(BidangFullBase, table=True):
         }
     )
 
-    peminjaman_bidang: "PeminjamanBidang" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-
-
     @property
     def created_by_name(self) -> str | None:
         return getattr(getattr(self, 'worker', None), 'name', None)
