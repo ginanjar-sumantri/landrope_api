@@ -47,93 +47,45 @@ async def create(sch: KjbHdCreateSch,
 
     return create_response(data=new_obj)
 
-# @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
-# async def upload_dokumen(
-#             id:UUID, 
-#             file: UploadFile,
-#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+@router.put("/{id}", response_model=PutResponseBaseSch[KjbHdSch])
+async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
+                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-#     """Update a obj by its id"""
+    """Update a obj by its id"""
 
-#     obj_current = await crud.kjb_hd.get_by_id(id=id)
-#     if not obj_current:
-#         raise IdNotFoundException(KjbHd, id)
+    obj_current = await crud.kjb_hd.get_by_id(id=id)
 
-#     if file:
-#         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{obj_current.code}', is_public=True)
-#         object_updated = KjbHdUpdateSch(file_path=file_path)
-    
-#     obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
-#     obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
-
-#     return create_response(data=obj_updated)
-
-@router.get("/download-file/{id}")
-async def download_file(id:UUID):
-    """Download File Dokumen"""
-
-    obj_current = await crud.kjb_hd.get(id=id)
     if not obj_current:
         raise IdNotFoundException(KjbHd, id)
-    if obj_current.file_path is None:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+
     try:
-        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
+        obj_updated = await crud.kjb_hd.update_(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, request=request)
     except Exception as e:
-        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
+        raise HTTPException(status_code=422, detail=f"{str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
     
-    ext = obj_current.file_path.split('.')[-1]
+    obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
+    return create_response(data=obj_updated)
 
-    # return FileResponse(file, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={obj_current.id}.{ext}"})
-    response = Response(content=file_bytes, media_type="application/octet-stream")
-    response.headers["Content-Disposition"] = f"attachment; filename=KJB-{id}-{obj_current.code}.{ext}"
-    return response
-
-# @router.post("/cloud-task-workflow")
-# async def workflow(id:UUID, additional_info:str):
-#     obj = await crud.kjb_hd.get(id=id)
-
-#     if not obj:
-#         raise IdNotFoundException(KjbHd, id)
+@router.post("/{id}/update_project", response_model=PutResponseBaseSch[KjbHdSch])
+async def update(id:UUID, project_id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-#     trying:int = 0
-#     if is_create:
-#         while obj.file_path is None:
-#             if trying > 7:
-#                 raise HTTPException(status_code=409, detail="File not found")
-#             obj = await crud.kjb_hd.get(id=id)
-#             time.sleep(2)
-#             trying = trying + 1
-    
+    """Update a obj by its id"""
 
-    
-#     public_url = await GCStorageService().public_url(file_path=obj.file_path)
-#     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
-#     wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
-#     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.code}", url=public_url)
-#     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
-#                                             flow_id=flow.flow_id, 
-#                                             descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
-#                                                     Tanggal: {obj.created_at.date()}<br>
-#                                                     Dokumen: {obj.code}<br><br>
-#                                                     Berikut lampiran dokumen terkait : """, 
-#                                             additional_info={"approval_number" : str(additional_info)}, 
-#                                             attachments=[vars(wf_system_attachment)])
-    
-#     wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
-#     if wf_current:
-#         last_version = 1 if wf_current.version is None else wf_current.version
-#         if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
-#             wf_sch.version = last_version + 1 
-#             wf_sch.last_status = None
-#             wf_system_sch.version = last_version + 1 
-            
-#         await crud.workflow.update_(obj_current=wf_current, obj_wf=wf_system_sch, obj_new=wf_sch, updated_by_id=obj.updated_by_id)
-#     else:
-#         await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+    obj_current = await crud.kjb_hd.get_by_id(id=id)
 
+    if not obj_current:
+        raise IdNotFoundException(KjbHd, id)
 
-#     return {"message" : "successfully"}
+    try:
+        obj_updated = KjbHdUpdateSch.from_orm(obj_current)
+        obj_updated.project_id = project_id
+
+        obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=obj_updated, updated_by_id=current_worker.id)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"{str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+    
+    obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
+    return create_response(data=obj_updated)
 
 @router.get("", response_model=GetResponsePaginatedSch[KjbHdSch])
 async def get_list(
@@ -238,24 +190,25 @@ async def get_by_id(id:UUID):
     else:
         raise IdNotFoundException(KjbHd, id)
 
-@router.put("/{id}", response_model=PutResponseBaseSch[KjbHdSch])
-async def update(id:UUID, sch:KjbHdCreateSch, request:Request,
-                 current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-    """Update a obj by its id"""
+@router.get("/download-file/{id}")
+async def download_file(id:UUID):
+    """Download File Dokumen"""
 
-    obj_current = await crud.kjb_hd.get_by_id(id=id)
-
+    obj_current = await crud.kjb_hd.get(id=id)
     if not obj_current:
         raise IdNotFoundException(KjbHd, id)
-
+    if obj_current.file_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
     try:
-        obj_updated = await crud.kjb_hd.update_(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id, request=request)
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"{str(e.detail) if e.args == '' or e.args is None else str(e.args)}")
+        raise DocumentFileNotFoundException(dokumenname=obj_current.code)
     
-    obj_updated = await crud.kjb_hd.get_by_id_cu(id=obj_updated.id)
-    return create_response(data=obj_updated)
+    ext = obj_current.file_path.split('.')[-1]
+
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename=KJB-{id}-{obj_current.code}.{ext}"
+    return response
 
 @router.post("/task/update-to-bidang")
 async def update_to_bidang(payload:Dict):
@@ -302,3 +255,70 @@ async def update_to_bidang(payload:Dict):
     await db_session.commit()
 
     return {"message" : "successfully"}
+
+# @router.put("/upload-dokumen/{id}", response_model=PutResponseBaseSch[KjbHdSch])
+# async def upload_dokumen(
+#             id:UUID, 
+#             file: UploadFile,
+#             current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+#     """Update a obj by its id"""
+
+#     obj_current = await crud.kjb_hd.get_by_id(id=id)
+#     if not obj_current:
+#         raise IdNotFoundException(KjbHd, id)
+
+#     if file:
+#         file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f'KJB-{obj_current.code}', is_public=True)
+#         object_updated = KjbHdUpdateSch(file_path=file_path)
+    
+#     obj_updated = await crud.kjb_hd.update(obj_current=obj_current, obj_new=object_updated, updated_by_id=current_worker.id)
+#     obj_updated = await crud.kjb_hd.get_by_id(id=obj_updated.id)
+
+#     return create_response(data=obj_updated)
+
+# @router.post("/cloud-task-workflow")
+# async def workflow(id:UUID, additional_info:str):
+#     obj = await crud.kjb_hd.get(id=id)
+
+#     if not obj:
+#         raise IdNotFoundException(KjbHd, id)
+    
+#     trying:int = 0
+#     if is_create:
+#         while obj.file_path is None:
+#             if trying > 7:
+#                 raise HTTPException(status_code=409, detail="File not found")
+#             obj = await crud.kjb_hd.get(id=id)
+#             time.sleep(2)
+#             trying = trying + 1
+    
+
+    
+#     public_url = await GCStorageService().public_url(file_path=obj.file_path)
+#     flow = await crud.workflow_template.get_by_entity(entity=WorkflowEntityEnum.KJB)
+#     wf_sch = WorkflowCreateSch(reference_id=id, entity=WorkflowEntityEnum.KJB, flow_id=flow.flow_id)
+#     wf_system_attachment = WorkflowSystemAttachmentSch(name=f"KJB-{obj.code}", url=public_url)
+#     wf_system_sch = WorkflowSystemCreateSch(client_ref_no=str(id), 
+#                                             flow_id=flow.flow_id, 
+#                                             descs=f"""Dokumen KJB {obj.code} ini membutuhkan Approval dari Anda:<br><br>
+#                                                     Tanggal: {obj.created_at.date()}<br>
+#                                                     Dokumen: {obj.code}<br><br>
+#                                                     Berikut lampiran dokumen terkait : """, 
+#                                             additional_info={"approval_number" : str(additional_info)}, 
+#                                             attachments=[vars(wf_system_attachment)])
+    
+#     wf_current = await crud.workflow.get_by_reference_id(reference_id=id)
+#     if wf_current:
+#         last_version = 1 if wf_current.version is None else wf_current.version
+#         if wf_current.last_status == WorkflowLastStatusEnum.COMPLETED:
+#             wf_sch.version = last_version + 1 
+#             wf_sch.last_status = None
+#             wf_system_sch.version = last_version + 1 
+            
+#         await crud.workflow.update_(obj_current=wf_current, obj_wf=wf_system_sch, obj_new=wf_sch, updated_by_id=obj.updated_by_id)
+#     else:
+#         await crud.workflow.create_(obj_in=wf_sch, obj_wf=wf_system_sch, created_by_id=obj.created_by_id)
+
+
+#     return {"message" : "successfully"}
