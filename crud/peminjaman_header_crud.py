@@ -8,7 +8,7 @@ from sqlmodel import and_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
 from models import Role, PeminjamanHeader
-from schemas.peminjaman_header_sch import PeminjamanBidangCreateSch, PeminjamanHeaderUpdateSch
+from schemas.peminjaman_header_sch import PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch
 from typing import List
 from sqlalchemy import text
 from fastapi_async_sqlalchemy import db
@@ -21,7 +21,7 @@ from typing import Optional
 token_auth_scheme = HTTPBearer()
 
 
-class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanBidangCreateSch, PeminjamanHeaderUpdateSch]):
+class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch]):
     async def get_by_id_bidang(
         self,
         *,
