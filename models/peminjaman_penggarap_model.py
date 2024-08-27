@@ -18,6 +18,6 @@ class PeminjamanPenggarapFullBase(PeminjamanPenggarapBase, BaseUUIDModel):
     pass
 
 class PeminjamanPenggarap(PeminjamanPenggarapFullBase, table=True):
-    peminjaman_header:"PeminjamanHeader" = Relationship(back_populates="peminjaman_bidangs", sa_relationship_kwargs={'lazy':'selectin'})
+    peminjaman_header:"PeminjamanHeader" = Relationship(back_populates="peminjaman_penggaraps", sa_relationship_kwargs={'lazy':'selectin'})
 
     

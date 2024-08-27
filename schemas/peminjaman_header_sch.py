@@ -1,4 +1,4 @@
-from models.peminjaman_header_model import PeminjamanHeader, PeminjamanHeaderBase, PeminjamanHeaderFullBase
+from models.peminjaman_header_model import PeminjamanHeaderBase, PeminjamanHeaderFullBase
 from models.peminjaman_bidang_model import PeminjamanBidangBase
 from typing import List
 
