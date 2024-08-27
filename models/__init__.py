@@ -36,12 +36,9 @@ from .termin_model import Termin, TerminBayar, TerminBayarDt
 from .utj_khusus_model import UtjKhusus, UtjKhususDetail
 from .invoice_model import Invoice, InvoiceDetail, InvoiceBayar
 from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKomponenBiayaDetail
-from .peminjaman_header_model import PeminjamanHeader
-from .peminjaman_penggarap_model import PeminjamanPenggarap
-from .peminjaman_bidang_model import PeminjamanBidang
-from .pelepasan_bidang_model import PelepasanBidang
-from .pelepasan_penggarap_model import PelepasanPenggarap
-from .pelepasan_header_model import PelepasanHeader
+# from .pelepasan_bidang_model import PelepasanBidang
+# from .pelepasan_penggarap_model import PelepasanPenggarap
+# from .pelepasan_header_model import PelepasanHeader
 
 
 
@@ -49,6 +46,10 @@ from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, Workflo
 
 from .bidang_closing_model import BidangClosing
 from .planing_closing_model import PlaningClosing
+
+from .peminjaman_header_model import PeminjamanHeader
+from .peminjaman_penggarap_model import PeminjamanPenggarap
+from .peminjaman_bidang_model import PeminjamanBidang
 
 # from .termin_rfp_payment_model import TerminRfpPayment
 
