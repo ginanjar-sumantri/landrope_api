@@ -47,5 +47,8 @@ from .pelepasan_header_model import PelepasanHeader
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover
 
+from .bidang_closing_model import BidangClosing
+from .planing_closing_model import PlaningClosing
+
 # from .termin_rfp_payment_model import TerminRfpPayment
 
