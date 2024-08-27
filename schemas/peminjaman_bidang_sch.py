@@ -1,9 +1,9 @@
-from models.peminjaman_bidang_model import PeminjamanBidang, PeminjamanBidangBase, PeminjamanBidangFullBase
+from models.peminjaman_bidang_model import PeminjamanBidangBase, PeminjamanBidangFullBase
 from typing import List
 from schemas.kontak_sch import KontakCreateExtSch
 from schemas.rekening_sch import RekeningCreateExtSch
 
-class PeminjamanBidangCreateSch(PeminjamanBidang):
+class PeminjamanBidangCreateSch(PeminjamanBidangBase):
     pass
 
 class PeminjamanBidangSch(PeminjamanBidangFullBase):

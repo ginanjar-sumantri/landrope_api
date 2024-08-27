@@ -5,7 +5,7 @@ from typing import List
 class PeminjamanHeaderCreateSch(PeminjamanHeaderBase):
     peminjaman_bidangs: List[PeminjamanBidangBase]
 
-class PeminjamanHeaderSch(PeminjamanHeader):
+class PeminjamanHeaderSch(PeminjamanHeaderBase):
     pass
 
 class PeminjamanHeaderByIdSch(PeminjamanHeaderFullBase):
