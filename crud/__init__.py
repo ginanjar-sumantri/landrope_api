@@ -95,4 +95,9 @@ from .workflow_history_crud import workflow_history
 from .workflow_template_crud import workflow_template
 from .workflow_next_approver_crud import workflow_next_approver
 
+from .peminjaman_header_crud import peminjaman_header
+from .peminjaman_bidang_crud import peminjaman_bidang
+# from .peminjaman_penggarap_crud import peminjaman_penggarap
+
+
 # from .termin_rfp_payment_crud import termin_rfp_payment

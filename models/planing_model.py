@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from models.project_model import Project
     from models.desa_model import Desa
     from models.bundle_model import BundleHd
-    from models import HargaStandard
+    from models import HargaStandard, PeminjamanHeader
 
 class PlaningBase(SQLModel):
     project_id: UUID = Field(default=None, foreign_key="project.id")
@@ -32,6 +32,8 @@ class Planing(PlaningFullBase, table=True):
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     harga_standards: list["HargaStandard"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
+    peminjaman_header: "PeminjamanHeader" = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
+
     # kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     # kjb_dts_by_ttn: list["KjbDt"] = Relationship(back_populates="planing_by_ttn", sa_relationship_kwargs={'lazy':'select'})
     # tanda_terima_notaris_hd:list["TandaTerimaNotarisHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'selectin'})
