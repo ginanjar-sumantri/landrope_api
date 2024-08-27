@@ -7,6 +7,7 @@ from decimal import Decimal
 
 if TYPE_CHECKING:
     from models.skpt_model import Skpt
+    from models.peminjaman_header_model import PeminjamanHeader
     # from models.rincik_model import Rincik
     # from models.bidang_model import Bidang, Bidangoverlap
 
@@ -22,4 +23,6 @@ class PtskFullBase(PtskRawBase):
 
 class Ptsk(PtskFullBase, table=True):
     skpts: list["Skpt"] = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
+    peminjaman_header: "PeminjamanHeader" = Relationship(back_populates="ptsk", sa_relationship_kwargs={'lazy':'selectin'})
+
 

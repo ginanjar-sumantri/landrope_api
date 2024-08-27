@@ -20,7 +20,7 @@ from services.history_service import HistoryService
 from io import BytesIO
 from uuid import UUID
 from geoalchemy2 import functions
-from datetime import datetime
+from datetime import datetime, date
 
 
 class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
@@ -807,5 +807,13 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         response = await db_session.execute(query)
         result = [BidangAllPembayaran(**dict(bd)) for bd in response.fetchall()]
         return result
+
+    async def closing_bidang(self, period_date:date):
+        db_session = db.session
+
+        query = f"call closing_bidang('{period_date}')"
+        await db_session.execute(query)
+        await db_session.commit()
+
 
 bidang = CRUDBidang(Bidang)

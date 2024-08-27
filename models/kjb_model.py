@@ -85,6 +85,12 @@ class KjbHd(KjbHdFullBase, table=True):
         return self.desa.name
     
     @property
+    def project_name(self) -> str | None:
+        if self.project is None:
+            return None
+        return self.project.name
+    
+    @property
     def manager_name(self) -> str | None:
         if self.manager is None:
             return ""

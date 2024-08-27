@@ -15,7 +15,7 @@ from datetime import datetime
 
 if TYPE_CHECKING:
     from models import (Planing, SubProject, Skpt, Ptsk, Pemilik, JenisSurat, Kategori, KategoriSub, KategoriProyek, Manager, Sales,
-                        Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice, TahapDetail)
+                        Notaris, BundleHd, HasilPetaLokasi, Worker, BidangKomponenBiaya, BidangOverlap, Invoice, TahapDetail, PeminjamanBidang)
     
 class BidangBase(SQLModel):
     id_bidang:Optional[str] = Field(nullable=False, max_length=150, sa_column=(Column("id_bidang", String, unique=True)))

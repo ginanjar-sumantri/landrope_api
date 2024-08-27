@@ -74,6 +74,7 @@ class CRUDKjbHd(CRUDBase[KjbHd, KjbHdCreateSch, KjbHdUpdateSch]):
         db_session = db_session or db.session
         
         query = select(KjbHd).where(KjbHd.id == id).options(selectinload(KjbHd.desa)
+                                                ).options(selectinload(KjbHd.project)
                                                 ).options(selectinload(KjbHd.manager)
                                                 ).options(selectinload(KjbHd.sales)
                                                 ).options(selectinload(KjbHd.kjb_dts)
