@@ -40,3 +40,5 @@ async def report_pembebasan_detail_project(period_date:date, project_id:UUID, st
     data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
 
     return create_response(data=data)
+
+@router.get("/summary_project/e")
