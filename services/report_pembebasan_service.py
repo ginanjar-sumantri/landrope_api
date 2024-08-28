@@ -30,7 +30,7 @@ class ReportPembebasanService:
 
         return result
     
-    async def detail_project(self, period_date:date, project_id:UUID, status_pembebasan:StatusReportPembebasanEnum, keyword:str | None = None):
+    async def detail_project(self, period_date:date, status_pembebasan:StatusReportPembebasanEnum, project_id:UUID | None = None, keyword:str | None = None):
 
         objs = []
         db_session = db.session
@@ -44,7 +44,7 @@ class ReportPembebasanService:
         params = {
             "cut_off" : period_date,
             "is_current_period" : is_current_period,
-            "project_ids": [project_id]
+            "project_ids": None if project_id is None else [project_id]
         }
 
         if status_pembebasan == StatusReportPembebasanEnum.BELUM_BEBAS:
@@ -52,13 +52,13 @@ class ReportPembebasanService:
         elif status_pembebasan == StatusReportPembebasanEnum.BEBAS:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_bebas(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.BELUM_PETLOK:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:cut_off, :is_current_period, :project_ids)""")
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL_REKLAMASI:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal_reklamasi(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.KJB:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:cut_off, :is_current_period, :project_ids)""")
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:project_ids)""")
         else:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_relokasi(:cut_off, :is_current_period, :project_ids)""")
 
