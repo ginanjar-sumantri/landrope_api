@@ -27,9 +27,9 @@ async def report_pembebasan_summary_project(period_date:date, current_worker:Wor
     return create_response(data=objs)
 
 @router.get("/detail_project", response_model=GetResponsePaginatedSch[DetailProjectSch])
-async def report_pembebasan_detail_project(period_date:date, project_id:UUID, status_pembebasan:StatusReportPembebasanEnum, params: Params=Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
+async def report_pembebasan_detail_project(period_date:date, project_id:UUID, status_pembebasan:StatusReportPembebasanEnum, keyword:str | None = None, params: Params=Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
-    objs = await ReportPembebasanService().detail_project(period_date=period_date, project_id=project_id, status_pembebasan=status_pembebasan)
+    objs = await ReportPembebasanService().detail_project(period_date=period_date, project_id=project_id, status_pembebasan=status_pembebasan, keyword=keyword)
 
     # SETUP MANUAL PAGINATION
     start = (params.page - 1) * params.size

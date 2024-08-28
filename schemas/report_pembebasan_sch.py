@@ -26,7 +26,7 @@ class DetailProjectSch(SQLModel):
     desa_id: UUID | None = None 
     id_bidang: str | None = None 
     notaris_name: str | None = None 
-    kategori_proyek_name: str | None = None 
+    project_name: str | None = None 
     desa_name: str | None = None 
     group: str | None = None 
     manager_name: str | None = None 
@@ -37,4 +37,4 @@ class DetailProjectSch(SQLModel):
     alashak: str | None = None
     luas_surat: Decimal | None = None 
     luas_bayar: Decimal | None = None 
-    kategori_lahan: str | None = None
+    kategori_name: str | None = None

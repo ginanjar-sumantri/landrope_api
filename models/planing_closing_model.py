@@ -10,6 +10,7 @@ from datetime import date
 class PlaningClosingBase(SQLModel):
     planing_id: UUID = Field(nullable=False, foreign_key="planing.id")
     luas: Decimal = Field(nullable=False, default=0)
+    date_cut_off: date = Field(nullable=False)
 
 class PlaningClosingFullBase(BaseUUIDModel, PlaningClosingBase):
     pass
