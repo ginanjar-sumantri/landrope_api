@@ -18,3 +18,23 @@ class SummaryProjectSch(SQLModel):
     kjb: Decimal | None = None
     total_bebas: Decimal | None = None
     belum_bebas: Decimal | None = None
+
+class DetailProjectSch(SQLModel):
+    id: UUID | None = None 
+    jenis_bidang: str | None = None 
+    project_id: UUID | None = None 
+    desa_id: UUID | None = None 
+    id_bidang: str | None = None 
+    notaris_name: str | None = None 
+    kategori_proyek_name: str | None = None 
+    desa_name: str | None = None 
+    group: str | None = None 
+    manager_name: str | None = None 
+    sales_name: str | None = None 
+    pemilik_name: str | None = None
+    mediator: str | None = None 
+    jenis_alashak: str | None = None 
+    alashak: str | None = None
+    luas_surat: Decimal | None = None 
+    luas_bayar: Decimal | None = None 
+    kategori_lahan: str | None = None

@@ -225,3 +225,12 @@ class KategoriLahanEnum(str, Enum):
 class KategoriTipeTanahEnum(str, Enum):
     EMPANG = "EMPANG"
     SAWAH = "SAWAH"
+
+class StatusReportPembebasanEnum(str, Enum):
+    BELUM_BEBAS = "belum_bebas"
+    KJB = "kjb"
+    BELUM_PETLOK = "belum_petlok"
+    DEAL = "deal"
+    BEBAS = "bebas"
+    RELOKASI = "relokasi"
+    DEAL_REKLAMASI = "deal_reklamasi"
