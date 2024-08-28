@@ -15,6 +15,7 @@ class BidangClosingBase(SQLModel):
     luas_bayar: Decimal = Field(default=0, nullable=False)
     kategori_lahan: KategoriLahanEnum = Field(default=KategoriLahanEnum.DARAT, nullable=False)
     date_cut_off: date = Field(nullable=False)
+    kategori_id: UUID | None = Field(nullable=True, foreign_key="kategori.id")
 
 class BidangClosingFullBase(BaseUUIDModel, BidangClosingBase):
     pass
