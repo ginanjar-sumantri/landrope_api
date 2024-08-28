@@ -8,7 +8,7 @@ from crud.base_crud import CRUDBase
 from models import Planing, Project
 from schemas.planing_sch import PlaningCreateSch, PlaningUpdateSch
 from sqlalchemy import exc
-from datetime import datetime
+from datetime import datetime, date
 
 class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
     async def get_by_id(self, 
@@ -68,5 +68,12 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         
         await db_session.refresh(db_obj)
         return db_obj
+
+    async def closing_planing(self, period_date:date):
+        db_session = db.session
+
+        query = f"call closing_planing('{period_date}')"
+        await db_session.execute(query)
+        await db_session.commit()
 
 planing = CRUDPlaning(Planing)

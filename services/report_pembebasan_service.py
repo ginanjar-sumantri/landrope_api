@@ -30,7 +30,7 @@ class ReportPembebasanService:
 
         return result
     
-    async def detail_project(self, period_date:date, project_id:UUID, status_pembebasan:StatusReportPembebasanEnum):
+    async def detail_project(self, period_date:date, project_id:UUID, status_pembebasan:StatusReportPembebasanEnum, keyword:str | None = None):
 
         objs = []
         db_session = db.session
@@ -48,19 +48,37 @@ class ReportPembebasanService:
         }
 
         if status_pembebasan == StatusReportPembebasanEnum.BELUM_BEBAS:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_bebas(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_bebas(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.BEBAS:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_bebas(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_bebas(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.BELUM_PETLOK:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL_REKLAMASI:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal_reklamasi(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal_reklamasi(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.KJB:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:cut_off, :is_current_period, :project_ids)""")
         else:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_relokasi(:cut_off, :is_current_period, :project_ids)""").params(**params)
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_relokasi(:cut_off, :is_current_period, :project_ids)""")
+
+        if keyword:
+            query = sqlalchemy.text(f"""{query} WHERE 
+                                REPLACE(lower(id_bidang), ' ', '') like '%{keyword.lower().replace(' ', '')}%' 
+                                OR REPLACE(lower(alashak), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(notaris_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(project_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(desa_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower('group'), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(manager_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(sales_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(pemilik_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(mediator), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(jenis_alashak), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                                OR REPLACE(lower(kategori_name), ' ', '') like '%{keyword.lower().replace(' ', '')}%'
+                    """)
+
+        query = query.params(**params)
 
         response = await db_session.execute(query)
         rows = response.fetchall()
