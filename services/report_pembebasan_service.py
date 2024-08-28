@@ -70,7 +70,3 @@ class ReportPembebasanService:
             result.append(dict(row))
 
         return result
-
-        
-
-        
