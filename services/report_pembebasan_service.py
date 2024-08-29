@@ -104,7 +104,7 @@ class ReportPembebasanService:
 
         GCloudTaskService().create_task(payload=
                                         {
-                                            "period_date": period_date,
+                                            "period_date": str(period_date),
                                             "is_staging" : is_staging,
                                             "export_log_id": str(export_log.id)
                                         }, 
@@ -121,7 +121,7 @@ class ReportPembebasanService:
 
         GCloudTaskService().create_task(payload=
                                         {
-                                            "period_date": period_date,
+                                            "period_date": str(period_date),
                                             "is_staging" : is_staging,
                                             "export_log_id": str(export_log.id),
                                             "project_id": str(project_id)
