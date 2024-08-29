@@ -1,14 +1,20 @@
 from fastapi_async_sqlalchemy import db
 import sqlalchemy
 
-from common.enum import StatusReportPembebasanEnum
+from services.export_log_service import ExportLogService
+from services.gcloud_task_service import GCloudTaskService
 
+from common.enum import StatusReportPembebasanEnum
+from configs.config import settings
 from datetime import date
 from uuid import UUID
 import calendar
 
 
 class ReportPembebasanService:
+
+    OAUTH2_TOKEN = settings.OAUTH2_TOKEN
+    INSTANCE = settings.INSTANCE
 
     async def summary_project(self, period_date:date):
 
@@ -88,3 +94,37 @@ class ReportPembebasanService:
             result.append(dict(row))
 
         return result
+    
+    # FUNGSI UNTUK CREATE EXPORT LOG, SEKALIGUS GENERATE FILE EXCEL DAN DIUPLOAD KE CLOUD STORAGE
+    async def export_summary_project(self, period_date:date, created_by_id:UUID):
+
+        export_log = await ExportLogService().create_export_log(name="REPORT PEMBEBASAN SUMMARY PROJECT", media_type=".xlsx", created_by_id=created_by_id)
+
+        is_staging = True if self.INSTANCE == "STAGING" else False
+
+        # GCloudTaskService().create_task(payload=
+        #                                 {
+        #                                     "period_date": period_date,
+        #                                     "is_staging" : is_staging,
+        #                                     "export_log_id": str(export_log.id)
+        #                                 }, 
+        #                                 base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
+
+        return export_log
+    
+    # FUNGSI UNTUK CREATE EXPORT LOG, SEKALIGUS GENERATE FILE EXCEL DAN DIUPLOAD KE CLOUD STORAGE
+    async def export_detail_project(self, period_date:date, created_by_id:UUID, project_id:UUID | None = None):
+
+        export_log = await ExportLogService().create_export_log(name="REPORT PEMBEBASAN DETAIL PROJECT", media_type=".xlsx", created_by_id=created_by_id)
+
+        is_staging = True if self.INSTANCE == "STAGING" else False
+
+        # GCloudTaskService().create_task(payload=
+        #                                 {
+        #                                     "period_date": period_date,
+        #                                     "is_staging" : is_staging,
+        #                                     "export_log_id": str(export_log.id)
+        #                                 }, 
+        #                                 base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
+
+        return export_log
