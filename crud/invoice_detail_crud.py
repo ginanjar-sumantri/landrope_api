@@ -5,6 +5,7 @@ from sqlmodel import select, or_, and_, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
 from common.ordered import OrderEnumSch
+from common.enum import JenisBayarEnum
 from crud.base_crud import CRUDBase
 from models import InvoiceDetail, Invoice, BidangKomponenBiaya, Termin
 from schemas.invoice_detail_sch import InvoiceDetailCreateSch, InvoiceDetailUpdateSch
@@ -89,10 +90,11 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
 
         query = select(InvoiceDetail).join(Invoice, Invoice.id == InvoiceDetail.invoice_id
                                 ).join(Termin, Termin.id == Invoice.termin_id
-                                ).where(and_(InvoiceDetail.invoice_id == invoice_id, 
+                                ).where(and_(InvoiceDetail.invoice_id != invoice_id, 
                                             InvoiceDetail.bidang_komponen_biaya_id == bidang_komponen_biaya_id,
                                             func.coalesce(Invoice.is_void, False) == False,
-                                            func.coalesce(Termin.is_void, False) == False))
+                                            func.coalesce(Termin.is_void, False) == False,
+                                            Termin.jenis_bayar != JenisBayarEnum.PENGEMBALIAN_BEBAN_PENJUAL))
         
         if invoice_dt_id:
             query = query.filter(InvoiceDetail.id != invoice_dt_id)
@@ -100,7 +102,6 @@ class CRUDInvoiceDetail(CRUDBase[InvoiceDetail, InvoiceDetailCreateSch, InvoiceD
         response =  await db_session.execute(query)
         return response.scalars().all()
     
-
     # FOR TERMIN UPDATE FUNCTION
     async def get_ids_by_invoice_ids(self, 
                             *,
