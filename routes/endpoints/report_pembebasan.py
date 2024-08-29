@@ -9,6 +9,7 @@ from common.enum import StatusReportPembebasanEnum
 
 from models import Worker
 from schemas.report_pembebasan_sch import SummaryProjectSch, DetailProjectSch
+from schemas.export_log_sch import ExportLogSch
 from schemas.response_sch import create_response, GetResponseBaseSch, GetResponsePaginatedSch
 
 from services.report_pembebasan_service import ReportPembebasanService
@@ -40,3 +41,17 @@ async def report_pembebasan_detail_project(period_date:date, project_id:UUID, st
     data = Page(items=objs[start:end], size=params.size, page=params.page, pages=pages, total=total_items)
 
     return create_response(data=data)
+
+@router.get("/summary_project/export", response_model=GetResponseBaseSch[ExportLogSch])
+async def export_report_pembebasan_summary_project(period_date:date, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    export_log = await ReportPembebasanService().export_summary_project(period_date=period_date, created_by_id=current_worker.id)
+
+    return create_response(data=export_log)
+
+@router.get("/detail_project/export", response_model=GetResponseBaseSch[ExportLogSch])
+async def export_report_pembebasan_summary_project(period_date:date, project_id:UUID | None = None, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    export_log = await ReportPembebasanService().export_detail_project(period_date=period_date, created_by_id=current_worker.id, project_id=project_id)
+
+    return create_response(data=export_log)
