@@ -102,13 +102,13 @@ class ReportPembebasanService:
 
         is_staging = True if self.INSTANCE == "STAGING" else False
 
-        # GCloudTaskService().create_task(payload=
-        #                                 {
-        #                                     "period_date": period_date,
-        #                                     "is_staging" : is_staging,
-        #                                     "export_log_id": str(export_log.id)
-        #                                 }, 
-        #                                 base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
+        GCloudTaskService().create_task(payload=
+                                        {
+                                            "period_date": period_date,
+                                            "is_staging" : is_staging,
+                                            "export_log_id": str(export_log.id)
+                                        }, 
+                                        base_url="https://landrope-report-summary-project-318655103671.asia-southeast2.run.app")
 
         return export_log
     
@@ -119,12 +119,13 @@ class ReportPembebasanService:
 
         is_staging = True if self.INSTANCE == "STAGING" else False
 
-        # GCloudTaskService().create_task(payload=
-        #                                 {
-        #                                     "period_date": period_date,
-        #                                     "is_staging" : is_staging,
-        #                                     "export_log_id": str(export_log.id)
-        #                                 }, 
-        #                                 base_url="https://asia-southeast2-sedayuone.cloudfunctions.net/landrope_generate_excel_bidang")
+        GCloudTaskService().create_task(payload=
+                                        {
+                                            "period_date": period_date,
+                                            "is_staging" : is_staging,
+                                            "export_log_id": str(export_log.id),
+                                            "project_id": str(project_id)
+                                        }, 
+                                        base_url="https://landrope-report-detail-project-318655103671.asia-southeast2.run.app")
 
         return export_log
