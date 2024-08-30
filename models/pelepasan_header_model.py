@@ -21,7 +21,7 @@ class PelepasanHeaderBase(SQLModel):
 
     # INFORMASI NAMA PT
     ptsk_id: UUID | None = Field(nullable=True, foreign_key="ptsk.id")
-    jenis_surat_id: str | None = Field(nullable=True, foreign_key="jenis_surat_id")
+    jenis_surat_id: UUID | None = Field(nullable=True, foreign_key="jenis_surat.id")
     alashak: str | None = Field(nullable=True)
 
     # CHECKLIST KELENGKAPAN
