@@ -40,6 +40,8 @@ from .payment_model import Payment, PaymentDetail, PaymentGiroDetail, PaymentKom
 # from .pelepasan_penggarap_model import PelepasanPenggarap
 # from .pelepasan_header_model import PelepasanHeader
 
+from .pelepasan_header_model import PelepasanHeader
+from .pelepasan_bidang_model import PelepasanBidang
 
 
 from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, WorkflowNextApprover
