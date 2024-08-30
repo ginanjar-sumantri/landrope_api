@@ -312,3 +312,6 @@ class BidangAllPembayaran(SQLModel):
     id_pembayaran:UUID|None
     name:str|None
     amount:Decimal|None
+
+class BidangPeminjamanSch(BidangRawBase):
+    pemilik_name:str|None

@@ -7,23 +7,27 @@ if TYPE_CHECKING:
     from models import (Bidang, PeminjamanHeader)
 
 class PeminjamanBidangBase(SQLModel):
-    bidang_id: UUID = Field(nullable=False, foreign_key="bidang.id")
-    peminjaman_header_id: UUID = Field(nullable=False, foreign_key="peminjaman_header.id")
+    bidang_id: UUID | None = Field(nullable=True, foreign_key="bidang.id")
+    peminjaman_header_id: UUID | None = Field(nullable=True, foreign_key="peminjaman_header.id")
 
 class PeminjamanBidangFullBase(PeminjamanBidangBase, BaseUUIDModel):
     pass
 
 class PeminjamanBidang(PeminjamanBidangFullBase, table=True):
     bidang:"Bidang" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
-    peminjaman_header:"PeminjamanHeader" = Relationship(back_populates="peminjaman_bidangs", sa_relationship_kwargs={'lazy':'selectin'})
+    peminjaman_header:"PeminjamanHeader" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
-    # @property
-    # def Peminjaman_hd_id(self):
-    #     self.Peminjaman.id
+    @property
+    def id_bidang(self):
+        self.bidang.id_bidang
     
-    # @property
-    # def id_bidang(self):
-    #     self.bidang.id_bidang
+    @property
+    def pemilik_name(self)-> str:
+        if self.bidang is None:
+            return ""
+        return self.bidang.pemilik_name
+
+    
 
 
     

@@ -2,6 +2,7 @@ from fastapi_async_sqlalchemy import db
 from fastapi_pagination import Params, Page
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from fastapi.encoders import jsonable_encoder
+from fastapi import HTTPException
 from sqlmodel import select, and_, or_, func, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select
@@ -10,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from typing import List, Any, Dict
 from crud.base_crud import CRUDBase
 from models import (Bidang, Skpt, Ptsk, Planing, Project, Desa, JenisSurat, JenisLahan, Kategori, KategoriSub, KategoriProyek, Invoice, InvoiceDetail,
-                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya)
+                    Manager, Sales, Notaris, BundleHd, HasilPetaLokasi, KjbDt, KjbHd, TahapDetail, BidangOverlap, BidangKomponenBiaya, PeminjamanHeader, PeminjamanBidang)
 from schemas.bidang_sch import (BidangCreateSch, BidangUpdateSch, BidangPercentageLunasForSpk, BidangParameterDownload, BidangAllPembayaran,
                                 BidangForUtjSch, BidangTotalBebanPenjualByIdSch, BidangTotalInvoiceByIdSch, ReportBidangBintang, 
                                 BidangRptExcel, BidangShpSch)
@@ -815,5 +816,63 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         await db_session.execute(query)
         await db_session.commit()
 
+    async def get_by_id_bidang_dan_alashak(
+        self,
+        *,
+        search: str,
+        db_session: AsyncSession | None = None,
+    ) -> Bidang | None:
+                
+        db_session = db_session or db.session
 
+        query = (select(Bidang).where(Bidang.status == 'Bebas',  
+            or_(
+                Bidang.id_bidang == search,
+                Bidang.alashak == search
+            )
+        )
+    )
+
+        response = await db_session.execute(query)
+            
+        return response.scalar_one_or_none()
+    
+    # async def get_list_bidangs(self, 
+    #                 *, 
+    #                 keyword: UUID | str, 
+    #                 db_session : AsyncSession | None = None
+    #                 ) -> List[Bidang] | None:
+        
+    #     db_session = db_session or db.session
+        
+    #     current_date = datetime.now()
+    
+    #     query = select(Bidang)
+    #     query = query.outerjoin(PeminjamanBidang, PeminjamanBidang.bidang_id == Bidang.id)
+    #     query = query.outerjoin(PeminjamanHeader, PeminjamanHeader.id == PeminjamanBidang.peminjaman_header_id)
+    #     query = query.filter(Bidang.status == 'Bebas')
+    #     query = query.filter(
+    #             or_(
+    #                 PeminjamanBidang.bidang_id == None,
+    #                 or_(
+    #                     PeminjamanHeader.tanggal_berakhir == None,
+    #                     PeminjamanHeader.tanggal_berakhir <= current_date
+    #                 )
+    #             )
+    #         )
+    #     query = query.order_by(Bidang.updated_at.desc())
+
+    
+    #     if keyword:
+    #         query = query.filter(
+    #             or_(
+    #                 Bidang.id_bidang == keyword,      
+    #                 Bidang.alashak.ilike(f"%{keyword}%")  
+    #             )
+    #         )
+            
+    #     response =  await db_session.execute(query)
+
+    #     return response.scalars().all()
+    
 bidang = CRUDBidang(Bidang)
