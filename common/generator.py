@@ -121,7 +121,7 @@ async def generate_code_month(entity:CodeCounterEnum,
         
         code = str(code_counter).zfill(max_digit)
         return code
-    
+
 async def generate_code_reset_by_year(entity:CodeCounterEnum, code_template:str | None, db_session : AsyncSession | None = None, with_commit: bool | None = True):
 
     last_number = 1
