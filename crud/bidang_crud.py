@@ -815,5 +815,26 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         await db_session.execute(query)
         await db_session.commit()
 
+    async def get_by_id_bidang_dan_alashak(
+        self,
+        *,
+        search: str,
+        db_session: AsyncSession | None = None,
+    ) -> Bidang | None:
+                
+        db_session = db_session or db.session
+
+        query = (select(Bidang).where(Bidang.status == 'Bebas',  
+            or_(
+                Bidang.id_bidang == search,
+                Bidang.alashak == search
+            )
+        )
+    )
+
+        response = await db_session.execute(query)
+            
+        return response.scalar_one_or_none()
+
 
 bidang = CRUDBidang(Bidang)

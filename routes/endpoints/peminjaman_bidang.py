@@ -66,16 +66,17 @@ async def get_list(params: Params=Depends(), search:str = None):
     return create_response(data=objs)
 
 
-@router.get("/{id_bidang}", response_model=GetResponseBaseSch[PeminjamanBidangSch])
-async def get_by_id_bidang(id:str):
+@router.get("/{search}", response_model=GetResponseBaseSch[PeminjamanBidangSch])
+async def get_by_bidang_id_dan_alashak(search:str = None):
 
-    """Get an object by id bidang"""
+    """Get an object by bidang id dan alas hak"""
 
-    obj = await crud.peminjaman_bidang.get_by_id_bidang(id=id)
+    obj = await crud.bidang.get_by_id_bidang_dan_alashak(search=search)
     if obj:
         return create_response(data=obj)
     else:
-        raise IdNotFoundException(PeminjamanBidang, id)
+        raise IdNotFoundException(PeminjamanBidang, search)
+    #difilter status bebas
     
 @router.put("/{id}", response_model=PutResponseBaseSch[PeminjamanBidangSch])
 async def update(id:str, sch:PeminjamanBidangUpdateSch):
