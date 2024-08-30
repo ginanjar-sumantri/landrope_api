@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer
 from sqlmodel import and_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
+from fastapi.encoders import jsonable_encoder
 from models import Role, PeminjamanHeader, Planing, Ptsk, PeminjamanBidang
 from schemas.peminjaman_header_sch import PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch
 from typing import List
@@ -28,7 +29,7 @@ token_auth_scheme = HTTPBearer()
 
 
 class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch]):
-    async def get_by_id_bidang(
+    async def get_by_id(
         self,
         *,
         id: str,
@@ -143,5 +144,153 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
         obj_nomor = f"{sequence_str}/S/IZIN/LA/{month_roman}/{current_year}"
 
         return obj_nomor
+    
+
+    async def edit(self, 
+                     *, 
+                     obj_current : PeminjamanHeader, 
+                     obj_new : PeminjamanHeaderUpdateSch | PeminjamanHeader,
+                     updated_by_id: UUID | str | None = None,
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True
+                     ) -> PeminjamanHeader | None:
+        
+        db_session = db_session or db.session
+    
+        obj_data = jsonable_encoder(obj_current)
+    
+        if isinstance(obj_new, dict):
+            update_data = obj_new
+        else:
+            update_data = obj_new.dict(exclude_unset=True)
+    
+        for field in obj_data:
+            if field in update_data:
+                setattr(obj_current, field, update_data[field])
+            if field == "updated_at":
+                setattr(obj_current, field, datetime.utcnow())
+    
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
+        
+        if 'peminjaman_bidangs' in update_data:
+            bidangs_data = update_data['peminjaman_bidangs']
+    
+            current_bidang_query = select(PeminjamanBidang).where(
+                PeminjamanBidang.peminjaman_header_id == obj_current.id
+            )
+            result_bidang = await db_session.execute(current_bidang_query)
+            existing_bidangs = result_bidang.scalars().all()
+    
+            existing_bidang_ids = {bidang.bidang_id for bidang in existing_bidangs}
+            #id dari peminjaman bidangnya
+    
+            for bidang_data in bidangs_data:
+                bidang_id = bidang_data['bidang_id']
+    
+                if bidang_id in existing_bidang_ids:
+                    existing_bidang = next(b for b in existing_bidangs if b.bidang_id == bidang_id)
+                    for key, value in bidang_data.items():
+                        setattr(existing_bidang, key, value)
+                else:
+                    filtered_bidang_data = {k: v for k, v in bidang_data.items() if k not in ['peminjaman_header_id']}
+                    new_bidang = PeminjamanBidang(
+                        peminjaman_header_id=obj_current.id,
+                        updated_by_id=obj_current.updated_by_id,
+                        created_by_id=obj_current.created_by_id,
+                        **filtered_bidang_data
+                    )
+                    db_session.add(new_bidang)
+    
+        db_session.add(obj_current)
+        if with_commit:
+            await db_session.commit()
+            await db_session.refresh(obj_current)
+        
+        return obj_current
+    
+    
+    # async def edit_pinjam(
+    #     self,
+    #     id: str | None, 
+    #     sch: PeminjamanHeaderUpdateSch, 
+    #     db_session: AsyncSession | None = None
+    # ):
+    #     db_session = db_session or db.session
+
+    #     current_header_query = await crud.peminjaman_header.get_by_id(id=id)
+    #     result_header = await db_session.execute(current_header_query)
+    #     header = result_header.scalar_one_or_none()
+
+    #     if header:
+    #         # Update the PeminjamanHeader fields with the provided schema values
+    #         for key, value in sch.dict(exclude={'bidangs'}).items():
+    #             setattr(header, key, value)
+
+    #         # Update or add PeminjamanBidang entries
+    #         if 'bidangs' in sch.dict():
+    #             bidangs_data = sch.dict()['bidangs']
+
+    #             # Retrieve existing PeminjamanBidang for the current header
+    #             current_bidang_query = select(PeminjamanBidang).where(
+    #                 PeminjamanBidang.peminjaman_header_id == id
+    #             )
+    #             result_bidang = await db_session.execute(current_bidang_query)
+    #             existing_bidangs = result_bidang.scalars().all()
+
+    #             existing_bidang_ids = {bidang.bidang_id for bidang in existing_bidangs}
+
+    #             # Update or create new PeminjamanBidang entries
+    #             for bidang_data in bidangs_data:
+    #                 bidang_id = bidang_data['bidang_id']
+
+    #                 if bidang_id in existing_bidang_ids:
+    #                     # Update existing PeminjamanBidang
+    #                     existing_bidang = next(b for b in existing_bidangs if b.bidang_id == bidang_id)
+    #                     for key, value in bidang_data.items():
+    #                         setattr(existing_bidang, key, value)
+    #                 else:
+    #                     # Create new PeminjamanBidang
+    #                     new_bidang = PeminjamanBidang(
+    #                         peminjaman_header_id=id,
+    #                         **bidang_data
+    #                     )
+    #                     db_session.add(new_bidang)
+
+    #     else:
+    #         # If no header found, you can either raise an exception or handle it as needed
+    #         raise ValueError("PeminjamanHeader not found")
+
+    #     await db_session.commit()
+
+    #     # Refresh header to get updated state
+    #     await db_session.refresh(header)
+
+    #     return header
+
+    async def update_islock(
+                                self, id: UUID | None = None, 
+                                db_session: AsyncSession | None = None
+                            ) -> PeminjamanHeader | None:
+        
+        db_session = db_session or db.session
+
+        query = select(PeminjamanHeader).where(PeminjamanHeader.id == id)
+
+        result = await db_session.execute(query)
+
+        peminjaman_header = result.scalars().first()
+
+        if not peminjaman_header:
+            return None
+
+        # Set is_lock to False
+        peminjaman_header.is_lock = False
+
+        await db_session.commit()
+        await db_session.refresh(peminjaman_header)
+
+        return peminjaman_header
+    
     
 peminjaman_header = CRUDPeminjamanHeader(PeminjamanHeader)

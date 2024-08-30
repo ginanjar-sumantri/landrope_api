@@ -7,14 +7,14 @@ from decimal import Decimal
 
 class PeminjamanHeaderCreateSch(PeminjamanHeaderBase):
     peminjaman_bidangs: List[PeminjamanBidangBase] | None
-
-class PeminjamanHeaderSch(PeminjamanHeaderFullBase):
+   
+class PeminjamanHeaderSch(PeminjamanHeaderFullBase):    
     pass
 
 class PeminjamanHeaderByIdSch(PeminjamanHeaderFullBase):
     peminjaman_bidangs: List[PeminjamanBidangBase] | None
 
-class PeminjamanHeaderUpdateSch(PeminjamanHeaderBase):
+class PeminjamanHeaderUpdateSch(PeminjamanHeaderFullBase):
     peminjaman_bidangs: List[PeminjamanBidangBase] | None
 
 

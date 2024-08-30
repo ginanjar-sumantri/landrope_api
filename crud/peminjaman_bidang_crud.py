@@ -8,7 +8,7 @@ from sqlmodel import and_, select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
 from models import Role, PeminjamanBidang, Bidang
-from schemas.peminjaman_bidang_sch import PeminjamanBidangCreateSch, PeminjamanBidangUpdateSch
+from schemas.peminjaman_bidang_sch import PeminjamanBidangSch, PeminjamanBidangCreateSch, PeminjamanBidangUpdateSch
 from typing import List
 from sqlalchemy import text
 from fastapi_async_sqlalchemy import db
@@ -41,5 +41,7 @@ class CRUDPeminjamanBidang(CRUDBase[PeminjamanBidang, PeminjamanBidangCreateSch,
         response = await db_session.execute(query)
             
         return response.scalar_one_or_none()
+    
+   
     
 peminjaman_bidang = CRUDPeminjamanBidang(PeminjamanBidang)
