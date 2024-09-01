@@ -1,6 +1,5 @@
 from sqlmodel import SQLModel, Field
 from models.base_model import BaseUUIDModel
-from common.enum import StatusBidangEnum, KategoriLahanEnum
 
 from uuid import UUID
 from decimal import Decimal

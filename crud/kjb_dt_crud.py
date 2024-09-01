@@ -14,7 +14,7 @@ from models.master_model import HargaStandard
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch, KjbDtDoubleDataSch
 from typing import List
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import exc
 
 
@@ -319,5 +319,19 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
             datas.append(data)
 
         return datas
+    
+    async def closing_kjb_dt_by_kjb(self, period_date:date):
+        db_session = db.session
+
+        query = f"call closing_kjb_dt_by_kjb('{period_date}')"
+        await db_session.execute(query)
+        await db_session.commit()
+
+    async def closing_kjb_dt_by_ttn(self, period_date:date):
+        db_session = db.session
+
+        query = f"call closing_kjb_dt_by_ttn('{period_date}')"
+        await db_session.execute(query)
+        await db_session.commit()
 
 kjb_dt = CRUDKjbDt(KjbDt)
