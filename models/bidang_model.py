@@ -33,7 +33,7 @@ class BidangBase(SQLModel):
     kategori_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori.id")
     kategori_sub_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori_sub.id")
     kategori_proyek_id:Optional[UUID] = Field(nullable=True, foreign_key="kategori_proyek.id")
-    kategori_lahan: KategoriLahanEnum | None = Field(nullable=True, default=KategoriLahanEnum.DARAT)
+    kategori_lahan: KategoriLahanEnum | None = Field(nullable=True)
     skpt_id:Optional[UUID] = Field(nullable=True, foreign_key="skpt.id") #PT SK
     penampung_id:Optional[UUID] = Field(nullable=True, foreign_key="ptsk.id") #PT Penampung
     manager_id:Optional[UUID] = Field(nullable=True, foreign_key="manager.id")

@@ -220,7 +220,8 @@ activity_landrope_to_activity_rfp_dict = {
 
 class KategoriLahanEnum(str, Enum):
     LAUT = "LAUT"
-    DARAT = "DARAT"
+    SAWAH = "SAWAH"
+    EMPANG = "EMPANG"
 
 class KategoriTipeTanahEnum(str, Enum):
     EMPANG = "EMPANG"

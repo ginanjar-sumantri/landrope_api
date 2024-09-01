@@ -48,6 +48,8 @@ from .workflow_model import Workflow, WorkflowHistory, WorkflowTemplate, Workflo
 
 from .bidang_closing_model import BidangClosing
 from .planing_closing_model import PlaningClosing
+from .kjb_dt_closing_kjb_model import KjbDtClosingKjb
+from .kjb_dt_closing_ttn_model import KjbDtClosingTtn
 
 from .peminjaman_header_model import PeminjamanHeader
 from .peminjaman_penggarap_model import PeminjamanPenggarap
