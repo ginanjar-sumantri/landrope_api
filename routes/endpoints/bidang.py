@@ -595,7 +595,7 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                 shp_data.no_peta = await generate_no_peta(planing_id=plan.id, id_bidang=shp_data.n_idbidang)
 
             sch = BidangSch(id_bidang=shp_data.n_idbidang,
-                            id_bidang_lama=shp_data.o_idbidang if shp_data.o_idbidang != 'nan' else None,
+                            id_bidang_lama=shp_data.o_idbidang if shp_data.o_idbidang not in null_values else None,
                             no_peta=shp_data.no_peta,
                             pemilik_id=pemilik,
                             jenis_bidang=HelperService().FindJenisBidang(shp_data.proses),
@@ -617,7 +617,8 @@ async def bulk_create(payload:ImportLogCloudTaskSch,
                             parent_id=kulit_bintang_id,
                             geom=shp_data.geom)
 
-            obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
+            obj_current = await crud.bidang.get_by_id_bidang(idbidang=sch.id_bidang)
+            # obj_current = await crud.bidang.get_by_id_bidang_id_bidang_lama(idbidang=sch.id_bidang, idbidang_lama=sch.id_bidang_lama)
             # obj_current = await crud.bidang.get_by_id_bidang_lama(idbidang_lama=shp_data.o_idbidang)
 
             if obj_current:

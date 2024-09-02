@@ -3,6 +3,7 @@ from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
 from datetime import datetime, date
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models import (Project, Desa, Ptsk, JenisSurat, PelepasanBidang, Worker)
@@ -79,6 +80,10 @@ class PelepasanHeader(PelepasanHeaderFullBase, table=True):
     @property
     def jenis_surat_name(self) -> str | None:
         return self.jenis_surat.name
+    
+    @property
+    def total_luas_bayar(self) -> Decimal | None:
+        return sum([(pelepasan_bidang.bidang.luas_bayar or 0 ) for pelepasan_bidang in self.pelepasan_bidangs])
 
 
 
