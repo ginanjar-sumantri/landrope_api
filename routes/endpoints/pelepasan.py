@@ -7,6 +7,7 @@ from schemas.pelepasan_header_sch import (PelepasanHeaderSch, PelepasanHeaderCre
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 
 from services.gcloud_storage_service import GCStorageService
+from services.pdf_service import PdfService
 
 from common.exceptions import (IdNotFoundException)
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
@@ -128,7 +129,7 @@ async def get_by_id(id:UUID, current_worker:Worker = Depends(crud.worker.get_act
 
     return create_response(data=obj)
 
-@router.get("/{id}/download_file")
+@router.get("/{id}/download_file" )
 async def download_file(id:UUID):
     """Download File Dokumen"""
 
@@ -148,6 +149,32 @@ async def download_file(id:UUID):
     response = Response(content=file_bytes, media_type="application/octet-stream")
     response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_pelepasan}.{ext}"
     return response
+
+@router.get("/{id}/printout")
+async def printout_file(id:UUID):
+
+    obj_current = await crud.pelepasan_header.get(id=id, with_select_in_load=True)
+    if not obj_current:
+        raise IdNotFoundException(PelepasanHeader, id)
+    
+    data = {
+        "filename": "landrope_form_pelepasan",
+        "template_file": "landrope_form_pelepasan.docx",
+        "data": {
+            "nama_pemilik": obj_current.nama_pemilik,
+            "total_luas_bayar": obj_current.total_luas_bayar,
+            "desa_name": obj_current.desa_name,
+
+        },
+        "images": []
+    }
+
+    file_bytes = await PdfService().get_pdf_from_report_service(data=data)
+    
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_pelepasan.replace('/', '_')}.pdf"
+    return response
+
 
 @router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSearchSch])
 async def search_bidang(project_id: UUID, desa_id: UUID, pelepasan_header_id: UUID | None = None, keyword:str | None = None, params:Params = Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
