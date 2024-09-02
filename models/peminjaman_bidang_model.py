@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from models import (Bidang, PeminjamanHeader)
 
 class PeminjamanBidangBase(SQLModel):
-    bidang_id: UUID | None = Field(nullable=True, foreign_key="bidang.id")
+    bidang_id: UUID = Field(nullable=False, foreign_key="bidang.id")
     peminjaman_header_id: UUID | None = Field(nullable=True, foreign_key="peminjaman_header.id")
 
 class PeminjamanBidangFullBase(PeminjamanBidangBase, BaseUUIDModel):
