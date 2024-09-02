@@ -1,24 +1,29 @@
 from sqlmodel import SQLModel, Field, Relationship
 from models.peminjaman_header_model import PeminjamanHeaderBase, PeminjamanHeaderFullBase
 from models.peminjaman_bidang_model import PeminjamanBidangBase
-from typing import List
-from decimal import Decimal
-
+from schemas.peminjaman_bidang_sch import PeminjamanBidangCreateUpdateSch, PeminjamanBidangSch
+from common.as_form import as_form
 
 class PeminjamanHeaderCreateSch(PeminjamanHeaderBase):
-    peminjaman_bidangs: List[PeminjamanBidangBase] | None
-   
-class PeminjamanHeaderSch(PeminjamanHeaderFullBase):    
-    pass
+    peminjaman_bidangs: list[PeminjamanBidangCreateUpdateSch]
+
+
+class PeminjamanHeaderSch(PeminjamanHeaderFullBase):
+    project_name: str | None
+    desa_name: str | None
+    ptsk_name: str | None
 
 class PeminjamanHeaderByIdSch(PeminjamanHeaderFullBase):
-    peminjaman_bidangs: List[PeminjamanBidangBase] | None
+    project_name: str | None
+    desa_name: str | None
+    ptsk_name: str | None
 
-class PeminjamanHeaderUpdateSch(PeminjamanHeaderFullBase):
-    peminjaman_bidangs: List[PeminjamanBidangBase] | None
+    peminjaman_bidangs: list[PeminjamanBidangSch]
 
+class PeminjamanHeaderEditSch(PeminjamanHeaderBase):
+    peminjaman_bidangs: list[PeminjamanBidangCreateUpdateSch] | None 
 
-
-
-
+@as_form
+class PeminjamanHeaderUpdateSch(PeminjamanHeaderBase):
+    pass
 

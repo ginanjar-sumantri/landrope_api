@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from models.base_model import BaseUUIDModel
 from uuid import UUID
 from typing import TYPE_CHECKING
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from models import (Bidang, PeminjamanHeader)
@@ -18,14 +19,24 @@ class PeminjamanBidang(PeminjamanBidangFullBase, table=True):
     peminjaman_header:"PeminjamanHeader" = Relationship(sa_relationship_kwargs={'lazy':'selectin'})
 
     @property
-    def id_bidang(self):
-        self.bidang.id_bidang
+    def id_bidang(self) -> str | None:
+        return self.bidang.id_bidang
     
     @property
-    def pemilik_name(self)-> str:
-        if self.bidang is None:
-            return ""
-        return self.bidang.pemilik_name
+    def alashak(self) -> str | None:
+        return self.bidang.alashak
+    
+    @property
+    def pemilik_name(self) -> str | None:
+        return self.bidang.pemilik.name if self.bidang.pemilik else None
+    
+    @property
+    def group(self) -> str | None:
+        return self.bidang.group
+    
+    @property
+    def luas_bayar(self) -> Decimal | None:
+        return self.bidang.luas_bayar
 
     
 
