@@ -8,7 +8,7 @@ from routes.endpoints import (bidang, bidang_overlap, bidang_komponen_biaya, bid
                               kjb_hd, kjb_termin, kjb_harga, kjb_dt, kjb_rekening, kjb_beban_biaya, kjb_penjual, kjb_history,
                               tanda_terima_notaris_hd, tanda_terima_notaris_dt, notaris, request_peta_lokasi, hasil_peta_lokasi, 
                               hasil_peta_lokasi_detail, hasil_peta_lokasi_history, import_log, export_log, order_gambar_ukur,
-                              report_map, dashboard, workflow, export_excel, report, report_pembebasan, attachment_file, rfp, peminjaman_header, peminjaman_bidang)
+                              report_map, dashboard, workflow, export_excel, report, attachment_file, rfp, report_pembebasan, peminjaman, pelepasan)
 
 api_router = APIRouter()
 
@@ -83,10 +83,10 @@ api_router.include_router(kategori_proyek.router, prefix="/kategoriproyek", tags
 api_router.include_router(giro.router, prefix="/giro", tags=["giro"])
 api_router.include_router(keterangan_req_petlok.router, prefix="/keterangan_req_petlok", tags=["keterangan_req_petlok"])
 
-api_router.include_router(peminjaman_header.router, prefix="/peminjaman_header", tags=["peminjaman_header"])
-api_router.include_router(peminjaman_bidang.router, prefix="/peminjaman_bidang", tags=["peminjaman_bidang"])
+api_router.include_router(peminjaman.router, prefix="/peminjaman_header", tags=["peminjaman_header"])
+# api_router.include_router(peminjaman_bidang.router, prefix="/peminjaman_bidang", tags=["peminjaman_bidang"])
 
-
+api_router.include_router(pelepasan.router, prefix="/pelepasan", tags=["pelepasan"])
 
 api_router.include_router(import_log.router, prefix="/importlog", tags=["importlog"])
 api_router.include_router(export_log.router, prefix="/exportlog", tags=["exportlog"])
