@@ -71,7 +71,7 @@ app = init_app()
 scheduler = BackgroundScheduler()
 
 # FUNGSI UTAMA UNTUK CRON JOB
-# - ENABLE ACCOUNTING PERIOD TIAP TANGGAL 1
+# - CLOSING TIAP TANGGAL 1
 async def cron_job_bulanan():
     async with db():
         await ClosingService().closing_bidang()

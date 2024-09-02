@@ -139,7 +139,7 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
         if updated_by_id:
             obj_current.updated_by_id = updated_by_id
 
-        obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_pelepasan.replace("/", "_")} - {uuid4().hex}")
+        obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_pelepasan.replace('/', '_')} - {uuid4().hex}")
         obj_current.is_lock = True
         
         try:
