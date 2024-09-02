@@ -7,7 +7,7 @@ from sqlmodel.sql.expression import Select
 from sqlalchemy import exc
 from sqlalchemy.orm import selectinload
 from crud.base_crud import CRUDBase
-from models import PelepasanHeader
+from models import PelepasanHeader, PelepasanBidang, Bidang
 from models.code_counter_model import CodeCounterEnum
 from schemas.pelepasan_header_sch import PelepasanHeaderCreateSch, PelepasanHeaderEditSch, PelepasanHeaderUpdateSch
 from schemas.pelepasan_bidang_sch import PelepasanBidangCreateSch
@@ -46,7 +46,7 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
             db_session.add(db_obj)
 
             for dt in obj_in.pelepasan_bidangs:
-                sch = PelepasanBidangCreateSch(**dt.dict(exclude={"id", "pelepasan_header_id"}), pelepasan_header_id=db_obj.id)
+                sch = PelepasanBidangCreateSch(bidang_id=dt, pelepasan_header_id=db_obj.id)
                 await crud.pelepasan_bidang.create(obj_in=sch, created_by_id=created_by_id, db_session=db_session, with_commit=False)
 
             if with_commit:
@@ -92,14 +92,8 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
             current_ids = [x.id for x in current_pelepasan_bidangs]
 
             for dt in obj_new.pelepasan_bidangs:
-                if dt.id in current_ids:
-                    current_pelepasan_bidang = await crud.pelepasan_bidang.get(id=dt.id)
-                    dt.pelepasan_header_id = obj_current.id
-                    await crud.pelepasan_bidang.update(obj_current=current_pelepasan_bidang, obj_new=dt, updated_by_id=updated_by_id, db_session=db_session, with_commit=False)
-                    current_ids.remove(dt.id)
-                else:
-                    dt.pelepasan_header_id = obj_current.id
-                    await crud.pelepasan_bidang.create(obj_in=dt, created_by_id=updated_by_id, db_session=db_session, with_commit=False)
+                sch = PelepasanBidangCreateSch(bidang_id=dt, pelepasan_header_id=obj_current.id)
+                await crud.pelepasan_bidang.create(obj_in=sch, created_by_id=updated_by_id, db_session=db_session, with_commit=False)
 
             for remove_id in current_ids:
                 await crud.pelepasan_bidang.remove(id=remove_id, with_commit=False)
@@ -139,7 +133,9 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
         if updated_by_id:
             obj_current.updated_by_id = updated_by_id
 
-        obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_pelepasan.replace('/', '_')} - {uuid4().hex}")
+        if file:
+            obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_pelepasan.replace('/', '_')} - {uuid4().hex}")
+        
         obj_current.is_lock = True
         
         try:
@@ -169,7 +165,7 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
         if with_select_in_load:
             query = query.options(selectinload(PelepasanHeader.project), selectinload(PelepasanHeader.desa), 
                                 selectinload(PelepasanHeader.ptsk), selectinload(PelepasanHeader.jenis_surat),
-                                selectinload(PelepasanHeader.pelepasan_bidangs))
+                                selectinload(PelepasanHeader.pelepasan_bidangs).options(selectinload(PelepasanBidang.bidang).options(selectinload(Bidang.pemilik))))
 
         response = await db_session.execute(query)
 

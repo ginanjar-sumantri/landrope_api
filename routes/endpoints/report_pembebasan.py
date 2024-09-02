@@ -13,6 +13,7 @@ from schemas.export_log_sch import ExportLogSch
 from schemas.response_sch import create_response, GetResponseBaseSch, GetResponsePaginatedSch
 
 from services.report_pembebasan_service import ReportPembebasanService
+from services.closing_service import ClosingService
 
 from decimal import Decimal
 from datetime import date
@@ -55,3 +56,12 @@ async def export_report_pembebasan_summary_project(period_date:date, project_id:
     export_log = await ReportPembebasanService().export_detail_project(period_date=period_date, created_by_id=current_worker.id, project_id=project_id)
 
     return create_response(data=export_log)
+
+@router.get("/closing")
+async def closing_bidang():
+    
+    await ClosingService().closing_bidang()
+    await ClosingService().closing_kulit_planing()
+    await ClosingService().closing_kjb_dt()
+
+    return create_response({"detail": "SUCCESS"})
