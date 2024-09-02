@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     INSTANCE:str
 
+    REPORT_SERVICE_URL:str
+
     class Config:
         env_file = ".env"
 

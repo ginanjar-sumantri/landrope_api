@@ -15,12 +15,14 @@ class PelepasanHeaderSch(PelepasanHeaderFullBase):
     desa_name: str | None
     ptsk_name: str | None
     jenis_surat_name: str | None
+    total_luas_bayar: Decimal | None
 
 class PelepasanHeaderByIdSch(PelepasanHeaderFullBase):
     project_name: str | None
     desa_name: str | None
     ptsk_name: str | None
     jenis_surat_name: str | None
+    total_luas_bayar: Decimal | None
 
     pelepasan_bidangs: list[PelepasanBidangSch]
 

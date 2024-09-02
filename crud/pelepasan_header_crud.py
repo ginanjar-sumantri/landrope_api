@@ -171,4 +171,5 @@ class CRUDPelepasanHeader(CRUDBase[PelepasanHeader, PelepasanHeaderCreateSch, Pe
 
         return response.scalar_one_or_none()
 
+
 pelepasan_header = CRUDPelepasanHeader(PelepasanHeader)
