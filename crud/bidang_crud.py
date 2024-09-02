@@ -270,7 +270,7 @@ class CRUDBidang(CRUDBase[Bidang, BidangCreateSch, BidangUpdateSch]):
         return obj.scalar_one_or_none()
 
     async def get_by_id_bidang_id_bidang_lama(
-        self, *, idbidang: str, idbidang_lama: str, db_session: AsyncSession | None = None
+        self, *, idbidang: str | None = None, idbidang_lama: str | None = None, db_session: AsyncSession | None = None
     ) -> Bidang:
         db_session = db_session or db.session
         query = select(Bidang).where(and_(Bidang.id_bidang == idbidang, Bidang.id_bidang_lama == idbidang_lama))
