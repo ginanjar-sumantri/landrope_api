@@ -32,7 +32,6 @@ class Planing(PlaningFullBase, table=True):
     bidangs: list["Bidang"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     bundlehds: list["BundleHd"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     harga_standards: list["HargaStandard"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
-    peminjaman_headers: list["PeminjamanHeader"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
 
     # kjb_dts: list["KjbDt"] = Relationship(back_populates="planing", sa_relationship_kwargs={'lazy':'select'})
     # kjb_dts_by_ttn: list["KjbDt"] = Relationship(back_populates="planing_by_ttn", sa_relationship_kwargs={'lazy':'select'})

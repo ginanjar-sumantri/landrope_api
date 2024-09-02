@@ -1,17 +1,21 @@
+from sqlmodel import SQLModel
 from models.peminjaman_bidang_model import PeminjamanBidangBase, PeminjamanBidangFullBase
-from typing import List
-from schemas.kontak_sch import KontakCreateExtSch
-from schemas.rekening_sch import RekeningCreateExtSch
+from common.partial import optional
+from uuid import UUID
+from decimal import Decimal
 
 class PeminjamanBidangCreateSch(PeminjamanBidangBase):
     pass
 
 class PeminjamanBidangSch(PeminjamanBidangFullBase):
-    pass
-
-class PeminjamanBidangByIdSch(PeminjamanBidangFullBase):
-    pass
+    id_bidang: str | None
+    alashak: str | None
+    pemilik_name: str | None
+    group: str | None
+    luas_bayar: Decimal | None
 
 class PeminjamanBidangUpdateSch(PeminjamanBidangBase):
     pass
 
+class PeminjamanBidangCreateUpdateSch(PeminjamanBidangBase):
+    id: UUID | None

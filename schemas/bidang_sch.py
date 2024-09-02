@@ -313,5 +313,5 @@ class BidangAllPembayaran(SQLModel):
     name:str|None
     amount:Decimal|None
 
-class BidangPeminjamanSch(BidangRawBase):
+class BidangPeminjamanSch(SQLModel):
     pemilik_name:str|None
