@@ -26,6 +26,7 @@ class CodeCounterEnum(str, Enum):
     Giro = "Giro"
     Cek = "Cek"
     Pelepasan = "Pelepasan"
+    Peminjaman = "Peminjaman"
 
 class CodeCounterBase(SQLModel):
     entity:CodeCounterEnum | None

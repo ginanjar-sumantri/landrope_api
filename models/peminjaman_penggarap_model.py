@@ -12,7 +12,7 @@ class PeminjamanPenggarapBase(SQLModel):
     alamat: str | None = Field(nullable=True)
     nomor_ktp: str | None = Field(nullable=True)
     nomor_handphone: int | None = Field(nullable=True)
-    peminjaman_header_id: UUID = Field(nullable=False, foreign_key="peminjaman_header.id")
+    peminjaman_header_id: UUID | None= Field(nullable=True, foreign_key="peminjaman_header.id")
 
 class PeminjamanPenggarapFullBase(PeminjamanPenggarapBase, BaseUUIDModel):
     pass

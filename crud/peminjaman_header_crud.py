@@ -9,6 +9,8 @@ from models import Role, PeminjamanHeader
 from models.code_counter_model import CodeCounterEnum
 from sqlalchemy.orm import selectinload
 from schemas.peminjaman_header_sch import PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch, PeminjamanHeaderEditSch
+from schemas.peminjaman_bidang_sch import PeminjamanBidangCreateSch
+from schemas.peminjaman_penggarap_sch import PeminjamanPenggarapCreateSch
 from typing import List
 from sqlalchemy import text
 from fastapi_async_sqlalchemy import db
@@ -43,16 +45,24 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
             db_obj.updated_by_id = created_by_id
 
         try:
-            nomor_peminjaman_template = f"[code]/IZIN/LA/{roman.toRoman(date.today().month)}/{date.today().year}"
 
-            db_obj.nomor_peminjaman = await generate_code_reset_by_year(entity=CodeCounterEnum.peminjaman,
-                                                                    code_template=nomor_peminjaman_template,
+            if obj_in.kategori.lower() == "sawah":
+                kat = "S"
+            elif obj_in.kategori.lower() == "empang":
+                    kat = "E"
+            else:
+                kat = ""
+        
+            nomor_perjanjian_template = f"[code]/{kat}/IZIN/LA/{roman.toRoman(date.today().month)}/{date.today().year}"
+
+            db_obj.nomor_perjanjian = await generate_code_reset_by_year(entity=CodeCounterEnum.Peminjaman,
+                                                                    code_template=nomor_perjanjian_template,
                                                                     db_session=db_session, with_commit=False)
 
             db_session.add(db_obj)
 
             for dt in obj_in.peminjaman_bidangs:
-                sch = PeminjamanHeaderCreateSch(**dt.dict(exclude={"id", "peminjaman_header_id"}), peminjaman_header_id=db_obj.id)
+                sch = PeminjamanBidangCreateSch(bidang_id=dt, peminjaman_header_id=db_obj.id)
                 await crud.peminjaman_bidang.create(obj_in=sch, created_by_id=created_by_id, db_session=db_session, with_commit=False)
 
             if with_commit:
@@ -98,14 +108,8 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
             current_ids = [x.id for x in current_peminjaman_bidangs]
 
             for dt in obj_new.peminjaman_bidangs:
-                if dt.id in current_ids:
-                    current_peminjaman_bidang = await crud.peminjaman_bidang.get(id=dt.id)
-                    dt.peminjaman_header_id = obj_current.id
-                    await crud.peminjaman_bidang.update(obj_current=current_peminjaman_bidang, obj_new=dt, updated_by_id=updated_by_id, db_session=db_session, with_commit=False)
-                    current_ids.remove(dt.id)
-                else:
-                    dt.peminjaman_header_id = obj_current.id
-                    await crud.peminjaman_bidang.create(obj_in=dt, created_by_id=updated_by_id, db_session=db_session, with_commit=False)
+                sch = PeminjamanBidangCreateSch(bidang_id=dt, peminjaman_header=obj_current.id)
+                await crud.peminjaman_bidang.create(obj_in=sch, created_by_id=updated_by_id, db_session=db_session, with_commit=False)
 
             for remove_id in current_ids:
                 await crud.peminjaman_bidang.remove(id=remove_id, with_commit=False)
@@ -145,11 +149,19 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
         if updated_by_id:
             obj_current.updated_by_id = updated_by_id
 
-        obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_perjanjian.replace('/', '_')} - {uuid4().hex}")
         obj_current.is_lock = True
         
         try:
             db_session.add(obj_current)
+
+            for dt in obj_new.peminjaman_penggaraps:
+                    sch = PeminjamanPenggarapCreateSch(**dt.dict(exclude={"peminjaman_header_id"}), peminjaman_header_id=obj_current.id)
+                    await crud.peminjaman_bidang.create(
+                        obj_in=sch, 
+                        created_by_id=updated_by_id, 
+                        db_session=db_session, 
+                        with_commit=False
+                    )
 
             if with_commit:
                 await db_session.commit()
@@ -157,7 +169,7 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
 
         except exc.IntegrityError:
             await db_session.rollback()
-            raise HTTPException(status_code=400, detail="Failed Edit")
+            raise HTTPException(status_code=400, detail="Failed Updated")
 
         return obj_current
 

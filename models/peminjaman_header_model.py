@@ -34,7 +34,10 @@ class PeminjamanHeader(PeminjamanHeaderFullBase, table=True):
         back_populates="peminjaman_header", 
         sa_relationship_kwargs = {"lazy":"select", 
                                   "primaryjoin": "PeminjamanHeader.id==PeminjamanBidang.peminjaman_header_id"})
-    peminjaman_penggaraps:list["PeminjamanPenggarap"] = Relationship(sa_relationship_kwargs = {'lazy':'select'})
+    
+    peminjaman_penggaraps:list["PeminjamanPenggarap"] = Relationship(
+        sa_relationship_kwargs = {"lazy":"select",
+                                  "primaryjoin": "PeminjamanHeader.id==PeminjamanPenggarap.peminjaman_header_id"})
 
     worker: "Worker" = Relationship(  
         sa_relationship_kwargs={

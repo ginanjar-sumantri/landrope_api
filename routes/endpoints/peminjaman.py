@@ -91,7 +91,27 @@ async def edit(id:UUID, sch:PeminjamanHeaderEditSch, current_worker:Worker = Dep
 
 
 @router.put("/{id}/update", response_model=PutResponseBaseSch[PeminjamanHeaderSch])
-async def update(id:UUID, sch:PeminjamanHeaderUpdateSch = Depends(PeminjamanHeaderUpdateSch.as_form), 
+async def update(id:UUID, sch:PeminjamanHeaderUpdateSch, 
+                current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Update a obj by its id"""
+
+    obj_current = await crud.peminjaman_header.get(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(PeminjamanHeader, id)
+    
+    if obj_current.is_lock:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Peminjaman sudah terkunci")
+    
+    obj_updated = await crud.peminjaman_header.update(obj_current=obj_current, obj_new=sch, updated_by_id=current_worker.id)
+
+    response_obj = await crud.peminjaman_header.get(id=obj_updated.id, with_select_in_load=True)
+
+    return create_response(data=response_obj)
+
+@router.put("/{id}/upload", response_model=PutResponseBaseSch[PeminjamanHeaderSch])
+async def update(id:UUID, 
                 file:UploadFile | None = None, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
@@ -104,7 +124,7 @@ async def update(id:UUID, sch:PeminjamanHeaderUpdateSch = Depends(PeminjamanHead
     if obj_current.is_lock:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Peminjaman sudah terkunci")
     
-    obj_updated = await crud.peminjaman_header.update(obj_current=obj_current, obj_new=sch, file=file, updated_by_id=current_worker.id)
+    obj_updated = await crud.peminjaman_header.update(obj_current=obj_current, file=file, updated_by_id=current_worker.id)
 
     response_obj = await crud.peminjaman_header.get(id=obj_updated.id, with_select_in_load=True)
 

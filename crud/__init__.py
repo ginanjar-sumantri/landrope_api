@@ -100,7 +100,7 @@ from .pelepasan_bidang_crud import pelepasan_bidang
 
 from .peminjaman_header_crud import peminjaman_header
 from .peminjaman_bidang_crud import peminjaman_bidang
-# from .peminjaman_penggarap_crud import peminjaman_penggarap
+from .peminjaman_penggarap_crud import peminjaman_penggarap
 
 
 # from .termin_rfp_payment_crud import termin_rfp_payment
