@@ -17,6 +17,7 @@ from schemas.response_sch import (GetResponseBaseSch, GetResponsePaginatedSch,
 from common.exceptions import (IdNotFoundException, NameExistException, ContentNoChangeException)
 from common.enum import StatusBidangEnum, JenisBidangEnum
 from services.helper_service import KomponenBiayaHelper
+from services.tahap_service import TahapService
 from shapely import wkb, wkt
 from io import BytesIO
 import crud
@@ -32,77 +33,15 @@ async def create(
             current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Create a new object"""
-    db_session = db.session
-
-    obj_planing = await crud.planing.get_by_id(id=sch.planing_id)
-    if not obj_planing:
-        raise IdNotFoundException(Planing, sch.planing_id)
     
-    new_last_tahap = 0
-    mainproject_current = None
-    if obj_planing.project.main_project:
-        mainproject_current = obj_planing.project.main_project
-        new_last_tahap = (mainproject_current.last_tahap or 0) + 1
-    else:
-        obj_sub_project = await crud.sub_project.get_by_id(id=sch.sub_project_id)
-        if not obj_sub_project:
-            raise ContentNoChangeException(detail="Sub Project tidak ditemukan")
-        mainproject_current = obj_sub_project.main_project
-        new_last_tahap = (mainproject_current.last_tahap or 0) + 1
+    new_obj = await TahapService().create_tahap(sch=sch, created_by_id=current_worker.id)
 
-    mainproject_updated = mainproject_current
-    mainproject_updated.last_tahap = new_last_tahap
-    await crud.section.update(obj_current=mainproject_current, obj_new=mainproject_updated, 
-                              db_session=db_session, with_commit=False, updated_by_id=current_worker.id)
-    
-    sch.nomor_tahap = new_last_tahap
-
-    new_obj = await crud.tahap.create(obj_in=sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-
-    for dt in sch.details:
-        dt_sch = TahapDetailCreateSch(tahap_id=new_obj.id, bidang_id=dt.bidang_id, is_void=False)
-        await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-
-        bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
-        if bidang_current.geom :
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        if bidang_current.geom_ori:
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        
-        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
-        bidang_updated.luas_bayar = dt.luas_bayar
-        bidang_updated.harga_akta = dt.harga_akta
-        bidang_updated.harga_transaksi = dt.harga_transaksi
-
-        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
-                                  with_commit=False, db_session=db_session, 
-                                  updated_by_id=current_worker.id)
-
-        
-        for ov in dt.overlaps:
-            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
-            if bidang_overlap_current.geom :
-                geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
-                bidang_overlap_current.geom = geom_ov
-            if bidang_overlap_current.geom_temp :
-                geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
-                bidang_overlap_current.geom_temp = geom_temp_ov
-        
-            bidang_overlap_updated = BidangOverlapUpdateSch(**ov.dict())
-            
-            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
-                                            with_commit=False, db_session=db_session,
-                                            updated_by_id=current_worker.id)
-    
-    await db_session.commit()
-    await db_session.refresh(new_obj)
-
-    new_obj = await crud.tahap.get_by_id(id=new_obj.id)
+    response_obj = await crud.tahap.get_by_id(id=new_obj.id)
 
     bidang_ids = [dt.bidang_id for dt in new_obj.details]
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
-    return create_response(data=new_obj)
+    return create_response(data=response_obj)
 
 @router.get("", response_model=GetResponsePaginatedSch[TahapSch])
 async def get_list(
@@ -194,90 +133,14 @@ async def update(
     
     """Update a obj by its id"""
 
-    db_session = db.session
+    obj_updated = await TahapService().update_tahap(sch=sch, updated_by_id=current_worker.id)
 
-    obj_current = await crud.tahap.get_by_id(id=id)
-    if not obj_current:
-        raise IdNotFoundException(Tahap, id)
-    
-    obj_updated = await crud.tahap.update(obj_current=obj_current, obj_new=sch, 
-                                          db_session=db_session, with_commit=False, 
-                                          updated_by_id=current_worker.id)
-
-    #remove bidang
-    list_id = [dt.id for dt in sch.details if dt.id is not None]
-    if len(list_id) > 0:
-        list_detail = await crud.tahap_detail.get_multi_not_in_id_removed(list_ids=list_id, tahap_id=id)
-        for ls in list_detail:
-            if len(ls.bidang.invoices) > 0:
-                raise ContentNoChangeException(detail=f"bidang {ls.bidang.id_bidang} tidak dapat dihapus karena memiliki invoice")
-            
-        if list_detail:
-            await crud.tahap_detail.remove_multiple_data(list_obj=list_detail, db_session=db_session)
-    
-    if len(list_id) == 0 and len(obj_current.details) > 0:
-        list_id = [dt.id for dt in obj_current.details if dt.id is not None]
-        list_detail = await crud.tahap_detail.get_multi_in_id_removed(list_ids=list_id, tahap_id=id)
-        for ls in list_detail:
-            if len(ls.bidang.invoices) > 0:
-                raise ContentNoChangeException(detail=f"bidang {ls.bidang.id_bidang} tidak dapat dihapus karena memiliki invoice")
-            
-        await crud.tahap_detail.remove_multiple_data(list_obj=obj_current.details, db_session=db_session)
-
-    #updated details
-    for dt in sch.details:
-        if dt.id is None:
-            dt_sch = TahapDetailCreateSch(tahap_id=id, bidang_id=dt.bidang_id, is_void=False)
-            await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=current_worker.id)
-        else:
-            dt_current = await crud.tahap_detail.get(id=dt.id)
-            dt_updated = TahapDetailUpdateSch(**dt_current.dict())
-
-            await crud.tahap_detail.update(obj_current=dt_current, obj_new=dt_updated, 
-                                           with_commit=False, db_session=db_session,
-                                             updated_by_id=current_worker.id)
-        
-        bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
-        if bidang_current.geom :
-            bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-        
-        if bidang_current.geom_ori :
-            bidang_current.geom_ori = wkt.dumps(wkb.loads(bidang_current.geom_ori.data, hex=True))
-        
-        bidang_updated = BidangUpdateSch.from_orm(bidang_current)
-        bidang_updated.luas_bayar = dt.luas_bayar
-        bidang_updated.harga_akta = dt.harga_akta
-        bidang_updated.harga_transaksi = dt.harga_transaksi
-
-        await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated,
-                                  with_commit=False, db_session=db_session, 
-                                  updated_by_id=current_worker.id)
-        
-        for ov in dt.overlaps:
-            bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
-            if bidang_overlap_current.geom :
-                geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
-                bidang_overlap_current.geom = geom_ov
-            if bidang_overlap_current.geom_temp :
-                geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
-                bidang_overlap_current.geom_temp = geom_temp_ov
-        
-            bidang_overlap_updated = BidangOverlapUpdateSch(**ov.dict())
-
-            await crud.bidangoverlap.update(obj_current=bidang_overlap_current, obj_new=bidang_overlap_updated,
-                                            with_commit=False, db_session=db_session,
-                                            updated_by_id=current_worker.id)
-        
-
-    await db_session.commit()
-    await db_session.refresh(obj_updated)
-
-    obj_updated = await crud.tahap.get_by_id(id=obj_updated.id)
+    response_obj = await crud.tahap.get_by_id(id=obj_updated.id)
 
     bidang_ids = [dt.bidang_id for dt in obj_updated.details]
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
-    return create_response(data=obj_updated)
+    return create_response(data=response_obj)
 
 @router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSrcSch])
 async def get_list(

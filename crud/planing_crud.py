@@ -20,12 +20,11 @@ class CRUDPlaning(CRUDBase[Planing, PlaningCreateSch, PlaningUpdateSch]):
         db_session = db_session or db.session
         
         query = select(Planing).where(Planing.id == id
-                                        ).options(selectinload(Planing.project
-                                                            ).options(selectinload(Project.section)
-                                                            ).options(selectinload(Project.main_project)
-                                                            ).options(selectinload(Project.sub_projects))
-                                        ).options(selectinload(Planing.desa)
-                                        ).options(selectinload(Planing.harga_standards))
+                                        ).options(selectinload(Planing.project).options(selectinload(Project.section), 
+                                                                                        selectinload(Project.main_project), 
+                                                                                        selectinload(Project.sub_projects)), 
+                                                  selectinload(Planing.desa), 
+                                                  selectinload(Planing.harga_standards))
         
         response = await db_session.execute(query)
 

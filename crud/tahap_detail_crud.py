@@ -85,6 +85,18 @@ class CRUDTahapDetail(CRUDBase[TahapDetail, TahapDetailCreateSch, TahapDetailUpd
                                 ))
         response =  await db_session.execute(query)
         return response.fetchone()
+    
+    async def get_multi_by_tahap_id(self, 
+                                    *, 
+                                    tahap_id:UUID | str,
+                                    db_session : AsyncSession | None = None
+                                    ) -> list[TahapDetail] | None:
+        
+        db_session = db_session or db.session
+        
+        response =  await db_session.execute(select(TahapDetail).where(TahapDetail.tahap_id == tahap_id))
+
+        return response.scalars().all()
 
     async def get_multi_by_tahap_id_for_printout(self, 
                                             *, 
