@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from common.ordered import OrderEnumSch
 from common.enum import StatusPetaLokasiEnum
 from crud.base_crud import CRUDBase
-from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing, BundleHd, BundleDt, Workflow
+from models import KjbHd, KjbDt, RequestPetaLokasi, Pemilik, HasilPetaLokasi, Planing, BundleHd, BundleDt, Workflow, Bidang
 from models.master_model import HargaStandard
 from schemas.kjb_dt_sch import KjbDtCreateSch, KjbDtUpdateSch, KjbDtSrcForGUSch, KjbDtForCloud, KjbDtListSch, KjbDtDoubleDataSch
 from typing import List
@@ -65,11 +65,14 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
                    KjbDt.kjb_hd_id,
                    Workflow.last_status.label("status_workflow"),
                    Workflow.step_name.label("step_name_workflow"),
-                   func.coalesce(func.max(HargaStandard.harga), 0).label("harga_standard")
+                   func.coalesce(func.max(HargaStandard.harga), 0).label("harga_standard"),
+                   Bidang.id_bidang
                     ).join(KjbHd, KjbHd.id == KjbDt.kjb_hd_id
                     ).outerjoin(Planing, Planing.desa_id == KjbDt.desa_by_ttn_id
                     ).outerjoin(HargaStandard, HargaStandard.planing_id == Planing.id
-                    ).outerjoin(Workflow, Workflow.reference_id == KjbHd.id)
+                    ).outerjoin(Workflow, Workflow.reference_id == KjbHd.id
+                    ).outerjoin(HasilPetaLokasi, HasilPetaLokasi.kjb_dt_id == KjbDt.id
+                    ).outerjoin(Bidang, Bidang.id == HasilPetaLokasi.bidang_id)
         
         if filter == "lebihdari":
             query = query.filter(KjbDt.harga_transaksi > HargaStandard.harga)
@@ -90,8 +93,9 @@ class CRUDKjbDt(CRUDBase[KjbDt, KjbDtCreateSch, KjbDtUpdateSch]):
             )
         
         
-        query = query.group_by(KjbDt.id, KjbHd.code, Workflow.last_status, Workflow.step_name
-                    ).order_by(KjbDt.id, KjbHd.code, KjbDt.created_at.desc())
+        query = query.group_by(KjbDt.id, KjbHd.code, Workflow.last_status, Workflow.step_name, Bidang.id_bidang
+                    ).order_by(KjbDt.id, KjbHd.code, KjbDt.created_at.desc()
+                    )
 
         return await paginate(db_session, query, params)
     

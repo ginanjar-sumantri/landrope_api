@@ -345,6 +345,16 @@ class KjbDt(KjbDtFullBase, table=True):
     @property
     def status_workflow(self) -> WorkflowLastStatusEnum | None:
         return getattr(getattr(self, 'kjb_hd', None), 'status_workflow', None)
+    
+    @property
+    def id_bidang(self) -> str | None:
+        if self.hasil_peta_lokasi:
+            if self.hasil_peta_lokasi.bidang:
+                return self.hasil_peta_lokasi.bidang.id_bidang
+            else:
+                return None
+        
+        return None
 
 ##########################################################################
 
