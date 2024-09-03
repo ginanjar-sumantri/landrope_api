@@ -18,7 +18,6 @@ from common.exceptions import (IdNotFoundException, NameExistException, ContentN
 from common.enum import StatusBidangEnum, JenisBidangEnum
 from services.helper_service import KomponenBiayaHelper
 from services.tahap_service import TahapService
-from shapely import wkb, wkt
 from io import BytesIO
 import crud
 import json
