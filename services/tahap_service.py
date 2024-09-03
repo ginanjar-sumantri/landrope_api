@@ -7,6 +7,7 @@ from schemas.tahap_sch import TahapCreateSch, TahapUpdateSch
 from schemas.tahap_detail_sch import TahapDetailCreateSch, TahapDetailUpdateSch
 
 from uuid import UUID
+from shapely import wkb, wkt
 
 import crud
 
@@ -49,6 +50,10 @@ class TahapService:
             await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=created_by_id)
 
             bidang_current = await crud.bidang.get(id=dt.bidang_id)
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori:
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             
             bidang_updated = {
                 "luas_bayar" : dt.luas_bayar,
@@ -73,6 +78,13 @@ class TahapService:
 
             for ov in dt.overlaps:
                 bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
+                if bidang_overlap_current.geom :
+                    geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
+                    bidang_overlap_current.geom = geom_ov
+                if bidang_overlap_current.geom_temp :
+                    geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
+                    bidang_overlap_current.geom_temp = geom_temp_ov
+
                 bidang_overlap_updated = {
                     "is_show": ov.is_show,
                     "kategori": ov.kategori,
@@ -129,6 +141,11 @@ class TahapService:
             # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA / LUAS BAYAR AKAN
             if bidang_current.harga_transaksi != dt.harga_transaksi or bidang_current.harga_akta != dt.harga_akta or bidang_current.luas_bayar != dt.luas_bayar:
                 
+                if bidang_current.geom :
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+                if bidang_current.geom_ori:
+                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+
                 bidang_updated = {
                     "luas_bayar" : dt.luas_bayar,
                     "harga_akta" : dt.harga_akta,
@@ -152,6 +169,13 @@ class TahapService:
             
             for ov in dt.overlaps:
                 bidang_overlap_current = await crud.bidangoverlap.get(id=ov.id)
+                if bidang_overlap_current.geom :
+                    geom_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom.data, hex=True))
+                    bidang_overlap_current.geom = geom_ov
+                if bidang_overlap_current.geom_temp :
+                    geom_temp_ov = wkt.dumps(wkb.loads(bidang_overlap_current.geom_temp.data, hex=True))
+                    bidang_overlap_current.geom_temp = geom_temp_ov
+                    
                 bidang_overlap_updated = {
                     "is_show": ov.is_show,
                     "kategori": ov.kategori,
