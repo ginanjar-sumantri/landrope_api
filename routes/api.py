@@ -83,7 +83,7 @@ api_router.include_router(kategori_proyek.router, prefix="/kategoriproyek", tags
 api_router.include_router(giro.router, prefix="/giro", tags=["giro"])
 api_router.include_router(keterangan_req_petlok.router, prefix="/keterangan_req_petlok", tags=["keterangan_req_petlok"])
 
-api_router.include_router(peminjaman.router, prefix="/peminjaman_header", tags=["peminjaman_header"])
+api_router.include_router(peminjaman.router, prefix="/peminjaman", tags=["peminjaman"])
 # api_router.include_router(peminjaman_bidang.router, prefix="/peminjaman_bidang", tags=["peminjaman_bidang"])
 
 api_router.include_router(pelepasan.router, prefix="/pelepasan", tags=["pelepasan"])

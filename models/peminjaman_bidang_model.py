@@ -28,7 +28,7 @@ class PeminjamanBidang(PeminjamanBidangFullBase, table=True):
     
     @property
     def pemilik_name(self) -> str | None:
-        return self.bidang.pemilik.name if self.bidang.pemilik else None
+        return self.pemilik.name 
     
     @property
     def group(self) -> str | None:
@@ -37,6 +37,41 @@ class PeminjamanBidang(PeminjamanBidangFullBase, table=True):
     @property
     def luas_bayar(self) -> Decimal | None:
         return self.bidang.luas_bayar
+
+    @property
+    def nomor_perjanjian(self)->str:
+        if self.peminjaman_header.nomor_perjanjian is None:
+            return ""
+        return self.peminjaman_header.nomor_perjanjian
+    
+    @property
+    def project_name(self)->str:
+        if self.peminjaman_header.project_name is None:
+            return ""
+        return self.peminjaman_header.project_name
+    
+    @property
+    def desa_name(self)->str:
+        if self.peminjaman_header.desa_name is None:
+            return ""
+        return self.peminjaman_header.desa_name
+    
+    @property
+    def ptsk_name(self)->str:
+        if self.peminjaman_header.ptsk_name is None:
+            return ""
+        return self.peminjaman_header.ptsk_name
+    
+    @property
+    def luas_bidang(self)->str:
+        if self.peminjaman_header.luas_bidang is None:
+            return ""
+        return self.peminjaman_header.luas_bidang
+    
+
+    
+    
+    
 
     
 

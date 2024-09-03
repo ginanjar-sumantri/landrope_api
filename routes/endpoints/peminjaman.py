@@ -1,18 +1,27 @@
-from fastapi import APIRouter, status, Depends, UploadFile, HTTPException
-from sqlmodel import select, or_, cast, String
+from fastapi import APIRouter, status, Depends, UploadFile, HTTPException, Response
+from sqlmodel import select, or_, cast, String, and_
 from fastapi_pagination import Params
+
+from common.enum import KategoriTipeTanahEnum
+
+
+from schemas.peminjaman_header_sch import (PeminjamanHeaderSch, PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch, PeminjamanHeaderEditSch, PeminjamanHeaderByIdSch, BidangSearchListSch)
+from schemas.peminjaman_bidang_sch import (PeminjamanBidangSch)
+from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
+
 from models.peminjaman_header_model import PeminjamanHeader
-from schemas.peminjaman_header_sch import (PeminjamanHeaderSch, PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch, PeminjamanHeaderEditSch)
-from schemas.bidang_sch import BidangPeminjamanSch
-from models import Bidang, PeminjamanBidang, Planing, Project, Ptsk, Desa
-from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, DeleteResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
-from common.exceptions import (IdNotFoundException)
+from models import Bidang, PeminjamanBidang, Planing, Project, Ptsk, Desa, Skpt
 from models.worker_model import Worker
+
+from common.exceptions import (IdNotFoundException)
+
 import crud
 from common.exceptions import (IdNotFoundException, DocumentFileNotFoundException)
 from uuid import UUID
 from datetime import datetime
 
+from services.pdf_service import PdfService
+from services.gcloud_storage_service import GCStorageService
 
 
 router = APIRouter()
@@ -89,6 +98,29 @@ async def edit(id:UUID, sch:PeminjamanHeaderEditSch, current_worker:Worker = Dep
 
     return create_response(data=response_obj)
 
+@router.put("/{id}/upload", response_model=PutResponseBaseSch[PeminjamanHeaderSch])
+async def upload(id:UUID, 
+                file:UploadFile | None = None, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Update a obj by its id"""
+
+    #jika dia tidak upload di berikan warning wajib mengupload
+
+    obj_current = await crud.peminjaman_header.get(id=id)
+
+    if not obj_current:
+        raise IdNotFoundException(PeminjamanHeader, id)
+    
+    if not file:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Upload dokumen terlebih dahulu")
+
+    
+    obj_updated = await crud.peminjaman_header.upload(obj_current=obj_current, file=file, updated_by_id=current_worker.id)
+
+    response_obj = await crud.peminjaman_header.get(id=obj_updated.id, with_select_in_load=True)
+
+    return create_response(data=response_obj)
+
 
 @router.put("/{id}/update", response_model=PutResponseBaseSch[PeminjamanHeaderSch])
 async def update(id:UUID, sch:PeminjamanHeaderUpdateSch, 
@@ -110,127 +142,109 @@ async def update(id:UUID, sch:PeminjamanHeaderUpdateSch,
 
     return create_response(data=response_obj)
 
-@router.put("/{id}/upload", response_model=PutResponseBaseSch[PeminjamanHeaderSch])
-async def update(id:UUID, 
-                file:UploadFile | None = None, current_worker:Worker = Depends(crud.worker.get_active_worker)):
-    
-    """Update a obj by its id"""
+@router.get("/{id}", response_model=GetResponseBaseSch[PeminjamanHeaderByIdSch])
+async def get_by_id(id:UUID, current_worker:Worker = Depends(crud.worker.get_active_worker)):
+
+    """Get an object by id bidang"""
+
+    obj = await crud.peminjaman_header.get(id=id, with_select_in_load=True)
+
+    if not obj:
+        raise IdNotFoundException(PeminjamanHeader, id)
+
+    return create_response(data=obj)
+
+@router.get("/{id}/download_file" )
+async def download_file(id:UUID):
+    """Download File Dokumen"""
 
     obj_current = await crud.peminjaman_header.get(id=id)
-
     if not obj_current:
         raise IdNotFoundException(PeminjamanHeader, id)
     
-    if obj_current.is_lock:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Peminjaman sudah terkunci")
+    if obj_current.file_path is None:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.nomor_perjanjian)
+    try:
+        file_bytes = await GCStorageService().download_dokumen(file_path=obj_current.file_path)
+    except Exception as e:
+        raise DocumentFileNotFoundException(dokumenname=obj_current.nomor_perjanjian)
     
-    obj_updated = await crud.peminjaman_header.update(obj_current=obj_current, file=file, updated_by_id=current_worker.id)
+    ext = obj_current.file_path.split('.')[-1]
 
-    response_obj = await crud.peminjaman_header.get(id=obj_updated.id, with_select_in_load=True)
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_perjanjian}.{ext}"
+    return response
 
-    return create_response(data=response_obj)
+@router.get("/{id}/printout")
+async def printout_file(id:UUID):
 
-
-@router.get("/list-bidang", response_model=GetResponsePaginatedSch[BidangPeminjamanSch])
-async def get_list_bidang(
-    project_id: str,  
-    desa_id: str,   
-    ptsk_id: str,     
-    keyword: str | None = None
-):
-    """Gets a paginated list of bidang objects"""
-
-    if not project_id:
-        raise HTTPException(status_code=400, detail="Parameter 'project' is required.")
-    if not desa_id:
-        raise HTTPException(status_code=400, detail="Parameter 'desa' is required.")
-    if not ptsk_id:
-        raise HTTPException(status_code=400, detail="Parameter 'ptsk' is required.")
+    obj_current = await crud.peminjaman_header.get(id=id, with_select_in_load=True)
+    if not obj_current:
+        raise IdNotFoundException(PeminjamanHeader, id)
     
-    current_date = datetime.now()
+    data = {
+        "filename": "landrope_form_peminjaman",
+        "template_file": "landrope_form_peminjaman.docx",
+        "data": {
+            "nomor_perjanjian": obj_current.nomor_perjanjian,
+            "project_name": obj_current.project_name,
+            "desa_name": obj_current.desa_name,
+            "kota_name": obj_current.kota_name,
+            "ptsk_name": obj_current.ptsk_name,
+            "kelurahan_name": obj_current.kelurahan_name,
+            "tanggal_berakhir": obj_current.tanggal_berakhir,
+            "kategori": obj_current.kategori,
+        },
+        "images": []
+    }
+
+    file_bytes = await PdfService().get_pdf_from_report_service(data=data)
     
-    query = (
-        select(Bidang)
-        .outerjoin(PeminjamanBidang, PeminjamanBidang.bidang_id == Bidang.id)
-        .outerjoin(PeminjamanHeader, PeminjamanHeader.id == PeminjamanBidang.peminjaman_header_id)
-        .outerjoin(Project, Project.id == PeminjamanHeader.project_id)
-        .outerjoin(Desa, Desa.id == PeminjamanHeader.desa_id)
-        .outerjoin(Ptsk, Ptsk.id == PeminjamanHeader.ptsk_id)
-        .filter(Bidang.status == 'Bebas')
-        .filter(Project.id == project_id)  
-        .filter(Desa.id == desa_id)        
-        .filter(Ptsk.id == ptsk_id)        
-        .filter(
-            or_(
-                PeminjamanBidang.bidang_id == None,
-                or_(
-                    PeminjamanHeader.tanggal_berakhir == None,
-                    PeminjamanHeader.tanggal_berakhir <= current_date
+    response = Response(content=file_bytes, media_type="application/octet-stream")
+    response.headers["Content-Disposition"] = f"attachment; filename={obj_current.nomor_perjanjian.replace('/', '_')}.pdf"
+    return response
+
+
+@router.get("/search/bidang", response_model=GetResponsePaginatedSch[BidangSearchListSch])
+async def search_bidang(project_id: UUID, desa_id: UUID, ptsk_id: UUID, peminjaman_header_id: UUID | None = None, keyword:str | None = None, params:Params = Depends(), current_worker:Worker = Depends(crud.worker.get_active_worker)):
+    
+    """Gets a paginated list objects"""
+
+    query = select(Bidang).join(Planing, Bidang.planing_id == Planing.id
+                   ).outerjoin(PeminjamanBidang, Bidang.id == PeminjamanBidang.bidang_id
+                    ).outerjoin(Skpt, Skpt.id == Bidang.skpt_id)
+
+    if peminjaman_header_id:
+        query = query.where(
+            or_(PeminjamanBidang.peminjaman_header_id == peminjaman_header_id, 
+                PeminjamanBidang.id == None,
+                and_(
+                    Planing.project_id == project_id,
+                    Planing.desa_id == desa_id,
+                    Skpt.ptsk_id == ptsk_id
                 )
             )
         )
-    )
+    else:
+        query = query.where(
+            and_(
+                    PeminjamanBidang.id == None,
+                    Planing.project_id == project_id,
+                    Planing.desa_id == desa_id,
+                    Skpt.ptsk_id == ptsk_id
+                )
+        )
 
     if keyword:
-        query = query.filter(
-            or_(
-                Bidang.id_bidang == keyword,
-                Bidang.alashak.ilike(f"%{keyword}%")
-            )
-        )
+        query = query.filter(or_(
+                        cast(Bidang.id_bidang, String).ilike(f"%{keyword}%"),
+                        cast(Bidang.alashak, String).ilike(f"%{keyword}%")
+                    ))
     
-    query = query.order_by(Bidang.updated_at.desc())
-    
-    objs = await crud.bidang.get_multi_paginated_ordered(query=query)
+    query = query.filter(Bidang.status == "Bebas").distinct()
 
-    if not objs:
-        raise HTTPException(status_code=404, detail="No bidang found with the given criteria.")
+    objs = await crud.bidang.get_multi_paginated_ordered(query=query)
     
     return create_response(data=objs)
-
-# @router.get("/print-out/{id}")
-# async def printout(id:str):
-
-#     """Print out"""
-
-#     obj_current = await crud.Peminjaman_header.get(id=id)
-
-#     if not obj_current:
-#         raise IdNotFoundException(PeminjamanHeader, id)
-    
-#     obj_bytes = await PeminjamanHeaderService().generate_printout(obj=obj_current)
-    
-#     headers = {'Content-Disposition': 'inline; filename="Report_Peminjaman.pdf"'}
-
-#     response = Response(obj_bytes.getvalue(), headers=headers, media_type="application/octet-stream")
-#     return response
-    
-
-# @router.get("/export/excel")
-# async def get_report_Peminjaman(periode_date: datetime):
-
-#     """Gets a report"""
-#     base_query = "SELECT * FROM public._a_report_Peminjaman(:periode_date)"
-#     params = {
-#         "periode_date": periode_date
-#     }
-
-#     query = text(base_query).params(**params)
-
-#     objs = await crud.Peminjaman_header.get_sql_function(query=query)
-
-#     headers = ["Category", "Jenis", "Total"]
-#     attributes = ["category", "jenis", "total"]
-
-#     excel_data = await ExportExcelService().generate_excel_report(objs, headers, attributes, report_title="Report Perpanjangan Peminjaman")
-    
-#     return StreamingResponse(excel_data,
-#                              media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-#                              headers={"Content-Disposition": "attachment; filename=report_Peminjaman.xlsx"})
-
-
-
-
-
 
    

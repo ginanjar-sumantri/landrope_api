@@ -5,7 +5,7 @@ from uuid import UUID
 class PeminjamanPenggarapCreateSch(PeminjamanPenggarapBase):
     pass
 
-class PeminjamanPenggarapSch(PeminjamanPenggarapFullBase):
+class PeminjamanPenggarapSch(PeminjamanPenggarapBase):
     pass
 
 class PeminjamanPenggarapByIdSch(PeminjamanPenggarapFullBase):

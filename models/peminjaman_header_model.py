@@ -12,7 +12,7 @@ class PeminjamanHeaderBase(SQLModel):
     nomor_perjanjian: str | None = Field(nullable=False)
     tanggal_perjanjian: date | None = Field(nullable=True)
     tanggal_berakhir: date | None = Field(nullable=True)
-    kategori: KategoriTipeTanahEnum | None = Field(nullable=True)
+    kategori: KategoriTipeTanahEnum = Field(nullable=True)
 
     ptsk_id: UUID | None = Field(nullable=True, foreign_key="ptsk.id")
     project_id: UUID | None = Field(nullable=True, foreign_key="project.id")
@@ -70,3 +70,11 @@ class PeminjamanHeader(PeminjamanHeaderFullBase, table=True):
     @property
     def ptsk_name(self) -> str | None:
         return self.ptsk.name
+
+    @property
+    def kota_name(self) -> str | None:
+        return self.desa.kota
+    
+    @property
+    def kelurahan_name(self) -> str | None:
+        return self.desa.kecamatan

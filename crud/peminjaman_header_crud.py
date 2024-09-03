@@ -5,12 +5,15 @@ from fastapi.encoders import jsonable_encoder
 from sqlmodel import and_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from crud.base_crud import CRUDBase
+from common.enum import KategoriTipeTanahEnum
 from models import Role, PeminjamanHeader
 from models.code_counter_model import CodeCounterEnum
 from sqlalchemy.orm import selectinload
+
 from schemas.peminjaman_header_sch import PeminjamanHeaderCreateSch, PeminjamanHeaderUpdateSch, PeminjamanHeaderEditSch
 from schemas.peminjaman_bidang_sch import PeminjamanBidangCreateSch
 from schemas.peminjaman_penggarap_sch import PeminjamanPenggarapCreateSch
+
 from typing import List
 from sqlalchemy import text
 from fastapi_async_sqlalchemy import db
@@ -44,14 +47,15 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
             db_obj.created_by_id = created_by_id
             db_obj.updated_by_id = created_by_id
 
+        obj_tgl_berakhir = date(date.now().year, 12, 31)
+        db_obj.tanggal_berakhir = obj_tgl_berakhir
+    
         try:
-
-            if obj_in.kategori.lower() == "sawah":
+            
+            if obj_in.kategori == KategoriTipeTanahEnum.SAWAH:
                 kat = "S"
-            elif obj_in.kategori.lower() == "empang":
-                    kat = "E"
-            else:
-                kat = ""
+            elif obj_in.kategori == KategoriTipeTanahEnum.EMPANG:
+                kat = "E"
         
             nomor_perjanjian_template = f"[code]/{kat}/IZIN/LA/{roman.toRoman(date.today().month)}/{date.today().year}"
 
@@ -124,11 +128,50 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
 
         return obj_current
     
+    async def upload(self, 
+                     *, 
+                     obj_current : PeminjamanHeader, 
+                     file: UploadFile | None = None,
+                     updated_by_id: UUID | str | None = None,
+                     db_session : AsyncSession | None = None,
+                     with_commit: bool | None = True) -> PeminjamanHeader :
+        db_session =  db_session or db.session
+        obj_data = jsonable_encoder(obj_current)
+
+        if isinstance(obj_current, dict):
+            update_data =  obj_current
+        else:
+            update_data = obj_current.dict(exclude_unset=True) #This tell pydantic to not include the values that were not sent
+        
+        for field in obj_data:
+            if field in update_data:
+                setattr(obj_current, field, update_data[field])
+            if field == "updated_at":
+                setattr(obj_current, field, datetime.utcnow())
+        
+        if updated_by_id:
+            obj_current.updated_by_id = updated_by_id
+
+        if file:
+            obj_current.file_path = await GCStorageService().upload_file_dokumen(file=file, file_name=f"{obj_current.nomor_perjanjian.replace('/', '_')} - {uuid4().hex}")
+        
+        try:
+            db_session.add(obj_current)
+
+            if with_commit:
+                await db_session.commit()
+                await db_session.refresh(obj_current)
+
+        except exc.IntegrityError:
+            await db_session.rollback()
+            raise HTTPException(status_code=400, detail="Failed Edit")
+
+        return obj_current
+    
     async def update(self, 
                      *, 
                      obj_current : PeminjamanHeader, 
                      obj_new : PeminjamanHeaderUpdateSch,
-                     file: UploadFile | None = None,
                      updated_by_id: UUID | str | None = None,
                      db_session : AsyncSession | None = None,
                      with_commit: bool | None = True) -> PeminjamanHeader :
@@ -156,7 +199,7 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
 
             for dt in obj_new.peminjaman_penggaraps:
                     sch = PeminjamanPenggarapCreateSch(**dt.dict(exclude={"peminjaman_header_id"}), peminjaman_header_id=obj_current.id)
-                    await crud.peminjaman_bidang.create(
+                    await crud.peminjaman_penggarap.create(
                         obj_in=sch, 
                         created_by_id=updated_by_id, 
                         db_session=db_session, 
@@ -186,7 +229,8 @@ class CRUDPeminjamanHeader(CRUDBase[PeminjamanHeader, PeminjamanHeaderCreateSch,
 
         if with_select_in_load:
             query = query.options(selectinload(PeminjamanHeader.project), selectinload(PeminjamanHeader.desa), 
-                                selectinload(PeminjamanHeader.ptsk), selectinload(PeminjamanHeader.peminjaman_bidangs))
+                                selectinload(PeminjamanHeader.ptsk), selectinload(PeminjamanHeader.peminjaman_bidangs),
+                                selectinload(PeminjamanHeader.peminjaman_penggaraps))
 
         response = await db_session.execute(query)
 
