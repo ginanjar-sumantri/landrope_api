@@ -132,7 +132,7 @@ async def update(
     
     """Update a obj by its id"""
 
-    obj_updated = await TahapService().update_tahap(sch=sch, updated_by_id=current_worker.id)
+    obj_updated = await TahapService().update_tahap(id=id, sch=sch, updated_by_id=current_worker.id)
 
     response_obj = await crud.tahap.get_by_id(id=obj_updated.id)
 
