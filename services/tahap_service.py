@@ -63,6 +63,7 @@ class TahapService:
             
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, with_commit=False, db_session=db_session, updated_by_id=created_by_id)
 
+            
             hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
             if hasil_peta_lokasi_current:
                 kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
@@ -136,10 +137,7 @@ class TahapService:
                 await crud.tahap_detail.update(obj_current=tahap_detail_current, obj_new=tahap_detail_sch, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
             
             bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
-
-            # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA / LUAS BAYAR AKAN
-            
-                
+             
             if bidang_current.geom :
                 bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             if bidang_current.geom_ori:
@@ -153,9 +151,7 @@ class TahapService:
             
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
 
-            # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA AKAN MENGUPDATE KE KJB DT
             hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
-
             if hasil_peta_lokasi_current:
                 kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
 
