@@ -63,9 +63,8 @@ class TahapService:
             
             await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, with_commit=False, db_session=db_session, updated_by_id=created_by_id)
 
-            # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA AKAN MENGUPDATE KE KJB DT
-            if bidang_current.harga_transaksi != dt.harga_transaksi or bidang_current.harga_akta != dt.harga_akta:
-                hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
+            hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
+            if hasil_peta_lokasi_current:
                 kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
 
                 kjb_dt_updated = {
@@ -139,32 +138,33 @@ class TahapService:
             bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
 
             # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA / LUAS BAYAR AKAN
-            if bidang_current.harga_transaksi != dt.harga_transaksi or bidang_current.harga_akta != dt.harga_akta or bidang_current.luas_bayar != dt.luas_bayar:
+            
                 
-                if bidang_current.geom :
-                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
-                if bidang_current.geom_ori:
-                    bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom :
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
+            if bidang_current.geom_ori:
+                bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
 
-                bidang_updated = {
-                    "luas_bayar" : dt.luas_bayar,
-                    "harga_akta" : dt.harga_akta,
-                    "harga_transaksi" : dt.harga_transaksi
+            bidang_updated = {
+                "luas_bayar" : dt.luas_bayar,
+                "harga_akta" : dt.harga_akta,
+                "harga_transaksi" : dt.harga_transaksi
+            }
+            
+            await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
+
+            # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA AKAN MENGUPDATE KE KJB DT
+            hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
+
+            if hasil_peta_lokasi_current:
+                kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
+
+                kjb_dt_updated = {
+                    "harga_akta": dt.harga_akta,
+                    "harga_transaksi": dt.harga_transaksi
                 }
-                
-                await crud.bidang.update(obj_current=bidang_current, obj_new=bidang_updated, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
 
-                # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA AKAN MENGUPDATE KE KJB DT
-                if bidang_current.harga_transaksi != dt.harga_transaksi or bidang_current.harga_akta != dt.harga_akta:
-                    hasil_peta_lokasi_current = await crud.hasil_peta_lokasi.get_by_bidang_id(bidang_id=dt.bidang_id)
-                    kjb_dt_current = await crud.kjb_dt.get(id=hasil_peta_lokasi_current.kjb_dt_id)
-
-                    kjb_dt_updated = {
-                        "harga_akta": dt.harga_akta,
-                        "harga_transaksi": dt.harga_transaksi
-                    }
-
-                    await crud.kjb_dt.update(obj_current=kjb_dt_current, obj_new=kjb_dt_updated, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
+                await crud.kjb_dt.update(obj_current=kjb_dt_current, obj_new=kjb_dt_updated, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
 
             
             for ov in dt.overlaps:
