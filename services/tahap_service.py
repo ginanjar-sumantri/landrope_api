@@ -103,7 +103,7 @@ class TahapService:
 
         return new_obj
     
-    async def update_tahap(self, sch: TahapUpdateSch, updated_by_id: UUID) -> Tahap:
+    async def update_tahap(self, id:UUID, sch: TahapUpdateSch, updated_by_id: UUID) -> Tahap:
 
         db_session = db.session
 
