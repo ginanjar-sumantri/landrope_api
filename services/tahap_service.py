@@ -49,7 +49,7 @@ class TahapService:
             dt_sch = TahapDetailCreateSch(tahap_id=new_obj.id, bidang_id=dt.bidang_id, is_void=False)
             await crud.tahap_detail.create(obj_in=dt_sch, db_session=db_session, with_commit=False, created_by_id=created_by_id)
 
-            bidang_current = await crud.bidang.get(id=dt.bidang_id)
+            bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
             if bidang_current.geom :
                 bidang_current.geom = wkt.dumps(wkb.loads(bidang_current.geom.data, hex=True))
             if bidang_current.geom_ori:
@@ -136,7 +136,7 @@ class TahapService:
 
                 await crud.tahap_detail.update(obj_current=tahap_detail_current, obj_new=tahap_detail_sch, with_commit=False, db_session=db_session, updated_by_id=updated_by_id)
             
-            bidang_current = await crud.bidang.get(id=dt.bidang_id)
+            bidang_current = await crud.bidang.get_by_id(id=dt.bidang_id)
 
             # JIKA ADA PERUBAHAN HARGA TRANSAKSI / HARGA AKTA / LUAS BAYAR AKAN
             if bidang_current.harga_transaksi != dt.harga_transaksi or bidang_current.harga_akta != dt.harga_akta or bidang_current.luas_bayar != dt.luas_bayar:
@@ -191,3 +191,5 @@ class TahapService:
             await db_session.refresh(obj_updated)
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed update Tahap")
+        
+        return obj_updated
