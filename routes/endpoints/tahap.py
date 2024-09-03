@@ -37,7 +37,7 @@ async def create(
 
     response_obj = await crud.tahap.get_by_id(id=new_obj.id)
 
-    bidang_ids = [dt.bidang_id for dt in new_obj.details]
+    bidang_ids = [dt.bidang_id for dt in response_obj.details]
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
     return create_response(data=response_obj)
@@ -136,7 +136,7 @@ async def update(
 
     response_obj = await crud.tahap.get_by_id(id=obj_updated.id)
 
-    bidang_ids = [dt.bidang_id for dt in obj_updated.details]
+    bidang_ids = [dt.bidang_id for dt in response_obj.details]
     background_task.add_task(KomponenBiayaHelper().calculated_all_komponen_biaya, bidang_ids)
 
     return create_response(data=response_obj)
