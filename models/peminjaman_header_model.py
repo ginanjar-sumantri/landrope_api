@@ -4,6 +4,8 @@ from uuid import UUID
 from typing import TYPE_CHECKING, List
 from common.enum import (KategoriTipeTanahEnum)
 from datetime import date
+from decimal import Decimal
+
 
 if TYPE_CHECKING:
     from models import (Worker, Ptsk, PeminjamanBidang, PeminjamanPenggarap, Project, Desa, Ptsk)
@@ -72,9 +74,19 @@ class PeminjamanHeader(PeminjamanHeaderFullBase, table=True):
         return self.ptsk.name
 
     @property
-    def kota_name(self) -> str | None:
+    def kabupaten_name(self) -> str | None:
         return self.desa.kota
     
     @property
-    def kelurahan_name(self) -> str | None:
+    def kecamatan_name(self) -> str | None:
         return self.desa.kecamatan
+    
+    # @property
+    # def name_penggarap(self) -> str | None:
+    #     if self.peminjaman_penggaraps:
+    #         return ""
+    #     return ", ".join([penggarap.name for penggarap in self.peminjaman_penggaraps])
+    
+    @property
+    def total_luas_bayar(self) -> Decimal | None:
+        return sum([(peminjaman_bidang.bidang.luas_bayar or 0 ) for peminjaman_bidang in self.peminjaman_bidangs])

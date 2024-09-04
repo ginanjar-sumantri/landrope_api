@@ -68,9 +68,7 @@ async def get_list(keyword:str | None = None, params:Params = Depends()):
         query = query.outerjoin(PeminjamanBidang, PeminjamanHeader.id == PeminjamanBidang.peminjaman_header_id
                     ).outerjoin(Bidang, Bidang.id == PeminjamanBidang.bidang_id
                     ).filter(or_(
-                        cast(PeminjamanHeader.nomor_perjanjian, String).ilike(f"%{keyword}%"),
-                        cast(PeminjamanHeader.alashak, String).ilike(f"%{keyword}%"),
-                        cast(Bidang.id_bidang, String).ilike(f"%{keyword}%")
+                        cast(PeminjamanHeader.nomor_perjanjian, String).ilike(f"%{keyword}%")
                     ))
     
     query = query.distinct()
@@ -103,8 +101,6 @@ async def upload(id:UUID,
                 file:UploadFile | None = None, current_worker:Worker = Depends(crud.worker.get_active_worker)):
     
     """Update a obj by its id"""
-
-    #jika dia tidak upload di berikan warning wajib mengupload
 
     obj_current = await crud.peminjaman_header.get(id=id)
 
@@ -182,18 +178,30 @@ async def printout_file(id:UUID):
     if not obj_current:
         raise IdNotFoundException(PeminjamanHeader, id)
     
+    tahun_berakhir = obj_current.tanggal_berakhir.year if obj_current.tanggal_berakhir else "...."
+
+    # penggarap_details = []
+    # for penggarap in obj_current.peminjaman_penggaraps:
+    #     penggarap_details.append({
+    #         "name": penggarap.name,
+    #         "alamat": penggarap.alamat,
+    #         "nomor_ktp": penggarap.nomor_ktp,
+    #         "nomor_handphone": penggarap.nomor_handphone
+    #     })
+    
     data = {
         "filename": "landrope_form_peminjaman",
         "template_file": "landrope_form_peminjaman.docx",
         "data": {
             "nomor_perjanjian": obj_current.nomor_perjanjian,
-            "project_name": obj_current.project_name,
             "desa_name": obj_current.desa_name,
-            "kota_name": obj_current.kota_name,
             "ptsk_name": obj_current.ptsk_name,
-            "kelurahan_name": obj_current.kelurahan_name,
-            "tanggal_berakhir": obj_current.tanggal_berakhir,
             "kategori": obj_current.kategori,
+            "kabupaten_name": obj_current.kabupaten_name,
+            "kecamatan_name": obj_current.kecamatan_name,
+            "total_luas_bayar": obj_current.total_luas_bayar,
+            "tahun_berakhir": tahun_berakhir
+            # "penggaraps": penggarap_details
         },
         "images": []
     }
