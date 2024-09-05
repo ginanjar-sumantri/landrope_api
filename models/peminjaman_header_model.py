@@ -81,6 +81,10 @@ class PeminjamanHeader(PeminjamanHeaderFullBase, table=True):
     def kecamatan_name(self) -> str | None:
         return self.desa.kecamatan
     
+    @property
+    def created_by_name(self) -> str | None:
+        return self.worker.name
+
     # @property
     # def name_penggarap(self) -> str | None:
     #     if self.peminjaman_penggaraps:

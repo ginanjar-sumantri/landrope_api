@@ -10,7 +10,8 @@ from decimal import Decimal
 class PeminjamanHeaderCreateSch(PeminjamanHeaderBase):
     peminjaman_bidangs: list[UUID]
 
-class PeminjamanHeaderSch(PeminjamanHeaderBase):
+class PeminjamanHeaderSch(PeminjamanHeaderFullBase):
+    created_by_name:str | None
     project_name: str | None
     desa_name: str | None
     ptsk_name: str | None

@@ -68,8 +68,12 @@ async def get_list(keyword:str | None = None, params:Params = Depends()):
         query = query.outerjoin(PeminjamanBidang, PeminjamanHeader.id == PeminjamanBidang.peminjaman_header_id
                     ).outerjoin(Bidang, Bidang.id == PeminjamanBidang.bidang_id
                     ).filter(or_(
-                        cast(PeminjamanHeader.nomor_perjanjian, String).ilike(f"%{keyword}%")
+                        cast(PeminjamanHeader.nomor_perjanjian, String).ilike(f"%{keyword}%"),
+                        cast(Bidang.id_bidang, String).ilike(f"%{keyword}%"),
+                        cast(Bidang.alashak, String).ilike(f"%{keyword}%")
                     ))
+        
+    #tambah query untuk search id bidangnya / join bidang id untuk searching id_bidangnya
     
     query = query.distinct()
 
