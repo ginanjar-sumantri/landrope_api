@@ -74,7 +74,8 @@ async def get_list(keyword:str | None = None, params:Params = Depends()):
                         cast(Bidang.alashak, String).ilike(f"%{keyword}%"),
                         cast(PeminjamanPenggarap.name, String).ilike(f"%{keyword}%"),
                         cast(PeminjamanPenggarap.alamat, String).ilike(f"%{keyword}%"),
-                        cast(PeminjamanPenggarap.nomor_ktp, String).ilike(f"%{keyword}%")
+                        cast(PeminjamanPenggarap.nomor_ktp, String).ilike(f"%{keyword}%"),
+                        cast(PeminjamanPenggarap.nomor_handphone, String).ilike(f"%{keyword}%")
                     ))
         
     query = query.distinct()
