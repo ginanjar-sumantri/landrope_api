@@ -10,7 +10,7 @@ from schemas.peminjaman_bidang_sch import (PeminjamanBidangSch)
 from schemas.response_sch import (PostResponseBaseSch, GetResponseBaseSch, GetResponsePaginatedSch, PutResponseBaseSch, create_response)
 
 from models.peminjaman_header_model import PeminjamanHeader
-from models import Bidang, PeminjamanBidang, Planing, Project, Ptsk, Desa, Skpt
+from models import Bidang, PeminjamanBidang, Planing, Skpt, PeminjamanPenggarap
 from models.worker_model import Worker
 
 from common.exceptions import (IdNotFoundException)
@@ -67,14 +67,16 @@ async def get_list(keyword:str | None = None, params:Params = Depends()):
     if keyword:
         query = query.outerjoin(PeminjamanBidang, PeminjamanHeader.id == PeminjamanBidang.peminjaman_header_id
                     ).outerjoin(Bidang, Bidang.id == PeminjamanBidang.bidang_id
+                    ).outerjoin(PeminjamanPenggarap, PeminjamanPenggarap.peminjaman_header_id == PeminjamanHeader.id
                     ).filter(or_(
                         cast(PeminjamanHeader.nomor_perjanjian, String).ilike(f"%{keyword}%"),
                         cast(Bidang.id_bidang, String).ilike(f"%{keyword}%"),
-                        cast(Bidang.alashak, String).ilike(f"%{keyword}%")
+                        cast(Bidang.alashak, String).ilike(f"%{keyword}%"),
+                        cast(PeminjamanPenggarap.name, String).ilike(f"%{keyword}%"),
+                        cast(PeminjamanPenggarap.alamat, String).ilike(f"%{keyword}%"),
+                        cast(PeminjamanPenggarap.nomor_ktp, String).ilike(f"%{keyword}%")
                     ))
         
-    #tambah query untuk search id bidangnya / join bidang id untuk searching id_bidangnya
-    
     query = query.distinct()
 
     objs = await crud.peminjaman_header.get_multi_paginated_ordered(query=query)
