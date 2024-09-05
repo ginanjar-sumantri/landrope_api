@@ -42,6 +42,7 @@ class KjbDtSch(KjbDtFullBase):
     pbt_exists:bool|None = Field(default=False)
     step_name_workflow: str | None
     status_workflow: WorkflowLastStatusEnum | None
+    id_bidang: str | None
 
 class KjbDtListRequestPetlokSch(KjbDtSch):
     has_input_petlok:bool | None = Field(alias="has_input_petlok")
@@ -70,6 +71,7 @@ class KjbDtListSch(SQLModel):
     harga_standard:Decimal|None
     step_name_workflow: str | None
     status_workflow: WorkflowLastStatusEnum | None
+    id_bidang: str | None
     
 
 @optional
