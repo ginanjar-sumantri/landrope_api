@@ -58,13 +58,13 @@ class ReportPembebasanService:
         elif status_pembebasan == StatusReportPembebasanEnum.BEBAS:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_bebas(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.BELUM_PETLOK:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:project_ids)""")
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_belum_petlok(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.DEAL_REKLAMASI:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_deal_reklamasi(:cut_off, :is_current_period, :project_ids)""")
         elif status_pembebasan == StatusReportPembebasanEnum.KJB:
-            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:project_ids)""")
+            query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_kjb(:cut_off, :is_current_period, :project_ids)""")
         else:
             query = sqlalchemy.text(f"""SELECT * FROM public._b_report_lili_bidang_relokasi(:cut_off, :is_current_period, :project_ids)""")
 
